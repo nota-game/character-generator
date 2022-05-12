@@ -1,7 +1,9 @@
+
 <?xml version='1.0'?>
 <!-- This file represents a fragment of a book store inventory database -->
 <Daten Version='1' 
   xmlns='https://nota-game.github.io/schema/vNext/nota.xsd' 
+  xmlns:nota='https://nota-game.github.io/schema/vNext/nota.xsd' 
   xmlns:misc='https://nota-game.github.io/schema/vNext/misc.xsd' 
   xmlns:lebewesen="https://nota-game.github.io/schema/vNext/wesen.xsd" 
   xmlns:pfad="https://nota-game.github.io/schema/vNext/pfad.xsd" 
@@ -17,17 +19,17 @@
   <!--<Pfade>
     <PfadAuswahl Id="Götter">
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Götter]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Götter]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Der Gott dem der Charakter gewidmet ist.]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Der Gott dem der Charakter gewidmet ist.]]></misc:Lokalisirung>
       </Beschreibung>
       <Pfad Id="Alsa">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Alsa]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Alsa]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Der Charakter ist ein Diener des Gottes Alsa.]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Der Charakter ist ein Diener des Gottes Alsa.]]></misc:Lokalisirung>
         </Beschreibung>
         <Modifikationen>
           <Besonderheiten xmlns="https://nota-game.github.io/schema/vNext/lebewesen.xsd">
@@ -38,14 +40,78 @@
       </Pfad>
     </PfadAuswahl>
   </Pfade>-->
-  <GenerierungsDaten GenerierungsPunkte="120" MinimumVerbreitung="3" />
+  <KostenDefinitionen xmlns="https://nota-game.github.io/schema/vNext/misc.xsd">
+  <KostenDefinition Id="GP">
+    <Name >
+      <Lokalisirung  Sprache="de">
+        Generierungspunkte
+      </Lokalisirung>
+    </Name>
+    <Abkürzung>
+      <Lokalisirung Sprache="de">
+        GP
+      </Lokalisirung>
+      </Abkürzung>
+      
+    <Beschreibung>
+      <Lokalisirung Sprache="de">
+        Ein abstraktes Maß zur generierung der Charaktere.
+      </Lokalisirung>
+    </Beschreibung>
+  </KostenDefinition>
+    <KostenDefinition Id="EP">
+      <Name >
+        <Lokalisirung  Sprache="de">
+          Erfahrungspunkte
+        </Lokalisirung>
+      </Name>
+      <Abkürzung>
+        <Lokalisirung Sprache="de">
+          EP
+        </Lokalisirung>
+        </Abkürzung>
+        
+      <Beschreibung>
+        <Lokalisirung Sprache="de">
+          Die Erfahrung die ein Charakter bereits gesammelt hat.
+        </Lokalisirung>
+      </Beschreibung>
+    </KostenDefinition>
+    <misc:KostenDefinition Id="Kultur">
+      <misc:Name>
+        <misc:Lokalisirung Sprache="de">Kulturpunkte</misc:Lokalisirung>
+      </misc:Name>
+      <misc:Abkürzung>
+        <misc:Lokalisirung Sprache="de">KuP</misc:Lokalisirung></misc:Abkürzung>
+        <misc:Beschreibung>
+          <misc:Lokalisirung Sprache="de">
+            Das abstrakte maß in wie weit jemand aus einer Kultur lernen konte
+          </misc:Lokalisirung>
+        </misc:Beschreibung>
+    </misc:KostenDefinition>
+    <misc:KostenDefinition Id="Alter">
+      <misc:Name>
+        <misc:Lokalisirung Sprache="de">Alterspunkte</misc:Lokalisirung>
+      </misc:Name>
+      <misc:Abkürzung>
+        <misc:Lokalisirung Sprache="de">AlP</misc:Lokalisirung></misc:Abkürzung>
+        <misc:Beschreibung>
+          <misc:Lokalisirung Sprache="de">
+            Das maß in dem jemand gealtert ist, in erster linie kommen mit dem Alter zusätzliche komplikationen
+          </misc:Lokalisirung>
+        </misc:Beschreibung>
+    </misc:KostenDefinition>
+  </KostenDefinitionen>
+  <GenerierungsDaten MinimumVerbreitung="3"  >
+    <misc:Kosten Id="GP" Wert="120" />
+  </GenerierungsDaten>
   <Organismen xmlns="https://nota-game.github.io/schema/vNext/lebewesen.xsd">
     <Gattung Id="Homo">
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Homo]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Homo]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Die Gattung der Menschen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Die Gattung der Menschen]]></misc:Lokalisirung>
       </Beschreibung>
     </Gattung>
     <Organismus Id="Mensch" Gattung="Homo">
@@ -53,10 +119,10 @@
       <Morphe>
         <Morph Id="Mann" Geschlecht="Mänlich">
           <Name>
-            <misc:Lokalisirung Sparche="de"><![CDATA[Mann]]></misc:Lokalisirung>
+            <misc:Lokalisirung Sprache="de"><![CDATA[Mann]]></misc:Lokalisirung>
           </Name>
           <Beschreibung>
-            <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+            <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
           </Beschreibung>
           <Eigenschaften Punkte="15">
             <Mut Durchschnitt="1" Minimum="7" Maximum="13" />
@@ -75,24 +141,24 @@
           </StandardPfade>
           <Lebensabschnitte>
             <Lebensabschnitt Id="JugendlicherM1" startAlter="12" endAlter="13" minGröße="1.41" maxGröße="1.56" minBMI="15" maxBMI="21">
-              <Spielbar Kosten="3">
-                <PfadPunkte Pfade="Kultur" Punkte="223"/>
+              <Spielbar >
+                <misc:Kosten Id="Kultur" Wert="100" />
               </Spielbar>
               <Name>
-                <misc:Lokalisirung Sparche="de"><![CDATA[Jugendlicher]]></misc:Lokalisirung>
+                <misc:Lokalisirung Sprache="de"><![CDATA[Jugendlicher]]></misc:Lokalisirung>
               </Name>
               <Beschreibung>
-                <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+                <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
               </Beschreibung>
             </Lebensabschnitt>
           </Lebensabschnitte>
         </Morph>
         <Morph Id="Frau" Geschlecht="Weiblich">
           <Name>
-            <misc:Lokalisirung Sparche="de"><![CDATA[Frau]]></misc:Lokalisirung>
+            <misc:Lokalisirung Sprache="de"><![CDATA[Frau]]></misc:Lokalisirung>
           </Name>
           <Beschreibung>
-            <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+            <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
           </Beschreibung>
           <Eigenschaften Punkte="15">
             <Mut Durchschnitt="1" Minimum="7" Maximum="13" />
@@ -111,57 +177,55 @@
           </StandardPfade>
           <Lebensabschnitte>
             <Lebensabschnitt Id="JugendlicherW1" startAlter="0" endAlter="3" minGröße="1.44" maxGröße="1.58" minBMI="16" maxBMI="21">
-              <Spielbar Kosten="3">
-                <PfadPunkte Pfade="Kultur" Punkte="223"/>
+              <Spielbar >
+                <misc:Kosten Id="Kultur" Wert="100" />
               </Spielbar>
               <Name>
-                <misc:Lokalisirung Sparche="de"><![CDATA[Jugendlicher]]></misc:Lokalisirung>
+                <misc:Lokalisirung Sprache="de"><![CDATA[Jugendlicher]]></misc:Lokalisirung>
               </Name>
               <Beschreibung>
-                <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+                <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
               </Beschreibung>
             </Lebensabschnitt>
           </Lebensabschnitte>
         </Morph>
       </Morphe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Mensch]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Mensch]]></misc:Lokalisirung>
       </Name>
       <Art>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Sapiens]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Sapiens]]></misc:Lokalisirung>
       </Art>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
     </Organismus>
   </Organismen>
   <PfadGruppen xmlns="https://nota-game.github.io/schema/vNext/pfad.xsd">
     <Pfade Id="Kultur" WiderholungMaximum="2">
       <Name >
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Kultur]]>
         </misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Wähle die Kultur des Charakters]]>
         </misc:Lokalisirung>
       </Beschreibung>
 
       <Pfad Id="Alan">
         <Name>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Alan]]>
           </misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[]]>
           </misc:Lokalisirung>
         </Beschreibung>
-        <NächstePfade>
-          <pfad:Pfad Id="Koch"/>
-        </NächstePfade>
+        
         <misc:Levels>
           <misc:Level Id="T">
           </misc:Level>
@@ -170,18 +234,15 @@
 
       <Pfad Id="Kirin">
         <Name>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Kirin]]>
           </misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[]]>
           </misc:Lokalisirung>
         </Beschreibung>
-        <NächstePfade>
-          <pfad:Pfad Id="Soldat"/>
-        </NächstePfade>
         <misc:Levels>
           <misc:Level Id="T">
           </misc:Level>
@@ -191,50 +252,51 @@
 
     <pfad:Pfade Id="Proffession" WiderholungMaximum="3">
       <pfad:Name >
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Proffession]]>
         </misc:Lokalisirung>
       </pfad:Name>
       <pfad:Beschreibung>
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Wähle die Proffession]]>
         </misc:Lokalisirung>
       </pfad:Beschreibung>
       <pfad:Pfad Id="Koch">
         <pfad:Name>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Koch]]>
           </misc:Lokalisirung>
         </pfad:Name>
         <pfad:Beschreibung>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[]]>
           </misc:Lokalisirung>
         </pfad:Beschreibung>
 
         <misc:Levels>
-          <misc:Level Id="T">
-            <talent:Talent Id="Kochen" Level="3"/>
+          <misc:Level Id="Grundlagen">
+            
+          <misc:Talent Id="Kochen" EP="20" />
+          <misc:Talent Id="Backen" EP="20" />
             <fertigkeit:Fertigkeit Id="Konditor" />
-            <talent:Talent Id="Backen" Level="3"/>
           </misc:Level>
         </misc:Levels>
       </pfad:Pfad>
       <pfad:Pfad Id="Soldat">
         <pfad:Name>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Soldat]]>
           </misc:Lokalisirung>
         </pfad:Name>
         <pfad:Beschreibung>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[]]>
           </misc:Lokalisirung>
         </pfad:Beschreibung>
 
         <misc:Levels>
           <misc:Level Id="T">
-            <talent:Talent Id="Schwerter" Level="3"/>
+            <misc:Talent Id="Schwerter" EP="30"/>
           </misc:Level>
         </misc:Levels>
       </pfad:Pfad>
@@ -242,21 +304,21 @@
 
     <Pfade Id="Götter">
       <Name >
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Götter]]>
         </misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Wähle den Gott des Charakters]]>
         </misc:Lokalisirung>
       </Beschreibung>
       <Pfad Id="Alsas">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Alsa]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Alsa]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Der Charakter ist ein Diener des Gottes Alsa.]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Der Charakter ist ein Diener des Gottes Alsa.]]></misc:Lokalisirung>
         </Beschreibung>
         <misc:Levels>
           <misc:Level Id="T">
@@ -270,10 +332,10 @@
     xmlns="https://nota-game.github.io/schema/vNext/kultur.xsd">
     <Kultur Id="Alan">
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Alan]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Alan]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Professionen>
         <profession:Profession Id="Bäcker"/>
@@ -294,10 +356,10 @@
     xmlns="https://nota-game.github.io/schema/vNext/profession.xsd">
     <Profession Id="Bäcker">
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Bäcker]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Bäcker]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Levels xmlns="https://nota-game.github.io/schema/vNext/misc">
         <Level Id="Test3">
@@ -323,10 +385,10 @@
         <Fokus/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Kampfgespür]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Kampfgespür]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Die fähigkeit im Kampf immer den überblick zu halten.]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Die fähigkeit im Kampf immer den überblick zu halten.]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -337,10 +399,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Fechtwaffen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Fechtwaffen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Eine leichte und schnelle Waffe die vorallem auf präzision statt kraft setzt.]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Eine leichte und schnelle Waffe die vorallem auf präzision statt kraft setzt.]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -354,10 +416,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Stumpfe Hiebwaffen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Stumpfe Hiebwaffen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Eine brachiale Waffe die ihre effiktivität aus der Kraft des nutzers zieht.]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Eine brachiale Waffe die ihre effiktivität aus der Kraft des nutzers zieht.]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -371,10 +433,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Einhandäxte]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Einhandäxte]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -389,10 +451,10 @@
         <Gewandtheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Zweihandäxte]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Zweihandäxte]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -406,10 +468,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Stäbe]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Stäbe]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -423,10 +485,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schwerter]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schwerter]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -441,10 +503,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Säbel]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Säbel]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -459,10 +521,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Anderthalbhänder]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Anderthalbhänder]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -479,10 +541,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Zweihandschwert]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Zweihandschwert]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -496,10 +558,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Zweihandhiebwaffe]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Zweihandhiebwaffe]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -513,10 +575,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Zweihandsäbel]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Zweihandsäbel]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -530,10 +592,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Tonfas]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Tonfas]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -547,10 +609,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Bogen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Bogen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -564,10 +626,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Faust Projektielwaffen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Faust Projektielwaffen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Gewehre, Armbrüste]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Gewehre, Armbrüste]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -581,10 +643,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Zweihandprojektielwaffen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Zweihandprojektielwaffen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Gewehre, Armbrüste]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Gewehre, Armbrüste]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -598,10 +660,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schild]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schild]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -615,10 +677,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Ausweichen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Ausweichen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -632,10 +694,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Stangenwaffe]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Stangenwaffe]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -649,10 +711,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Peitche]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Peitche]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -666,10 +728,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Dolch]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Dolch]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -683,10 +745,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Flegel]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Flegel]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -700,10 +762,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Waffenlos]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Waffenlos]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -722,10 +784,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Chakram]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Chakram]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Das Chakram (von Sanskrit: चक्र, cakra n., Nom. Sg. cakram, dt.: „Kreis“ oder „Rad“) ist eine Wurfwaffe, die in Indien benutzt wurde. Sie besteht aus einem flachen Metallring mit einem scharfen äußeren Rand von 12 bis 30 cm Durchmesser.]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Das Chakram (von Sanskrit: चक्र, cakra n., Nom. Sg. cakram, dt.: „Kreis“ oder „Rad“) ist eine Wurfwaffe, die in Indien benutzt wurde. Sie besteht aus einem flachen Metallring mit einem scharfen äußeren Rand von 12 bis 30 cm Durchmesser.]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -736,10 +798,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Wurfspeer]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Wurfspeer]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -753,10 +815,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Wurfaxt]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Wurfaxt]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -770,10 +832,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Wurfmesser]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Wurfmesser]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -787,10 +849,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Katar]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Katar]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Das Katar, auch Coutar, Katah, Koutah, Kutah, Kutar, Bundi Dolch oder Jemdhar genannt, ist ein indischer Faustdolch. Der Ursprung liegt bei den Rajputen, aber die Waffe ist im indischen Raum weit verbreitet]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Das Katar, auch Coutar, Katah, Koutah, Kutah, Kutar, Bundi Dolch oder Jemdhar genannt, ist ein indischer Faustdolch. Der Ursprung liegt bei den Rajputen, aber die Waffe ist im indischen Raum weit verbreitet]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -804,10 +866,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Wurfwaffe]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Wurfwaffe]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[z.B. Stein]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[z.B. Stein]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -821,10 +883,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schleuder]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schleuder]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -838,10 +900,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Speerschleuder]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Speerschleuder]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -855,10 +917,10 @@
         <Fokus/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Nunchaku]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Nunchaku]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -872,10 +934,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Dreugliederstab]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Dreugliederstab]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -890,10 +952,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Kettenwaffe]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Kettenwaffe]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[z.B. Suruchin, Manriki Gusari]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[z.B. Suruchin, Manriki Gusari]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -908,10 +970,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Sense]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Sense]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -928,10 +990,10 @@
         <Gewandtheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Springen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Springen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -942,10 +1004,10 @@
         <Gewandtheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Laufen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Laufen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -956,10 +1018,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Beschatten]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Beschatten]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -970,10 +1032,10 @@
         <Gewandtheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Gewichtstemmen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Gewichtstemmen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -984,10 +1046,10 @@
         <Gewandtheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schwimmen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schwimmen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -998,10 +1060,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Körperbeherschung]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Körperbeherschung]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1012,10 +1074,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Akrobatik]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Akrobatik]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1026,10 +1088,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Fingerübungen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Fingerübungen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Manschmal muss ein Charakter sehr prezise arbeit mit seinen Fingern durchführen. Seien es Taschenspieler Triks, wie das Hervorziehen einer Münze, oder den Bolzen möglichst zügig aus einer Felsspalte zu ziehen. In solchen Fällen steht das Tallent Fingerübungen zur verfügung.]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Manschmal muss ein Charakter sehr prezise arbeit mit seinen Fingern durchführen. Seien es Taschenspieler Triks, wie das Hervorziehen einer Münze, oder den Bolzen möglichst zügig aus einer Felsspalte zu ziehen. In solchen Fällen steht das Tallent Fingerübungen zur verfügung.]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1040,10 +1102,10 @@
         <Mut/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Klettern]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Klettern]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1054,10 +1116,10 @@
         <Mut/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schleichen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schleichen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1068,10 +1130,10 @@
         <Gewandtheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Fliegen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Fliegen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1083,10 +1145,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Gaukelein]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Gaukelein]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1098,10 +1160,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Reiten]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Reiten]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1113,10 +1175,10 @@
         <Gewandtheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Sich Verstecken]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Sich Verstecken]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1128,10 +1190,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Singen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Singen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1143,10 +1205,10 @@
         <Konstitution/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Skifahren]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Skifahren]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1158,10 +1220,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Stimmen Imitieren]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Stimmen Imitieren]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1173,10 +1235,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Taschendiebstahl]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Taschendiebstahl]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1188,10 +1250,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Zechen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Zechen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1202,10 +1264,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Entfesseln]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Entfesseln]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1218,10 +1280,10 @@
         <Konstitution/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Fährtensuche]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Fährtensuche]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1233,10 +1295,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Orientierung]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Orientierung]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1248,10 +1310,10 @@
         <Klugheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Selbstbeherchung]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Selbstbeherchung]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1262,10 +1324,10 @@
         <Klugheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Wahrnehmung]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Wahrnehmung]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -1282,10 +1344,10 @@
         <Klugheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Sehen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Sehen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -1299,10 +1361,10 @@
         <Klugheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Hören]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Hören]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -1316,10 +1378,10 @@
         <Klugheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Richen und Schmeken]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Richen und Schmeken]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -1333,10 +1395,10 @@
         <Klugheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Fühlen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Fühlen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -1351,10 +1413,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Menschenkentniss]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Menschenkentniss]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1365,10 +1427,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Verführen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Verführen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1379,10 +1441,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Lügen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Lügen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1393,10 +1455,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Überreden]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Überreden]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1407,10 +1469,10 @@
         <Antipathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Einschüchtern]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Einschüchtern]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1422,10 +1484,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Gesellschaft]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Gesellschaft]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1437,10 +1499,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schauspielerei]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schauspielerei]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1452,10 +1514,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schriftlicher Ausdruck]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schriftlicher Ausdruck]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1466,10 +1528,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Etikette]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Etikette]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1480,10 +1542,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Seelsorge]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Seelsorge]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1496,10 +1558,10 @@
         <Gewandtheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Sich Verkleiden]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Sich Verkleiden]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1511,10 +1573,10 @@
         <Konstitution/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Tanzen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Tanzen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1526,10 +1588,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Gassenwissen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Gassenwissen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1540,10 +1602,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Rechnen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Rechnen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1554,10 +1616,10 @@
         <Mut/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Sagen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Sagen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1568,10 +1630,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Astronomi]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Astronomi]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1582,10 +1644,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Geographie]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Geographie]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1596,10 +1658,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Gesteinskunde]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Gesteinskunde]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1610,10 +1672,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Recherche]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Recherche]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Das finden von informationen in Büchern und Bibliotheken.]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Das finden von informationen in Büchern und Bibliotheken.]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1624,10 +1686,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Buchführung]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Buchführung]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1638,10 +1700,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Medizin]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Medizin]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1652,10 +1714,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Tierkunde]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Tierkunde]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1666,10 +1728,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Pflanzenkunde]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Pflanzenkunde]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1680,10 +1742,10 @@
         <Mut/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Kunst]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Kunst]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1694,10 +1756,10 @@
         <Klugheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Alchemischeswissen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Alchemischeswissen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1708,10 +1770,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Wettervorhersage]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Wettervorhersage]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1724,10 +1786,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Anatomie]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Anatomie]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1739,10 +1801,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Baukunst]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Baukunst]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1754,10 +1816,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Geselchaftsspiele]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Geselchaftsspiele]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1769,10 +1831,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Geschichtswissen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Geschichtswissen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1784,10 +1846,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Mystik]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Mystik]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1798,10 +1860,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Religion]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Religion]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1813,10 +1875,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Heraldik]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Heraldik]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1828,10 +1890,10 @@
         <Konstitution/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Hüttenkunde]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Hüttenkunde]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1843,10 +1905,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Krigskunst]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Krigskunst]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1858,10 +1920,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Kryptographie]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Kryptographie]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1873,10 +1935,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Magiekunde]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Magiekunde]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1888,10 +1950,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Mechanik]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Mechanik]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1903,10 +1965,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Philosophie]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Philosophie]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1918,10 +1980,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Rechtskunde]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Rechtskunde]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1933,10 +1995,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schätzen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schätzen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1948,10 +2010,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Sprachenkunde]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Sprachenkunde]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1963,10 +2025,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Staatskunst]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Staatskunst]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1978,10 +2040,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Sternenkunde]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Sternenkunde]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -1992,10 +2054,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Giftkunde]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Giftkunde]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2006,10 +2068,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Krankheitskunde]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Krankheitskunde]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2022,10 +2084,10 @@
         <Intuition/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Alchemie]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Alchemie]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2036,10 +2098,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Backen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Backen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -2053,10 +2115,10 @@
         <Klugheit/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Kochen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Kochen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Bedingungen>
@@ -2076,10 +2138,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Abrichten]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Abrichten]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2091,10 +2153,10 @@
         <Konstitution/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Ackerbau]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Ackerbau]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2106,10 +2168,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Alchimie]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Alchimie]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2121,10 +2183,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Bauer]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Bauer]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2136,10 +2198,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Bergbau]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Bergbau]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2151,10 +2213,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Botenbau]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Botenbau]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2166,10 +2228,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Pfeilmacher]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Pfeilmacher]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2181,10 +2243,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Boote Fahren]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Boote Fahren]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2196,10 +2258,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Drucker]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Drucker]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2211,10 +2273,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Fahrzeuge Lenken]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Fahrzeuge Lenken]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2226,10 +2288,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Faöschspiel]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Faöschspiel]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2241,10 +2303,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Feinmechanik]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Feinmechanik]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2256,10 +2318,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Feuersteinbearbeitung]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Feuersteinbearbeitung]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2271,10 +2333,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Fleicher]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Fleicher]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2286,10 +2348,10 @@
         <Konstitution/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Gerber]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Gerber]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -2304,10 +2366,10 @@
         <Konstitution/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Kürschner]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Kürschner]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -2322,10 +2384,10 @@
         <Konstitution/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Glaskunst]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Glaskunst]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2337,10 +2399,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schmieden]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schmieden]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2352,10 +2414,10 @@
         <Sympathie/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Handel]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Handel]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2367,10 +2429,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Hauswirtschaft]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Hauswirtschaft]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2384,10 +2446,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Wundversorgung]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Wundversorgung]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2399,10 +2461,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Holzbbearbeitung]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Holzbbearbeitung]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2414,10 +2476,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Instrumentenbauer]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Instrumentenbauer]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2429,10 +2491,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Kartographie]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Kartographie]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2445,10 +2507,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Lederarbeiten]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Lederarbeiten]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2460,10 +2522,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Zeichnen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Zeichnen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2474,10 +2536,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Malen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Malen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2489,10 +2551,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Maurer]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Maurer]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2504,10 +2566,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Metallguss]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Metallguss]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2519,10 +2581,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Musizieren]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Musizieren]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2534,10 +2596,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schlösser Knacken]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schlösser Knacken]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2549,10 +2611,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schnaps brennen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schnaps brennen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2564,10 +2626,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Schneidern]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Schneidern]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2579,10 +2641,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Seefahrt]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Seefahrt]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2594,10 +2656,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Seiler]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Seiler]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2609,10 +2671,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Steinmetz]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Steinmetz]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2624,10 +2686,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Juwelier]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Juwelier]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2639,10 +2701,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Stellmacher]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Stellmacher]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2654,10 +2716,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Stoffe Färben]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Stoffe Färben]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2669,10 +2731,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Tätowiren]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Tätowiren]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2684,10 +2746,10 @@
         <Präzision/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Töpfern]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Töpfern]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2699,10 +2761,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Viehzucht]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Viehzucht]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2714,10 +2776,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Webkunst]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Webkunst]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2729,10 +2791,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Winzer]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Winzer]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2744,10 +2806,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Zimmermann]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Zimmermann]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2758,10 +2820,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Fallenstellen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Fallenstellen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2773,10 +2835,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Fesseln]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Fesseln]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2787,10 +2849,10 @@
         <Stärke/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Fischen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Fischen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2801,10 +2863,10 @@
         <Konstitution/>
       </Probe>
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Wildnissleben]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Wildnissleben]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
     </Talent>
@@ -2819,10 +2881,10 @@
   <Fertigkeiten xmlns="https://nota-game.github.io/schema/vNext/fertigkeit.xsd">
     <Fertigkeit Id="Kulturkunde Alan" Kosten="100">
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Kulturkunde Alan]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Kulturkunde Alan]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Das Wissen um die Kultur der Alan]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Das Wissen um die Kultur der Alan]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="3">
         <misc:Pfad Id="Alan" Verbreitung="7"/>
@@ -2831,10 +2893,10 @@
     <Fertigkeit Id="Arjuniche Zeichen" Kosten="100">
 
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Arjuniche Zeichen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Arjuniche Zeichen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Die Schrift der Arjur]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Die Schrift der Arjur]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Tags>
@@ -2843,42 +2905,42 @@
     </Fertigkeit>
     <fertigkeit:Fertigkeit Id="Konditor" Kosten="30">
       <fertigkeit:Name>
-        <misc:Lokalisirung Sparche="de">Konditor</misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de">Konditor</misc:Lokalisirung>
       </fertigkeit:Name>
       <fertigkeit:Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Die kunst Süßes zu erstellen]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Die kunst Süßes zu erstellen]]></misc:Lokalisirung>
       </fertigkeit:Beschreibung>
       <fertigkeit:Verbreitung Wert="4"></fertigkeit:Verbreitung>
     </fertigkeit:Fertigkeit>
   </Fertigkeiten>
   <Besonderheiten xmlns="https://nota-game.github.io/schema/vNext/besonderheit.xsd">
-    <Besonderheit Id="Auserwählter" Gebunden="true" Kosten="0">
+    <Besonderheit Id="Auserwählter" Gebunden="true" >
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Auserwählter]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Auserwählter]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Der Charakter wurde von einem der Götter auserwählt]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Der Charakter wurde von einem der Götter auserwählt]]></misc:Lokalisirung>
       </Beschreibung>
     </Besonderheit>
 
-    <Besonderheit Id="Auserwählter Alsas" Gebunden="true" Kosten="0">
+    <Besonderheit Id="Auserwählter Alsas" Gebunden="true" >
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Auserwählter Alsas]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Auserwählter Alsas]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Der Charakter wurde von einem der Götter auserwählt]]>
         </misc:Lokalisirung>
       </Beschreibung>
     </Besonderheit>
 
 
-    <Besonderheit Id="Miasma Resistenz" Kosten="0">
+    <Besonderheit Id="Miasma Resistenz" >
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Miasma Resistenz]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Miasma Resistenz]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Der Charakter hat eine erhöte Resistenz gegen das dämonische Miasma]]>
         </misc:Lokalisirung>
       </Beschreibung>
@@ -2887,12 +2949,12 @@
       </Bedingung>
     </Besonderheit>
 
-    <Besonderheit Id="Verbesserte Wundheilung" Kosten="0">
+    <Besonderheit Id="Verbesserte Wundheilung" >
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Verbesserte Wundheilung]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Verbesserte Wundheilung]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Die Wunden des Charakters heilen Schneller.]]>
         </misc:Lokalisirung>
       </Beschreibung>
@@ -2901,12 +2963,12 @@
       </Bedingung>
     </Besonderheit>
 
-    <Besonderheit Id="Krankheitsresistenz" Kosten="0">
+    <Besonderheit Id="Krankheitsresistenz" >
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Krankheitsresistenz]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Krankheitsresistenz]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Der Charakter wird troz wiedriger Umstände nicht so leicht Krank.]]>
         </misc:Lokalisirung>
       </Beschreibung>
@@ -2915,12 +2977,14 @@
       </Bedingung>
     </Besonderheit>
 
-    <Besonderheit Id="Beidhändig" Kosten="3">
+    <Besonderheit Id="Beidhändig" >
+      <misc:Kosten Id="GP" Wert="3" />
+      <misc:Kosten Id="GP" Wert="3" />
       <Name>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Beidhändig]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sprache="de"><![CDATA[Beidhändig]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[]]>
         </misc:Lokalisirung>
       </Beschreibung>
@@ -3177,18 +3241,18 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
     <Eigenschaften>
       <Eigenschaft Id="Präzise">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Präzise]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Präzise]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Eine Aktion die besonders Präzises vorgehen verlangt.]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Eine Aktion die besonders Präzises vorgehen verlangt.]]></misc:Lokalisirung>
         </Beschreibung>
       </Eigenschaft>
       <Eigenschaft Id="Wuchtig">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Wuchtig]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Wuchtig]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Eine Aktoin bei der es auf Brachiale gewalt ankommt.]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Eine Aktoin bei der es auf Brachiale gewalt ankommt.]]></misc:Lokalisirung>
         </Beschreibung>
       </Eigenschaft>
     </Eigenschaften>
@@ -3199,10 +3263,10 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
     <Waffen>
       <Nahkampfwaffe Id="Floret" Distanzklasse="2">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Floret]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Floret]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Schnitt Schaden="2"/>
@@ -3211,15 +3275,15 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
           <Eigenschaft Id="Präzise"/>
         </Eigenschaften>
         <Talente>
-          <talent:Talent Id="Fechtwaffen"/>
+          <ausstattung:Talent Id="Fechtwaffen" />
         </Talente>
       </Nahkampfwaffe>
       <Nahkampfwaffe Id="Rapier" Distanzklasse="2">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Rapier]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Rapier]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Wucht Schaden="1"/>
@@ -3229,76 +3293,76 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
           <Eigenschaft Id="Präzise"/>
         </Eigenschaften>
         <Talente>
-          <talent:Talent Id="Fechtwaffen"/>
+          <ausstattung:Talent Id="Fechtwaffen"/>
         </Talente>
       </Nahkampfwaffe>
       <Nahkampfwaffe Id="Schwert" Distanzklasse="2">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Schwert]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Schwert]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Wucht Schaden="3"/>
           <Schnitt Schaden="3"/>
         </Schaden>
         <Talente>
-          <talent:Talent Id="Schwerter"/>
+          <ausstattung:Talent Id="Schwerter"/>
         </Talente>
       </Nahkampfwaffe>
       <Nahkampfwaffe Id="Axt" Distanzklasse="2">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Axt]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Axt]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Wucht Schaden="5"/>
           <Schnitt Schaden="4"/>
         </Schaden>
         <Talente>
-          <talent:Talent Id="Einhandäxte"/>
+          <ausstattung:Talent Id="Einhandäxte"/>
         </Talente>
       </Nahkampfwaffe>
       <Nahkampfwaffe Id="Dolch" Distanzklasse="1">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Dolch]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Dolch]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Schnitt Schaden="2"/>
         </Schaden>
         <Talente>
-          <talent:Talent Id="Dolch"/>
+          <ausstattung:Talent Id="Dolch"/>
         </Talente>
       </Nahkampfwaffe>
 
       <Nahkampfwaffe Id="Speer" Distanzklasse="3">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Speer]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Speer]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Wucht Schaden="1"/>
           <Schnitt Schaden="2"/>
         </Schaden>
         <Talente>
-          <talent:Talent Id="Stangenwaffe"/>
+          <ausstattung:Talent Id="Stangenwaffe"/>
         </Talente>
       </Nahkampfwaffe>
 
       <Nahkampfwaffe Id="Harpune" Distanzklasse="3">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Harpune]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Harpune]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Wucht Schaden="1"/>
@@ -3308,48 +3372,48 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
           <Eigenschaft Id="Wiederharken"/>
         </Eigenschaften>
         <Talente>
-          <talent:Talent Id="Stangenwaffe"/>
+          <ausstattung:Talent Id="Stangenwaffe"/>
         </Talente>
       </Nahkampfwaffe>
 
       <Nahkampfwaffe Id="Gleve" Distanzklasse="3">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Gleve]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Gleve]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Wucht Schaden="2"/>
           <Schnitt Schaden="2"/>
         </Schaden>
         <Talente>
-          <talent:Talent Id="Stangenwaffe"/>
+          <ausstattung:Talent Id="Stangenwaffe"/>
         </Talente>
       </Nahkampfwaffe>
 
 
       <Nahkampfwaffe Id="Keule" Distanzklasse="2">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Keule]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Keule]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Wucht Schaden="3"/>
         </Schaden>
         <Talente>
-          <talent:Talent Id="Stumpfe Hiebwaffen"/>
+          <ausstattung:Talent Id="Stumpfe Hiebwaffen"/>
         </Talente>
       </Nahkampfwaffe>
 
       <Nahkampfwaffe Id="Hammer" Distanzklasse="2">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Hammer]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Hammer]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Wucht Schaden="6"/>
@@ -3358,32 +3422,32 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
           <Eigenschaft Id="Wuchtig"/>
         </Eigenschaften>
         <Talente>
-          <talent:Talent Id="Stumpfe Hiebwaffen"/>
+          <ausstattung:Talent Id="Stumpfe Hiebwaffen"/>
         </Talente>
       </Nahkampfwaffe>
 
       <Nahkampfwaffe Id="Anderthalbhänder" Distanzklasse="3">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Anderthalbhänder]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Anderthalbhänder]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Wucht Schaden="4"/>
           <Schnitt Schaden="3"/>
         </Schaden>
         <Talente>
-          <talent:Talent Id="Anderthalbhänder"/>
+          <ausstattung:Talent Id="Anderthalbhänder"/>
         </Talente>
       </Nahkampfwaffe>
 
       <Fernkampfwaffe Id="Kompositbogen">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Kompositbogen]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Kompositbogen]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schaden>
           <Wucht Schaden="2"/>
@@ -3413,10 +3477,10 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
     <Rüstungen>
       <Rüstung Id="Lederharnisch" Erschwernis="1">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Lederharnisch]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Lederharnisch]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schutz >
           <Flexibilität Wert="3"/>
@@ -3434,10 +3498,10 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
 
       <Rüstung Id="MetallHarnich" Erschwernis="1">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[MetallHarnich]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[MetallHarnich]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schutz >
           <Flexibilität Wert="1"/>
@@ -3455,10 +3519,10 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
 
       <Rüstung Id="Kettenhemd" Erschwernis="1">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Kettenhemd]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Kettenhemd]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schutz >
           <Flexibilität Wert="2"/>
@@ -3476,10 +3540,10 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
 
       <Rüstung Id="Gambesong" Erschwernis="1">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Gambesong]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Gambesong]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[]]></misc:Lokalisirung>
         </Beschreibung>
         <Schutz >
           <Flexibilität Wert="4"/>
@@ -3500,68 +3564,68 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
     <Eigenschaften>
       <Eigenschaft Id="Präzise">
         <Name>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Präzise]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Präzise]]></misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de"><![CDATA[Eine Waffe mit der Eigenschaft Präzise ist in der Lage die Rüstung des Gegners zu umgehen. Für alle Präzisen Manöver sind die Erschwernisse halbiert.]]></misc:Lokalisirung>
+          <misc:Lokalisirung Sprache="de"><![CDATA[Eine Waffe mit der Eigenschaft Präzise ist in der Lage die Rüstung des Gegners zu umgehen. Für alle Präzisen Manöver sind die Erschwernisse halbiert.]]></misc:Lokalisirung>
         </Beschreibung>
       </Eigenschaft>
       <Eigenschaft Id="Wuchtig">
         <Name>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Wuchtig]]>
           </misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Wuchtige waffen erleichtern es sie mit brachialer gewallt einzusetzen. Für alle Aktionen mit der Eigenschaft Wuchtig ist die Erschwerniss halbiert.]]>
           </misc:Lokalisirung>
         </Beschreibung>
       </Eigenschaft>
       <Eigenschaft Id="Durchschalgend">
         <Name>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Durchschalgend]]>
           </misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Der Wuchtschaden wird für die berechnungs des Schnittschadens verdoppelt.]]>
           </misc:Lokalisirung>
         </Beschreibung>
       </Eigenschaft>
       <Eigenschaft Id="Rüstungsbrechend">
         <Name>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Rüstungsbrechend]]>
           </misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Der Wuchtschaden wird für die berechnungs des Schnittschadens Verdreifacht.]]>
           </misc:Lokalisirung>
         </Beschreibung>
       </Eigenschaft>
       <Eigenschaft Id="Tödlich">
         <Name>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Tödlich]]>
           </misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Schnittschaden der im bereich Kopf, Brust Hüfte verursacht wird, wird verdoppelt.]]>
           </misc:Lokalisirung>
         </Beschreibung>
       </Eigenschaft>
       <Eigenschaft Id="Wiederharken">
         <Name>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Wiederharken]]>
           </misc:Lokalisirung>
         </Name>
         <Beschreibung>
-          <misc:Lokalisirung Sparche="de">
+          <misc:Lokalisirung Sprache="de">
             <![CDATA[Waffe kann sich im Opfer verfangen, und fügt beim entfernen 1 Blutungsschaden zu.]]>
           </misc:Lokalisirung>
         </Beschreibung>
@@ -3571,12 +3635,12 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
   <Tags xmlns="https://nota-game.github.io/schema/vNext/misc.xsd">
     <Tag Id="Lesen/Schreiben">
       <Name>
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Lesen und Schreiben]]>
         </misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de">
+        <misc:Lokalisirung Sprache="de">
           <![CDATA[Die fähigkeit in mindestens einer Schrift Lesen und Schreiben zu können.]]>
         </misc:Lokalisirung>
       </Beschreibung>
