@@ -24,7 +24,9 @@
 <p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
 
 {#if data && char}
+<div class="hover">
 	<PointControl {char} {data} />
+</div>
 
 	<OrganismSelect {char} {data} />
 
@@ -36,3 +38,20 @@
 {:else}
 	<p>Loding…</p>
 {/if}
+
+<style lang="scss">
+	:global {
+		.missing{
+			color: brown;
+		}
+	}
+	.hover{
+		padding: 8px;
+		border: 1px solid black;
+		position: fixed;
+		right: 5px;
+		top: 5px;
+		//float: right;
+		
+		}
+</style>

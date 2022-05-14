@@ -35,11 +35,16 @@
 							.Abkürzung
 					);
 					const value = c.Wert - (rc?.filter((x) => x.Id == c.Id)[0]?.Wert ?? 0);
-					const missing = ps
+					let missing = ps
 						? paid
 							? Math.max(0, (ps[c.Id] ?? 0) + c.Wert)
 							: Math.max(0, c.Wert - ps[c.Id] ?? 0)
 						: 0;
+
+					if (missing > 0 && ps![c.Id] < 0 && missing < -ps![c.Id]) {
+						missing = 0;
+					}
+
 					const order = data.Instance.Daten.KostenDefinitionen.KostenDefinition.map((x, i) => {
 						return { i, Id: x.Id };
 					}).filter((x) => x.Id == c.Id)[0].i;

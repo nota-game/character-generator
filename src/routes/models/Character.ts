@@ -82,11 +82,11 @@ class EigenschaftenDataAccess {
         this.acciredStore = derived(this.base.acciredStore, (value) => value);
         this.costStore = derived(this.base.costStore, (value) => value);
         this.increaseCostStore = derived([this.costStore, this.acciredStore], ([c, a]) =>
-            a == -1
+            a <= -1
                 ? c[-1]?.map(x => ({ Id: x.Id, Wert: -x.Wert } as any))
                 : c[a + 1]);
         this.decreaseCostStore = derived([this.costStore, this.acciredStore], ([c, a]) =>
-            a == 1
+            a >= 1
                 ? c[1]?.map(x => ({ Id: x.Id, Wert: -x.Wert } as any))
                 : c[a - 1]);
         this.currentStore = derived([this.startStore, this.modifiedStore, this.acciredStore], ([s, m, a]) => s - Object.values(m).reduce((c, p) => c + p, 0) - a)
