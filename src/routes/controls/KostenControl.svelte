@@ -34,14 +34,15 @@
 						data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter((x) => x.Id == c.Id)[0]
 							.Abkürzung
 					);
-					const value = paid
-						? -c.Wert - (rc?.filter((x) => x.Id == c.Id)[0]?.Wert ?? 0)
-						: c.Wert - (rc?.filter((x) => x.Id == c.Id)[0]?.Wert ?? 0);
-					let missing = ps
-						? paid
-							? Math.max(0, -1 * (c.Wert - ps[c.Id] ?? 0))
-							: Math.max(0, c.Wert - ps[c.Id] ?? 0)
-						: 0;
+					console.log(rc);
+					const red =
+						rc
+							?.filter((x) => x.Id == c.Id)
+							.map((y) => y.Wert)
+							.reduce((p, c) => p + c, 0) ?? 0;
+					console.log(red);
+					const value = red != 0 ? c.Wert - red : p ? -c.Wert : c.Wert;
+					let missing = ps ? Math.max(0, value - ps[c.Id] ?? 0) : 0;
 					let toExpensiv = missing > 0;
 					if (missing > 0 && ps![c.Id] < 0 && missing < -ps![c.Id]) {
 						missing = 0;
@@ -53,6 +54,7 @@
 					}).filter((x) => x.Id == c.Id)[0].i;
 					return { abbr, name, value, missing, order, toExpensiv };
 				})
+				.filter((x) => x.value != 0)
 				.sort((a, b) => a.order - b.order);
 		}
 	);
@@ -69,10 +71,10 @@
 		<li>
 			{#if c.missing}
 				<span class="missing"
-					><abbr title={c.name}>{c.abbr}</abbr>: {c.value < 0 ? '+' : '-'}{Math.abs(c.value)} (-{c.missing})</span
+					><abbr title={c.name}>{c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)} (-{c.missing})</span
 				>
 			{:else}
-				<abbr title={c.name}> {c.abbr}</abbr>: {c.value < 0 ? '+' : '-'}{Math.abs(c.value)}
+				<abbr title={c.name}> {c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)}
 			{/if}
 		</li>
 	{/each}

@@ -42,12 +42,12 @@
 {#if can}
 	<button on:click={() => char.addPath(gruppe, path, lvl)}>+</button>
 	{#if l?.Kosten}
-		<KostenControl cost={l.Kosten} {data} {char} />
+		<KostenControl cost={l.Kosten} {data} {char} paid={false} />
 	{/if}
 {/if}
 {#if has}
 	<button on:click={() => char.removePath(gruppe, path, lvl)}>-</button>
 	{#if l?.Kosten}
-		<KostenControl cost={l.Kosten} {data} {char} paid />
+		<KostenControl cost={l.Kosten} {data} {char} paid={true} />
 	{/if}
 {/if}
