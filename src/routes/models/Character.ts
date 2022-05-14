@@ -1,5 +1,6 @@
 import type { _Art, _Gattung, _Lebensabschnitt, _Morph, _Kosten } from "src/data/nota.g";
-import { readable, type Readable, type Subscriber, get, derived, writable } from "svelte/store";
+import { type Readable, get, derived, writable } from "svelte/store";
+
 import type { Data } from "./Data";
 
 type selection = {
@@ -70,7 +71,7 @@ export const EIGENRSCHAFTEN = [
 ] as const;
 class EigenschaftenDataAccess {
 
-    private readonly base: EigenschaftenData;
+
 
     /**
      *
@@ -92,6 +93,7 @@ class EigenschaftenDataAccess {
         this.currentStore = derived([this.startStore, this.modifiedStore, this.acciredStore], ([s, m, a]) => s - Object.values(m).reduce((c, p) => c + p, 0) - a)
     }
 
+    private readonly base: EigenschaftenData;
     public readonly startStore: Readable<number>;
     public readonly currentStore: Readable<number>;
     public readonly modifiedStore: Readable<Record<Eigenschaft, number>>;
@@ -144,6 +146,10 @@ export class Charakter {
     constructor(data: Data) {
         this.data = data;
 
+
+        this.pfadLevelStore = derived(this.pfadLevelDataStore, x => x);
+
+
         this.organismusStore.subscribe((v) => {
             if (v) {
                 EIGENRSCHAFTEN.forEach(att => {
@@ -181,18 +187,7 @@ export class Charakter {
                         } else if (i == 0) {
                             e.cost[i] = [];
                         }
-                        else {
-                            console.log(
-                                this.data.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.map(x => `${x.von} <= ${i} <= ${x.bis}  ${x.attribut == undefined} && ${x.von <= i} && ${i <= x.bis}`)
-
-                            )
-
-                        }
                     }
-                    console.log(
-                        //     this.data.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.map(x => `${x.von} <= ${i} <= ${x.bis}  ${x.attribut == undefined} && ${x.von <= i} && ${i <= x.bis}`)
-                        e.cost
-                    )
                 });
             }
         });
@@ -222,8 +217,11 @@ export class Charakter {
             this.eigenschaftenData.Stärke.costStore,
             this.eigenschaftenData.Konstitution.costStore,
 
+            this.pfadLevelDataStore,
+
         ], ([
             organismus,
+
             acciredMut,
             acciredGlück,
             acciredKlugheit,
@@ -234,6 +232,7 @@ export class Charakter {
             acciredAntipathie,
             acciredStärke,
             acciredKonstitution,
+
             eCostMut,
             eCostGlück,
             eCostKlugheit,
@@ -243,7 +242,9 @@ export class Charakter {
             eCostSympathie,
             eCostAntipathie,
             eCostStärke,
-            eCostKonstitution
+            eCostKonstitution,
+
+            pfadLevelData
         ]) => {
 
             const r: Record<string, number> = {};
@@ -282,8 +283,26 @@ export class Charakter {
                         applyCost(ec);
                     }
                 }
-
             });
+
+            applyCost(Object.keys(pfadLevelData).flatMap(gruppe =>
+                Object.keys(pfadLevelData[gruppe]).flatMap(pfad =>
+                    Object.keys(pfadLevelData[gruppe][pfad]).flatMap(level => ({
+                        gruppe,
+                        pfad,
+                        level,
+                        amount: pfadLevelData[gruppe][pfad][level],
+                    }))
+                )
+            ).map(x => ({
+                level: data.Instance.Daten.PfadGruppen.Pfade
+                    .filter(y => y.Id == x.gruppe)[0].Pfad
+                    .filter(y => y.Id == x.pfad)[0].Levels.Level
+                    .filter(y => y.Id == x.level)[0],
+                amount: x.amount
+
+            }))
+                .flatMap(x => x.level.Kosten.map(y => ({ Id: y.Id, Wert: y.Wert * x.amount } as _Kosten))));
 
             return r;
 
@@ -301,13 +320,101 @@ export class Charakter {
 
         });
 
+
+    }
+
+    canPathChoosen(gruppe: string, pfad: string, level: string) {
+        return derived(this.pfadLevelDataStore, old => {
+            if (old[gruppe] == undefined) {
+                return true;
+            }
+            if (old[gruppe][pfad] == undefined) {
+                return true;
+            }
+            if (old[gruppe][pfad][level] == undefined) {
+                return true;
+            }
+
+            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+                .Pfad.filter(x => x.Id == pfad)[0]
+                .Levels.Level.filter(x => x.Id == level)[0]
+            return old[gruppe][pfad][level] < (l.WiederhoteNutzung ?? 1);
+        });
+    }
+    hasPathChoosen(gruppe: string, pfad: string, level: string) {
+        return derived(this.pfadLevelDataStore, old => {
+            if (old[gruppe] == undefined) {
+                return false;
+            }
+            if (old[gruppe][pfad] == undefined) {
+                return false;
+            }
+            if (old[gruppe][pfad][level] == undefined) {
+                return false;
+            }
+
+            return old[gruppe][pfad][level] > 0;
+        });
+    }
+    addPath(gruppe: string, pfad: string, level: string) {
+        this.pfadLevelDataStore.update(old => {
+
+
+
+            if (old[gruppe] == undefined) {
+                old[gruppe] = {};
+            }
+            if (old[gruppe][pfad] == undefined) {
+                old[gruppe][pfad] = {};
+            }
+            if (old[gruppe][pfad][level] == undefined) {
+                old[gruppe][pfad][level] = 0;
+            }
+
+            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+                .Pfad.filter(x => x.Id == pfad)[0]
+                .Levels.Level.filter(x => x.Id == level)[0]
+
+            if (old[gruppe][pfad][level] < (l.WiederhoteNutzung ?? 1)) {
+                old[gruppe][pfad][level]++;
+            }
+            return old;
+        });
+
+    }
+    removePath(gruppe: string, pfad: string, level: string) {
+        this.pfadLevelDataStore.update(old => {
+
+
+
+            if (old[gruppe] == undefined) {
+                old[gruppe] = {};
+            }
+            if (old[gruppe][pfad] == undefined) {
+                old[gruppe][pfad] = {};
+            }
+            if (old[gruppe][pfad][level] == undefined) {
+                old[gruppe][pfad][level] = 0;
+            }
+
+            if (old[gruppe][pfad][level] > 0) {
+                old[gruppe][pfad][level]--;
+            }
+            return old;
+        });
+
     }
 
 
+    private readonly pfadLevelDataStore = writable({} as Record<string, Record<string, Record<string, number>>>);
+    private get pfadLevelData(): Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, number>>>>>> {
+        return get(this.pfadLevelDataStore);
+    };
+    public readonly pfadLevelStore: Readable<Readonly<Record<string, Record<string, Record<string, number>>>>>;
 
-
-
-
+    public get pfadLevel(): Readonly<Record<string, Record<string, Record<string, number>>>> {
+        return get(this.pfadLevelDataStore);
+    };
 
 
     private readonly eigenrschaften: Readonly<EigenschaftsMap<EigenschaftenData>> = {

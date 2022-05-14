@@ -33,7 +33,6 @@
 		  }
 		| undefined;
 
-	console.log(data.Instance.Daten.Organismen);
 	let tree = data.Instance.Daten.Organismen.Gattung.map((x) => {
 		return {
 			titel: getText(x.Name),

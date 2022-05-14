@@ -24,7 +24,10 @@ export class Data {
      */
     public static async init() {
         // const data = fetch('https://nota-game.github.io/Content/vNext/data/nota.xml')
-        const data = nota;
+        const data = nota
+        .replace(/http:\/\/nota.org\/schema\//g,'https://nota-game.github.io/schema/vNext/');
+
+
 
         // the result will be a replica of the original object
         const deserialized = deserialize(notaStructure as SerializedRecord) as Array<element>;

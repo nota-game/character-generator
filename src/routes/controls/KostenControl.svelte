@@ -34,25 +34,32 @@
 						data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter((x) => x.Id == c.Id)[0]
 							.Abkürzung
 					);
-					const value = c.Wert - (rc?.filter((x) => x.Id == c.Id)[0]?.Wert ?? 0);
+					const value = paid
+						? -c.Wert - (rc?.filter((x) => x.Id == c.Id)[0]?.Wert ?? 0)
+						: c.Wert - (rc?.filter((x) => x.Id == c.Id)[0]?.Wert ?? 0);
 					let missing = ps
 						? paid
-							? Math.max(0, (ps[c.Id] ?? 0) + c.Wert)
+							? Math.max(0, -1 * (c.Wert - ps[c.Id] ?? 0))
 							: Math.max(0, c.Wert - ps[c.Id] ?? 0)
 						: 0;
-
+					let toExpensiv = missing > 0;
 					if (missing > 0 && ps![c.Id] < 0 && missing < -ps![c.Id]) {
 						missing = 0;
+						toExpensiv = false;
 					}
 
 					const order = data.Instance.Daten.KostenDefinitionen.KostenDefinition.map((x, i) => {
 						return { i, Id: x.Id };
 					}).filter((x) => x.Id == c.Id)[0].i;
-					return { abbr, name, value, missing, order };
+					return { abbr, name, value, missing, order, toExpensiv };
 				})
 				.sort((a, b) => a.order - b.order);
 		}
 	);
+
+	export const isToexpensiv = derived(list, (l) => {
+		return l.some((x) => x.toExpensiv);
+	});
 
 	//let list: { abbr: string; name: string; value: number; missing: number | undefined }[];
 </script>

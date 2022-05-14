@@ -1,5 +1,5 @@
 <script lang="ts">
-import { derived } from 'svelte/store';
+	import { derived, type Readable } from 'svelte/store';
 
 	import type { Charakter, Eigenschaft } from '../models/Character';
 	import type { Data } from '../models/Data';
@@ -13,8 +13,10 @@ import { derived } from 'svelte/store';
 		char.eigenschaftenData[eigenschaft].increaseCostStore;
 	const chareigenschaftenDataMutdecreaseCostStore =
 		char.eigenschaftenData[eigenschaft].decreaseCostStore;
-        const charMutStore = char.eigenschaftenData[eigenschaft].currentStore;
-		
+	const charMutStore = char.eigenschaftenData[eigenschaft].currentStore;
+
+	let isIncreaseToexpensiv: Readable<boolean>;
+	let isDecreaseToexpensiv: Readable<boolean>;
 </script>
 
 <ul>
@@ -24,15 +26,31 @@ import { derived } from 'svelte/store';
 		<div class="next">
 			<div>
 				{#if $chareigenschaftenDataMutincreaseCostStore}
-					<button on:click={() => char.eigenschaftenData[eigenschaft].increase()}>+</button>
-					<KostenControl cost={chareigenschaftenDataMutincreaseCostStore} {data} {char}  />
+					<button
+						class:missing={$isIncreaseToexpensiv}
+						on:click={() => char.eigenschaftenData[eigenschaft].increase()}>+</button
+					>
+					<KostenControl
+						cost={chareigenschaftenDataMutincreaseCostStore}
+						{data}
+						{char}
+						bind:isToexpensiv={isIncreaseToexpensiv}
+					/>
 				{/if}
 			</div>
 
 			<div>
 				{#if $chareigenschaftenDataMutdecreaseCostStore}
-					<button on:click={() => char.eigenschaftenData[eigenschaft].decrease()}>-</button>
-					<KostenControl cost={chareigenschaftenDataMutdecreaseCostStore} {data} {char}  />
+					<button
+						class:missing={$isDecreaseToexpensiv}
+						on:click={() => char.eigenschaftenData[eigenschaft].decrease()}>-</button
+					>
+					<KostenControl
+						cost={chareigenschaftenDataMutdecreaseCostStore}
+						{data}
+						{char}
+						bind:isToexpensiv={isDecreaseToexpensiv}
+					/>
 				{/if}
 			</div>
 		</div>
