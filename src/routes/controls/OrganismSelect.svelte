@@ -62,7 +62,6 @@
 	});
 </script>
 
-<p>test</p>
 <Tree {tree} let:node>
 	{#if node.l }
 	

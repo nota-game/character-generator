@@ -8,7 +8,7 @@
 
 	let list: { abbr: string; name: string; value: number }[];
 
-	char.punkte.subscribe((s) => {
+	char.punkteStore.subscribe((s) => {
 		list= Object.entries(s)
 			.map((x) => ({ Id: x[0], Store: x[1] }))
 			.map((c) => {

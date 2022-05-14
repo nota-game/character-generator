@@ -27,6 +27,7 @@
     "eslint-plugin-svelte3": "^4.0.0",
     "mathjs": "^10.5.3",
     "node-fetch": "^2.6.7",
+    "node-sass": "^7.0.1",
     "prettier": "^2.5.1",
     "prettier-plugin-svelte": "^2.5.0",
     "svelte": "^3.44.0",
