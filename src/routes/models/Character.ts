@@ -1,4 +1,4 @@
-import type { _Art, _Gattung, _Lebensabschnitt, _Morph, _Kosten } from "src/data/nota.g";
+import type { _Gattung, _Lebensabschnitt, _Morph, _Kosten, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1 } from "src/data/nota.g";
 import { type Readable, get, derived, writable } from "svelte/store";
 
 import type { Data } from "./Data";
@@ -6,7 +6,7 @@ import type { Data } from "./Data";
 type selection = {
     l: _Lebensabschnitt;
     m: _Morph;
-    a: _Art;
+    a: _Art2;
     g: _Gattung;
 } | undefined;
 
@@ -323,44 +323,94 @@ export class Charakter {
 
     }
 
-    canPathChoosen(gruppe: string, pfad: string, level: string) {
-        return derived(this.pfadLevelDataStore, old => {
-            if (old[gruppe] == undefined) {
-                return true;
-            }
-            if (old[gruppe][pfad] == undefined) {
-                return true;
-            }
-            if (old[gruppe][pfad][level] == undefined) {
-                return true;
-            }
+    canPathUnChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
+        instance ??= this.pfadLevel;
+        if (instance[gruppe] == undefined) {
+            return false;
+        }
+        if (instance[gruppe][pfad] == undefined) {
+            return false;
+        }
+        if (instance[gruppe][pfad][level] == undefined) {
+            return false;
+        }
 
-            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
-                .Pfad.filter(x => x.Id == pfad)[0]
-                .Levels.Level.filter(x => x.Id == level)[0]
-            return old[gruppe][pfad][level] < (l.WiederhoteNutzung ?? 1);
+        if (!Object.keys(instance[gruppe][pfad])
+            .filter(x => x != level)
+            .filter(x => instance![gruppe][pfad][x] > 0)
+            .every(key => this.levelPrerequire(gruppe, pfad, key, { withoutLevel: level }))) {
+            return false;
+        }
+
+
+        return instance[gruppe][pfad][level] > 0;
+    }
+    canPathUnChoosenStore(gruppe: string, pfad: string, level: string) {
+        return derived(this.pfadLevelDataStore, old => {
+            return this.canPathUnChoosen(gruppe, pfad, level, old);
         });
     }
-    hasPathChoosen(gruppe: string, pfad: string, level: string) {
-        return derived(this.pfadLevelDataStore, old => {
-            if (old[gruppe] == undefined) {
-                return false;
-            }
-            if (old[gruppe][pfad] == undefined) {
-                return false;
-            }
-            if (old[gruppe][pfad][level] == undefined) {
-                return false;
-            }
+    canPathChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
+        instance ??= this.pfadLevel;
 
-            return old[gruppe][pfad][level] > 0;
+        if (!this.levelPrerequire(gruppe, pfad, level)) {
+            return false;
+        }
+
+        if (instance[gruppe] &&
+            instance[gruppe][pfad] &&
+            !Object.keys(instance[gruppe][pfad])
+                .filter(x => x != level)
+                .filter(x => instance![gruppe][pfad][x] > 0)
+                .every(key => this.levelPrerequire(gruppe, pfad, key, { withLevel: level }))) {
+            return false;
+        }
+
+        if (instance[gruppe] == undefined) {
+            return true;
+        }
+        if (instance[gruppe][pfad] == undefined) {
+            return true;
+        }
+        if (instance[gruppe][pfad][level] == undefined) {
+            return true;
+        }
+        const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+            .Pfad.filter(x => x.Id == pfad)[0]
+            .Levels.Level.filter(x => x.Id == level)[0]
+
+        return instance[gruppe][pfad][level] < (l.WiederhoteNutzung ?? 1);
+    }
+
+    canPathChoosenStore(gruppe: string, pfad: string, level: string) {
+        return derived(this.pfadLevelDataStore, old => {
+            return this.canPathChoosen(gruppe, pfad, level, old);
         });
     }
+
+    hasPathChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
+        instance ??= this.pfadLevel;
+        if (instance[gruppe] == undefined) {
+            return false;
+        }
+        if (instance[gruppe][pfad] == undefined) {
+            return false;
+        }
+        if (instance[gruppe][pfad][level] == undefined) {
+            return false;
+        }
+
+        return instance[gruppe][pfad][level] > 0;
+    }
+
+    hasPathChoosenStore(gruppe: string, pfad: string, level: string) {
+        return derived(this.pfadLevelDataStore, old => {
+            return this.hasPathChoosen(gruppe, pfad, level, old);
+        });
+    }
+
     addPath(gruppe: string, pfad: string, level: string) {
         this.pfadLevelDataStore.update(old => {
-
-
-
             if (old[gruppe] == undefined) {
                 old[gruppe] = {};
             }
@@ -380,13 +430,10 @@ export class Charakter {
             }
             return old;
         });
-
     }
+
     removePath(gruppe: string, pfad: string, level: string) {
         this.pfadLevelDataStore.update(old => {
-
-
-
             if (old[gruppe] == undefined) {
                 old[gruppe] = {};
             }
@@ -405,6 +452,77 @@ export class Charakter {
 
     }
 
+    private levelPrerequire(gruppe: string, pfad: string, level: string, options?: { withoutLevel?: string } | { withLevel?: string }) {
+        const { withoutLevel, withLevel } = options as any ?? {};
+        const evalLevel = (lvl: _Level1): boolean => {
+            if (lvl.mindestVorkommen == 1 && lvl.Id == withLevel) {
+                return true;
+            }
+            if (this.pfadLevel[gruppe] == undefined) {
+                return false;
+            }
+            if (this.pfadLevel[gruppe][pfad] == undefined) {
+                return false;
+            }
+            if (this.pfadLevel[gruppe][pfad][lvl.Id] == undefined) {
+                return false;
+            }
+            return withoutLevel == lvl.Id
+                ? (this.pfadLevel[gruppe][pfad][lvl.Id] - 1) >= (lvl.mindestVorkommen ?? 1)
+                : withLevel == lvl.Id
+                    ? (this.pfadLevel[gruppe][pfad][lvl.Id] + 1) >= (lvl.mindestVorkommen ?? 1)
+                    : this.pfadLevel[gruppe][pfad][lvl.Id] >= (lvl.mindestVorkommen ?? 1);
+        };
+
+        const single = (e: _LevelAuswahl): boolean => {
+            if (e["#"] === "Not") {
+                return !single(e.Not);
+            } else if (e["#"] === "And") {
+                return evalAnd(e.And);
+            } else if (e["#"] === "Or") {
+                return evalOr(e.Or);
+            } else if (e["#"] === "Level") {
+                return evalLevel(e.Level);
+            } else {
+                throw Error('Not supported')
+            }
+
+        }
+        const evalAnd = (e: _LevelAuswahlen): boolean => {
+            return (e.And?.every(x => evalAnd(x))
+                ?? true)
+                &&
+                (e.Or?.every(x => evalOr(x))
+                    ?? true)
+                &&
+                (e.Level?.every(x => evalLevel(x))
+                    ?? true) &&
+                (e.Not?.every(x => !single(x))
+                    ?? true)
+        }
+        const evalOr = (e: _LevelAuswahlen): boolean => {
+            return (e.And?.some(x => evalAnd(x))
+                ?? true)
+                &&
+                (e.Or?.some(x => evalOr(x))
+                    ?? true)
+                &&
+                (e.Level?.some(x => evalLevel(x))
+                    ?? true) &&
+                (e.Not?.some(x => !single(x))
+                    ?? true)
+        }
+        const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter((x) => x.Id == gruppe)[0]
+            ?.Pfad.filter((x) => x.Id == pfad)[0]
+            ?.Levels.Level.filter((x) => x.Id == level)[0];
+
+
+        const succes = l.Bedingungen?.LevelVoraussetzung
+            ? single(l.Bedingungen?.LevelVoraussetzung)
+            : true;
+
+        return succes;
+    }
 
     private readonly pfadLevelDataStore = writable({} as Record<string, Record<string, Record<string, number>>>);
     private get pfadLevelData(): Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, number>>>>>> {

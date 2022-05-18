@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Kosten, _Kosten } from 'src/data/nota.g';
+	import type {  _Kosten } from 'src/data/nota.g';
 	import { element } from 'svelte/internal';
 	import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 	import { getText } from '../misc';
@@ -34,13 +34,12 @@
 						data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter((x) => x.Id == c.Id)[0]
 							.Abkürzung
 					);
-					console.log(rc);
 					const red =
 						rc
 							?.filter((x) => x.Id == c.Id)
 							.map((y) => y.Wert)
 							.reduce((p, c) => p + c, 0) ?? 0;
-					console.log(red);
+				
 					const value = red != 0 ? c.Wert - red : p ? -c.Wert : c.Wert;
 					let missing = ps ? Math.max(0, value - ps[c.Id] ?? 0) : 0;
 					let toExpensiv = missing > 0;

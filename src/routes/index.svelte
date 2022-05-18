@@ -7,6 +7,8 @@
 	import EigenschaftsControl from './controls/EigenschaftsControl.svelte';
 	import PathSelect from './controls/path/PathSelect.svelte';
 
+	import {} from '@picocss/pico/css/pico.css';
+
 	let data: Data | undefined;
 	let char: Charakter | undefined;
 
@@ -25,21 +27,36 @@
 <p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
 
 {#if data && char}
-	<div class="hover">
+	<article class="hover">
+		<header>Punkte</header>
 		<PointControl {char} {data} />
-	</div>
+	</article>
 
-	<OrganismSelect {char} {data} />
+	<main class="container">
+		<article>
+			<OrganismSelect {char} {data} />
+		</article>
 
-	{#if $charOrganismusStore}
-		{#each EIGENRSCHAFTEN as e}
-			<EigenschaftsControl {char} {data} eigenschaft={e} />
-		{/each}
-		{#each data.Instance.Daten.PfadGruppen.Pfade.map((x) => x.Id) as path}
-		<h1>{path}</h1>
-			<PathSelect {char} {data} gruppe={path} />
-		{/each}
-	{/if}
+		{#if $charOrganismusStore}
+			<h1>Eigenschaften</h1>
+			<div
+				style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; "
+			>
+				{#each EIGENRSCHAFTEN as e}
+					<EigenschaftsControl {char} {data} eigenschaft={e} />
+				{/each}
+			</div>
+			{#each data.Instance.Daten.PfadGruppen.Pfade.map((x) => x.Id) as path}
+				<h1>{path}</h1>
+				<details>
+					<summary>Gewählt</summary>
+					<article>
+						<PathSelect {char} {data} gruppe={path} />
+					</article>
+				</details>
+			{/each}
+		{/if}
+	</main>
 {:else}
 	<p>Loding…</p>
 {/if}
@@ -55,10 +72,9 @@
 		}
 	}
 	.hover {
-		padding: 8px;
-		border: 1px solid black;
+		width: 10rem;
 		position: fixed;
-		right: 5px;
+		right: 50px;
 		top: 5px;
 		//float: right;
 	}

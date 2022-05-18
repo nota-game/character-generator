@@ -5,7 +5,7 @@ import notaStructure from './../../data/nota-structure.g.json';
 import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
-import type { Daten } from 'src/data/nota.g';
+import type { Daten_nota as Daten } from 'src/data/nota.g';
 
 
 

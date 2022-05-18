@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { derived, type Readable } from 'svelte/store';
+	import type {  Readable } from 'svelte/store';
 
 	import type { Charakter, Eigenschaft } from '../models/Character';
 	import type { Data } from '../models/Data';
@@ -19,43 +19,44 @@
 	let isDecreaseToexpensiv: Readable<boolean>;
 </script>
 
-<ul>
-	<li>
+<article>
+	<header>
 		{eigenschaft}
 		{$charMutStore}
-		<div class="next">
-			<div>
-				{#if $chareigenschaftenDataMutincreaseCostStore}
-					<button
-						class:missing={$isIncreaseToexpensiv}
-						on:click={() => char.eigenschaftenData[eigenschaft].increase()}>+</button
-					>
-					<KostenControl
-						cost={chareigenschaftenDataMutincreaseCostStore}
-						{data}
-						{char}
-						bind:isToexpensiv={isIncreaseToexpensiv}
-					/>
-				{/if}
-			</div>
+	</header>
 
-			<div>
-				{#if $chareigenschaftenDataMutdecreaseCostStore}
-					<button
-						class:missing={$isDecreaseToexpensiv}
-						on:click={() => char.eigenschaftenData[eigenschaft].decrease()}>-</button
-					>
-					<KostenControl
-						cost={chareigenschaftenDataMutdecreaseCostStore}
-						{data}
-						{char}
-						bind:isToexpensiv={isDecreaseToexpensiv}
-					/>
-				{/if}
-			</div>
+	<div class="next">
+		<div>
+			{#if $chareigenschaftenDataMutincreaseCostStore}
+				<button
+					class:missing={$isIncreaseToexpensiv}
+					on:click={() => char.eigenschaftenData[eigenschaft].increase()}>+</button
+				>
+				<KostenControl
+					cost={chareigenschaftenDataMutincreaseCostStore}
+					{data}
+					{char}
+					bind:isToexpensiv={isIncreaseToexpensiv}
+				/>
+			{/if}
 		</div>
-	</li>
-</ul>
+
+		<div>
+			{#if $chareigenschaftenDataMutdecreaseCostStore}
+				<button
+					class:missing={$isDecreaseToexpensiv}
+					on:click={() => char.eigenschaftenData[eigenschaft].decrease()}>-</button
+				>
+				<KostenControl
+					cost={chareigenschaftenDataMutdecreaseCostStore}
+					{data}
+					{char}
+					bind:isToexpensiv={isDecreaseToexpensiv}
+				/>
+			{/if}
+		</div>
+	</div>
+</article>
 
 <style lang="scss">
 	.next {

@@ -13,24 +13,27 @@
 	export let data: Data;
 	export let char: Charakter;
 	export let gruppe: string;
-	
 
-	console.log(data.Instance.Daten.Organismen);
+	
 	let tree = data.Instance.Daten.PfadGruppen.Pfade.filter((x) => x.Id == gruppe)[0]?.Pfad;
 </script>
 
 {#each tree as t}
-	<div>
-		{getText(t.Name)}
-		{#if t.Levels?.Level}
-			{#each t.Levels.Level as lvl}
-				<PathSelectChild {char} {data} path={t.Id} {gruppe} lvl={lvl.Id} />
-			{/each}
-			<!--
+	<details>
+		<summary>
+			{getText(t.Name)}
+		</summary>
+		<div style="display: flex; flex-wrap: wrap; justify-content: space-between;">
+			{#if t.Levels?.Level}
+				{#each t.Levels.Level as lvl}
+					<PathSelectChild {char} {data} path={t.Id} {gruppe} lvl={lvl.Id} />
+				{/each}
+				<!--
 
 				{#each t.Levels.Level as l}
 				{/each}
 			-->
-		{/if}
-	</div>
+			{/if}
+		</div>
+	</details>
 {/each}

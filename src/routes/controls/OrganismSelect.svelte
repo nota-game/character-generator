@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { _Art, _Gattung, _Lebensabschnitt, _Morph } from 'src/data/nota.g';
+	import type { _Art, _Art1, _Gattung, _Lebensabschnitt, _Morph } from 'src/data/nota.g';
 	import { derived, writable, type Readable } from 'svelte/store';
 	import type { choise } from 'xsd-ts/dist/xsd';
 
@@ -27,7 +27,7 @@
 				titel: string;
 				l: _Lebensabschnitt;
 				m: _Morph;
-				a: _Art;
+				a: _Art1;
 				g: _Gattung;
 				selected?: Readable<boolean>;
 		  }
@@ -68,7 +68,10 @@
 			<input type="radio" bind:group={current} value={node} />
 			{node.titel}
 		</label>
-		<KostenControl cost={node.l.Spielbar.Kosten} {data} {char} paid={node.selected} replaceCost={wc} />
+		<article>
+
+			<KostenControl cost={node.l.Spielbar.Kosten} {data} {char} paid={node.selected} replaceCost={wc} />
+		</article>
 	{:else}
 		<div class="name">{node.titel}</div>
 	{/if}

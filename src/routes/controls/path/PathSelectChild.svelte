@@ -20,10 +20,10 @@
 	let fin = noop;
 	let fin2 = noop;
 	onMount(() => {
-		fin = char.canPathChoosen(gruppe, path, lvl).subscribe((x) => {
+		fin = char.canPathChoosenStore(gruppe, path, lvl).subscribe((x) => {
 			can = x;
 		});
-		fin = char.hasPathChoosen(gruppe, path, lvl).subscribe((x) => {
+		fin = char.canPathUnChoosenStore(gruppe, path, lvl).subscribe((x) => {
 			has = x;
 		});
 	});
@@ -37,17 +37,37 @@
 	});
 </script>
 
-{getText(l?.Name)}
+<article class="border">
+	<header>
+		{getText(l?.Name)} ({l?.Id})
+	</header>
+	<div class="handel">
+		<div>
+			<button disabled={!can} on:click={() => char.addPath(gruppe, path, lvl)}>+</button>
+			{#if can}
+				{#if l?.Kosten}
+					<KostenControl cost={l.Kosten} {data} {char} paid={false} />
+				{/if}
+			{/if}
+		</div>
+		<div>
+			<button disabled={!has} on:click={() => char.removePath(gruppe, path, lvl)}>-</button>
+			{#if has}
+				{#if l?.Kosten}
+					<KostenControl cost={l.Kosten} {data} {char} paid={true} />
+				{/if}
+			{/if}
+		</div>
+	</div>
+</article>
 
-{#if can}
-	<button on:click={() => char.addPath(gruppe, path, lvl)}>+</button>
-	{#if l?.Kosten}
-		<KostenControl cost={l.Kosten} {data} {char} paid={false} />
-	{/if}
-{/if}
-{#if has}
-	<button on:click={() => char.removePath(gruppe, path, lvl)}>-</button>
-	{#if l?.Kosten}
-		<KostenControl cost={l.Kosten} {data} {char} paid={true} />
-	{/if}
-{/if}
+<style lang="scss">
+	.handel {
+		display: flex;
+		flex-direction: row;
+		gap: 0.5rem;
+		* {
+			min-width: 6rem;
+		}
+	}
+</style>
