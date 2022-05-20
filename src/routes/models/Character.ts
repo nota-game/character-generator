@@ -1,4 +1,4 @@
-import type { _Gattung, _Lebensabschnitt, _Morph, _Kosten, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1 } from "src/data/nota.g";
+import type { _Gattung, _Lebensabschnitt, _Morph, _Kosten, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1, AbleitungsAuswahl_talent } from "src/data/nota.g";
 import { type Readable, get, derived, writable } from "svelte/store";
 
 import type { Data } from "./Data";
@@ -140,15 +140,139 @@ class EigenschaftenDataAccess {
 export class Charakter {
     data: Data;
 
+    public readonly organismusStore = writable<selection>(undefined);
+    public readonly punkteStore: Readable<Record<string, number>>;
+
+    private readonly pfadLevelDataStore = writable({} as Record<string, Record<string, Record<string, number>>>);
+    public readonly pfadLevelStore: Readable<Readonly<Record<string, Record<string, Record<string, number>>>>>;
+
+    private readonly besonderheitenPurchasedDataStore = writable({} as Record<string, true | undefined>);
+    public readonly besonderheitenPurchasedStore: Readable<Record<string, true | undefined>>;
+    public readonly besonderheitenStore: Readable<Readonly<Record<string, true | undefined>>>;
+
+    private readonly fertigkeitenPurchasedDataStore = writable({} as Record<string, number | undefined>);
+    public readonly fertigkeitenPurchasedStore: Readable<Record<string, number | undefined>>;
+    public readonly fertigkeitenStore: Readable<Readonly<Record<string, number | undefined>>>;
+
+    private readonly talentBaseEPData = writable({} as Record<string, number>);
+    private readonly talentFixEPData: Readable<Record<string, number>>;
+    public readonly talentBaseData: Readable<Record<string, number>>;
+    public readonly talentDerivationData: Readable<Record<string, number>>;
+    public readonly talentEffectiveData: Readable<Record<string, number>>;
+
+
+
+
     /**
      *
      */
     constructor(data: Data) {
         this.data = data;
 
+        this.talentBaseEPData.set(this.data.Instance.Daten.Talente.Talent.map(x => x.Id).reduce((p, c) => { p[c] = 0; return p; }, {} as Record<string, number>));
 
-        this.pfadLevelStore = derived(this.pfadLevelDataStore, x => x);
+        this.fertigkeitenPurchasedStore = derived(this.fertigkeitenPurchasedDataStore, x => ({ ...x }));
 
+        this.fertigkeitenStore = derived([this.fertigkeitenPurchasedStore, this.pfadLevelDataStore], ([f, levels]) => {
+
+            const costs = Object.keys(levels)
+                .flatMap(gruppe => Object.keys(levels[gruppe])
+                    .flatMap(pfad => Object.keys(levels[gruppe][pfad])
+                        .flatMap(level => {
+                            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+                                .Pfad.filter(x => x.Id == pfad)[0]
+                                .Levels.Level.filter(x => x.Id == level)[0];
+                            return l.Fertigkeit ?? [];
+                        })));
+            const result = { ...f };
+            return costs.reduce((p, c) => {
+                p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
+                return p;
+            }, result);
+        });
+
+        this.talentFixEPData = derived(this.pfadLevelDataStore, levels => {
+            const costs = Object.keys(levels)
+                .flatMap(gruppe => Object.keys(levels[gruppe])
+                    .flatMap(pfad => Object.keys(levels[gruppe][pfad])
+                        .flatMap(level => {
+                            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+                                .Pfad.filter(x => x.Id == pfad)[0]
+                                .Levels.Level.filter(x => x.Id == level)[0];
+                            return l.Talent ?? [];
+                        })));
+
+            return costs.reduce((p, c) => {
+                p[c.Id] = (p[c.Id] ?? 0) + c.EP;
+                return p;
+            }, {} as Record<string, number>)
+        });
+
+        this.talentBaseData = derived([this.talentFixEPData, this.talentBaseEPData], ([fix, b]) => {
+            const result = {} as Record<string, number>;
+            for (const key of Object.keys(b)) {
+                const ep = fix[key] + b[key];
+                const complexity = data.talentMap[key].Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
+                const levelCots = this.data.talentCostTabel[complexity]
+
+                for (let i = levelCots.length - 1; i >= 0; i--) {
+                    if (levelCots[i].Kosten.Wert <= ep) {
+                        result[key] = i;
+                    }
+                }
+            }
+            return result;
+        });
+
+
+        this.talentDerivationData = derived(this.talentBaseData, b => {
+            const calc = (a: AbleitungsAuswahl_talent | undefined): number[] => {
+                return a
+                    ? (a.Ableitung?.map(x => math.floor(b[x.Id] / x.Anzahl)) ?? [])
+                        .concat(
+                            (a.Max?.map(x => calc(x).sort((a, b) => b - a).slice(0, x.Anzahl).reduce((p, c) => p + c, 0)) ?? [])
+                        )
+                    : [];
+            }
+
+            return Object.values(data.talentMap).map(t => ({
+
+                id: t.Id,
+                value: calc(t.Ableitungen).reduce((p, c) => p + c, 0)
+            })).reduce((p, c) => { p[c.id] = c.value; return p; }, {} as Record<string, number>);
+
+
+        });
+
+        this.talentEffectiveData = derived([this.talentBaseData, this.talentDerivationData], ([b, d]) => {
+            const result = { ...b };
+            return Object.entries(d).reduce((p, c) => {
+                if (p[c[0]]) {
+                    p[c[0]] += c[1];
+                } else {
+                    p[c[0]] = c[1];
+                }
+                return p;
+            }, result);
+        });
+
+        this.pfadLevelStore = derived(this.pfadLevelDataStore, x => ({ ...x }));
+        this.besonderheitenPurchasedStore = derived(this.besonderheitenPurchasedDataStore, x => ({ ...x }));
+
+
+
+        this.besonderheitenStore = derived([this.besonderheitenPurchasedStore, this.pfadLevelStore], ([besonderheiten, levels]) => {
+            return (Object.keys(levels)
+                .flatMap(gruppe => Object.keys(levels[gruppe])
+                    .flatMap(pfad => Object.keys(levels[gruppe][pfad])
+                        .flatMap(level => {
+                            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+                                .Pfad.filter(x => x.Id == pfad)[0]
+                                .Levels.Level.filter(x => x.Id == level)[0];
+                            return l.Besonderheit?.map(x => x.Id) ?? [];
+                        })))
+                .concat(Object.entries(besonderheiten).filter(x => x[1]).map(x => x[0]))).reduce((p, c) => { p[c] = true; return p; }, {} as Record<string, true | undefined>)
+        });
 
         this.organismusStore.subscribe((v) => {
             if (v) {
@@ -319,9 +443,10 @@ export class Charakter {
             }
 
         });
-
-
     }
+
+
+
 
     canPathUnChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
         instance ??= this.pfadLevel;
@@ -524,13 +649,10 @@ export class Charakter {
         return succes;
     }
 
-    private readonly pfadLevelDataStore = writable({} as Record<string, Record<string, Record<string, number>>>);
-    private get pfadLevelData(): Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, number>>>>>> {
+    public get pfadLevel(): Readonly<Record<string, Record<string, Record<string, number>>>> {
         return get(this.pfadLevelDataStore);
     };
-    public readonly pfadLevelStore: Readable<Readonly<Record<string, Record<string, Record<string, number>>>>>;
-
-    public get pfadLevel(): Readonly<Record<string, Record<string, Record<string, number>>>> {
+    private get pfadLevelData(): Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, number>>>>>> {
         return get(this.pfadLevelDataStore);
     };
 
@@ -578,7 +700,6 @@ export class Charakter {
 
 
 
-    public readonly organismusStore = writable<selection>(undefined);
 
     public get organismus(): selection {
         return get(this.organismusStore);
@@ -590,7 +711,6 @@ export class Charakter {
 
 
 
-    public readonly punkteStore: Readable<Record<string, number>>;
 
     public get punkte(): Record<string, number> {
 
