@@ -358,6 +358,8 @@ export class Charakter {
 
             this.pfadLevelDataStore,
 
+            this.talentPurchasedEP
+
         ], ([
             organismus,
 
@@ -383,7 +385,10 @@ export class Charakter {
             eCostStärke,
             eCostKonstitution,
 
-            pfadLevelData
+            pfadLevelData,
+
+            talentEP
+
         ]) => {
 
             const r: Record<string, number> = {};
@@ -442,6 +447,11 @@ export class Charakter {
 
             }))
                 .flatMap(x => x.level.Kosten.map(y => ({ Id: y.Id, Wert: y.Wert * x.amount } as _Kosten))));
+
+            applyCost([{
+                Id: data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten ===true)[0].Id,
+                Wert: Object.values(talentEP).reduce((p, c) => p + c, 0)
+            } as any]);
 
             return r;
 
