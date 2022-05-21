@@ -1,0 +1,1 @@
+import{E as n}from"./index-c6d6f269.js";function i(o){const e=t=>{t?window.localStorage.setItem(o,JSON.stringify(t)):window.localStorage.removeItem(o)},r=()=>{const t=window.localStorage.getItem(o);if(t)return JSON.parse(t)};return{set:e,update:t=>e(t(r())),subscribe:t=>(t(r()),n)}}export{i as l};
