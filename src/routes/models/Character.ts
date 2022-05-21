@@ -1,4 +1,4 @@
-import type { _Gattung, _Lebensabschnitt, _Morph, _Kosten, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1, AbleitungsAuswahl_talent } from "src/data/nota.g";
+import type { _Gattung, _Lebensabschnitt, _Morph, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, Kosten_misc, KostenDefinition_misc } from "src/data/nota.g";
 import { type Readable, get, derived, writable, type Writable } from "svelte/store";
 
 import type { Data } from "./Data";
@@ -35,7 +35,7 @@ class EigenschaftenData {
     public set accired(value) {
         this.acciredStore.set(value);
     }
-    public readonly costStore = writable({} as Record<number, _Kosten[] | undefined>);
+    public readonly costStore = writable({} as Record<number, KostenDefinition_misc[] | undefined>);
     public get cost() {
         return get(this.costStore);
     }
@@ -84,11 +84,11 @@ class EigenschaftenDataAccess {
         this.costStore = derived(this.base.costStore, (value) => value);
         this.increaseCostStore = derived([this.costStore, this.acciredStore], ([c, a]) =>
             a <= -1
-                ? c[-1]?.map(x => ({ Id: x.Id, Wert: -x.Wert } as any))
+                ? c[-1]?.map(x => ({ Id: x.Id, Wert: -x.Wert }))
                 : c[a + 1]);
         this.decreaseCostStore = derived([this.costStore, this.acciredStore], ([c, a]) =>
             a >= 1
-                ? c[1]?.map(x => ({ Id: x.Id, Wert: -x.Wert } as any))
+                ? c[1]?.map(x => ({ Id: x.Id, Wert: -x.Wert }))
                 : c[a - 1]);
         this.currentStore = derived([this.startStore, this.modifiedStore, this.acciredStore], ([s, m, a]) => s - Object.values(m).reduce((c, p) => c + p, 0) - a)
     }
@@ -98,9 +98,9 @@ class EigenschaftenDataAccess {
     public readonly currentStore: Readable<number>;
     public readonly modifiedStore: Readable<Record<Eigenschaft, number>>;
     public readonly acciredStore: Readable<number>;
-    public readonly costStore: Readable<Record<number, _Kosten[] | undefined>>;
-    public readonly increaseCostStore: Readable<_Kosten[] | undefined>;
-    public readonly decreaseCostStore: Readable<_Kosten[] | undefined>;
+    public readonly costStore: Readable<Record<number, KostenDefinition_misc[] | undefined>>;
+    public readonly increaseCostStore: Readable<KostenDefinition_misc[] | undefined>;
+    public readonly decreaseCostStore: Readable<KostenDefinition_misc[] | undefined>;
 
 
     public get start() {
@@ -137,6 +137,95 @@ class EigenschaftenDataAccess {
     }
 
 }
+
+class FertigkeitInfo {
+
+    public readonly canBeBoght: Readable<boolean>
+    public readonly canBeSoled: Readable<boolean>
+    public readonly boughtLevel: Writable<number>
+    public readonly buyCost: Readable<KostenDefinition_misc[]>
+    public readonly sellCost: Readable<KostenDefinition_misc[]>
+
+    /**
+     *
+     */
+    constructor(costId: string, fertigkeitData: FertigkeitDefinition_fertigkeit, purchaseStore: Writable<Record<string, number | undefined>>, fixStore: Readable<Record<string, number | undefined>>) {
+
+        this.canBeBoght = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+            const p = purchased[fertigkeitData.Id];
+            const f = fixed[fertigkeitData.Id];
+            return ((p == undefined) || p < fertigkeitData.Stufe.length) && (f == undefined || f < fertigkeitData.Stufe.length);
+        })
+        this.canBeSoled = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+            const p = purchased[fertigkeitData.Id];
+            const f = fixed[fertigkeitData.Id];
+            return ((p != undefined) && p > (f ?? 0));
+        })
+
+        this.boughtLevel = {
+            set: (v) => {
+                purchaseStore.update(old => {
+                    const f = get(fixStore)[fertigkeitData.Id];
+                    if (v > (f ?? 0) && v <= fertigkeitData.Stufe.length) {
+                        old[fertigkeitData.Id] = v;
+                    }
+                    else if (v <= (f ?? 0)) {
+                        old[fertigkeitData.Id] = undefined;
+                    }
+                    return old;
+                })
+            },
+            update: (u) => {
+                const v = u(get(this.boughtLevel))
+                purchaseStore.update(old => {
+                    const f = get(fixStore)[fertigkeitData.Id];
+                    if (v > (f ?? 0) && v <= fertigkeitData.Stufe.length) {
+                        old[fertigkeitData.Id] = v;
+                    }
+                    else if (v <= (f ?? 0)) {
+                        old[fertigkeitData.Id] = undefined;
+                    }
+                    return old;
+                })
+
+            },
+            ...derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+                const p = purchased[fertigkeitData.Id];
+                const f = fixed[fertigkeitData.Id];
+                return Math.max(p ?? 0, f ?? 0);
+            })
+        };
+
+        this.buyCost = derived([purchaseStore, fixStore, this.canBeBoght], ([purchased, fixed, can]) => {
+            if (!can) {
+                return [];
+            }
+            const target = Math.max(purchased[fertigkeitData.Id] ?? 0, fixed[fertigkeitData.Id] ?? 0) + 1;
+            return [{
+                Id: costId,
+                Wert: fertigkeitData.Stufe[target - 1].Kosten
+            }];
+        })
+        this.sellCost = derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+            if (!can) {
+                return [];
+            }
+            const target = Math.max(purchased[fertigkeitData.Id] ?? 0, fixed[fertigkeitData.Id] ?? 0);
+            return [{
+                Id: costId,
+                Wert: fertigkeitData.Stufe[target - 1].Kosten * -1
+            }];
+        })
+
+
+
+
+
+    }
+
+
+
+}
 export class Charakter {
     data: Data;
 
@@ -151,6 +240,7 @@ export class Charakter {
     public readonly besonderheitenStore: Readable<Readonly<Record<string, true | undefined>>>;
 
     private readonly fertigkeitenPurchasedDataStore = writable({} as Record<string, number | undefined>);
+    private readonly fertigkeitenFixDataStore: Readable<Record<string, number | undefined>>;
     public readonly fertigkeitenPurchasedStore: Readable<Record<string, number | undefined>>;
     public readonly fertigkeitenStore: Readable<Readonly<Record<string, number | undefined>>>;
 
@@ -164,6 +254,9 @@ export class Charakter {
 
 
 
+    public getFertigkeitInfo(id: string) {
+        return new FertigkeitInfo(this.data.StandardKosten, this.data.fertigkeitenMap[id], this.fertigkeitenPurchasedDataStore, this.fertigkeitenFixDataStore);
+    }
 
     /**
      *
@@ -175,22 +268,30 @@ export class Charakter {
 
         this.fertigkeitenPurchasedStore = derived(this.fertigkeitenPurchasedDataStore, x => ({ ...x }));
 
-        this.fertigkeitenStore = derived([this.fertigkeitenPurchasedStore, this.pfadLevelDataStore], ([f, levels]) => {
-
+        this.fertigkeitenFixDataStore = derived(this.pfadLevelDataStore, (levels) => {
             const costs = Object.keys(levels)
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
                         .flatMap(level => {
+                            if ((levels[gruppe][pfad][level] ?? 0) == 0)
+                                return [];
                             const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
                                 .Pfad.filter(x => x.Id == pfad)[0]
                                 .Levels.Level.filter(x => x.Id == level)[0];
                             return l.Fertigkeit ?? [];
                         })));
-            const result = { ...f };
+
+            console.log(costs.length)
             return costs.reduce((p, c) => {
                 p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
                 return p;
-            }, result);
+            }, {} as Record<string, number | undefined>);
+        });
+        this.fertigkeitenStore = derived([this.fertigkeitenPurchasedStore, this.fertigkeitenFixDataStore], ([purchased, fixed]) => {
+            return Object.entries(fixed).reduce((p, c) => {
+                p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
+                return p;
+            }, { ...purchased });
         });
 
         this.talentFixEP = derived(this.pfadLevelDataStore, levels => {
@@ -358,7 +459,11 @@ export class Charakter {
 
             this.pfadLevelDataStore,
 
-            this.talentPurchasedEP
+            this.talentPurchasedEP,
+
+            this.fertigkeitenFixDataStore,
+            this.fertigkeitenPurchasedStore,
+
 
         ], ([
             organismus,
@@ -387,7 +492,10 @@ export class Charakter {
 
             pfadLevelData,
 
-            talentEP
+            talentEP,
+
+            fertigkeitenFix,
+            fertigkeitenPurchaseu,
 
         ]) => {
 
@@ -446,22 +554,36 @@ export class Charakter {
                 amount: x.amount
 
             }))
-                .flatMap(x => x.level.Kosten.map(y => ({ Id: y.Id, Wert: y.Wert * x.amount } as _Kosten))));
+                .flatMap(x => x.level.Kosten.map(y => ({ Id: y.Id, Wert: y.Wert * x.amount }))));
 
             applyCost([{
-                Id: data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten ===true)[0].Id,
+                Id: data.StandardKosten,
                 Wert: Object.values(talentEP).reduce((p, c) => p + c, 0)
-            } as any]);
+            }]);
+            applyCost([{
+                Id: data.StandardKosten,
+                Wert: Object.keys(fertigkeitenPurchaseu).map(key => {
+                    const up = fertigkeitenPurchaseu[key] ?? 0;
+                    const low = fertigkeitenFix[key] ?? 0;
+                    let r = 0;
+
+                    for (let i = low; i < up; i++) {
+                        r += data.fertigkeitenMap[key].Stufe[i].Kosten
+                    }
+                    return r;
+                }).reduce((p, c) => p + c, 0)
+            }]);
+
 
             return r;
 
             ///////////
-            function applyCredit(newLocal: (Record<string, never> & { Wert: number; } & { Id: string; })[]) {
+            function applyCredit(newLocal: KostenDefinition_misc[]) {
                 for (const s of newLocal) {
                     r[s.Id] += s.Wert;
                 }
             }
-            function applyCost(newLocal: (Record<string, never> & { Wert: number; } & { Id: string; })[]) {
+            function applyCost(newLocal: KostenDefinition_misc[]) {
                 for (const s of newLocal) {
                     r[s.Id] -= s.Wert;
                 }

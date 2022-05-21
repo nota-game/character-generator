@@ -1,13 +1,16 @@
 <script lang="ts">
-	import type {  _Kosten } from 'src/data/nota.g';
+	import type { KostenDefinition_misc } from 'src/data/nota.g';
 	import { element } from 'svelte/internal';
 	import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 	import { getText } from '../misc';
 	import type { Charakter } from '../models/Character';
 	import type { Data } from '../models/Data';
 
-	export let cost: _Kosten[] | Readable<_Kosten[] | undefined>;
-	export let replaceCost: _Kosten[] | Readable<_Kosten[] | undefined> | undefined = undefined;
+	export let cost: KostenDefinition_misc[] | Readable<KostenDefinition_misc[] | undefined>;
+	export let replaceCost:
+		| KostenDefinition_misc[]
+		| Readable<KostenDefinition_misc[] | undefined>
+		| undefined = undefined;
 	export let data: Data;
 	export let char: Charakter | undefined = undefined;
 	export let paid: boolean | Readable<boolean> = false;
@@ -39,7 +42,7 @@
 							?.filter((x) => x.Id == c.Id)
 							.map((y) => y.Wert)
 							.reduce((p, c) => p + c, 0) ?? 0;
-				
+
 					const value = red != 0 ? c.Wert - red : p ? -c.Wert : c.Wert;
 					let missing = ps ? Math.max(0, value - ps[c.Id] ?? 0) : 0;
 					let toExpensiv = missing > 0;

@@ -1,7 +1,7 @@
-import type { Lokalisirung } from "src/data/nota.g";
+import type { Lokalisierungen_misc, Lokalisirung } from "src/data/nota.g";
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 
-export function getText(p: Lokalisirung | undefined): string {
+export function getText(p: Lokalisierungen_misc | undefined): string {
     const languege = 'de';
     if (!p) {
         return '';

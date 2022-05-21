@@ -8,7 +8,8 @@
 	import PathSelect from './controls/path/PathSelect.svelte';
 
 	import {} from '@picocss/pico/css/pico.css';
-import TalentList from './controls/TalentList.svelte';
+	import TalentList from './controls/TalentList.svelte';
+	import FertigkeitenList from './controls/FertigkeitenList.svelte';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -60,7 +61,8 @@ import TalentList from './controls/TalentList.svelte';
 			<article>
 				<TalentList {char} {data} />
 			</article>
-
+			<h1>Fertigkeiten</h1>
+			<FertigkeitenList {char} {data} />
 		{/if}
 	</main>
 {:else}
