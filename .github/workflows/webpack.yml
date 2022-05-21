@@ -45,6 +45,8 @@ jobs:
       run: |
         cp -r build/* page
         cd page
+        git config user.email "Action@github.com"
+        git config user.name "Action"
         git commit --amend --untracked-files 
         git push --force
 
