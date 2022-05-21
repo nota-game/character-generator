@@ -9,23 +9,14 @@
 	export let char: Charakter;
 </script>
 
-{#each Object.keys(data.talentCategoryMap) as key}
-	<header>
-		<b>{key}</b>
-	</header>
+{#if data}
+	{#each Object.keys(data.talentCategoryMap) as key}
+		<header>
+			<b>{key}</b>
+		</header>
 
-	{#each Object.keys(data.talentCategoryMap[key]) as t}
-		<TalentControl {char} {data} talent={data.talentMap[t]} />
+		{#each Object.keys(data.talentCategoryMap[key]) as t}
+			<TalentControl {char} {data} talent={data.talentMap[t]} />
+		{/each}
 	{/each}
-{/each}
-
-<style lang="scss">
-	.next {
-		display: flex;
-		flex-direction: row;
-		flex-wrap: nowrap;
-		* {
-			width: 200px;
-		}
-	}
-</style>
+{/if}

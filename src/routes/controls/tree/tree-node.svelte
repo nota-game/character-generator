@@ -4,7 +4,6 @@
 	type WithChildren<T> = T & {
 		children: WithChildren<T>[];
 	};
-	export let index;
 	let showChildren = true;
 
 	function click() {
@@ -15,8 +14,8 @@
 </script>
 
 <div class="node">
-	<div class="content" on:click={click} class:point={node.children}>
-		{#if node.children}
+	<div class="content" on:click={click} class:point={node?.children}>
+		{#if node?.children}
 			<div class="button" class:active={showChildren}>
 				<svg focusable="false" viewBox="0 0 24 24">
 					<path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" />
@@ -27,10 +26,10 @@
 		{/if}
 		<slot {node} />
 	</div>
-	{#if node.children && showChildren}
+	{#if node?.children && showChildren}
 		<div class="children" transition:slide|local>
-			{#each node.children as _node, i}
-				<svelte:self node={_node} index={i} let:node>
+			{#each node?.children as _node, i}
+				<svelte:self node={_node}  let:node>
 					<slot {node} />
 				</svelte:self>
 			{/each}
@@ -59,10 +58,7 @@
 		width: 20px;
 		height: 20px;
 	}
-	.node .content .name {
-		margin-left: 10px;
-		font-size: 15px;
-	}
+	
 	.children {
 		margin-left: 20px;
 	}

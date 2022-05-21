@@ -28,7 +28,7 @@
 		});
 	});
 
-	let l = data.Instance.Daten.PfadGruppen.Pfade.filter((x) => x.Id == gruppe)[0]
+	let l = data?.Instance.Daten.PfadGruppen.Pfade.filter((x) => x.Id == gruppe)[0]
 		?.Pfad.filter((x) => x.Id == path)[0]
 		?.Levels.Level.filter((x) => x.Id == lvl)[0];
 	onDestroy(() => {

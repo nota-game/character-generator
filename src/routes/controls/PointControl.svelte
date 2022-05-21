@@ -8,8 +8,8 @@
 
 	let list: { abbr: string; name: string; value: number }[];
 
-	char.punkteStore.subscribe((s) => {
-		list= Object.entries(s)
+	char?.punkteStore.subscribe((s) => {
+		list = Object.entries(s)
 			.map((x) => ({ Id: x[0], Store: x[1] }))
 			.map((c) => {
 				const name = getText(
@@ -32,13 +32,15 @@
 </script>
 
 <ul>
-	{#each list as c}
-		<li>
-			{#if c.value < 0}
-				<span class="missing"><abbr title={c.name}>{c.abbr}</abbr>: {c.value}</span>
-			{:else}
-				<abbr title={c.name}> {c.abbr}</abbr>:{c.value}
-			{/if}
-		</li>
-	{/each}
+	{#if list}
+		{#each list as c}
+			<li>
+				{#if c.value < 0}
+					<span class="missing"><abbr title={c.name}>{c.abbr}</abbr>: {c.value}</span>
+				{:else}
+					<abbr title={c.name}> {c.abbr}</abbr>:{c.value}
+				{/if}
+			</li>
+		{/each}
+	{/if}
 </ul>

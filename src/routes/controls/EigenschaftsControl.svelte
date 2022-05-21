@@ -10,10 +10,10 @@
 	export let eigenschaft: Eigenschaft;
 
 	const chareigenschaftenDataMutincreaseCostStore =
-		char.eigenschaftenData[eigenschaft].increaseCostStore;
+		char?.eigenschaftenData[eigenschaft].increaseCostStore;
 	const chareigenschaftenDataMutdecreaseCostStore =
-		char.eigenschaftenData[eigenschaft].decreaseCostStore;
-	const charMutStore = char.eigenschaftenData[eigenschaft].currentStore;
+		char?.eigenschaftenData[eigenschaft].decreaseCostStore;
+	const charMutStore = char?.eigenschaftenData[eigenschaft].currentStore;
 
 	let isIncreaseToexpensiv: Readable<boolean>;
 	let isDecreaseToexpensiv: Readable<boolean>;

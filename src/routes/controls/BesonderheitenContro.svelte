@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { FertigkeitDefinition_fertigkeit } from 'src/data/nota.g';
+	import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigkeit } from 'src/data/nota.g';
 	import { getText } from '../misc';
 
 	import type { Charakter } from '../models/Character';
@@ -9,9 +9,9 @@
 
 	export let data: Data;
 	export let char: Charakter;
-	export let fertigkeit: FertigkeitDefinition_fertigkeit;
+	export let besonderheit: BesonderheitDefinition_besonderheit;
 
-	const info = char?.getFertigkeitInfo(fertigkeit.Id);
+	const info = char?.getBesonderheitInfo(besonderheit.Id);
 
 	const canBeBoght = info?.canBeBoght;
 	const canBeSoled = info?.canBeSoled;
@@ -24,18 +24,17 @@
 	//	const charEffectiveValueStore = char.getTalentEffectiveStore(talent.Id);
 </script>
 
-{#if char}
-	<article>
-		<header><b>{getText(fertigkeit.Name)}</b> {$boughtLevel}</header>
-		<div class="grid">
-			<div>
-				<button disabled={!$canBeBoght} on:click={() => $boughtLevel++}>+</button>
-				<KostenControl {char} {data} cost={buyCost} />
-			</div>
-			<div>
-				<button disabled={!$canBeSoled} on:click={() => $boughtLevel--}>-</button>
-				<KostenControl {char} {data} cost={sellCost} />
-			</div>
+<article>
+	<header><b>{getText(besonderheit?.Name)}</b> {$boughtLevel}</header>
+	<div class="grid">
+		<div>
+			<button disabled={!$canBeBoght} on:click={() => $boughtLevel++}>+</button>
+			<KostenControl {char} {data} cost={buyCost} />
 		</div>
-	</article>
-{/if}
+		<div>
+			<button disabled={!$canBeSoled} on:click={() => $boughtLevel--}>-</button>
+			<KostenControl {char} {data} cost={sellCost} />
+		</div>
+	</div>
+</article>
+

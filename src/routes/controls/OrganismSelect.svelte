@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { _Art, _Art1, _Gattung, _Lebensabschnitt, _Morph } from 'src/data/nota.g';
+	import type { _Art, _Art1, _Art2, _Gattung, _Lebensabschnitt, _Morph } from 'src/data/nota.g';
 	import { derived, writable, type Readable } from 'svelte/store';
 	import type { choise } from 'xsd-ts/dist/xsd';
 
@@ -15,11 +15,13 @@
 	let current: selection;
 
 	const w = writable(current);
-	const wc = derived(w, x=>x?.l?.Spielbar?.Kosten);
+	const wc = derived(w, (x) => x?.l?.Spielbar?.Kosten);
 
 	$: {
-		char.organismus = current;
-		w.set(current!)
+		if (char) {
+			char.organismus = current;
+			w.set(current!);
+		}
 	}
 
 	type selection =
@@ -27,13 +29,13 @@
 				titel: string;
 				l: _Lebensabschnitt;
 				m: _Morph;
-				a: _Art1;
+				a: _Art2;
 				g: _Gattung;
 				selected?: Readable<boolean>;
 		  }
 		| undefined;
 
-	let tree = data.Instance.Daten.Organismen.Gattung.map((x) => {
+	let tree = data?.Instance.Daten.Organismen.Gattung.map((x) => {
 		return {
 			titel: getText(x.Name),
 			children: x.Art.map((y) => {
@@ -62,15 +64,19 @@
 </script>
 
 <Tree {tree} let:node>
-	{#if node.l }
-	
+	{#if node.l}
 		<label>
 			<input type="radio" bind:group={current} value={node} />
 			{node.titel}
 		</label>
 		<article>
-
-			<KostenControl cost={node.l.Spielbar.Kosten} {data} {char} paid={node.selected} replaceCost={wc} />
+			<KostenControl
+				cost={node.l.Spielbar.Kosten}
+				{data}
+				{char}
+				paid={node.selected}
+				replaceCost={wc}
+			/>
 		</article>
 	{:else}
 		<div class="name">{node.titel}</div>

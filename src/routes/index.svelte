@@ -10,6 +10,7 @@
 	import {} from '@picocss/pico/css/pico.css';
 	import TalentList from './controls/TalentList.svelte';
 	import FertigkeitenList from './controls/FertigkeitenList.svelte';
+import BesonderheitenList from './controls/BesonderheitenList.svelte';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -25,8 +26,7 @@
 	});
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<h1>Welcome to Nota Charakter Generator</h1>
 
 {#if data && char}
 	<article class="hover">
@@ -63,6 +63,8 @@
 			</article>
 			<h1>Fertigkeiten</h1>
 			<FertigkeitenList {char} {data} />
+			<h1>Besonderheiten</h1>
+			<BesonderheitenList {char} {data} />
 		{/if}
 	</main>
 {:else}

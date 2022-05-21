@@ -7,7 +7,7 @@
 </script>
 
 {#each tree as _node, i}
-	<TreeNode node={_node} index={i} let:node>
+	<TreeNode node={_node}  let:node>
 		<slot {node}>
 			<div class="name">{node.name}</div>
 		</slot>

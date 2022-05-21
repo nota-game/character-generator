@@ -1,4 +1,4 @@
-import type { _Gattung, _Lebensabschnitt, _Morph, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, Kosten_misc, KostenDefinition_misc } from "src/data/nota.g";
+import type { _Gattung, _Lebensabschnitt, _Morph, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit } from "src/data/nota.g";
 import { type Readable, get, derived, writable, type Writable } from "svelte/store";
 
 import type { Data } from "./Data";
@@ -226,6 +226,88 @@ class FertigkeitInfo {
 
 
 }
+class BesonderheitenInfo {
+
+    public readonly canBeBoght: Readable<boolean>
+    public readonly canBeSoled: Readable<boolean>
+    public readonly boughtLevel: Writable<number>
+    public readonly buyCost: Readable<KostenDefinition_misc[]>
+    public readonly sellCost: Readable<KostenDefinition_misc[]>
+
+    /**
+     *
+     */
+    constructor(besonderheitData: BesonderheitDefinition_besonderheit, purchaseStore: Writable<Record<string, number | undefined>>, fixStore: Readable<Record<string, number | undefined>>) {
+
+        this.canBeBoght = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+            const p = purchased[besonderheitData.Id];
+            const f = fixed[besonderheitData.Id];
+            return ((p == undefined) || p < besonderheitData.Stufe.length) && (f == undefined || f < besonderheitData.Stufe.length);
+        })
+        this.canBeSoled = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+            const p = purchased[besonderheitData.Id];
+            const f = fixed[besonderheitData.Id];
+            return ((p != undefined) && p > (f ?? 0));
+        })
+
+        this.boughtLevel = {
+            set: (v) => {
+                purchaseStore.update(old => {
+                    const f = get(fixStore)[besonderheitData.Id];
+                    if (v > (f ?? 0) && v <= besonderheitData.Stufe.length) {
+                        old[besonderheitData.Id] = v;
+                    }
+                    else if (v <= (f ?? 0)) {
+                        old[besonderheitData.Id] = undefined;
+                    }
+                    return old;
+                })
+            },
+            update: (u) => {
+                const v = u(get(this.boughtLevel))
+                purchaseStore.update(old => {
+                    const f = get(fixStore)[besonderheitData.Id];
+                    if (v > (f ?? 0) && v <= besonderheitData.Stufe.length) {
+                        old[besonderheitData.Id] = v;
+                    }
+                    else if (v <= (f ?? 0)) {
+                        old[besonderheitData.Id] = undefined;
+                    }
+                    return old;
+                })
+
+            },
+            ...derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+                const p = purchased[besonderheitData.Id];
+                const f = fixed[besonderheitData.Id];
+                return Math.max(p ?? 0, f ?? 0);
+            })
+        };
+
+        this.buyCost = derived([purchaseStore, fixStore, this.canBeBoght], ([purchased, fixed, can]) => {
+            if (!can) {
+                return [];
+            }
+            const target = Math.max(purchased[besonderheitData.Id] ?? 0, fixed[besonderheitData.Id] ?? 0) + 1;
+            return besonderheitData.Stufe[target - 1].Kosten;
+        })
+        this.sellCost = derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+            if (!can) {
+                return [];
+            }
+            const target = Math.max(purchased[besonderheitData.Id] ?? 0, fixed[besonderheitData.Id] ?? 0);
+            return besonderheitData.Stufe[target - 1].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }));
+        })
+
+
+
+
+
+    }
+
+
+
+}
 export class Charakter {
     data: Data;
 
@@ -235,9 +317,10 @@ export class Charakter {
     private readonly pfadLevelDataStore = writable({} as Record<string, Record<string, Record<string, number>>>);
     public readonly pfadLevelStore: Readable<Readonly<Record<string, Record<string, Record<string, number>>>>>;
 
-    private readonly besonderheitenPurchasedDataStore = writable({} as Record<string, true | undefined>);
-    public readonly besonderheitenPurchasedStore: Readable<Record<string, true | undefined>>;
-    public readonly besonderheitenStore: Readable<Readonly<Record<string, true | undefined>>>;
+    private readonly besonderheitenPurchasedDataStore = writable({} as Record<string, number | undefined>);
+    private readonly besonderheitenFixDataStore: Readable<Record<string, number | undefined>>;
+    public readonly besonderheitenPurchasedStore: Readable<Record<string, number | undefined>>;
+    public readonly besonderheitenStore: Readable<Readonly<Record<string, number | undefined>>>;
 
     private readonly fertigkeitenPurchasedDataStore = writable({} as Record<string, number | undefined>);
     private readonly fertigkeitenFixDataStore: Readable<Record<string, number | undefined>>;
@@ -256,6 +339,9 @@ export class Charakter {
 
     public getFertigkeitInfo(id: string) {
         return new FertigkeitInfo(this.data.StandardKosten, this.data.fertigkeitenMap[id], this.fertigkeitenPurchasedDataStore, this.fertigkeitenFixDataStore);
+    }
+    public getBesonderheitInfo(id: string) {
+        return new BesonderheitenInfo(this.data.besonderheitenMap[id], this.besonderheitenPurchasedDataStore, this.besonderheitenFixDataStore);
     }
 
     /**
@@ -281,7 +367,6 @@ export class Charakter {
                             return l.Fertigkeit ?? [];
                         })));
 
-            console.log(costs.length)
             return costs.reduce((p, c) => {
                 p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
                 return p;
@@ -377,7 +462,31 @@ export class Charakter {
 
 
 
-        this.besonderheitenStore = derived([this.besonderheitenPurchasedStore, this.pfadLevelStore], ([besonderheiten, levels]) => {
+        this.besonderheitenFixDataStore = derived(this.pfadLevelStore, (levels) => {
+            return (Object.keys(levels)
+                .flatMap(gruppe => Object.keys(levels[gruppe])
+                    .flatMap(pfad => Object.keys(levels[gruppe][pfad])
+                        .flatMap(level => {
+                            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+                                .Pfad.filter(x => x.Id == pfad)[0]
+                                .Levels.Level.filter(x => x.Id == level)[0];
+                            return l.Besonderheit ?? [];
+                        })))).reduce((p, c) => {
+                            p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
+                            return p;
+                        }, {} as Record<string, number | undefined>);
+
+        });
+        this.besonderheitenStore = 
+        
+        
+        derived([this.besonderheitenPurchasedStore, this.besonderheitenFixDataStore], ([purchased, fixed]) => {
+            return Object.entries(fixed).reduce((p, c) => {
+                p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
+                return p;
+            }, { ...purchased });
+        });
+        derived([this.besonderheitenPurchasedStore, this.pfadLevelStore], ([besonderheiten, levels]) => {
             return (Object.keys(levels)
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
@@ -464,6 +573,9 @@ export class Charakter {
             this.fertigkeitenFixDataStore,
             this.fertigkeitenPurchasedStore,
 
+            this.besonderheitenFixDataStore,
+            this.besonderheitenPurchasedStore,
+
 
         ], ([
             organismus,
@@ -496,6 +608,9 @@ export class Charakter {
 
             fertigkeitenFix,
             fertigkeitenPurchaseu,
+
+            besonderheitenFix,
+            besonderheitenPurchaseu,
 
         ]) => {
 
@@ -573,6 +688,18 @@ export class Charakter {
                     return r;
                 }).reduce((p, c) => p + c, 0)
             }]);
+            applyCost(
+                Object.keys(besonderheitenPurchaseu).flatMap(key => {
+                    const up = besonderheitenPurchaseu[key] ?? 0;
+                    const low = besonderheitenFix[key] ?? 0;
+                    const r :KostenDefinition_misc[]= [];
+
+                    for (let i = low; i < up; i++) {
+                        r.push( ...data.besonderheitenMap[key].Stufe[i].Kosten)
+                    }
+                    return r;
+                })
+            );
 
 
             return r;
