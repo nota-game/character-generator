@@ -43,6 +43,7 @@ jobs:
       run: |
         cp -r build/* page
         cd page
+        touch .nojekyll
         git config user.email "Action@github.com"
         git config user.name "Action"
         git add .
