@@ -8,6 +8,7 @@
 	import PathSelect from './controls/path/PathSelect.svelte';
 
 	import {} from '@picocss/pico/css/pico.css';
+import TalentList from './controls/TalentList.svelte';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -55,6 +56,11 @@
 					</article>
 				</details>
 			{/each}
+
+			<article>
+				<TalentList {char} {data} />
+			</article>
+
 		{/if}
 	</main>
 {:else}

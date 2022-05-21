@@ -1,5 +1,5 @@
 import type { _Gattung, _Lebensabschnitt, _Morph, _Kosten, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1, AbleitungsAuswahl_talent } from "src/data/nota.g";
-import { type Readable, get, derived, writable } from "svelte/store";
+import { type Readable, get, derived, writable, type Writable } from "svelte/store";
 
 import type { Data } from "./Data";
 
@@ -154,11 +154,13 @@ export class Charakter {
     public readonly fertigkeitenPurchasedStore: Readable<Record<string, number | undefined>>;
     public readonly fertigkeitenStore: Readable<Readonly<Record<string, number | undefined>>>;
 
-    private readonly talentBaseEPData = writable({} as Record<string, number>);
-    private readonly talentFixEPData: Readable<Record<string, number>>;
-    public readonly talentBaseData: Readable<Record<string, number>>;
-    public readonly talentDerivationData: Readable<Record<string, number>>;
-    public readonly talentEffectiveData: Readable<Record<string, number>>;
+    private readonly talentPurchasedEPData = writable({} as Record<string, number>);
+    private readonly talentFixEP: Readable<Record<string, number>>;
+    public readonly talentPurchasedEP: Readable<Record<string, number>>;
+    public readonly talentBaseEP: Readable<Record<string, number>>;
+    public readonly talentBase: Readable<Record<string, number>>;
+    public readonly talentDerivation: Readable<Record<string, number>>;
+    public readonly talentEffective: Readable<Record<string, number>>;
 
 
 
@@ -169,7 +171,7 @@ export class Charakter {
     constructor(data: Data) {
         this.data = data;
 
-        this.talentBaseEPData.set(this.data.Instance.Daten.Talente.Talent.map(x => x.Id).reduce((p, c) => { p[c] = 0; return p; }, {} as Record<string, number>));
+        this.talentPurchasedEPData.set(Object.keys(this.data.talentMap).reduce((p, c) => { p[c] = 0; return p; }, {} as Record<string, number>));
 
         this.fertigkeitenPurchasedStore = derived(this.fertigkeitenPurchasedDataStore, x => ({ ...x }));
 
@@ -191,7 +193,7 @@ export class Charakter {
             }, result);
         });
 
-        this.talentFixEPData = derived(this.pfadLevelDataStore, levels => {
+        this.talentFixEP = derived(this.pfadLevelDataStore, levels => {
             const costs = Object.keys(levels)
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
@@ -208,16 +210,29 @@ export class Charakter {
             }, {} as Record<string, number>)
         });
 
-        this.talentBaseData = derived([this.talentFixEPData, this.talentBaseEPData], ([fix, b]) => {
+        this.talentPurchasedEP = derived(this.talentPurchasedEPData, (b) => ({ ...b }));
+        this.talentBaseEP = derived([this.talentPurchasedEPData, this.talentFixEP], ([b, fix]) => {
             const result = {} as Record<string, number>;
             for (const key of Object.keys(b)) {
-                const ep = fix[key] + b[key];
+                const ep = (fix[key] ?? 0) + (b[key] ?? 0);
+
+                result[key] = ep;
+
+            }
+            return result;
+        });
+        this.talentBase = derived(this.talentBaseEP, (b) => {
+            const result = {} as Record<string, number>;
+            for (const key of Object.keys(b)) {
+                const ep = b[key] ?? 0;
                 const complexity = data.talentMap[key].Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
                 const levelCots = this.data.talentCostTabel[complexity]
+
 
                 for (let i = levelCots.length - 1; i >= 0; i--) {
                     if (levelCots[i].Kosten.Wert <= ep) {
                         result[key] = i;
+                        break;
                     }
                 }
             }
@@ -225,10 +240,10 @@ export class Charakter {
         });
 
 
-        this.talentDerivationData = derived(this.talentBaseData, b => {
+        this.talentDerivation = derived(this.talentBase, b => {
             const calc = (a: AbleitungsAuswahl_talent | undefined): number[] => {
                 return a
-                    ? (a.Ableitung?.map(x => math.floor(b[x.Id] / x.Anzahl)) ?? [])
+                    ? (a.Ableitung?.map(x => Math.floor(b[x.Id] / x.Anzahl)) ?? [])
                         .concat(
                             (a.Max?.map(x => calc(x).sort((a, b) => b - a).slice(0, x.Anzahl).reduce((p, c) => p + c, 0)) ?? [])
                         )
@@ -244,7 +259,7 @@ export class Charakter {
 
         });
 
-        this.talentEffectiveData = derived([this.talentBaseData, this.talentDerivationData], ([b, d]) => {
+        this.talentEffective = derived([this.talentBase, this.talentDerivation], ([b, d]) => {
             const result = { ...b };
             return Object.entries(d).reduce((p, c) => {
                 if (p[c[0]]) {
@@ -445,7 +460,43 @@ export class Charakter {
         });
     }
 
+    getTalentPurchasedEPStore(id: string): Writable<number> {
+        const d = derived(this.talentPurchasedEP, x => x[id]);
+        return {
+            ...d,
+            set: (v) => {
+                const x = get(this.talentPurchasedEP);
+                x[id] = v;
+                this.talentPurchasedEPData.set(x);
+            },
+            update: (u) => {
+                const x = get(this.talentPurchasedEP);
+                x[id] = u(x[id]);
+                this.talentPurchasedEPData.set(x);
+            }
+        }
+    }
+    getTalentBaseStore(id: string): Readable<number> {
+        return derived(this.talentBase, x => x[id]);
+    }
+    getTalentEPStore(id: string): Readable<number> {
+        return derived(this.talentBaseEP, x => x[id]);
+    }
+    getTalentDerivedStore(id: string): Readable<number> {
+        return derived(this.talentDerivation, x => x[id]);
+    }
+    getTalentEffectiveStore(id: string): Readable<number> {
+        return derived(this.talentEffective, x => x[id]);
+    }
 
+    getTalentPurchasedEP(id: string): number {
+        return get(this.talentPurchasedEPData)[id];
+    }
+    setTalentPurchasedEP(id: string, value: number): void {
+        const x = get(this.talentBaseEP);
+        x[id] = value;
+        this.talentPurchasedEPData.set(x);
+    }
 
 
     canPathUnChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
