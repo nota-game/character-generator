@@ -3,8 +3,6 @@ name: NodeJS with Webpack
 on:
   push:
     branches: [ development ]
-  pull_request:
-    branches: [ development ]
 
 jobs:
   build:
@@ -47,6 +45,6 @@ jobs:
         cd page
         git config user.email "Action@github.com"
         git config user.name "Action"
-        git commit --amend --untracked-files 
+        git commit --amend --untracked-files --no-edit
         git push --force
 
