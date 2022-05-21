@@ -20,7 +20,7 @@ const config = {
 			precompress: false
 		}),
 		paths: {
-			base: dev ? '' : '/your-repo-name',
+			base: dev ? '' : '/character-generator',
 		},
 		prerender: {
 			// This can be false if you're using a fallback (i.e. SPA mode)
