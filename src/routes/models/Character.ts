@@ -1,4 +1,4 @@
-import type { _Gattung, _Lebensabschnitt, _Morph, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit } from "src/data/nota.g";
+import type { _Gattung, _Lebensabschnitt, _Morph, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc } from "src/data/nota.g";
 import { type Readable, get, derived, writable, type Writable } from "svelte/store";
 
 import type { Data } from "./Data";
@@ -308,6 +308,16 @@ class BesonderheitenInfo {
 
 
 }
+
+type MissingRequirements = { type: 'tag', id: string }
+    | { type: 'Fertigkeit', id: string, Stufe: number }
+    | { type: 'Besonderheit', id: string, Stufe: number }
+    | { type: 'Talent', id: string, Stufe: number, Kind: 'Basis' | 'Effektiv' | 'Unterstützung' }
+    | { type: 'Pfad', id: string }
+    | { type: 'Not', sub: MissingRequirements }
+    | { type: 'And', sub: MissingRequirements[] }
+    | { type: 'Or', sub: MissingRequirements[] }
+
 export class Charakter {
     data: Data;
 
@@ -335,6 +345,7 @@ export class Charakter {
     public readonly talentDerivation: Readable<Record<string, number>>;
     public readonly talentEffective: Readable<Record<string, number>>;
 
+    public readonly tags: Readable<Record<string, true | undefined>>;
 
 
     public getFertigkeitInfo(id: string) {
@@ -342,6 +353,96 @@ export class Charakter {
     }
     public getBesonderheitInfo(id: string) {
         return new BesonderheitenInfo(this.data.besonderheitenMap[id], this.besonderheitenPurchasedDataStore, this.besonderheitenFixDataStore);
+    }
+
+    public getMissingRequirements(requirements: BedingungsAuswahl_misc) {
+        return derived([this.talentEffective, this.talentDerivation, this.talentBase, this.besonderheitenStore, this.fertigkeitenStore, this.pfadLevelStore, this.tags], ([talentEffective, talentDerivation, talentBase, besonderheitenStore, fertigkeitenStore, pfadLevelStore, tags]) => {
+
+            const levels = Object.values(pfadLevelStore).flatMap(x => Object.values(x).flatMap(y => Object.entries(y))).reduce((p, c) => { p[c[0]] = c[1]; return p }, {} as Record<string, number>);
+
+            const singel = (requirements: BedingungsAuswahl_misc): MissingRequirements | null => {
+                if (requirements["#"] == 'Tag') {
+                    return tags[requirements.Tag.Id]
+                        ? null
+                        : { type: 'tag', id: requirements.Tag.Id }
+                } else if (requirements["#"] === 'Fertigkeit') {
+                    return (fertigkeitenStore[requirements.Fertigkeit.Id] ?? 0) >= requirements.Fertigkeit.Stufe
+                        ? null
+                        : { type: 'Fertigkeit', id: requirements.Fertigkeit.Id, Stufe: requirements.Fertigkeit.Stufe }
+                } else if (requirements["#"] === 'Besonderheit') {
+                    return (besonderheitenStore[requirements.Besonderheit.Id] ?? 0) >= requirements.Besonderheit.Stufe
+                        ? null
+                        : { type: 'Besonderheit', id: requirements.Besonderheit.Id, Stufe: requirements.Besonderheit.Stufe }
+                } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Basis") {
+                    return (talentBase[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level
+                        ? null
+                        : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+                } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Effektiv") {
+                    return (talentEffective[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level
+                        ? null
+                        : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+                } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Unterstützung") {
+                    return (talentDerivation[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level
+                        ? null
+                        : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+                } else if (requirements["#"] === 'Pfad') {
+                    return (levels[requirements.Pfad.Id] ?? 0) > 0
+                        ? null
+                        : { type: 'Pfad', id: requirements.Pfad.Id }
+                } else if (requirements["#"] === 'Not') {
+                    const temp = singel(requirements.Not);
+                    if (temp === null) {
+                        return null;
+                    }
+                    else {
+                        return { type: 'Not', sub: temp }
+                    }
+                } else if (requirements["#"] === 'And') {
+                    const temp = multy(requirements.And);
+                    if (temp === null) {
+                        return null;
+                    }
+                    else if (temp.length == 1) {
+                        return temp[0];
+                    }
+                    else {
+                        return { type: 'And', sub: temp }
+                    }
+                } else if (requirements["#"] === 'Or') {
+                    const temp = multy(requirements.Or);
+                    if (temp.length === 0) {
+                        return null;
+                    }
+                    else if (temp.length == 1) {
+                        return temp[0];
+                    }
+                    else {
+                        return { type: 'Or', sub: temp }
+                    }
+                }
+                else {
+                    throw Error('Not implemented: restriction');
+                }
+
+
+            }
+            function filterNull<T>(x: (T | null)[]): T[] {
+                return x.filter(y => y !== null) as T[];
+            }
+            const multy = (requirements: BedingungsAuswahlen_misc): MissingRequirements[] => {
+                return [
+                    ... (filterNull(requirements.And?.map(x => singel({ "#": "And", And: x })) ?? [])),
+                    ... (filterNull(requirements.Or?.map(x => singel({ "#": "Or", Or: x })) ?? [])),
+                    ... (filterNull(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x })) ?? [])),
+                    ... (filterNull(requirements.Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x })) ?? [])),
+                    ... (filterNull(requirements.Not?.map(x => singel({ "#": "Not", Not: x })) ?? [])),
+                    ... (filterNull(requirements.Pfad?.map(x => singel({ "#": "Pfad", Pfad: x })) ?? [])),
+                    ... (filterNull(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x })) ?? [])),
+                    ... (filterNull(requirements.Talent?.map(x => singel({ "#": "Talent", Talent: x })) ?? [])),
+                ];
+            }
+            return singel(requirements)
+        })
     }
 
     /**
@@ -477,27 +578,40 @@ export class Charakter {
                         }, {} as Record<string, number | undefined>);
 
         });
-        this.besonderheitenStore = 
-        
-        
-        derived([this.besonderheitenPurchasedStore, this.besonderheitenFixDataStore], ([purchased, fixed]) => {
-            return Object.entries(fixed).reduce((p, c) => {
-                p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
-                return p;
-            }, { ...purchased });
-        });
-        derived([this.besonderheitenPurchasedStore, this.pfadLevelStore], ([besonderheiten, levels]) => {
-            return (Object.keys(levels)
-                .flatMap(gruppe => Object.keys(levels[gruppe])
-                    .flatMap(pfad => Object.keys(levels[gruppe][pfad])
-                        .flatMap(level => {
-                            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
-                                .Pfad.filter(x => x.Id == pfad)[0]
-                                .Levels.Level.filter(x => x.Id == level)[0];
-                            return l.Besonderheit?.map(x => x.Id) ?? [];
+        this.besonderheitenStore =
+
+
+            derived([this.besonderheitenPurchasedStore, this.besonderheitenFixDataStore], ([purchased, fixed]) => {
+                return Object.entries(fixed).reduce((p, c) => {
+                    p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
+                    return p;
+                }, { ...purchased });
+            });
+        this.tags =
+            derived([this.besonderheitenPurchasedStore, this.pfadLevelStore, this.fertigkeitenStore], ([besonderheiten, levels, fertigkeiten]) => {
+                return (Object.keys(levels)
+                    .flatMap(gruppe => Object.keys(levels[gruppe])
+                        .flatMap(pfad => Object.keys(levels[gruppe][pfad])
+                            .flatMap(level => {
+                                const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+                                    .Pfad.filter(x => x.Id == pfad)[0]
+                                    .Levels.Level.filter(x => x.Id == level)[0];
+                                return l.Tag?.map(x => x.Id) ?? [];
+                            })))
+                    .concat(Object.entries(besonderheiten).filter(x => (x[1] ?? 0) > 0)
+                        .flatMap(([bid, stufe]) => {
+                            return this.data.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit).filter(x => x.Id == bid)[0]
+                                .Stufe[stufe! - 1]
+                                .Tags?.Tag.map(x => x.Id) ?? [];
                         })))
-                .concat(Object.entries(besonderheiten).filter(x => x[1]).map(x => x[0]))).reduce((p, c) => { p[c] = true; return p; }, {} as Record<string, true | undefined>)
-        });
+                    .concat(Object.entries(fertigkeiten).filter(x => (x[1] ?? 0) > 0)
+                        .flatMap(([bid, stufe]) => {
+                            return this.data.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit).filter(x => x.Id == bid)[0]
+                                .Stufe[stufe! - 1]
+                                .Tags?.Tag.map(x => x.Id) ?? [];
+                        }))
+                    .reduce((p, c) => { p[c] = true; return p; }, {} as Record<string, true | undefined>)
+            });
 
         this.organismusStore.subscribe((v) => {
             if (v) {
@@ -692,10 +806,10 @@ export class Charakter {
                 Object.keys(besonderheitenPurchaseu).flatMap(key => {
                     const up = besonderheitenPurchaseu[key] ?? 0;
                     const low = besonderheitenFix[key] ?? 0;
-                    const r :KostenDefinition_misc[]= [];
+                    const r: KostenDefinition_misc[] = [];
 
                     for (let i = low; i < up; i++) {
-                        r.push( ...data.besonderheitenMap[key].Stufe[i].Kosten)
+                        r.push(...data.besonderheitenMap[key].Stufe[i].Kosten)
                     }
                     return r;
                 })
