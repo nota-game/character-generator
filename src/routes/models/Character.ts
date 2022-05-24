@@ -142,9 +142,11 @@ class FertigkeitInfo {
 
     public readonly canBeBoght: Readable<boolean>
     public readonly canBeSoled: Readable<boolean>
+    public readonly canBeRemoved: Readable<boolean>
     public readonly boughtLevel: Writable<number>
     public readonly buyCost: Readable<KostenDefinition_misc[]>
     public readonly sellCost: Readable<KostenDefinition_misc[]>
+    public readonly removeCost: Readable<KostenDefinition_misc[]>
 
     /**
      *
@@ -160,6 +162,11 @@ class FertigkeitInfo {
             const p = purchased[fertigkeitData.Id];
             const f = fixed[fertigkeitData.Id];
             return ((p != undefined) && p > (f ?? 0));
+        })
+        this.canBeRemoved = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+            const p = purchased[fertigkeitData.Id];
+            const f = fixed[fertigkeitData.Id];
+            return ((p != undefined) && (f ?? 0) == 0);
         })
 
         this.boughtLevel = {
@@ -216,7 +223,20 @@ class FertigkeitInfo {
                 Wert: fertigkeitData.Stufe[target - 1].Kosten * -1
             }];
         })
+        this.removeCost = derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+            if (!can) {
+                return [];
+            }
+            const array = [];
+            for (let i = fixed[fertigkeitData.Id] ?? 0; i < (purchased[fertigkeitData.Id] ?? 0); i++) {
+                array.push(
+                    { Id: costId, Wert: -1 * fertigkeitData.Stufe[i].Kosten }
+                );
 
+            }
+
+            return array;
+        })
 
 
 
@@ -230,9 +250,11 @@ class BesonderheitenInfo {
 
     public readonly canBeBoght: Readable<boolean>
     public readonly canBeSoled: Readable<boolean>
+    public readonly canBeRemoved: Readable<boolean>
     public readonly boughtLevel: Writable<number>
     public readonly buyCost: Readable<KostenDefinition_misc[]>
     public readonly sellCost: Readable<KostenDefinition_misc[]>
+    public readonly removeCost: Readable<KostenDefinition_misc[]>
 
     /**
      *
@@ -248,6 +270,11 @@ class BesonderheitenInfo {
             const p = purchased[besonderheitData.Id];
             const f = fixed[besonderheitData.Id];
             return ((p != undefined) && p > (f ?? 0));
+        })
+        this.canBeRemoved = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+            const p = purchased[besonderheitData.Id];
+            const f = fixed[besonderheitData.Id];
+            return ((p != undefined) && (f ?? 0) == 0);
         })
 
         this.boughtLevel = {
@@ -297,6 +324,20 @@ class BesonderheitenInfo {
             }
             const target = Math.max(purchased[besonderheitData.Id] ?? 0, fixed[besonderheitData.Id] ?? 0);
             return besonderheitData.Stufe[target - 1].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }));
+        })
+        this.removeCost = derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+            if (!can) {
+                return [];
+            }
+            const array = [];
+            for (let i = fixed[besonderheitData.Id] ?? 0; i < (purchased[besonderheitData.Id] ?? 0); i++) {
+                array.push(
+                    besonderheitData.Stufe[i].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }))
+                );
+
+            }
+
+            return array.flatMap(x => x);
         })
 
 
@@ -364,7 +405,6 @@ export class Charakter {
             return writable(null);
         return derived([this.talentEffective, this.talentDerivation, this.talentBase, this.besonderheitenStore, this.fertigkeitenStore, this.pfadLevelStore, this.tags], ([talentEffective, talentDerivation, talentBase, besonderheitenStore, fertigkeitenStore, pfadLevelStore, tags]) => {
 
-            const levels = Object.values(pfadLevelStore).flatMap(x => Object.values(x).flatMap(y => Object.entries(y))).reduce((p, c) => { p[c[0]] = c[1]; return p }, {} as Record<string, number>);
 
             const singel = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit): MissingRequirements | null => {
                 if (requirements["#"] == 'Tag') {
@@ -391,10 +431,6 @@ export class Charakter {
                     return (talentDerivation[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level
                         ? null
                         : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
-                } else if (requirements["#"] === 'Pfad') {
-                    return (levels[requirements.Pfad.Id] ?? 0) > 0
-                        ? null
-                        : { type: 'Pfad', id: requirements.Pfad.Id }
                 } else if (requirements["#"] === 'Not') {
                     const temp = singel(requirements.Not);
                     if (temp === null) {
@@ -442,7 +478,6 @@ export class Charakter {
                     ... (filterNull<MissingRequirements>(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x } as any)) ?? [])),
                     ... (filterNull<MissingRequirements>(requirements.Not?.map(x => singel({ "#": "Not", Not: x } as any)) ?? [])),
                     ... (filterNull<MissingRequirements>(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x } as any)) ?? [])),
-                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Pfad?.map(x => singel({ "#": "Pfad", Pfad: x } as any)) ?? [])),
                     ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any)) ?? [])),
                     ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Talent?.map(x => singel({ "#": "Talent", Talent: x } as any)) ?? [])),
                 ];
@@ -468,7 +503,7 @@ export class Charakter {
                         .flatMap(level => {
                             if ((levels[gruppe][pfad][level] ?? 0) == 0)
                                 return [];
-                            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+                            const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
                                 .Pfad.filter(x => x.Id == pfad)[0]
                                 .Levels.Level.filter(x => x.Id == level)[0];
                             return l.Fertigkeit ?? [];
@@ -491,7 +526,7 @@ export class Charakter {
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
                         .flatMap(level => {
-                            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+                            const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
                                 .Pfad.filter(x => x.Id == pfad)[0]
                                 .Levels.Level.filter(x => x.Id == level)[0];
                             const count = levels[gruppe][pfad][level];
@@ -597,7 +632,10 @@ export class Charakter {
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
                         .flatMap(level => {
-                            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+                            if ((levels[gruppe][pfad][level] ?? 0) == 0)
+                                return [];
+
+                            const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
                                 .Pfad.filter(x => x.Id == pfad)[0]
                                 .Levels.Level.filter(x => x.Id == level)[0];
                             return l.Besonderheit ?? [];
@@ -622,7 +660,7 @@ export class Charakter {
                     .flatMap(gruppe => Object.keys(levels[gruppe])
                         .flatMap(pfad => Object.keys(levels[gruppe][pfad])
                             .flatMap(level => {
-                                const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+                                const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
                                     .Pfad.filter(x => x.Id == pfad)[0]
                                     .Levels.Level.filter(x => x.Id == level)[0];
                                 return l.Tag?.map(x => x.Id) ?? [];
@@ -805,7 +843,7 @@ export class Charakter {
                     }))
                 )
             ).map(x => ({
-                level: data.Instance.Daten.PfadGruppen.Pfade
+                level: data.Instance.Daten.Pfade
                     .filter(y => y.Id == x.gruppe)[0].Pfad
                     .filter(y => y.Id == x.pfad)[0].Levels.Level
                     .filter(y => y.Id == x.level)[0],
@@ -959,7 +997,7 @@ export class Charakter {
         if (instance[gruppe][pfad][level] == undefined) {
             return true;
         }
-        const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+        const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
             .Pfad.filter(x => x.Id == pfad)[0]
             .Levels.Level.filter(x => x.Id == level)[0]
 
@@ -1005,7 +1043,7 @@ export class Charakter {
                 old[gruppe][pfad][level] = 0;
             }
 
-            const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
+            const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
                 .Pfad.filter(x => x.Id == pfad)[0]
                 .Levels.Level.filter(x => x.Id == level)[0]
 
@@ -1096,7 +1134,7 @@ export class Charakter {
                 (e.Not?.some(x => !single(x))
                     ?? true)
         }
-        const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter((x) => x.Id == gruppe)[0]
+        const l = this.data.Instance.Daten.Pfade.filter((x) => x.Id == gruppe)[0]
             ?.Pfad.filter((x) => x.Id == pfad)[0]
             ?.Levels.Level.filter((x) => x.Id == level)[0];
 

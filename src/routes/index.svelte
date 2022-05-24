@@ -48,7 +48,7 @@
 					<EigenschaftsControl {char} {data} eigenschaft={e} />
 				{/each}
 			</div>
-			{#each data.Instance.Daten.PfadGruppen.Pfade.map((x) => x.Id) as path}
+			{#each data.Instance.Daten.Pfade.map((x) => x.Id) as path}
 				<h1>{path}</h1>
 				<details>
 					<summary>Gewählt</summary>

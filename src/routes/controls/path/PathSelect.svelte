@@ -14,7 +14,7 @@
 	export let char: Charakter;
 	export let gruppe: string;
 
-	let tree = data?.Instance.Daten.PfadGruppen.Pfade.filter((x) => x.Id == gruppe)[0]?.Pfad;
+	let tree = data?.Instance.Daten.Pfade.filter((x) => x.Id == gruppe)[0]?.Pfad;
 </script>
 
 {#if tree}

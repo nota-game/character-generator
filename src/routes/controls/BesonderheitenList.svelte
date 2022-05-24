@@ -7,19 +7,63 @@
 	import BesonderheitenContro from './BesonderheitenContro.svelte';
 	import FertigeitenControl from './FertigeitenControl.svelte';
 
-	export let data: Data;
-	export let char: Charakter;
+	export let data: Data | undefined;
+	export let char: Charakter | undefined;
+
+	let selected = Object.keys(data?.besonderheitenCategoryMap ?? {})[0];
 </script>
-{#if data}
-	
-{#each Object.keys(data.besonderheitenCategoryMap) as key}
-<header>
-		<b>{key}</b>
-	</header>
 
-	{#each Object.keys(data.besonderheitenCategoryMap[key]) as t}
-		<BesonderheitenContro {char} {data} besonderheit={data.besonderheitenMap[t]} />
+{#if data && char}
+	<article>
+		<header>
+			{#each Object.keys(data.besonderheitenCategoryMap) as key}
+				<input id={key + 'fertigkeit'} type="radio" bind:group={selected} value={key} />
+				<label for={key + 'fertigkeit'}>{key} </label>
+			{/each}
+		</header>
+
+		{#each Object.keys(data.besonderheitenCategoryMap) as key}
+			{#if key === selected}
+				{#each Object.keys(data.besonderheitenCategoryMap[key]).sort() as t}
+					<BesonderheitenContro
+						{char}
+						{data}
+						besonderheit={data.besonderheitenMap[t]}
+						showTaken={true}
+					/>
+				{/each}
+				<hr />
+				<details>
+					<summary>Nicht gekauft</summary>
+					{#each Object.keys(data.besonderheitenCategoryMap[key]).sort() as t}
+						<BesonderheitenContro
+							{char}
+							{data}
+							besonderheit={data.besonderheitenMap[t]}
+							showTaken={false}
+						/>
+					{/each}
+				</details>
+			{/if}
 		{/each}
-{/each}
-
+	</article>
 {/if}
+
+
+<style lang="scss">
+	hr {
+		margin-top: 2rem;
+	}
+
+	header {
+		input {
+			display: none;
+			&:checked + label {
+				color: var(--primary);
+			}
+		}
+		label {
+			display: inline;
+		}
+	}
+</style>

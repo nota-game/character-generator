@@ -14,6 +14,7 @@
 	export let data: Data;
 	export let char: Charakter | undefined = undefined;
 	export let paid: boolean | Readable<boolean> = false;
+	export let oneLine: boolean = false;
 
 	function toStore<T>(t: T | Readable<T>): Readable<T> {
 		if (t !== undefined && typeof (t as any).subscribe === 'function') {
@@ -27,7 +28,17 @@
 		[toStore(cost), toStore(replaceCost), toStore(paid), toStore(char?.punkteStore)],
 		([cc, rc, p, ps]) => {
 			if (!cc) return [];
-			return cc
+			return Object.entries(
+				cc.reduce((p, c) => {
+					if (p[c.Id]) {
+						p[c.Id] += c.Wert;
+					} else {
+						p[c.Id] = c.Wert;
+					}
+					return p;
+				}, {} as Record<string, number>)
+			)
+				.map(([Id, Wert]) => ({ Id, Wert }))
 				.map((c) => {
 					const name = getText(
 						data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter((x) => x.Id == c.Id)[0]
@@ -68,9 +79,9 @@
 	//let list: { abbr: string; name: string; value: number; missing: number | undefined }[];
 </script>
 
-<ul>
-	{#each $list as c}
-		<li>
+{#each $list as c}
+	{#if oneLine}
+		
 			{#if c.missing}
 				<span class="missing"
 					><abbr title={c.name}>{c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)} (-{c.missing})</span
@@ -78,6 +89,16 @@
 			{:else}
 				<abbr title={c.name}> {c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)}
 			{/if}
-		</li>
-	{/each}
-</ul>
+		
+	{:else}
+		<div>
+			{#if c.missing}
+				<span class="missing"
+					><abbr title={c.name}>{c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)} (-{c.missing})</span
+				>
+			{:else}
+				<abbr title={c.name}> {c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)}
+			{/if}
+		</div>
+	{/if}
+{/each}

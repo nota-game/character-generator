@@ -10,7 +10,7 @@
 	export let data: Data;
 	export let char: Charakter;
 	export let talent: TalentDefinition_talent;
-	export let taken: boolean | undefined;
+	export let showTaken: boolean | undefined = undefined;
 
 	const charPurchasedStore = char?.getTalentPurchasedEPStore(talent.Id);
 	const charEPStore = char?.getTalentEPStore(talent.Id);
@@ -21,7 +21,7 @@
 	const talentMissingRequirement = char?.gettalentMissingRequirement(talent.Id);
 </script>
 
-{#if taken === ($charEPStore > 0 || $talentEffectiveIgnoreRequirements > 0) || taken === undefined}
+{#if showTaken === ($charEPStore > 0 || $talentEffectiveIgnoreRequirements > 0) || showTaken === undefined}
 	<div>
 		{getText(data?.talentMap[talent.Id].Name)}
 		<strong>{$charEffectiveValueStore} TaW</strong> ({$charEPStore} EP, {$charBaseValueStore} TaB + {$charDerivatValueStore}

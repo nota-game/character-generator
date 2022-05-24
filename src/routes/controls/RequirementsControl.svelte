@@ -13,7 +13,8 @@
 	const info = char?.getMissingRequirementsStore(requirement!);
 
 	$: {
-		itFullfiled = $info == null;
+		itFullfiled = $info == undefined;
+
 	}
 </script>
 
