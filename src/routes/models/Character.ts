@@ -309,11 +309,10 @@ class BesonderheitenInfo {
 
 }
 
-type MissingRequirements = { type: 'tag', id: string }
+export type MissingRequirements = { type: 'tag', id: string }
     | { type: 'Fertigkeit', id: string, Stufe: number }
     | { type: 'Besonderheit', id: string, Stufe: number }
     | { type: 'Talent', id: string, Stufe: number, Kind: 'Basis' | 'Effektiv' | 'Unterstützung' }
-    | { type: 'Pfad', id: string }
     | { type: 'Not', sub: MissingRequirements }
     | { type: 'And', sub: MissingRequirements[] }
     | { type: 'Or', sub: MissingRequirements[] }
@@ -344,6 +343,8 @@ export class Charakter {
     public readonly talentBase: Readable<Record<string, number>>;
     public readonly talentDerivation: Readable<Record<string, number>>;
     public readonly talentEffective: Readable<Record<string, number>>;
+    public readonly talentEffectiveIgnoreRequirements: Readable<Record<string, number>>;
+    public readonly talentMissingRequirement: Readable<Record<string, { Wert: number; missing: MissingRequirements; }[]>>;
 
     public readonly tags: Readable<Record<string, true | undefined>>;
 
@@ -355,12 +356,17 @@ export class Charakter {
         return new BesonderheitenInfo(this.data.besonderheitenMap[id], this.besonderheitenPurchasedDataStore, this.besonderheitenFixDataStore);
     }
 
-    public getMissingRequirements(requirements: BedingungsAuswahl_misc) {
+    public getMissingRequirements(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): MissingRequirements | null {
+        return get(this.getMissingRequirementsStore(requirements))
+    }
+    public getMissingRequirementsStore(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): Readable<MissingRequirements | null> {
+        if (requirements == undefined)
+            return writable(null);
         return derived([this.talentEffective, this.talentDerivation, this.talentBase, this.besonderheitenStore, this.fertigkeitenStore, this.pfadLevelStore, this.tags], ([talentEffective, talentDerivation, talentBase, besonderheitenStore, fertigkeitenStore, pfadLevelStore, tags]) => {
 
             const levels = Object.values(pfadLevelStore).flatMap(x => Object.values(x).flatMap(y => Object.entries(y))).reduce((p, c) => { p[c[0]] = c[1]; return p }, {} as Record<string, number>);
 
-            const singel = (requirements: BedingungsAuswahl_misc): MissingRequirements | null => {
+            const singel = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit): MissingRequirements | null => {
                 if (requirements["#"] == 'Tag') {
                     return tags[requirements.Tag.Id]
                         ? null
@@ -429,16 +435,16 @@ export class Charakter {
             function filterNull<T>(x: (T | null)[]): T[] {
                 return x.filter(y => y !== null) as T[];
             }
-            const multy = (requirements: BedingungsAuswahlen_misc): MissingRequirements[] => {
+            const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit): MissingRequirements[] => {
                 return [
-                    ... (filterNull(requirements.And?.map(x => singel({ "#": "And", And: x })) ?? [])),
-                    ... (filterNull(requirements.Or?.map(x => singel({ "#": "Or", Or: x })) ?? [])),
-                    ... (filterNull(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x })) ?? [])),
-                    ... (filterNull(requirements.Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x })) ?? [])),
-                    ... (filterNull(requirements.Not?.map(x => singel({ "#": "Not", Not: x })) ?? [])),
-                    ... (filterNull(requirements.Pfad?.map(x => singel({ "#": "Pfad", Pfad: x })) ?? [])),
-                    ... (filterNull(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x })) ?? [])),
-                    ... (filterNull(requirements.Talent?.map(x => singel({ "#": "Talent", Talent: x })) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.And?.map(x => singel({ "#": "And", And: x } as any)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Or?.map(x => singel({ "#": "Or", Or: x } as any)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x } as any)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Not?.map(x => singel({ "#": "Not", Not: x } as any)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x } as any)) ?? [])),
+                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Pfad?.map(x => singel({ "#": "Pfad", Pfad: x } as any)) ?? [])),
+                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any)) ?? [])),
+                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Talent?.map(x => singel({ "#": "Talent", Talent: x } as any)) ?? [])),
                 ];
             }
             return singel(requirements)
@@ -488,13 +494,14 @@ export class Charakter {
                             const l = this.data.Instance.Daten.PfadGruppen.Pfade.filter(x => x.Id == gruppe)[0]
                                 .Pfad.filter(x => x.Id == pfad)[0]
                                 .Levels.Level.filter(x => x.Id == level)[0];
-                            return l.Talent ?? [];
+                            const count = levels[gruppe][pfad][level];
+                            return Array.from({ length: count }, () => l.Talent ?? []).flatMap(x => x);
                         })));
 
             return costs.reduce((p, c) => {
                 p[c.Id] = (p[c.Id] ?? 0) + c.EP;
                 return p;
-            }, {} as Record<string, number>)
+            }, {} as Record<string, number>);
         });
 
         this.talentPurchasedEP = derived(this.talentPurchasedEPData, (b) => ({ ...b }));
@@ -522,6 +529,8 @@ export class Charakter {
                         break;
                     }
                 }
+
+
             }
             return result;
         });
@@ -546,16 +555,36 @@ export class Charakter {
 
         });
 
-        this.talentEffective = derived([this.talentBase, this.talentDerivation], ([b, d]) => {
+        this.talentEffectiveIgnoreRequirements = derived([this.talentBase, this.talentDerivation], ([b, d]) => {
             const result = { ...b };
-            return Object.entries(d).reduce((p, c) => {
-                if (p[c[0]]) {
-                    p[c[0]] += c[1];
+            return Object.entries(d).reduce((p, [key, value]) => {
+                if (p[key]) {
+                    p[key] += value;
                 } else {
-                    p[c[0]] = c[1];
+                    p[key] = value;
                 }
                 return p;
             }, result);
+        });
+        this.talentEffective = derived(this.talentEffectiveIgnoreRequirements, (p) => {
+            p = { ...p };
+            Object.keys(p).forEach((key) => {
+                const req = data.talentMap[key].Bedingungen?.Bedingung.filter(x => x.Wert <= p[key]) ?? [];
+                const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingRequirements(x) })).filter(x => x.missing !== null);
+
+                p[key] = Math.min(p[key], ...missing.map(x => x.wert - 1))
+            });
+            return p;
+        });
+        this.talentMissingRequirement = derived(this.talentEffectiveIgnoreRequirements, (v) => {
+            return Object.entries(v).reduce((p, [key, value]) => {
+                const req = data.talentMap[key].Bedingungen?.Bedingung.filter(x => x.Wert <= value) ?? [];
+                const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingRequirements(x) })).filter(x => x.missing !== null);
+                if (missing.length > 0) {
+                    p[key] = missing as any;
+                }
+                return p;
+            }, {} as Record<string, { Wert: number, missing: MissingRequirements }[]>);
         });
 
         this.pfadLevelStore = derived(this.pfadLevelDataStore, x => ({ ...x }));
@@ -860,6 +889,12 @@ export class Charakter {
     }
     getTalentEffectiveStore(id: string): Readable<number> {
         return derived(this.talentEffective, x => x[id]);
+    }
+    gettalentEffectiveIgnoreRequirements(id: string) {
+        return derived(this.talentEffectiveIgnoreRequirements, x => x[id]);
+    }
+    gettalentMissingRequirement(id: string) {
+        return derived(this.talentMissingRequirement, x => x[id]);
     }
 
     getTalentPurchasedEP(id: string): number {

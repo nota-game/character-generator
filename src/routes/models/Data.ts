@@ -6,7 +6,7 @@ import notaStructure from './../../data/nota-structure.g.json';
 import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
-import type { BesonderheitDefinition_besonderheit, Daten_nota as Daten, FertigkeitDefinition_fertigkeit, TalentDefinition_talent, _Talent4 } from 'src/data/nota.g';
+import type { BesonderheitDefinition_besonderheit, Daten_nota as Daten, FertigkeitDefinition_fertigkeit, Level_misc, TagDefinition_misc, TalentDefinition_talent, _Talent4 } from 'src/data/nota.g';
 
 
 
@@ -14,13 +14,17 @@ export class Data {
 
 
     private instance: Daten | undefined
-    public readonly talentMap: Record<string, TalentDefinition_talent & { Kategorie: string }>;
-    public readonly talentCategoryMap: Record<string, Record<string, TalentDefinition_talent>>;
+    
+
+    public readonly talentMap: Record<string, Readonly<TalentDefinition_talent & { Kategorie: string }>>;
+    public readonly talentCategoryMap: Record<string, Record<string, Readonly<TalentDefinition_talent>>>;
 
     public readonly talentCostTabel: readonly (readonly { readonly Kosten: { readonly Id: string; readonly Wert: number; }; }[])[];
 
     public readonly besonderheitenMap: Record<string, Readonly<BesonderheitDefinition_besonderheit & { Kategorie: string }>>;
     public readonly besonderheitenCategoryMap: Record<string, Record<string, Readonly<BesonderheitDefinition_besonderheit>>>;
+
+    public readonly tagMap: Record<string, Readonly<TagDefinition_misc>>;
 
     public readonly fertigkeitenMap: Record<string, Readonly<FertigkeitDefinition_fertigkeit & { Kategorie: string }>>;
     public readonly fertigkeitenCategoryMap: Record<string, Record<string, Readonly<FertigkeitDefinition_fertigkeit>>>;
@@ -39,6 +43,8 @@ export class Data {
         )
             .reduce((p, c) => { p[c.id] = c.t; return p; }, {} as Record<string, Record<string, TalentDefinition_talent>>);
 
+
+        this.tagMap = data.Daten.Tags.Tag.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, TagDefinition_misc>)
 
         this.besonderheitenMap = data.Daten.Besonderheiten.flatMap(x => x.Besonderheit.map(y => ({ ...y, Kategorie: x.KategorieId }))).reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, BesonderheitDefinition_besonderheit & { Kategorie: string }>)
         this.besonderheitenCategoryMap = data.Daten.Besonderheiten.map(x => x.Besonderheit

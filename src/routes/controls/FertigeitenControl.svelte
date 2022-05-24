@@ -6,6 +6,7 @@
 	import type { Data } from '../models/Data';
 	import EigenschaftsControl from './EigenschaftsControl.svelte';
 	import KostenControl from './KostenControl.svelte';
+	import RequirementsControl from './RequirementsControl.svelte';
 
 	export let data: Data;
 	export let char: Charakter;
@@ -18,6 +19,8 @@
 	const boughtLevel = info?.boughtLevel;
 	const buyCost = info?.buyCost;
 	const sellCost = info?.sellCost;
+	let requirementsBuy: boolean;
+
 	//	const charEPStore = char.getTalentEPStore(talent.Id);
 	//	const charBaseValueStore = char.getTalentBaseStore(talent.Id);
 	//	const charDerivatValueStore = char.getTalentDerivedStore(talent.Id);
@@ -31,6 +34,12 @@
 			<div>
 				<button disabled={!$canBeBoght} on:click={() => $boughtLevel++}>+</button>
 				<KostenControl {char} {data} cost={buyCost} />
+				<RequirementsControl
+					{char}
+					{data}
+					itFullfiled={requirementsBuy}
+					requirement={fertigkeit?.Stufe[$boughtLevel]?.Voraussetzung}
+				/>
 			</div>
 			<div>
 				<button disabled={!$canBeSoled} on:click={() => $boughtLevel--}>-</button>

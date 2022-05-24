@@ -10,7 +10,7 @@
 	import {} from '@picocss/pico/css/pico.css';
 	import TalentList from './controls/TalentList.svelte';
 	import FertigkeitenList from './controls/FertigkeitenList.svelte';
-import BesonderheitenList from './controls/BesonderheitenList.svelte';
+	import BesonderheitenList from './controls/BesonderheitenList.svelte';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -58,9 +58,8 @@ import BesonderheitenList from './controls/BesonderheitenList.svelte';
 				</details>
 			{/each}
 
-			<article>
-				<TalentList {char} {data} />
-			</article>
+			<h1>Talente</h1>
+			<TalentList {char} {data} />
 			<h1>Fertigkeiten</h1>
 			<FertigkeitenList {char} {data} />
 			<h1>Besonderheiten</h1>
