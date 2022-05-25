@@ -12,73 +12,68 @@
 	export let data: Data;
 	export let char: Charakter;
 
-	let current: selection;
+	let current = char.organismus?.l.Id;
 
-	const w = writable(current);
+	const w = char.organismusStore;
 	const wc = derived(w, (x) => x?.l?.Spielbar?.Kosten);
 
+	const tree = Object.fromEntries(
+		data?.Instance.Daten.Organismen.Gattung.flatMap((x) =>
+			x.Art.flatMap((y) =>
+				y.Morphe.Morph.flatMap((z) =>
+					z.Lebensabschnitte.Lebensabschnitt.filter((l) => l.Spielbar).map((l) => {
+						const newLocal: selection = {
+							l: l,
+							m: z,
+							a: y,
+							g: x
+						};
+
+						return [l.Id, newLocal];
+					})
+				)
+			)
+		)
+	);
 	$: {
-		if (char) {
-			char.organismus = current;
-			w.set(current!);
-		}
+		char.organismus = current ? tree[current] : undefined;
 	}
 
 	type selection =
 		| {
-				titel: string;
 				l: _Lebensabschnitt;
 				m: _Morph;
 				a: _Art2;
 				g: _Gattung;
-				selected?: Readable<boolean>;
 		  }
 		| undefined;
-
-	let tree = data?.Instance.Daten.Organismen.Gattung.map((x) => {
-		return {
-			titel: getText(x.Name),
-			children: x.Art.map((y) => {
-				return {
-					titel: getText(y.Name),
-					children: y.Morphe.Morph.map((z) => {
-						return {
-							titel: getText(z.Name),
-							children: z.Lebensabschnitte.Lebensabschnitt.filter((l) => l.Spielbar).map((l) => {
-								const newLocal: selection = {
-									titel: getText(l.Name),
-									l: l,
-									m: z,
-									a: y,
-									g: x
-								};
-								newLocal.selected = derived(w, (x) => x == newLocal);
-								return newLocal;
-							})
-						};
-					})
-				};
-			})
-		};
-	});
 </script>
 
-<Tree {tree} let:node>
-	{#if node.l}
-		<label>
-			<input type="radio" bind:group={current} value={node} />
-			{node.titel}
-		</label>
-		<article>
-			<KostenControl
-				cost={node.l.Spielbar.Kosten}
-				{data}
-				{char}
-				paid={node.selected}
-				replaceCost={wc}
-			/>
-		</article>
-	{:else}
-		<div class="name">{node.titel}</div>
-	{/if}
-</Tree>
+{#each data?.Instance.Daten.Organismen.Gattung as g}
+	<h2>{getText(g.Name)}</h2>
+	<p>{getText(g.Beschreibung)}</p>
+	{#each g.Art as a}
+		<h3>{getText(a.Name)}</h3>
+		<p>{getText(a.Beschreibung)}</p>
+		{#each a.Morphe.Morph as m}
+			<h4>{getText(m.Name)}</h4>
+			<p>{getText(m.Beschreibung)}</p>
+			{#each m.Lebensabschnitte.Lebensabschnitt as l}
+				{#if l.Spielbar}
+					<label>
+						<input type="radio" value={l.Id} bind:group={current} />
+						{getText(l.Name)}
+					</label>
+					{getText(l.Beschreibung)}
+					<KostenControl
+						cost={l.Spielbar.Kosten}
+						{data}
+						{char}
+						paid={current === l.Id}
+						replaceCost={wc}
+					/>
+				{/if}
+			{/each}
+		{/each}
+	{/each}
+{/each}

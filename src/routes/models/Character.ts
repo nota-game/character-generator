@@ -406,33 +406,33 @@ export class Charakter {
         return derived([this.talentEffective, this.talentDerivation, this.talentBase, this.besonderheitenStore, this.fertigkeitenStore, this.pfadLevelStore, this.tags], ([talentEffective, talentDerivation, talentBase, besonderheitenStore, fertigkeitenStore, pfadLevelStore, tags]) => {
 
 
-            const singel = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit): MissingRequirements | null => {
+            const singel = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit, negate: boolean): MissingRequirements | null => {
                 if (requirements["#"] == 'Tag') {
-                    return tags[requirements.Tag.Id]
+                    return (tags?.[requirements.Tag.Id] === true) !== negate
                         ? null
                         : { type: 'tag', id: requirements.Tag.Id }
                 } else if (requirements["#"] === 'Fertigkeit') {
-                    return (fertigkeitenStore[requirements.Fertigkeit.Id] ?? 0) >= requirements.Fertigkeit.Stufe
+                    return (((fertigkeitenStore?.[requirements.Fertigkeit.Id] ?? 0) >= requirements.Fertigkeit.Stufe)=== true) !== negate
                         ? null
                         : { type: 'Fertigkeit', id: requirements.Fertigkeit.Id, Stufe: requirements.Fertigkeit.Stufe }
                 } else if (requirements["#"] === 'Besonderheit') {
-                    return (besonderheitenStore[requirements.Besonderheit.Id] ?? 0) >= requirements.Besonderheit.Stufe
+                    return (((besonderheitenStore?.[requirements.Besonderheit.Id] ?? 0) >= requirements.Besonderheit.Stufe)=== true) !== negate
                         ? null
                         : { type: 'Besonderheit', id: requirements.Besonderheit.Id, Stufe: requirements.Besonderheit.Stufe }
                 } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Basis") {
-                    return (talentBase[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level
+                    return (((talentBase?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level)=== true) !== negate
                         ? null
                         : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
                 } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Effektiv") {
-                    return (talentEffective[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level
+                    return (((talentEffective?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level)=== true) !== negate
                         ? null
                         : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
                 } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Unterstützung") {
-                    return (talentDerivation[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level
+                    return (((talentDerivation?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level)=== true) !== negate
                         ? null
                         : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
                 } else if (requirements["#"] === 'Not') {
-                    const temp = singel(requirements.Not);
+                    const temp = singel(requirements.Not, !negate);
                     if (temp === null) {
                         return null;
                     }
@@ -440,7 +440,7 @@ export class Charakter {
                         return { type: 'Not', sub: temp }
                     }
                 } else if (requirements["#"] === 'And') {
-                    const temp = multy(requirements.And);
+                    const temp = multy(requirements.And, negate);
                     if (temp === null) {
                         return null;
                     }
@@ -451,7 +451,7 @@ export class Charakter {
                         return { type: 'And', sub: temp }
                     }
                 } else if (requirements["#"] === 'Or') {
-                    const temp = multy(requirements.Or);
+                    const temp = multy(requirements.Or, negate);
                     if (temp.length === 0) {
                         return null;
                     }
@@ -471,18 +471,18 @@ export class Charakter {
             function filterNull<T>(x: (T | null)[]): T[] {
                 return x.filter(y => y !== null) as T[];
             }
-            const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit): MissingRequirements[] => {
+            const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit, negate: boolean): MissingRequirements[] => {
                 return [
-                    ... (filterNull<MissingRequirements>(requirements.And?.map(x => singel({ "#": "And", And: x } as any)) ?? [])),
-                    ... (filterNull<MissingRequirements>(requirements.Or?.map(x => singel({ "#": "Or", Or: x } as any)) ?? [])),
-                    ... (filterNull<MissingRequirements>(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x } as any)) ?? [])),
-                    ... (filterNull<MissingRequirements>(requirements.Not?.map(x => singel({ "#": "Not", Not: x } as any)) ?? [])),
-                    ... (filterNull<MissingRequirements>(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x } as any)) ?? [])),
-                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any)) ?? [])),
-                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Talent?.map(x => singel({ "#": "Talent", Talent: x } as any)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.And?.map(x => singel({ "#": "And", And: x } as any, negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Or?.map(x => singel({ "#": "Or", Or: x } as any, negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x } as any, negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Not?.map(x => singel({ "#": "Not", Not: x } as any, !negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x } as any, negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any, negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Talent?.map(x => singel({ "#": "Talent", Talent: x } as any, negate)) ?? [])),
                 ];
             }
-            return singel(requirements)
+            return singel(requirements, false)
         })
     }
 
@@ -944,6 +944,28 @@ export class Charakter {
         this.talentPurchasedEPData.set(x);
     }
 
+
+    pathChoosenTimes(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
+        instance ??= this.pfadLevel;
+        if (instance[gruppe] == undefined) {
+            return 0;
+        }
+        if (instance[gruppe][pfad] == undefined) {
+            return 0;
+        }
+        if (instance[gruppe][pfad][level] == undefined) {
+            return 0;
+        }
+
+  
+
+        return instance[gruppe][pfad][level];
+    }
+    pathChoosenTimesStore(gruppe: string, pfad: string, level: string) {
+        return derived(this.pfadLevelDataStore, old => {
+            return this.pathChoosenTimes(gruppe, pfad, level, old);
+        });
+    }
 
     canPathUnChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
         instance ??= this.pfadLevel;
