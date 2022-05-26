@@ -20,6 +20,7 @@
 	const canBeRemoved = info?.canBeRemoved;
 	const canBeSoled = info?.canBeSoled;
 	const boughtLevel = info?.boughtLevel;
+	const actualLevel = info?.actualLevel!;
 	const buyCost = info?.buyCost;
 	const sellCost = info?.sellCost;
 	const removeCost = info?.removeCost;
@@ -77,7 +78,19 @@
 		</small>
 
 		<h3>
-			{getTextFertigkeit(fertigkeit, $boughtLevel)}
+			{#if $actualLevel == 0}
+				<span class="missing">
+					{getTextFertigkeit(fertigkeit, $boughtLevel)}
+					<small> (Voraussetzung nicht erfüllt)</small></span
+				>
+			{:else if $actualLevel !== $boughtLevel}
+				{getTextFertigkeit(fertigkeit, $actualLevel)}
+				<small class="missing">
+					(Voraussetzung für {getTextFertigkeit(fertigkeit, $boughtLevel)} nicht erfüllt)</small
+				>
+			{:else}
+				{getTextFertigkeit(fertigkeit, $boughtLevel)}
+			{/if}
 		</h3>
 		<RequirementsControl
 			{char}

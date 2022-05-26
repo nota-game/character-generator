@@ -1,5 +1,6 @@
 import type { _Gattung, _Lebensabschnitt, _Morph, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc } from "src/data/nota.g";
 import { type Readable, get, derived, writable, type Writable } from "svelte/store";
+import { derivedLazy } from "../lazyDerivied";
 
 import type { Data } from "./Data";
 
@@ -144,6 +145,7 @@ class FertigkeitInfo {
     public readonly canBeSoled: Readable<boolean>
     public readonly canBeRemoved: Readable<boolean>
     public readonly boughtLevel: Writable<number>
+    public readonly actualLevel: Readable<number>
     public readonly buyCost: Readable<KostenDefinition_misc[]>
     public readonly sellCost: Readable<KostenDefinition_misc[]>
     public readonly removeCost: Readable<KostenDefinition_misc[]>
@@ -151,7 +153,7 @@ class FertigkeitInfo {
     /**
      *
      */
-    constructor(costId: string, fertigkeitData: FertigkeitDefinition_fertigkeit, purchaseStore: Writable<Record<string, number | undefined>>, fixStore: Readable<Record<string, number | undefined>>) {
+    constructor(costId: string, fertigkeitData: FertigkeitDefinition_fertigkeit, actualStore: Readable<Record<string, number | undefined>>, purchaseStore: Writable<Record<string, number | undefined>>, fixStore: Readable<Record<string, number | undefined>>) {
 
         this.canBeBoght = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
             const p = purchased[fertigkeitData.Id];
@@ -168,6 +170,7 @@ class FertigkeitInfo {
             const f = fixed[fertigkeitData.Id];
             return ((p != undefined) && (f ?? 0) == 0);
         })
+        this.actualLevel = derived(actualStore, a => a[fertigkeitData.Id] ?? 0);
 
         this.boughtLevel = {
             set: (v) => {
@@ -252,6 +255,7 @@ class BesonderheitenInfo {
     public readonly canBeSoled: Readable<boolean>
     public readonly canBeRemoved: Readable<boolean>
     public readonly boughtLevel: Writable<number>
+    public readonly actualLevel: Readable<number>
     public readonly buyCost: Readable<KostenDefinition_misc[]>
     public readonly sellCost: Readable<KostenDefinition_misc[]>
     public readonly removeCost: Readable<KostenDefinition_misc[]>
@@ -259,23 +263,24 @@ class BesonderheitenInfo {
     /**
      *
      */
-    constructor(besonderheitData: BesonderheitDefinition_besonderheit, purchaseStore: Writable<Record<string, number | undefined>>, fixStore: Readable<Record<string, number | undefined>>) {
+    constructor(besonderheitData: BesonderheitDefinition_besonderheit, actualStore: Readable<Record<string, number | undefined>>, purchaseStore: Writable<Record<string, number | undefined>>, fixStore: Readable<Record<string, number | undefined>>) {
 
         this.canBeBoght = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
-            const p = purchased[besonderheitData.Id];
-            const f = fixed[besonderheitData.Id];
+            const p = purchased[besonderheitData.Id] ?? 0;
+            const f = fixed[besonderheitData.Id] ?? 0;
             return ((p == undefined) || p < besonderheitData.Stufe.length) && (f == undefined || f < besonderheitData.Stufe.length);
         })
         this.canBeSoled = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
-            const p = purchased[besonderheitData.Id];
-            const f = fixed[besonderheitData.Id];
+            const p = purchased[besonderheitData.Id] ?? 0;
+            const f = fixed[besonderheitData.Id] ?? 0;
             return ((p != undefined) && p > (f ?? 0));
         })
         this.canBeRemoved = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
-            const p = purchased[besonderheitData.Id];
-            const f = fixed[besonderheitData.Id];
+            const p = purchased[besonderheitData.Id] ?? 0;
+            const f = fixed[besonderheitData.Id] ?? 0;
             return ((p != undefined) && (f ?? 0) == 0);
         })
+        this.actualLevel = derived(actualStore, a => a[besonderheitData.Id] ?? 0);
 
         this.boughtLevel = {
             set: (v) => {
@@ -305,8 +310,8 @@ class BesonderheitenInfo {
 
             },
             ...derived([purchaseStore, fixStore], ([purchased, fixed]) => {
-                const p = purchased[besonderheitData.Id];
-                const f = fixed[besonderheitData.Id];
+                const p = purchased[besonderheitData.Id] ?? 0;
+                const f = fixed[besonderheitData.Id] ?? 0;
                 return Math.max(p ?? 0, f ?? 0);
             })
         };
@@ -315,7 +320,7 @@ class BesonderheitenInfo {
             if (!can) {
                 return [];
             }
-            const target = Math.max(purchased[besonderheitData.Id] ?? 0, fixed[besonderheitData.Id] ?? 0) + 1;
+            const target = Math.max(purchased?.[besonderheitData.Id] ?? 0, fixed?.[besonderheitData.Id] ?? 0) + 1;
             return besonderheitData.Stufe[target - 1].Kosten;
         })
         this.sellCost = derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
@@ -371,119 +376,149 @@ export class Charakter {
     private readonly besonderheitenFixDataStore: Readable<Record<string, number | undefined>>;
     public readonly besonderheitenPurchasedStore: Readable<Record<string, number | undefined>>;
     public readonly besonderheitenStore: Readable<Readonly<Record<string, number | undefined>>>;
+    public get besonderheiten(): Readonly<Record<string, number | undefined>> {
+        return get(this.besonderheitenStore);
+    }
+    public readonly besonderheitenStoreIgnoreRequirements: Readable<Readonly<Record<string, number | undefined>>>;
+    public get besonderheitenIgnoreRequirements(): Readonly<Record<string, number | undefined>> {
+        return get(this.besonderheitenStoreIgnoreRequirements)
+    }
 
     private readonly fertigkeitenPurchasedDataStore = writable({} as Record<string, number | undefined>);
     private readonly fertigkeitenFixDataStore: Readable<Record<string, number | undefined>>;
     public readonly fertigkeitenPurchasedStore: Readable<Record<string, number | undefined>>;
     public readonly fertigkeitenStore: Readable<Readonly<Record<string, number | undefined>>>;
+    public get fertigkeiten(): Readonly<Record<string, number | undefined>> {
+        return get(this.fertigkeitenStore);
+    }
+    public readonly fertigkeitenStoreIgnoreRequirements: Readable<Readonly<Record<string, number | undefined>>>;
+    public get fertigkeitenIgnoreRequirements(): Readonly<Record<string, number | undefined>> {
+        return get(this.fertigkeitenStoreIgnoreRequirements);
+    }
 
     private readonly talentPurchasedEPData = writable({} as Record<string, number>);
     private readonly talentFixEP: Readable<Record<string, number>>;
     public readonly talentPurchasedEP: Readable<Record<string, number>>;
     public readonly talentBaseEP: Readable<Record<string, number>>;
-    public readonly talentBase: Readable<Record<string, number>>;
-    public readonly talentDerivation: Readable<Record<string, number>>;
-    public readonly talentEffective: Readable<Record<string, number>>;
+    public readonly talentBaseStore: Readable<Record<string, number>>;
+    public get talentBase(): Record<string, number> {
+        return get(this.talentBaseStore);
+    }
+    public readonly talentDerivationStore: Readable<Record<string, number>>;
+    public get talentDerivation(): Record<string, number> {
+        return get(this.talentDerivationStore);
+    }
+    public readonly talentEffectiveStore: Readable<Record<string, number>>;
+    public get talentEffective(): Record<string, number> {
+        return get(this.talentEffectiveStore);
+    }
     public readonly talentEffectiveIgnoreRequirements: Readable<Record<string, number>>;
     public readonly talentMissingRequirement: Readable<Record<string, { Wert: number; missing: MissingRequirements; }[]>>;
 
-    public readonly tags: Readable<Record<string, true | undefined>>;
+    public readonly tagsStore: Readable<Record<string, true | undefined>>;
+    public get tags(): Record<string, true | undefined> {
+        return get(this.tagsStore);
+    }
+
 
 
     public getFertigkeitInfo(id: string) {
-        return new FertigkeitInfo(this.data.StandardKosten, this.data.fertigkeitenMap[id], this.fertigkeitenPurchasedDataStore, this.fertigkeitenFixDataStore);
+        return new FertigkeitInfo(this.data.StandardKosten, this.data.fertigkeitenMap[id], this.fertigkeitenStore, this.fertigkeitenPurchasedDataStore, this.fertigkeitenFixDataStore);
     }
     public getBesonderheitInfo(id: string) {
-        return new BesonderheitenInfo(this.data.besonderheitenMap[id], this.besonderheitenPurchasedDataStore, this.besonderheitenFixDataStore);
+        return new BesonderheitenInfo(this.data.besonderheitenMap[id], this.besonderheitenStore, this.besonderheitenPurchasedDataStore, this.besonderheitenFixDataStore);
     }
 
     public getMissingRequirements(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): MissingRequirements | null {
-        return get(this.getMissingRequirementsStore(requirements))
+        return this.getMissingInternal(requirements, this.talentEffective, this.talentDerivation, this.talentBase, this.besonderheiten, this.besonderheitenIgnoreRequirements, this.fertigkeiten, this.fertigkeitenIgnoreRequirements, this.tags);
+    }
+    private getMissingInternal(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined, talentEffective: Record<string, number>, talentDerivation: Record<string, number>, talentBase: Record<string, number>, besonderheiten: Record<string, number | undefined>, besonderheitenIgnored: Record<string, number | undefined>, fertigkeiten: Record<string, number | undefined>, fertigkeitenIgnored: Record<string, number | undefined>, tags: Record<string, true | undefined>): MissingRequirements | null {
+        if (requirements == undefined)
+            return null;
+        const singel = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit, negate: boolean): MissingRequirements | null => {
+            if (requirements["#"] == 'Tag') {
+                return (tags?.[requirements.Tag.Id] === true) !== negate
+                    ? null
+                    : { type: 'tag', id: requirements.Tag.Id }
+            } else if (requirements["#"] === 'Fertigkeit') {
+                return (((fertigkeiten?.[requirements.Fertigkeit.Id] ?? 0) >= requirements.Fertigkeit.Stufe) === true) !== negate && (((fertigkeitenIgnored?.[requirements.Fertigkeit.Id] ?? 0) >= requirements.Fertigkeit.Stufe) === true) !== negate
+                    ? null
+                    : { type: 'Fertigkeit', id: requirements.Fertigkeit.Id, Stufe: requirements.Fertigkeit.Stufe }
+            } else if (requirements["#"] === 'Besonderheit') {
+                return (((besonderheiten?.[requirements.Besonderheit.Id] ?? 0) >= requirements.Besonderheit.Stufe) === true) !== negate && (((besonderheitenIgnored?.[requirements.Besonderheit.Id] ?? 0) >= requirements.Besonderheit.Stufe) === true) !== negate
+                    ? null
+                    : { type: 'Besonderheit', id: requirements.Besonderheit.Id, Stufe: requirements.Besonderheit.Stufe }
+            } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Basis") {
+                return (((talentBase?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
+                    ? null
+                    : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+            } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Effektiv") {
+                return (((talentEffective?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
+                    ? null
+                    : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+            } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Unterstützung") {
+                return (((talentDerivation?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
+                    ? null
+                    : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+            } else if (requirements["#"] === 'Not') {
+                const temp = singel(requirements.Not, !negate);
+                if (temp === null) {
+                    return null;
+                }
+                else {
+                    return { type: 'Not', sub: temp }
+                }
+            } else if (requirements["#"] === 'And') {
+                const temp = multy(requirements.And, negate);
+                if (temp === null) {
+                    return null;
+                }
+                else if (temp.length == 1) {
+                    return temp[0];
+                }
+                else {
+                    return { type: 'And', sub: temp }
+                }
+            } else if (requirements["#"] === 'Or') {
+                const temp = multy(requirements.Or, negate);
+                if (temp.length === 0) {
+                    return null;
+                }
+                else if (temp.length == 1) {
+                    return temp[0];
+                }
+                else {
+                    return { type: 'Or', sub: temp }
+                }
+            }
+            else {
+                throw Error('Not implemented: restriction');
+            }
+
+
+        }
+        function filterNull<T>(x: (T | null)[]): T[] {
+            return x.filter(y => y !== null) as T[];
+        }
+        const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit, negate: boolean): MissingRequirements[] => {
+            return [
+                ... (filterNull<MissingRequirements>(requirements.And?.map(x => singel({ "#": "And", And: x } as any, negate)) ?? [])),
+                ... (filterNull<MissingRequirements>(requirements.Or?.map(x => singel({ "#": "Or", Or: x } as any, negate)) ?? [])),
+                ... (filterNull<MissingRequirements>(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x } as any, negate)) ?? [])),
+                ... (filterNull<MissingRequirements>(requirements.Not?.map(x => singel({ "#": "Not", Not: x } as any, !negate)) ?? [])),
+                ... (filterNull<MissingRequirements>(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x } as any, negate)) ?? [])),
+                ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any, negate)) ?? [])),
+                ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Talent?.map(x => singel({ "#": "Talent", Talent: x } as any, negate)) ?? [])),
+            ];
+        }
+        return singel(requirements, false);
     }
     public getMissingRequirementsStore(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): Readable<MissingRequirements | null> {
         if (requirements == undefined)
             return writable(null);
-        return derived([this.talentEffective, this.talentDerivation, this.talentBase, this.besonderheitenStore, this.fertigkeitenStore, this.pfadLevelStore, this.tags], ([talentEffective, talentDerivation, talentBase, besonderheitenStore, fertigkeitenStore, pfadLevelStore, tags]) => {
-
-
-            const singel = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit, negate: boolean): MissingRequirements | null => {
-                if (requirements["#"] == 'Tag') {
-                    return (tags?.[requirements.Tag.Id] === true) !== negate
-                        ? null
-                        : { type: 'tag', id: requirements.Tag.Id }
-                } else if (requirements["#"] === 'Fertigkeit') {
-                    return (((fertigkeitenStore?.[requirements.Fertigkeit.Id] ?? 0) >= requirements.Fertigkeit.Stufe)=== true) !== negate
-                        ? null
-                        : { type: 'Fertigkeit', id: requirements.Fertigkeit.Id, Stufe: requirements.Fertigkeit.Stufe }
-                } else if (requirements["#"] === 'Besonderheit') {
-                    return (((besonderheitenStore?.[requirements.Besonderheit.Id] ?? 0) >= requirements.Besonderheit.Stufe)=== true) !== negate
-                        ? null
-                        : { type: 'Besonderheit', id: requirements.Besonderheit.Id, Stufe: requirements.Besonderheit.Stufe }
-                } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Basis") {
-                    return (((talentBase?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level)=== true) !== negate
-                        ? null
-                        : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
-                } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Effektiv") {
-                    return (((talentEffective?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level)=== true) !== negate
-                        ? null
-                        : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
-                } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Unterstützung") {
-                    return (((talentDerivation?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level)=== true) !== negate
-                        ? null
-                        : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
-                } else if (requirements["#"] === 'Not') {
-                    const temp = singel(requirements.Not, !negate);
-                    if (temp === null) {
-                        return null;
-                    }
-                    else {
-                        return { type: 'Not', sub: temp }
-                    }
-                } else if (requirements["#"] === 'And') {
-                    const temp = multy(requirements.And, negate);
-                    if (temp === null) {
-                        return null;
-                    }
-                    else if (temp.length == 1) {
-                        return temp[0];
-                    }
-                    else {
-                        return { type: 'And', sub: temp }
-                    }
-                } else if (requirements["#"] === 'Or') {
-                    const temp = multy(requirements.Or, negate);
-                    if (temp.length === 0) {
-                        return null;
-                    }
-                    else if (temp.length == 1) {
-                        return temp[0];
-                    }
-                    else {
-                        return { type: 'Or', sub: temp }
-                    }
-                }
-                else {
-                    throw Error('Not implemented: restriction');
-                }
-
-
-            }
-            function filterNull<T>(x: (T | null)[]): T[] {
-                return x.filter(y => y !== null) as T[];
-            }
-            const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit, negate: boolean): MissingRequirements[] => {
-                return [
-                    ... (filterNull<MissingRequirements>(requirements.And?.map(x => singel({ "#": "And", And: x } as any, negate)) ?? [])),
-                    ... (filterNull<MissingRequirements>(requirements.Or?.map(x => singel({ "#": "Or", Or: x } as any, negate)) ?? [])),
-                    ... (filterNull<MissingRequirements>(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x } as any, negate)) ?? [])),
-                    ... (filterNull<MissingRequirements>(requirements.Not?.map(x => singel({ "#": "Not", Not: x } as any, !negate)) ?? [])),
-                    ... (filterNull<MissingRequirements>(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x } as any, negate)) ?? [])),
-                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any, negate)) ?? [])),
-                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Talent?.map(x => singel({ "#": "Talent", Talent: x } as any, negate)) ?? [])),
-                ];
-            }
-            return singel(requirements, false)
-        })
+        return derived([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, this.besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, this.fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore], ([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+            return this.getMissingInternal(requirements, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags);
+        });
     }
 
     /**
@@ -514,6 +549,34 @@ export class Charakter {
                 return p;
             }, {} as Record<string, number | undefined>);
         });
+        this.fertigkeitenStoreIgnoreRequirements = derived([this.fertigkeitenPurchasedStore, this.fertigkeitenFixDataStore], ([purchased, fixed]) => {
+            return Object.entries(fixed).reduce((p, c) => {
+                p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
+                return p;
+            }, { ...purchased });
+        });
+
+
+
+        const
+            [fertigkeitenStore, fertigkeitenInit] =
+                derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number | undefined>>
+                    (([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+                        return Object.fromEntries(Object.entries(fertigkeitenIgnored).map(y => {
+                            if (y[1] == undefined) {
+                                return [y[0], undefined];
+                            }
+                            const b = data.fertigkeitenMap[y[0]];
+                            for (let i = 0; i < y[1]; i++) {
+                                if (this.getMissingInternal(b.Stufe[i].Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags)) {
+                                    return [y[0], i === 0 ? undefined : i];
+                                }
+                            }
+                            return y;
+                        }).filter(([_, value]) => value !== undefined));
+                    }, {});
+        this.fertigkeitenStore = fertigkeitenStore;
+
         this.fertigkeitenStore = derived([this.fertigkeitenPurchasedStore, this.fertigkeitenFixDataStore], ([purchased, fixed]) => {
             return Object.entries(fixed).reduce((p, c) => {
                 p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
@@ -550,7 +613,7 @@ export class Charakter {
             }
             return result;
         });
-        this.talentBase = derived(this.talentBaseEP, (b) => {
+        this.talentBaseStore = derived(this.talentBaseEP, (b) => {
             const result = {} as Record<string, number>;
             for (const key of Object.keys(b)) {
                 const ep = b[key] ?? 0;
@@ -571,7 +634,7 @@ export class Charakter {
         });
 
 
-        this.talentDerivation = derived(this.talentBase, b => {
+        this.talentDerivationStore = derived(this.talentBaseStore, b => {
             const calc = (a: AbleitungsAuswahl_talent | undefined): number[] => {
                 return a
                     ? (a.Ableitung?.map(x => Math.floor(b[x.Id] / x.Anzahl)) ?? [])
@@ -590,7 +653,7 @@ export class Charakter {
 
         });
 
-        this.talentEffectiveIgnoreRequirements = derived([this.talentBase, this.talentDerivation], ([b, d]) => {
+        this.talentEffectiveIgnoreRequirements = derived([this.talentBaseStore, this.talentDerivationStore], ([b, d]) => {
             const result = { ...b };
             return Object.entries(d).reduce((p, [key, value]) => {
                 if (p[key]) {
@@ -601,26 +664,44 @@ export class Charakter {
                 return p;
             }, result);
         });
-        this.talentEffective = derived(this.talentEffectiveIgnoreRequirements, (p) => {
-            p = { ...p };
-            Object.keys(p).forEach((key) => {
-                const req = data.talentMap[key].Bedingungen?.Bedingung.filter(x => x.Wert <= p[key]) ?? [];
-                const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingRequirements(x) })).filter(x => x.missing !== null);
 
-                p[key] = Math.min(p[key], ...missing.map(x => x.wert - 1))
-            });
-            return p;
-        });
-        this.talentMissingRequirement = derived(this.talentEffectiveIgnoreRequirements, (v) => {
-            return Object.entries(v).reduce((p, [key, value]) => {
-                const req = data.talentMap[key].Bedingungen?.Bedingung.filter(x => x.Wert <= value) ?? [];
-                const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingRequirements(x) })).filter(x => x.missing !== null);
-                if (missing.length > 0) {
-                    p[key] = missing as any;
-                }
-                return p;
-            }, {} as Record<string, { Wert: number, missing: MissingRequirements }[]>);
-        });
+
+
+
+
+
+
+        const
+            [talentEffectiveStore, talentEffectiveInit] =
+                derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number>>
+                    (([p, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+                        p = { ...p };
+                        Object.keys(p).forEach((key) => {
+                            const req = data.talentMap[key].Bedingungen?.Bedingung.filter(x => x.Wert <= p[key]) ?? [];
+                            const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingInternal(x, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags) })).filter(x => x.missing !== null);
+
+                            p[key] = Math.min(p[key], ...missing.map(x => x.wert - 1))
+                        });
+                        return p;
+                    }, {});
+        this.talentEffectiveStore = talentEffectiveStore;
+
+        const
+            [talentMissingRequirement, talentMissingRequirementInit] =
+                derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, { Wert: number, missing: MissingRequirements }[]>>
+                    (([v, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+                        return Object.entries(v).reduce((p, [key, value]) => {
+                            const req = data.talentMap[key].Bedingungen?.Bedingung.filter(x => x.Wert <= value) ?? [];
+                            const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingInternal(x, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags) })).filter(x => x.missing !== null);
+                            if (missing.length > 0) {
+                                p[key] = missing as any;
+                            }
+                            return p;
+                        }, {} as Record<string, { Wert: number, missing: MissingRequirements }[]>);
+                    }, {});
+        this.talentMissingRequirement = talentMissingRequirement;
+
+
 
         this.pfadLevelStore = derived(this.pfadLevelDataStore, x => ({ ...x }));
         this.besonderheitenPurchasedStore = derived(this.besonderheitenPurchasedDataStore, x => ({ ...x }));
@@ -645,17 +726,36 @@ export class Charakter {
                         }, {} as Record<string, number | undefined>);
 
         });
-        this.besonderheitenStore =
-
-
+        this.besonderheitenStoreIgnoreRequirements =
             derived([this.besonderheitenPurchasedStore, this.besonderheitenFixDataStore], ([purchased, fixed]) => {
                 return Object.entries(fixed).reduce((p, c) => {
                     p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
                     return p;
                 }, { ...purchased });
             });
-        this.tags =
-            derived([this.besonderheitenPurchasedStore, this.pfadLevelStore, this.fertigkeitenStore], ([besonderheiten, levels, fertigkeiten]) => {
+        const
+            [besonderheitenStore, besonderheitenInit] =
+                derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number | undefined>>
+                    (([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+                        return Object.fromEntries(Object.entries(besonderheitenIgnored).map(y => {
+                            if (y[1] == undefined) {
+                                return [y[0], undefined];
+                            }
+                            const b = data.besonderheitenMap[y[0]];
+                            for (let i = 0; i < y[1]; i++) {
+                                if (this.getMissingInternal(b.Stufe[i].Bedingung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags)) {
+                                    return [y[0], i === 0 ? undefined : i];
+                                }
+
+                            }
+                            return y;
+                        }).filter(([_, value]) => value !== undefined));
+                    }, {});
+        this.besonderheitenStore = besonderheitenStore;
+
+
+        this.tagsStore =
+            derived([this.besonderheitenStore, this.pfadLevelStore, this.fertigkeitenStore], ([besonderheiten, levels, fertigkeiten]) => {
                 return (Object.keys(levels)
                     .flatMap(gruppe => Object.keys(levels[gruppe])
                         .flatMap(pfad => Object.keys(levels[gruppe][pfad])
@@ -722,6 +822,10 @@ export class Charakter {
             }
         });
 
+        besonderheitenInit.init([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
+        fertigkeitenInit.init([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
+        talentMissingRequirementInit.init([this.talentEffectiveIgnoreRequirements, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
+        talentEffectiveInit.init([this.talentEffectiveIgnoreRequirements, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
 
         this.punkteStore = derived([
             this.organismusStore,
@@ -917,16 +1021,16 @@ export class Charakter {
         }
     }
     getTalentBaseStore(id: string): Readable<number> {
-        return derived(this.talentBase, x => x[id]);
+        return derived(this.talentBaseStore, x => x[id]);
     }
     getTalentEPStore(id: string): Readable<number> {
         return derived(this.talentBaseEP, x => x[id]);
     }
     getTalentDerivedStore(id: string): Readable<number> {
-        return derived(this.talentDerivation, x => x[id]);
+        return derived(this.talentDerivationStore, x => x[id]);
     }
     getTalentEffectiveStore(id: string): Readable<number> {
-        return derived(this.talentEffective, x => x[id]);
+        return derived(this.talentEffectiveStore, x => x[id]);
     }
     gettalentEffectiveIgnoreRequirements(id: string) {
         return derived(this.talentEffectiveIgnoreRequirements, x => x[id]);
@@ -957,7 +1061,7 @@ export class Charakter {
             return 0;
         }
 
-  
+
 
         return instance[gruppe][pfad][level];
     }

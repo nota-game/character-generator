@@ -29,54 +29,80 @@
 	});
 </script>
 
-<h1>Welcome to Nota Charakter Generator</h1>
-
 {#if data && char}
+	<nav>
+		<ul>
+			<li></li>
+		</ul>
+		<ul>
+			<li>
+				<input
+					id="Gattung/ArtSelecs"
+					type="radio"
+					name="top"
+					value="Gattung/Art"
+					bind:group={selection}
+				/>
+				<label for="Gattung/ArtSelecs">Gattung/Art </label>
+			</li>
+			{#if $charOrganismusStore}
+				<li>
+					<input
+						id="EigenschaftenSelecs"
+						type="radio"
+						name="top"
+						value="Eigenschaften"
+						bind:group={selection}
+					/>
+					<label for="EigenschaftenSelecs">Eigenschaften </label>
+				</li>
+				<li>
+					<input id="PfadeSelecs" type="radio" name="top" value="Pfade" bind:group={selection} />
+					<label for="PfadeSelecs">Pfade </label>
+				</li>
+				<li>
+					<input
+						id="TalenteSelecs"
+						type="radio"
+						name="top"
+						value="Talente"
+						bind:group={selection}
+					/>
+					<label for="TalenteSelecs">Talente </label>
+				</li>
+				<li>
+					<input
+						id="FertigkeitenSelecs"
+						type="radio"
+						name="top"
+						value="Fertigkeiten"
+						bind:group={selection}
+					/>
+					<label for="FertigkeitenSelecs">Fertigkeiten </label>
+				</li>
+				<li>
+					<input
+						id="BesonderheitenSelecs"
+						type="radio"
+						name="top"
+						value="Besonderheiten"
+						bind:group={selection}
+					/>
+					<label for="BesonderheitenSelecs">Besonderheiten </label>
+				</li>
+			{/if}
+		</ul>
+		<ul>
+			<li />
+		</ul>
+	</nav>
+
 	<article class="hover">
 		<header>Punkte</header>
 		<PointControl {char} {data} />
 	</article>
 
 	<main class="container">
-		<input
-			id="Gattung/ArtSelecs"
-			type="radio"
-			name="top"
-			value="Gattung/Art"
-			bind:group={selection}
-		/>
-		<label for="Gattung/ArtSelecs">Gattung/Art </label>
-		{#if $charOrganismusStore}
-			<input
-				id="EigenschaftenSelecs"
-				type="radio"
-				name="top"
-				value="Eigenschaften"
-				bind:group={selection}
-			/>
-			<label for="EigenschaftenSelecs">Eigenschaften </label>
-			<input id="PfadeSelecs" type="radio" name="top" value="Pfade" bind:group={selection} />
-			<label for="PfadeSelecs">Pfade </label>
-			<input id="TalenteSelecs" type="radio" name="top" value="Talente" bind:group={selection} />
-			<label for="TalenteSelecs">Talente </label>
-			<input
-				id="FertigkeitenSelecs"
-				type="radio"
-				name="top"
-				value="Fertigkeiten"
-				bind:group={selection}
-			/>
-			<label for="FertigkeitenSelecs">Fertigkeiten </label>
-			<input
-				id="BesonderheitenSelecs"
-				type="radio"
-				name="top"
-				value="Besonderheiten"
-				bind:group={selection}
-			/>
-			<label for="BesonderheitenSelecs">Besonderheiten </label>
-		{/if}
-
 		{#if selection == 'Gattung/Art'}
 			<article>
 				<OrganismSelect {char} {data} />
@@ -84,7 +110,6 @@
 		{/if}
 		{#if $charOrganismusStore}
 			{#if selection == 'Eigenschaften'}
-				
 				<div
 					style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; "
 				>
@@ -93,16 +118,12 @@
 					{/each}
 				</div>
 			{:else if selection == 'Pfade'}
-				
 				<PfadList {char} {data} />
 			{:else if selection == 'Talente'}
-				
 				<TalentList {char} {data} />
 			{:else if selection == 'Fertigkeiten'}
-				
 				<FertigkeitenList {char} {data} />
 			{:else if selection == 'Besonderheiten'}
-				
 				<BesonderheitenList {char} {data} />
 			{/if}
 		{/if}

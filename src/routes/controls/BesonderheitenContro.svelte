@@ -23,6 +23,7 @@
 	const canBeRemoved = info?.canBeRemoved;
 	const canBeSoled = info?.canBeSoled;
 	const boughtLevel = info?.boughtLevel!;
+	const actualLevel = info?.actualLevel!;
 	const buyCost = info?.buyCost;
 	const sellCost = info?.sellCost;
 	const removeCost = info?.removeCost;
@@ -79,7 +80,19 @@
 			<KostenControl {char} {data} cost={removeCost} />
 		</small>
 		<h3>
-			{getTextBesonderheit(besonderheit, $boughtLevel)}
+			{#if $actualLevel == 0}
+				<span class="missing">
+					{getTextBesonderheit(besonderheit, $boughtLevel)}
+					<small> (Voraussetzung nicht erfüllt)</small></span
+				>
+			{:else if $actualLevel !== $boughtLevel}
+				{getTextBesonderheit(besonderheit, $actualLevel)}
+				<small class="missing">
+					(Voraussetzung für {getTextBesonderheit(besonderheit, $boughtLevel)} nicht erfüllt)</small
+				>
+			{:else}
+				{getTextBesonderheit(besonderheit, $boughtLevel)}
+			{/if}
 		</h3>
 		<RequirementsControl
 			{char}
