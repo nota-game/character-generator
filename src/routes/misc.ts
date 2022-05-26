@@ -55,7 +55,9 @@ export function getTextFertigkeit(p: FertigkeitDefinition_fertigkeit | undefined
 }
 
 
-export function renderRequirement(req: MissingRequirements, data: Data) {
+export function renderRequirement(req: MissingRequirements, data: Data|undefined) {
+    if(!data)
+    return "";
     const buildname = (
         m: MissingRequirements & { type: 'Besonderheit' | 'Fertigkeit' | 'tag' | 'Talent' }
     ) => {

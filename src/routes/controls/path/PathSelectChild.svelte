@@ -10,16 +10,17 @@
 	import type { Data } from './../../models/Data';
 	import KostenControl from './../KostenControl.svelte';
 
-	export let data: Data;
-	export let char: Charakter;
-	export let path: string;
-	export let gruppe: string;
-	export let lvl: string;
+	export let data: Data | undefined;
+	export let char: Charakter | undefined;
+	export let path: string | undefined;
+	export let gruppe: string | undefined;
+	export let lvl: string | undefined;
 	let can = false;
 	let has = false;
 	let fin = noop;
 	let fin2 = noop;
 	onMount(() => {
+		if (!char || !gruppe || !path || !lvl) return;
 		fin = char.canPathChoosenStore(gruppe, path, lvl).subscribe((x) => {
 			can = x;
 		});
@@ -28,7 +29,7 @@
 		});
 	});
 
-	const level = char.pathChoosenTimesStore(gruppe, path, lvl);
+	const level = char?.pathChoosenTimesStore(gruppe ?? '', path ?? '', lvl ?? '');
 
 	let l = data?.Instance.Daten.Pfade.filter((x) => x.Id == gruppe)[0]
 		?.Pfad.filter((x) => x.Id == path)[0]
@@ -39,52 +40,54 @@
 	});
 </script>
 
-<div>
-	<div style="display: flex; flex-direction: row; justify-content:space-between ;">
-		<h4>
-			{getText(l?.Name)} ({$level}/{l?.WiederhoteNutzung})
-		</h4>
-		<div>
-			{#if can}
-				<div>
-					<a
-						on:click={(e) => {
-							e.preventDefault();
-							char.addPath(gruppe, path, lvl);
-						}}
-						href="#">+ (<KostenControl cost={l.Kosten} {data} {char} oneLine paid={false} />)</a
-					>
-				</div>
-			{/if}
-			{#if has}
-				<div>
-					<a
-						on:click={(e) => {
-							e.preventDefault();
-							char.removePath(gruppe, path, lvl);
-						}}
-						href="#">- (<KostenControl cost={l.Kosten} {data} {char} oneLine paid={true} />)</a
-					>
-				</div>
-			{/if}
+{#if char && l &&ImageData}
+	<div>
+		<div style="display: flex; flex-direction: row; justify-content:space-between ;">
+			<h4>
+				{getText(l?.Name)} ({$level}/{l?.WiederhoteNutzung})
+			</h4>
+			<div>
+				{#if can}
+					<div>
+						<a
+							on:click={(e) => {
+								e.preventDefault();
+								char?.addPath(gruppe ?? '', path ?? '', lvl ?? '');
+							}}
+							href="#">+ (<KostenControl cost={l.Kosten} {data} {char} oneLine paid={false} />)</a
+						>
+					</div>
+				{/if}
+				{#if has}
+					<div>
+						<a
+							on:click={(e) => {
+								e.preventDefault();
+								char?.removePath(gruppe??'', path??'', lvl??'');
+							}}
+							href="#">- (<KostenControl cost={l.Kosten} {data} {char} oneLine paid={true} />)</a
+						>
+					</div>
+				{/if}
+			</div>
 		</div>
+		{#if l.Talent}
+			{#each l.Talent as t}
+				<div>{getText(data.talentMap[t.Id].Name)} +{t.EP} EP</div>
+			{/each}
+		{/if}
+		{#if l.Fertigkeit}
+			{#each l.Fertigkeit as t}
+				<div>{getTextFertigkeit(data.fertigkeitenMap[t.Id], t.Stufe)}</div>
+			{/each}
+		{/if}
+		{#if l.Besonderheit}
+			{#each l.Besonderheit as t}
+				<div>{getTextBesonderheit(data.besonderheitenMap[t.Id], t.Stufe)}</div>
+			{/each}
+		{/if}
 	</div>
-	{#if l.Talent}
-		{#each l.Talent as t}
-			<div>{getText(data.talentMap[t.Id].Name)} +{t.EP} EP</div>
-		{/each}
-	{/if}
-	{#if l.Fertigkeit}
-		{#each l.Fertigkeit as t}
-			<div>{getTextFertigkeit(data.fertigkeitenMap[t.Id], t.Stufe)}</div>
-		{/each}
-	{/if}
-	{#if l.Besonderheit}
-		{#each l.Besonderheit as t}
-			<div>{getTextBesonderheit(data.besonderheitenMap[t.Id], t.Stufe)}</div>
-		{/each}
-	{/if}
-</div>
+{/if}
 
 <style lang="scss">
 	.handel {

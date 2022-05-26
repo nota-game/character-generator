@@ -11,7 +11,7 @@ type selection = {
     g: _Gattung;
 } | undefined;
 
-export type Eigenschaft = 'Mut' | 'Glück' | 'Klugheit' | 'Intuition' | 'Gewandtheit' | 'Feinmotorik' | 'Sympathie' | 'Antipathie' | 'Stärke' | 'Fokus'| 'Einfluss';
+export type Eigenschaft = 'Mut' | 'Glück' | 'Klugheit' | 'Intuition' | 'Gewandtheit' | 'Feinmotorik' | 'Sympathie' | 'Antipathie' | 'Stärke' |'Konstitution' | 'Fokus'| 'Einfluss';
 
 class EigenschaftenData {
 

@@ -2,21 +2,13 @@
 	import { onMount } from 'svelte';
 	import { Data } from './models/Data';
 	import { Charakter, EIGENRSCHAFTEN, type CharakterData } from './models/Character';
-	import PointControl from './controls/PointControl.svelte';
-	import OrganismSelect from './controls/OrganismSelect.svelte';
-	import EigenschaftsControl from './controls/EigenschaftsControl.svelte';
-	import { persist, localStorage } from '@macfja/svelte-persistent-store';
-
 	import paged from './../../node_modules/pagedjs/dist/paged.polyfill.js?raw';
 
-	import TalentList from './controls/TalentList.svelte';
-	import FertigkeitenList from './controls/FertigkeitenList.svelte';
-	import BesonderheitenList from './controls/BesonderheitenList.svelte';
-	import PfadList from './controls/PfadList.svelte';
-	import { writable } from 'svelte/store';
 	import { getText } from './misc';
-	import { floor } from 'mathjs';
+
 	import Hitman from './controls/hitman.svelte';
+	import { local } from './storage';
+	import { get } from 'svelte/store';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -26,17 +18,15 @@
 
 	let selection: string = 'Gattung/Art';
 
-	const currentChar = persist(
-		writable<CharakterData | undefined>(undefined),
-		localStorage(),
-		'currentChar'
-	);
 	onMount(async () => {
+		const currentChar = local<CharakterData>('currentChar');
 		data = await Data.init();
 		if (data) {
 			char = new Charakter(data);
-			if ($currentChar) {
-				char.Data = $currentChar;
+
+			const j = get(currentChar);
+			if (j) {
+				char.Data = j;
 			}
 		}
 		eval(paged);
@@ -318,22 +308,22 @@
 			<table class="aussdauer">
 				{#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as y}
 					{@const au = Math.floor(
-						70-(2 * (char?.eigenschaftenData.Konstitution.current ?? 21) +
-							(char?.eigenschaftenData.Stärke.current ?? 21)) 
+						70 -
+							(2 * (char?.eigenschaftenData.Konstitution.current ?? 21) +
+								(char?.eigenschaftenData.Stärke.current ?? 21))
 					)}
 					<tr>
 						{#each [1, 2, 3, 4, 5, 6] as x}
-						{@const c =(x-1) + (y-1) * 6 +1}
-						{#if au ==c+1}
-						<td style="background-color: black;">{c}</td>
-						
-						{:else if c <=18}
-						<td style="background-color: darkgray;">{c}</td>
-						{:else if c <=24}
-						<td style="background-color: lightgray;">{c}</td>
-						{:else}
-						<td>{c}</td>
-						{/if}
+							{@const c = x - 1 + (y - 1) * 6 + 1}
+							{#if au == c + 1}
+								<td style="background-color: black;">{c}</td>
+							{:else if c <= 18}
+								<td style="background-color: darkgray;">{c}</td>
+							{:else if c <= 24}
+								<td style="background-color: lightgray;">{c}</td>
+							{:else}
+								<td>{c}</td>
+							{/if}
 						{/each}
 					</tr>
 				{/each}
@@ -359,7 +349,7 @@
 		box-sizing: border-box;
 	}
 
-	h6{
+	h6 {
 		font-family: Verdana, Geneva, Tahoma, sans-serif;
 		margin-bottom: 8px;
 		font-weight: lighter;
