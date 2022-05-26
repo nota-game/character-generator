@@ -5,6 +5,7 @@
 
 	export let data: Data;
 	export let char: Charakter;
+	export let compact: boolean = false;
 
 	let list: { abbr: string; name: string; value: number }[];
 
@@ -31,16 +32,28 @@
 	});
 </script>
 
-<ul>
+{#if compact}
 	{#if list}
 		{#each list as c}
-			<li>
-				{#if c.value < 0}
-					<span class="missing"><abbr title={c.name}>{c.abbr}</abbr>: {c.value}</span>
-				{:else}
-					<abbr title={c.name}> {c.abbr}</abbr>:{c.value}
-				{/if}
-			</li>
+			{#if c.value < 0}
+				<span class="missing"><abbr title={c.name}>{c.abbr}</abbr>: {c.value}</span>
+			{:else}
+				<abbr title={c.name}> {c.abbr}</abbr>:{c.value}
+			{/if}
 		{/each}
 	{/if}
-</ul>
+{:else}
+	<ul>
+		{#if list}
+			{#each list as c}
+				<li>
+					{#if c.value < 0}
+						<span class="missing"><abbr title={c.name}>{c.abbr}</abbr>: {c.value}</span>
+					{:else}
+						<abbr title={c.name}> {c.abbr}</abbr>:{c.value}
+					{/if}
+				</li>
+			{/each}
+		{/if}
+	</ul>
+{/if}

@@ -130,7 +130,13 @@
 
 	<article class="hover">
 		<header>Punkte</header>
-		<PointControl {char} {data} />
+		<div>
+			<PointControl {char} {data} />
+		</div>
+		<div>
+			<strong>Punkte</strong>
+			<PointControl {char} {data} compact />
+		</div>
 	</article>
 
 	<main class="container">
@@ -179,7 +185,28 @@
 		float: right;
 		right: 50px;
 		top: 5px;
-		//float: right;
+
+		div:nth-child(3) {
+				display: none;
+			}
+
+		@media (max-width: 1500px) {
+			float: none;
+			width: unset;
+			right: unset;
+			top: 0px;
+			z-index: 999;
+
+			header {
+				display: none;
+			}
+			div:nth-child(2) {
+				display: none;
+			}
+			div:nth-child(3) {
+				display: block;
+			}
+		}
 	}
 
 	input {
