@@ -1,17 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Data } from './models/Data';
-	import { Charakter, EIGENRSCHAFTEN } from './models/Character';
+	import { Charakter, EIGENRSCHAFTEN, type CharakterData } from './models/Character';
 	import PointControl from './controls/PointControl.svelte';
 	import OrganismSelect from './controls/OrganismSelect.svelte';
 	import EigenschaftsControl from './controls/EigenschaftsControl.svelte';
-	import PathSelect from './controls/path/PathSelect.svelte';
+	import { persist, localStorage } from '@macfja/svelte-persistent-store';
 
 	import {} from '@picocss/pico/css/pico.css';
 	import TalentList from './controls/TalentList.svelte';
 	import FertigkeitenList from './controls/FertigkeitenList.svelte';
 	import BesonderheitenList from './controls/BesonderheitenList.svelte';
 	import PfadList from './controls/PfadList.svelte';
+	import { writable } from 'svelte/store';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -21,10 +22,25 @@
 
 	let selection: string = 'Gattung/Art';
 
+	const currentChar = persist(
+		writable<CharakterData | undefined>(undefined),
+		localStorage(),
+		'currentChar'
+	);
 	onMount(async () => {
+		window.addEventListener('close', (e) => {
+			if (char) {
+				$currentChar = char.Data;
+			}
+		});
 		data = await Data.init();
 		if (data) {
 			char = new Charakter(data);
+			if ($currentChar) {
+				char.Data = $currentChar;
+			}
+			char.DataStore.subscribe((v) => ($currentChar = v));
+			
 		}
 	});
 </script>
@@ -32,7 +48,7 @@
 {#if data && char}
 	<nav>
 		<ul>
-			<li></li>
+			<li />
 		</ul>
 		<ul>
 			<li>

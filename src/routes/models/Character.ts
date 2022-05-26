@@ -363,6 +363,16 @@ export type MissingRequirements = { type: 'tag', id: string }
     | { type: 'And', sub: MissingRequirements[] }
     | { type: 'Or', sub: MissingRequirements[] }
 
+
+export type CharakterData = {
+    lebensabschnittId: string | undefined,
+    eigenschaften: Record<string, number>
+    besonderheiten: Record<string, number>;
+    pfade: Readonly<Record<string, Record<string, Record<string, number>>>>;
+    fertigkeiten: Record<string, number>;
+    talentEP: Record<string, number>;
+};
+
 export class Charakter {
     data: Data;
 
@@ -398,7 +408,7 @@ export class Charakter {
 
     private readonly talentPurchasedEPData = writable({} as Record<string, number>);
     private readonly talentFixEP: Readable<Record<string, number>>;
-    public readonly talentPurchasedEP: Readable<Record<string, number>>;
+    public readonly talentPurchasedEP: Readable<Record<string, number | undefined>>;
     public readonly talentBaseEP: Readable<Record<string, number>>;
     public readonly talentBaseStore: Readable<Record<string, number>>;
     public get talentBase(): Record<string, number> {
@@ -418,6 +428,54 @@ export class Charakter {
     public readonly tagsStore: Readable<Record<string, true | undefined>>;
     public get tags(): Record<string, true | undefined> {
         return get(this.tagsStore);
+    }
+
+    public get DataStore(): Readable<CharakterData> {
+        return derived([this.pfadLevelStore, this.talentPurchasedEPData, this.organismusStore, this.fertigkeitenPurchasedStore, this.besonderheitenPurchasedStore, ...EIGENRSCHAFTEN.map(key => this.eigenrschaften[key].acciredStore)], ([pfadLevelStore, talentPurchasedEPData, organismusStore, fertigkeitenPurchasedStore, besonderheitenPurchasedStore, ...eigenschaften]) => {
+
+
+            return {
+                eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map((key, i) => [key, eigenschaften[i]])),
+                besonderheiten: Object.fromEntries(Object.entries(besonderheitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
+                fertigkeiten: Object.fromEntries(Object.entries(fertigkeitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
+                lebensabschnittId: organismusStore?.l.Id,
+                talentEP: Object.fromEntries(Object.entries(talentPurchasedEPData).filter(([_, value]) => (value ?? 0) > 0)),
+                pfade: pfadLevelStore
+            };
+        })
+
+    }
+
+    public get Data(): CharakterData {
+        return {
+            eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map(key => [key, this.eigenrschaften[key].accired])),
+            besonderheiten: Object.fromEntries(Object.entries(get(this.besonderheitenPurchasedStore)).filter((([key, value]) => (value ?? 0) > 0))) as any,
+            fertigkeiten: Object.fromEntries(Object.entries(get(this.fertigkeitenPurchasedStore)).filter((([key, value]) => (value ?? 0) > 0))) as any,
+            lebensabschnittId: this.organismus?.l.Id,
+            talentEP: Object.fromEntries(Object.entries(get(this.talentPurchasedEPData)).filter(([_, value]) => (value ?? 0) > 0)),
+            pfade: this.pfadLevel
+        };
+    }
+
+
+
+    public set Data(v: CharakterData) {
+
+        Object.entries(v.eigenschaften).forEach(([key, value]) => {
+            if (EIGENRSCHAFTEN.includes(key as any)) {
+                this.eigenrschaften[key as Eigenschaft].accired = value;
+            }
+        });
+        this.besonderheitenPurchasedDataStore.set(v.besonderheiten);
+        this.fertigkeitenPurchasedDataStore.set(v.fertigkeiten);
+        if (v.lebensabschnittId) {
+            const x = this.data.lebensabschnittLookup[v.lebensabschnittId];
+            this.organismusStore.set(x);
+        } else {
+            this.organismusStore.set(undefined);
+        }
+        this.talentPurchasedEPData.set(v.talentEP);
+        this.pfadLevelDataStore.set(v.pfade);
     }
 
 
@@ -630,7 +688,7 @@ export class Charakter {
 
 
             }
-            return  result;
+            return result;
         });
 
 
@@ -641,11 +699,11 @@ export class Charakter {
                 derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number>>
                     (([p, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
                         p = { ...p };
-                        Object.keys(p).forEach((key) => {
+                        Object.keys(data.talentMap).forEach((key) => {
                             const req = data.talentMap[key].Bedingungen?.Bedingung.filter(x => x.Wert <= p[key]) ?? [];
                             const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingInternal(x, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags) })).filter(x => x.missing !== null);
 
-                            p[key] = Math.min(p[key], ...missing.map(x => x.wert - 1))
+                            p[key] = Math.min(p[key] ?? 0, ...missing.map(x => x.wert - 1))
                         });
                         return p;
                     }, {});
@@ -654,7 +712,7 @@ export class Charakter {
         this.talentDerivationStore = derived([this.talentBaseStore, this.talentEffectiveStore], ([b, e]) => {
             const calc = (a: AbleitungsAuswahl_talent | undefined): number[] => {
                 return a
-                    ? (a.Ableitung?.map(x => Math.floor(Math.min(b[x.Id], e[x.Id]??0) / x.Anzahl)) ?? [])
+                    ? (a.Ableitung?.map(x => Math.floor(Math.min(b[x.Id], e[x.Id] ?? 0) / x.Anzahl)) ?? [])
                         .concat(
                             (a.Max?.map(x => calc(x).sort((a, b) => b - a).slice(0, x.Anzahl).reduce((p, c) => p + c, 0)) ?? [])
                         )
@@ -959,7 +1017,7 @@ export class Charakter {
 
             applyCost([{
                 Id: data.StandardKosten,
-                Wert: Object.values(talentEP).reduce((p, c) => p + c, 0)
+                Wert: Object.values(talentEP).reduce<number>((p, c) => p + (c ?? 0), 0)
             }]);
             applyCost([{
                 Id: data.StandardKosten,
@@ -1006,18 +1064,18 @@ export class Charakter {
     }
 
     getTalentPurchasedEPStore(id: string): Writable<number> {
-        const d = derived(this.talentPurchasedEP, x => x[id]);
+        const d = derived(this.talentPurchasedEP, x => x[id] ?? 0);
         return {
             ...d,
             set: (v) => {
                 const x = get(this.talentPurchasedEP);
                 x[id] = v;
-                this.talentPurchasedEPData.set(x);
+                this.talentPurchasedEPData.set(x as any);
             },
             update: (u) => {
                 const x = get(this.talentPurchasedEP);
-                x[id] = u(x[id]);
-                this.talentPurchasedEPData.set(x);
+                x[id] = u(x[id] ?? 0);
+                this.talentPurchasedEPData.set(x as any);
             }
         }
     }
@@ -1195,6 +1253,16 @@ export class Charakter {
 
             if (old[gruppe][pfad][level] > 0) {
                 old[gruppe][pfad][level]--;
+            }
+            if (old[gruppe][pfad][level] == 0) {
+                delete old[gruppe][pfad][level];
+                if (Object.keys(old[gruppe][pfad]).length == 0) {
+                    delete old[gruppe][pfad];
+                    if (Object.keys(old[gruppe]).length == 0) {
+                        delete old[gruppe];
+
+                    }
+                }
             }
             return old;
         });

@@ -6,9 +6,15 @@ import notaStructure from './../../data/nota-structure.g.json';
 import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
-import type { BesonderheitDefinition_besonderheit, Daten_nota as Daten, FertigkeitDefinition_fertigkeit, Level_misc, PfadDefinition_pfad, TagDefinition_misc, TalentDefinition_talent, _Talent4 } from 'src/data/nota.g';
+import type { ArtDefinition_lebewesen, Art_lebewesen, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, MorphDefinition_lebewesen, Morph_lebewesen, PfadDefinition_pfad, TagDefinition_misc, TalentDefinition_talent, _Talent4 } from 'src/data/nota.g';
 
-
+type lebensabschnittData =
+    | {
+        l: LebensabschnittDefinition_lebewesen;
+        m: MorphDefinition_lebewesen;
+        a: ArtDefinition_lebewesen;
+        g: GattungDefinition_lebewesen;
+    }
 
 export class Data {
 
@@ -33,12 +39,33 @@ export class Data {
     public readonly fertigkeitenMap: Record<string, Readonly<FertigkeitDefinition_fertigkeit & { Kategorie: string }>>;
     public readonly fertigkeitenCategoryMap: Record<string, Record<string, Readonly<FertigkeitDefinition_fertigkeit>>>;
     public readonly StandardKosten: string;
+    public readonly lebensabschnittLookup: { [key: string]: lebensabschnittData };
     //talentCostTabel: readonly { Kosten: { Wert: number; Id: string; }[]; }[][];
     /**
      *
      */
     constructor(data: Daten) {
         this.instance = data;
+
+
+        this.lebensabschnittLookup = Object.fromEntries(
+            data.Daten.Organismen.Gattung.flatMap((x) =>
+                x.Art.flatMap((y) =>
+                    y.Morphe.Morph.flatMap((z) =>
+                        z.Lebensabschnitte.Lebensabschnitt.filter((l) => l.Spielbar).map((l) => {
+                            const newLocal: lebensabschnittData = {
+                                l: l,
+                                m: z,
+                                a: y,
+                                g: x
+                            };
+
+                            return [l.Id, newLocal];
+                        })
+                    )
+                )
+            )
+        );
 
         this.StandardKosten = data.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten === true)[0].Id
         this.talentMap = data.Daten.Talente.flatMap(x => x.Talent.map(y => ({ ...y, Kategorie: x.KategorieId }))).reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, TalentDefinition_talent & { Kategorie: string }>);

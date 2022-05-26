@@ -90,7 +90,6 @@
 		function calculateMaxNext(a: Max_talent, min: number): alternativ[] {
 			const x = a.Max;
 			const current = calculateMax(a);
-			console.log(current);
 			const currentMin = Math.max(
 				current.length < a.Max.Anzahl ? 0 : current[current.length - 1] + 1,
 				min
