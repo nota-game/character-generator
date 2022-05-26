@@ -13,6 +13,7 @@
 	import BesonderheitenList from './controls/BesonderheitenList.svelte';
 	import PfadList from './controls/PfadList.svelte';
 	import { writable } from 'svelte/store';
+import Hitman from './controls/hitman.svelte';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -45,9 +46,16 @@
 </script>
 
 {#if data && char}
+
+
 	<nav>
 		<ul>
-			<li />
+			<li>
+				<a href="/page" role="button"
+					disabled={char == undefined?true:undefined}
+					>Character Blatt</a
+				>
+			</li>
 		</ul>
 		<ul>
 			<li>

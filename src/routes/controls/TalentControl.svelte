@@ -23,7 +23,7 @@
 	const talentMissingRequirement = char?.gettalentMissingRequirement(talent.Id);
 
 	const storeBase = char.talentBaseStore;
-	const storeBaseEP = char.talentBaseEP;
+	const storeBaseEP = char.talentBaseEPStore;
 	const storeEffective = char.talentEffectiveStore;
 
 	const uuid = uuidv4();

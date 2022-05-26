@@ -11,7 +11,7 @@ type selection = {
     g: _Gattung;
 } | undefined;
 
-export type Eigenschaft = 'Mut' | 'Glück' | 'Klugheit' | 'Intuition' | 'Gewandtheit' | 'Feinmotorik' | 'Sympathie' | 'Antipathie' | 'Stärke' | 'Konstitution';
+export type Eigenschaft = 'Mut' | 'Glück' | 'Klugheit' | 'Intuition' | 'Gewandtheit' | 'Feinmotorik' | 'Sympathie' | 'Antipathie' | 'Stärke' | 'Fokus'| 'Einfluss';
 
 class EigenschaftenData {
 
@@ -56,7 +56,8 @@ interface EigenschaftsMap<T> {
     Antipathie: T;
     Stärke: T;
     Konstitution: T;
-
+    Fokus: T;
+    Einfluss: T;
 }
 export const EIGENRSCHAFTEN = [
     'Mut',
@@ -69,6 +70,8 @@ export const EIGENRSCHAFTEN = [
     'Antipathie',
     'Stärke',
     'Konstitution',
+    'Fokus',
+    'Einfluss',
 ] as const;
 class EigenschaftenDataAccess {
 
@@ -409,7 +412,10 @@ export class Charakter {
     private readonly talentPurchasedEPData = writable({} as Record<string, number>);
     private readonly talentFixEP: Readable<Record<string, number>>;
     public readonly talentPurchasedEP: Readable<Record<string, number | undefined>>;
-    public readonly talentBaseEP: Readable<Record<string, number>>;
+    public readonly talentBaseEPStore: Readable<Record<string, number>>;
+    public get talentBaseEP(): Record<string, number>{
+        return get(this.talentBaseEPStore)
+    }
     public readonly talentBaseStore: Readable<Record<string, number>>;
     public get talentBase(): Record<string, number> {
         return get(this.talentBaseStore);
@@ -422,7 +428,10 @@ export class Charakter {
     public get talentEffective(): Record<string, number> {
         return get(this.talentEffectiveStore);
     }
-    public readonly talentEffectiveIgnoreRequirements: Readable<Record<string, number>>;
+    public readonly talentEffectiveIgnoreRequirementsStore: Readable<Record<string, number>>;
+    public get talentEffectiveIgnoreRequirements(): Record<string, number>{
+        return get(this.talentEffectiveIgnoreRequirementsStore);
+    }
     public readonly talentMissingRequirement: Readable<Record<string, { Wert: number; missing: MissingRequirements; }[]>>;
 
     public readonly tagsStore: Readable<Record<string, true | undefined>>;
@@ -659,7 +668,7 @@ export class Charakter {
         });
 
         this.talentPurchasedEP = derived(this.talentPurchasedEPData, (b) => ({ ...Object.fromEntries(Object.keys(data.talentMap).map(k => [k, b[k] ?? 0])) }));
-        this.talentBaseEP = derived([this.talentPurchasedEPData, this.talentFixEP], ([b, fix]) => {
+        this.talentBaseEPStore = derived([this.talentPurchasedEPData, this.talentFixEP], ([b, fix]) => {
             const result = {} as Record<string, number>;
             for (const key of Object.keys(data.talentMap)) {
                 const ep = (fix[key] ?? 0) + (b[key] ?? 0);
@@ -669,7 +678,7 @@ export class Charakter {
             }
             return result;
         });
-        this.talentBaseStore = derived(this.talentBaseEP, (b) => {
+        this.talentBaseStore = derived(this.talentBaseEPStore, (b) => {
             const result = {} as Record<string, number>;
             for (const key of Object.keys(data.talentMap)) {
                 const ep = b[key] ?? 0;
@@ -726,7 +735,7 @@ export class Charakter {
 
         });
 
-        this.talentEffectiveIgnoreRequirements = derived([this.talentBaseStore, this.talentDerivationStore], ([b, d]) => {
+        this.talentEffectiveIgnoreRequirementsStore = derived([this.talentBaseStore, this.talentDerivationStore], ([b, d]) => {
             const result = { ...b };
             return Object.entries(d).reduce((p, [key, value]) => {
                 if (p[key]) {
@@ -881,8 +890,8 @@ export class Charakter {
 
         besonderheitenInit.init([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
         fertigkeitenInit.init([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
-        talentMissingRequirementInit.init([this.talentEffectiveIgnoreRequirements, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
-        talentEffectiveInit.init([this.talentEffectiveIgnoreRequirements, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
+        talentMissingRequirementInit.init([this.talentEffectiveIgnoreRequirementsStore, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
+        talentEffectiveInit.init([this.talentEffectiveIgnoreRequirementsStore, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
 
         this.punkteStore = derived([
             this.organismusStore,
@@ -896,6 +905,8 @@ export class Charakter {
             this.eigenschaftenData.Antipathie.acciredStore,
             this.eigenschaftenData.Stärke.acciredStore,
             this.eigenschaftenData.Konstitution.acciredStore,
+            this.eigenschaftenData.Einfluss.acciredStore,
+            this.eigenschaftenData.Fokus.acciredStore,
 
             this.eigenschaftenData.Mut.costStore,
             this.eigenschaftenData.Glück.costStore,
@@ -907,6 +918,8 @@ export class Charakter {
             this.eigenschaftenData.Antipathie.costStore,
             this.eigenschaftenData.Stärke.costStore,
             this.eigenschaftenData.Konstitution.costStore,
+            this.eigenschaftenData.Einfluss.costStore,
+            this.eigenschaftenData.Fokus.costStore,
 
             this.pfadLevelDataStore,
 
@@ -932,6 +945,8 @@ export class Charakter {
             acciredAntipathie,
             acciredStärke,
             acciredKonstitution,
+            acciredEinfluss,
+            acciredFokus,
 
             eCostMut,
             eCostGlück,
@@ -943,6 +958,8 @@ export class Charakter {
             eCostAntipathie,
             eCostStärke,
             eCostKonstitution,
+            eCostEinfluss,
+            eCostFokus,
 
             pfadLevelData,
 
@@ -971,6 +988,8 @@ export class Charakter {
                 { cost: eCostAntipathie, accired: acciredAntipathie },
                 { cost: eCostStärke, accired: acciredStärke },
                 { cost: eCostKonstitution, accired: acciredKonstitution },
+                { cost: eCostFokus, accired: acciredFokus },
+                { cost: eCostEinfluss, accired: acciredEinfluss },
             ]
             applyCredit(this.data.Instance.Daten.GenerierungsDaten.Kosten)
 
@@ -1081,7 +1100,7 @@ export class Charakter {
         return derived(this.talentBaseStore, x => x[id]);
     }
     getTalentEPStore(id: string): Readable<number> {
-        return derived(this.talentBaseEP, x => x[id]);
+        return derived(this.talentBaseEPStore, x => x[id]);
     }
     getTalentDerivedStore(id: string): Readable<number> {
         return derived(this.talentDerivationStore, x => x[id]);
@@ -1090,7 +1109,7 @@ export class Charakter {
         return derived(this.talentEffectiveStore, x => x[id]);
     }
     gettalentEffectiveIgnoreRequirements(id: string) {
-        return derived(this.talentEffectiveIgnoreRequirements, x => x[id]);
+        return derived(this.talentEffectiveIgnoreRequirementsStore, x => x[id]);
     }
     gettalentMissingRequirement(id: string) {
         return derived(this.talentMissingRequirement, x => x[id]);
@@ -1100,7 +1119,7 @@ export class Charakter {
         return get(this.talentPurchasedEPData)[id] ?? 0;
     }
     setTalentPurchasedEP(id: string, value: number): void {
-        const x = get(this.talentBaseEP);
+        const x = get(this.talentBaseEPStore);
         x[id] = value;
         this.talentPurchasedEPData.set(x);
     }
@@ -1358,6 +1377,8 @@ export class Charakter {
         Antipathie: new EigenschaftenData(),
         Stärke: new EigenschaftenData(),
         Konstitution: new EigenschaftenData(),
+        Fokus: new EigenschaftenData(),
+        Einfluss: new EigenschaftenData(),
     }
     public readonly eigenschaftenData: Readonly<EigenschaftsMap<EigenschaftenDataAccess>> = {
         Mut: new EigenschaftenDataAccess(this.eigenrschaften.Mut),
@@ -1370,6 +1391,8 @@ export class Charakter {
         Antipathie: new EigenschaftenDataAccess(this.eigenrschaften.Antipathie),
         Stärke: new EigenschaftenDataAccess(this.eigenrschaften.Stärke),
         Konstitution: new EigenschaftenDataAccess(this.eigenrschaften.Konstitution),
+        Fokus: new EigenschaftenDataAccess(this.eigenrschaften.Fokus),
+        Einfluss: new EigenschaftenDataAccess(this.eigenrschaften.Einfluss),
     }
 
 
