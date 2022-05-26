@@ -33,15 +33,15 @@ export function derivedLazy<S extends Stores, T>(fn: (values: StoresValues<S>) =
         inited = true;
         get(redeble);
         sync();
-        
+
     }
     let set: Subscriber<T>;
     let unsubscribers: Unsubscriber[];
     const redeble = readable(initial_value, (set2) => {
         set = set2;
-        
+
         return function stop() {
-                      //internal.run_all(unsubscribers);
+            //internal.run_all(unsubscribers);
         };
     });
 
@@ -83,7 +83,9 @@ function deepEqual<T>(a: T, b: T) {
         }
         return true;
     }
-    else {
+    else if (isNaN(a as any)) {
+        return isNaN(b as any)
+    } else {
         return a === b;
     }
 }

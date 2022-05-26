@@ -26,6 +26,7 @@
 				{#each Object.keys(data.talentCategoryMap[key]).sort() as t}
 					<TalentControl {char} {data} talent={data.talentMap[t]} showTaken={true} />
 				{/each}
+				<hr>
 				<details>
 					<summary>Nicht gekauft</summary>
 					{#each Object.keys(data.talentCategoryMap[key]).sort() as t}
@@ -38,6 +39,9 @@
 {/if}
 
 <style lang="scss">
+	hr {
+		margin-top: 4rem;
+	}
 	header {
 		input {
 			display: none;

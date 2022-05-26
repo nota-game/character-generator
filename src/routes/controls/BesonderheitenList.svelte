@@ -52,7 +52,7 @@
 
 <style lang="scss">
 	hr {
-		margin-top: 2rem;
+		margin-top: 4rem;
 	}
 
 	header {

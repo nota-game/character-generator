@@ -14,7 +14,8 @@ export class Data {
 
 
     private instance: Daten | undefined
-    
+
+    public static readonly MAX_TALENT = 130;
 
     public readonly talentMap: Record<string, Readonly<TalentDefinition_talent & { Kategorie: string }>>;
     public readonly talentCategoryMap: Record<string, Record<string, Readonly<TalentDefinition_talent>>>;
@@ -91,7 +92,7 @@ export class Data {
                     Id: string;
                     ResultType: "differenz" | "total";
                 }
-            }[] = Array.from({ length: 131 }, (_, i) => {
+            }[] = Array.from({ length: Data.MAX_TALENT + 1 }, (_, i) => {
                 return {
                     Kosten: {
                         Wert: mappedTalentFunction.f(i, k),

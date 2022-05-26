@@ -630,14 +630,31 @@ export class Charakter {
 
 
             }
-            return result;
+            return  result;
         });
 
 
-        this.talentDerivationStore = derived(this.talentBaseStore, b => {
+
+
+        const
+            [talentEffectiveStore, talentEffectiveInit] =
+                derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number>>
+                    (([p, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+                        p = { ...p };
+                        Object.keys(p).forEach((key) => {
+                            const req = data.talentMap[key].Bedingungen?.Bedingung.filter(x => x.Wert <= p[key]) ?? [];
+                            const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingInternal(x, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags) })).filter(x => x.missing !== null);
+
+                            p[key] = Math.min(p[key], ...missing.map(x => x.wert - 1))
+                        });
+                        return p;
+                    }, {});
+        this.talentEffectiveStore = talentEffectiveStore;
+
+        this.talentDerivationStore = derived([this.talentBaseStore, this.talentEffectiveStore], ([b, e]) => {
             const calc = (a: AbleitungsAuswahl_talent | undefined): number[] => {
                 return a
-                    ? (a.Ableitung?.map(x => Math.floor(b[x.Id] / x.Anzahl)) ?? [])
+                    ? (a.Ableitung?.map(x => Math.floor(Math.min(b[x.Id], e[x.Id]??0) / x.Anzahl)) ?? [])
                         .concat(
                             (a.Max?.map(x => calc(x).sort((a, b) => b - a).slice(0, x.Anzahl).reduce((p, c) => p + c, 0)) ?? [])
                         )
@@ -669,22 +686,6 @@ export class Charakter {
 
 
 
-
-
-        const
-            [talentEffectiveStore, talentEffectiveInit] =
-                derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number>>
-                    (([p, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
-                        p = { ...p };
-                        Object.keys(p).forEach((key) => {
-                            const req = data.talentMap[key].Bedingungen?.Bedingung.filter(x => x.Wert <= p[key]) ?? [];
-                            const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingInternal(x, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags) })).filter(x => x.missing !== null);
-
-                            p[key] = Math.min(p[key], ...missing.map(x => x.wert - 1))
-                        });
-                        return p;
-                    }, {});
-        this.talentEffectiveStore = talentEffectiveStore;
 
         const
             [talentMissingRequirement, talentMissingRequirementInit] =
