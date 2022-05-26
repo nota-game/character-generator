@@ -15,6 +15,11 @@
 	let current = char.organismus?.l.Id;
 
 	const w = char.organismusStore;
+	w.subscribe((v) => {
+		if (v == undefined) {
+			current = undefined;
+		}
+	});
 	const wc = derived(w, (x) => x?.l?.Spielbar?.Kosten);
 
 	const tree = Object.fromEntries(
@@ -69,7 +74,7 @@
 						cost={l.Spielbar.Kosten}
 						{data}
 						{char}
-						paid={current === l.Id}
+						paid={current !== undefined && current === l.Id}
 						replaceCost={wc}
 					/>
 				{/if}

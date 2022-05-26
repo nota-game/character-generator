@@ -374,7 +374,7 @@ export type CharakterData = {
 };
 
 export class Charakter {
-    data: Data;
+    private readonly data: Data;
 
     public readonly organismusStore = writable<selection>(undefined);
     public readonly punkteStore: Readable<Record<string, number>>;
@@ -435,7 +435,7 @@ export class Charakter {
 
 
             return {
-                eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map((key, i) => [key, eigenschaften[i]])),
+                eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map((key, i) => [key, eigenschaften[i]]).filter(([_, v]) => (v as number) != 0)),
                 besonderheiten: Object.fromEntries(Object.entries(besonderheitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
                 fertigkeiten: Object.fromEntries(Object.entries(fertigkeitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
                 lebensabschnittId: organismusStore?.l.Id,
@@ -448,7 +448,7 @@ export class Charakter {
 
     public get Data(): CharakterData {
         return {
-            eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map(key => [key, this.eigenrschaften[key].accired])),
+            eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map(key => [key, this.eigenrschaften[key].accired]).filter(([_, v]) => (v as number) != 0)),
             besonderheiten: Object.fromEntries(Object.entries(get(this.besonderheitenPurchasedStore)).filter((([key, value]) => (value ?? 0) > 0))) as any,
             fertigkeiten: Object.fromEntries(Object.entries(get(this.fertigkeitenPurchasedStore)).filter((([key, value]) => (value ?? 0) > 0))) as any,
             lebensabschnittId: this.organismus?.l.Id,
@@ -461,10 +461,8 @@ export class Charakter {
 
     public set Data(v: CharakterData) {
 
-        Object.entries(v.eigenschaften).forEach(([key, value]) => {
-            if (EIGENRSCHAFTEN.includes(key as any)) {
-                this.eigenrschaften[key as Eigenschaft].accired = value;
-            }
+        EIGENRSCHAFTEN.forEach((key) => {
+            this.eigenrschaften[key].accired = v.eigenschaften[key] ?? 0;
         });
         this.besonderheitenPurchasedDataStore.set(v.besonderheiten);
         this.fertigkeitenPurchasedDataStore.set(v.fertigkeiten);
@@ -585,7 +583,7 @@ export class Charakter {
     constructor(data: Data) {
         this.data = data;
 
-        this.talentPurchasedEPData.set(Object.keys(this.data.talentMap).reduce((p, c) => { p[c] = 0; return p; }, {} as Record<string, number>));
+        this.talentPurchasedEPData.set({} as Record<string, number>);
 
         this.fertigkeitenPurchasedStore = derived(this.fertigkeitenPurchasedDataStore, x => ({ ...x }));
 
@@ -660,10 +658,10 @@ export class Charakter {
             }, {} as Record<string, number>);
         });
 
-        this.talentPurchasedEP = derived(this.talentPurchasedEPData, (b) => ({ ...b }));
+        this.talentPurchasedEP = derived(this.talentPurchasedEPData, (b) => ({ ...Object.fromEntries(Object.keys(data.talentMap).map(k => [k, b[k] ?? 0])) }));
         this.talentBaseEP = derived([this.talentPurchasedEPData, this.talentFixEP], ([b, fix]) => {
             const result = {} as Record<string, number>;
-            for (const key of Object.keys(b)) {
+            for (const key of Object.keys(data.talentMap)) {
                 const ep = (fix[key] ?? 0) + (b[key] ?? 0);
 
                 result[key] = ep;
@@ -673,7 +671,7 @@ export class Charakter {
         });
         this.talentBaseStore = derived(this.talentBaseEP, (b) => {
             const result = {} as Record<string, number>;
-            for (const key of Object.keys(b)) {
+            for (const key of Object.keys(data.talentMap)) {
                 const ep = b[key] ?? 0;
                 const complexity = data.talentMap[key].Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
                 const levelCots = this.data.talentCostTabel[complexity]
@@ -1099,7 +1097,7 @@ export class Charakter {
     }
 
     getTalentPurchasedEP(id: string): number {
-        return get(this.talentPurchasedEPData)[id];
+        return get(this.talentPurchasedEPData)[id] ?? 0;
     }
     setTalentPurchasedEP(id: string, value: number): void {
         const x = get(this.talentBaseEP);

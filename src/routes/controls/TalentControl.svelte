@@ -35,6 +35,7 @@
 		if (next > Data.MAX_TALENT) {
 			nextLevelCost = undefined;
 		} else {
+
 			const cost = data.talentCostTabel[comp][next].Kosten.Wert;
 			const fix = $charEPStore;
 			nextLevelCost = cost - fix;

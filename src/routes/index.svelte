@@ -40,7 +40,6 @@
 				char.Data = $currentChar;
 			}
 			char.DataStore.subscribe((v) => ($currentChar = v));
-			
 		}
 	});
 </script>
@@ -109,7 +108,23 @@
 			{/if}
 		</ul>
 		<ul>
-			<li />
+			<li>
+				<button
+					disabled={char == undefined}
+					on:click={() => {
+						if (char)
+							char.Data = {
+								besonderheiten: {},
+								eigenschaften: {},
+								fertigkeiten: {},
+								talentEP: {},
+								pfade: {},
+								lebensabschnittId: undefined
+							};
+						selection = 'Gattung/Art';
+					}}>Reset</button
+				>
+			</li>
 		</ul>
 	</nav>
 
@@ -160,7 +175,8 @@
 	}
 	.hover {
 		width: 10rem;
-		position: fixed;
+		position: sticky;
+		float: right;
 		right: 50px;
 		top: 5px;
 		//float: right;
