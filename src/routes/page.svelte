@@ -8,7 +8,8 @@
 
 	import Hitman from './controls/hitman.svelte';
 	import { local } from './storage';
-	import { get } from 'svelte/store';
+	import { get, writable } from 'svelte/store';
+import Armor from './controls/armor.svelte';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -29,8 +30,51 @@
 				char.Data = j;
 			}
 		}
+		dev.set(!window.location.pathname.includes('character-generator'));
+		(window as any).PagedConfig = {
+			auto: true,
+			after: (flow: any) => {
+				const nav = document.createElement('nav');
+				let pageLink: string;
+				pageLink = $dev ? '/' : '/character-generator/';
+				nav.innerHTML = `
+		
+				<a href=${pageLink} role="button"  rel="external" 
+					>Zum Editor</a
+				>
+
+
+`;
+				console.log(document.getElementsByTagName('body')[0].childNodes[0]);
+				document
+					.getElementsByTagName('body')[0]
+					.insertBefore(nav, document.getElementsByTagName('body')[0].childNodes[0]);
+			}
+		};
+
 		eval(paged);
+		// 		const nav = document.createElement('nav');
+		// 		let pageLink: string;
+		// 	 pageLink = $dev ? '/' : '/character-generator/';
+		// 		nav.innerHTML= `
+
+		// 				<a href=${pageLink} role="button"  rel="external"
+		// 					>Editor</a
+		// 				>
+
+		// `;
+		// console.log(document.getElementsByTagName('body')[0].childNodes[0])
+		// document.getElementsByTagName('body')[0].insertBefore(nav,document.getElementsByTagName('body')[0].childNodes[0]);
+
+		// (window as any).PagedConfig = {
+		// 		auto: true,
+		// 		after: (flow : any) => { console.log("after", flow) },
+		// 	};
 	});
+
+	let dev = writable(true);
+	let pageLink: string;
+	$: pageLink = $dev ? '/' : '/character-generator/';
 </script>
 
 {#if data && char}
@@ -299,8 +343,10 @@
 		</tr>
 	</table>
 	<div class="kampf-right">
-		<div />
-		<div />
+		<div style="grid-column: 1;">
+			<Armor {char}></Armor>
+		</div>
+		<div style="grid-column: 2;"/>
 		<div style="grid-column: 3;">
 			<h6>Ausdauer & Wunden</h6>
 			<Hitman {char} />
@@ -343,7 +389,77 @@
 			background-color: brown;
 			color: white;
 		}
+
+		@page {
+			size: A4;
+			margin-top: 35mm;
+			margin-right: 15mm;
+			margin-bottom: 25mm;
+			margin-left: 15mm;
+			@top-center {
+				content: element(titleRunning);
+			}
+		}
+
+		@media screen {
+			nav {
+				display: block !important;
+				position: sticky;
+				top: 0px ;
+				width: fit-content;
+				padding: 2rem;
+				border-bottom-right-radius: 99rem;
+			z-index: 999;
+
+			
+				background-color: cadetblue;
+				border: 1px solid blueviolet;
+
+				a{
+					color: #FFF;
+					font-family: Verdana, Geneva, Tahoma, sans-serif;
+					text-decoration: none;
+					transition: all 1000ms;
+				}
+				a:hover{
+					color: #00f;
+					font-family: Verdana, Geneva, Tahoma, sans-serif;
+					text-decoration: none;
+				}
+
+
+			}
+			:root {
+				--screen-pages-spacing: 10rem;
+				--color-paper:white;
+				--background:lightgray;
+			}
+			body {
+				background-color: var(--background);
+				margin: 0 auto 0 auto;
+			}
+			.pagedjs_pages {
+				display: flex;
+				// max-width: var(--pagedjs-width);
+				flex: 0;
+				flex-wrap: wrap;
+				margin: 0 auto;
+				margin-top:var(--screen-pages-spacing);
+			}
+			.pagedjs_page {
+				background: var(--color-paper);
+				box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), inset 0 0 3px rgba(0, 0, 0, 0.6);
+				flex-shrink: 0;
+				flex-grow: 0;
+				margin: auto auto var(--screen-pages-spacing) auto;
+			}
+		}
+		nav {
+			display: none;
+		}
+
 	}
+	
 
 	* {
 		box-sizing: border-box;
@@ -479,15 +595,5 @@
 	.header {
 		break-before: page;
 		position: running(titleRunning);
-	}
-	@page {
-		size: A4;
-		margin-top: 35mm;
-		margin-right: 15mm;
-		margin-bottom: 25mm;
-		margin-left: 15mm;
-		@top-center {
-			content: element(titleRunning);
-		}
 	}
 </style>

@@ -13,6 +13,8 @@
 	import PfadList from './controls/PfadList.svelte';
 	import { local } from './storage';
 	import { get, writable, type Writable } from 'svelte/store';
+import Hitman from './controls/hitman.svelte';
+import Armor from './controls/armor.svelte';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -48,10 +50,12 @@
 </script>
 
 {#if data && char}
+<!-- <Hitman {char}></Hitman> -->
+<!-- <Armor {char}></Armor> -->
 	<nav>
 		<ul>
 			<li>
-				<a href={pageLink} role="button" disabled={char == undefined ? true : undefined} target="_blank"
+				<a href={pageLink} role="button" disabled={char == undefined ? true : undefined} rel="external" 
 					>Character Blatt</a
 				>
 			</li>
