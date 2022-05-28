@@ -1,14 +1,10 @@
 <script lang="ts">
-	import type {
-		BesonderheitDefinition_besonderheit,
-		FertigkeitDefinition_fertigkeit
-	} from 'src/data/nota.g';
+	import type { BesonderheitDefinition_besonderheit } from 'src/data/nota.g';
 	import type { Readable } from 'svelte/store';
 	import { getText, getTextBesonderheit } from '../misc';
 
 	import type { Charakter } from '../models/Character';
 	import type { Data } from '../models/Data';
-	import EigenschaftsControl from './EigenschaftsControl.svelte';
 	import KostenControl from './KostenControl.svelte';
 	import RequirementsControl from './RequirementsControl.svelte';
 
@@ -17,16 +13,27 @@
 	export let besonderheit: BesonderheitDefinition_besonderheit | undefined;
 	export let showTaken: boolean | undefined = undefined;
 
-	const info = char?.getBesonderheitInfo(besonderheit?.Id ?? '');
+	let info = char?.getBesonderheitInfo(besonderheit?.Id ?? '');
+	let canBeBoght = info?.canBeBoght;
+	let canBeRemoved = info?.canBeRemoved;
+	let canBeSoled = info?.canBeSoled;
+	let boughtLevel = info?.boughtLevel!;
+	let actualLevel = info?.actualLevel!;
+	let buyCost = info?.buyCost;
+	let sellCost = info?.sellCost;
+	let removeCost = info?.removeCost;
 
-	const canBeBoght = info?.canBeBoght;
-	const canBeRemoved = info?.canBeRemoved;
-	const canBeSoled = info?.canBeSoled;
-	const boughtLevel = info?.boughtLevel!;
-	const actualLevel = info?.actualLevel!;
-	const buyCost = info?.buyCost;
-	const sellCost = info?.sellCost;
-	const removeCost = info?.removeCost;
+	$: {
+		info = char?.getBesonderheitInfo(besonderheit?.Id ?? '');
+		canBeBoght = info?.canBeBoght;
+		canBeRemoved = info?.canBeRemoved;
+		canBeSoled = info?.canBeSoled;
+		boughtLevel = info?.boughtLevel!;
+		actualLevel = info?.actualLevel!;
+		buyCost = info?.buyCost;
+		sellCost = info?.sellCost;
+		removeCost = info?.removeCost;
+	}
 
 	let requirementsBuy: boolean;
 	let isToexpensiv: Readable<boolean>;

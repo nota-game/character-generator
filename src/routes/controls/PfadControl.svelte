@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { FertigkeitDefinition_fertigkeit, PfadDefinition_pfad } from 'src/data/nota.g';
-	import type { Readable } from 'svelte/store';
+	import type { Readable, Unsubscriber } from 'svelte/store';
 	import { getText, getTextFertigkeit } from '../misc';
 
 	import type { Charakter } from '../models/Character';
@@ -20,13 +20,19 @@
 
 	let anyTaken: boolean = false;
 
-	char?.pfadLevelStore.subscribe((x) => {
-		if (pfad) {
-			anyTaken = Object.values(x[gruppeId]?.[pfad.Id]??{})?.some((y) => y > 0) ?? false;
-		} else {
-			anyTaken = false;
+	let unsubscriber: Unsubscriber | undefined;
+	$: {
+		if (unsubscriber) {
+			unsubscriber();
 		}
-	});
+		unsubscriber = char?.pfadLevelStore.subscribe((x) => {
+			if (pfad) {
+				anyTaken = Object.values(x[gruppeId]?.[pfad.Id] ?? {})?.some((y) => y > 0) ?? false;
+			} else {
+				anyTaken = false;
+			}
+		});
+	}
 </script>
 
 {#if char && pfad && data}

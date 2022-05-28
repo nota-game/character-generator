@@ -3,7 +3,8 @@
 	import { readable, writable, type Writable } from 'svelte/store';
 	import { onMount } from 'svelte';
 	export let char: Charakter | undefined;
-	const ko = char?.eigenschaftenData.Konstitution.currentStore ?? readable(21);
+	let ko = char?.eigenschaftenData.Konstitution.currentStore ?? readable(21);
+	$: ko = char?.eigenschaftenData.Konstitution.currentStore ?? readable(21);
 	let bonus: number;
 	$: bonus = Math.floor((21 - $ko) / 3);
 
@@ -65,8 +66,7 @@
 	xmlns:xlink="http://www.w3.org/1999/xlink"
 	x="0px"
 	y="0px"
-	width="204.095px"
-	height="266.456px"
+	
 	viewBox="0 0 204.095 266.456"
 	enable-background="new 0 0 204.095 266.456"
 	xml:space="preserve"

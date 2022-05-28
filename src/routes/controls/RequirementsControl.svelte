@@ -10,11 +10,11 @@
 	export let requirement: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined;
 	export let itFullfiled: boolean;
 
-	const info = char?.getMissingRequirementsStore(requirement!);
+	let info = char?.getMissingRequirementsStore(requirement!);
+	$: info = char?.getMissingRequirementsStore(requirement!);
 
 	$: {
 		itFullfiled = $info == undefined;
-
 	}
 </script>
 

@@ -6,19 +6,19 @@
 
 	let list: string[] = [];
 	onMount(() => {
-		list = Array.from(window.localStorage, (v, i) => window.localStorage.key(i) ?? '').filter(
-			(x) => x.length > 0
-		);
+		foo = true;
+		list = Array.from(window.localStorage, (v, i) => window.localStorage.key(i) ?? '')
+			.filter((x) => x.length > 0 && x[0] == 'c')
+			.map((x) => x.slice(1));
 
 		const data = window.location.hash.slice(2);
 		const type = window.location.hash[1];
-		if(type=='i'){
-			selection = data
+		if (type == 'i') {
+			selection = data;
 		}
-
 	});
 	function getName(key: string) {
-		const ds = window.localStorage.getItem(key);
+		const ds = window.localStorage.getItem('c' + key);
 		if (ds) {
 			const d = JSON.parse(ds) as CharakterData;
 			return d.name;
@@ -26,6 +26,12 @@
 	}
 
 	let selection: string | undefined;
+	let foo = false;
+	$: {
+		if (foo && window && window?.location && selection) {
+			window.location.hash = 'i' + selection;
+		}
+	}
 </script>
 
 <select bind:value={selection}>
@@ -35,5 +41,5 @@
 </select>
 
 {#if selection}
-<Char charId={selection} />
+	<Char charId={selection} />
 {/if}

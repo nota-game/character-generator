@@ -4,24 +4,30 @@
 	import { onMount } from 'svelte';
 	export let char: Charakter | undefined;
 
-	const array:armor[]		=[
+	const array: armor[] = [
 		{
-			titel:'Wamtt',
-			härte:2,
-			dämpfung:12,
-			steifheit:99,
-			range:[[3,4],[11,20]]
+			titel: 'Wamtt',
+			härte: 2,
+			dämpfung: 12,
+			steifheit: 99,
+			range: [
+				[3, 4],
+				[11, 20]
+			]
 		},
 		{
-			titel:'Platte',
-			härte:10,
-			dämpfung:0,
-			steifheit:99,
-			range:[[5,4],[11,20]]
-		},
+			titel: 'Platte',
+			härte: 10,
+			dämpfung: 0,
+			steifheit: 99,
+			range: [
+				[5, 4],
+				[11, 20]
+			]
+		}
 	];
 	type armor = {
-		titel:string,
+		titel: string;
 		steifheit: number;
 		härte: number;
 		dämpfung: number;
@@ -36,68 +42,65 @@
 	xmlns:xlink="http://www.w3.org/1999/xlink"
 	x="0px"
 	y="0px"
-	width="164.084px"
-	height="631.69px"
-	viewBox="0 0 164.084 631.69"
+	height="710px"
+	viewBox="8 9 146 615.3"
 	enable-background="new 0 0 164.084 631.69"
 	xml:space="preserve"
-	>
+>
 	<g>
-		{#each array as a ,i}
-		
-		<text
-		id="title-{i}"
-		stroke="#706F6F"
-		transform="rotate(-90) translate(-73, {80+i*22}) "
-		text-anchor="start"
-		font-family="'MyriadPro-Regular'"
-		font-size="12">{a.titel}</text
-		>
-		<text
-		id="flex-{i}"
-		stroke="#706F6F"
-		x={75+i*22}
-		y="90"
-		text-anchor="middle"
-		font-family="'MyriadPro-Regular'"
-		font-size="12">{a.steifheit}</text
-		>
-		<text
-		id="dämpfung-{i}"
-		stroke="#706F6F"
-		x={75+i*22}
-		y="107"
-		text-anchor="middle"
-		font-family="'MyriadPro-Regular'"
-		font-size="12">{a.dämpfung}</text
-		>
-		<text
-		id="härte-{i}"
-		stroke="#706F6F"
-		x={75+i*22}
-		y="124"
-		text-anchor="middle"
-		font-family="'MyriadPro-Regular'"
-		font-size="12">{a.härte}</text
-		>
-		
-		{#each a.range as [x,y],j}
-		<rect
-		id="range-{i}-{j}"
-		x={69.5+i*22}
-		y={128+Math.min(x,y)*7}
-		fill="red"
-		stroke="#706F6F"
-		stroke-width="0.75"
-		width="10"
-		height={Math.abs(y-x)*7}
-	/>
-	
-		{/each}
+		{#each array as a, i}
+			<text
+				id="title-{i}"
+				stroke="#706F6F"
+				transform="rotate(-90) translate(-73, {80 + i * 22}) "
+				text-anchor="start"
+				font-family="'MyriadPro-Regular'"
+				font-size="12">{a.titel}</text
+			>
+			<text
+				id="flex-{i}"
+				stroke="#706F6F"
+				x={75 + i * 22}
+				y="90"
+				text-anchor="middle"
+				font-family="'MyriadPro-Regular'"
+				font-size="12">{a.steifheit}</text
+			>
+			<text
+				id="dämpfung-{i}"
+				stroke="#706F6F"
+				x={75 + i * 22}
+				y="107"
+				text-anchor="middle"
+				font-family="'MyriadPro-Regular'"
+				font-size="12">{a.dämpfung}</text
+			>
+			<text
+				id="härte-{i}"
+				stroke="#706F6F"
+				x={75 + i * 22}
+				y="124"
+				text-anchor="middle"
+				font-family="'MyriadPro-Regular'"
+				font-size="12">{a.härte}</text
+			>
+
+			{#each a.range as [x, y], j}
+				<rect
+					id="range-{i}-{j}"
+					x={69.5 + i * 22}
+					y={128 + Math.min(x, y) * 7}
+					fill="red"
+					stroke="#706F6F"
+					stroke-width="0.75"
+					width="10"
+					height={Math.abs(y - x) * 7}
+				/>
+			{/each}
 		{/each}
 	</g>
-		<g>
-			<rect
+	<g>
+		<rect
 			x="63.285"
 			y="8.96"
 			fill="none"

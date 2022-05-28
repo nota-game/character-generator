@@ -14,19 +14,32 @@
 	export let talent: TalentDefinition_talent | undefined;
 	export let showTaken: boolean | undefined = undefined;
 
-	const charPurchasedStore = char?.getTalentPurchasedEPStore(talent?.Id ?? '');
-	const charEPStore = char?.getTalentEPStore(talent?.Id ?? '');
-	const charBaseValueStore = char?.getTalentBaseStore(talent?.Id ?? '');
-	const charDerivatValueStore = char?.getTalentDerivedStore(talent?.Id ?? '');
-	const charEffectiveValueStore = char?.getTalentEffectiveStore(talent?.Id ?? '');
-	const talentEffectiveIgnoreRequirements = char?.gettalentEffectiveIgnoreRequirements(
+	let charPurchasedStore = char?.getTalentPurchasedEPStore(talent?.Id ?? '');
+	let charEPStore = char?.getTalentEPStore(talent?.Id ?? '');
+	let charBaseValueStore = char?.getTalentBaseStore(talent?.Id ?? '');
+	let charDerivatValueStore = char?.getTalentDerivedStore(talent?.Id ?? '');
+	let charEffectiveValueStore = char?.getTalentEffectiveStore(talent?.Id ?? '');
+	let talentEffectiveIgnoreRequirements = char?.gettalentEffectiveIgnoreRequirements(
 		talent?.Id ?? ''
 	);
-	const talentMissingRequirement = char?.gettalentMissingRequirement(talent?.Id ?? '');
-
-	const storeBase = char?.talentBaseStore;
-	const storeBaseEP = char?.talentBaseEPStore;
-	const storeEffective = char?.talentEffectiveStore;
+	let talentMissingRequirement = char?.gettalentMissingRequirement(talent?.Id ?? '');
+	let storeBase = char?.talentBaseStore;
+	let storeBaseEP = char?.talentBaseEPStore;
+	let storeEffective = char?.talentEffectiveStore;
+	$: {
+		charPurchasedStore = char?.getTalentPurchasedEPStore(talent?.Id ?? '');
+		charEPStore = char?.getTalentEPStore(talent?.Id ?? '');
+		charBaseValueStore = char?.getTalentBaseStore(talent?.Id ?? '');
+		charDerivatValueStore = char?.getTalentDerivedStore(talent?.Id ?? '');
+		charEffectiveValueStore = char?.getTalentEffectiveStore(talent?.Id ?? '');
+		talentEffectiveIgnoreRequirements = char?.gettalentEffectiveIgnoreRequirements(
+			talent?.Id ?? ''
+		);
+		talentMissingRequirement = char?.gettalentMissingRequirement(talent?.Id ?? '');
+		storeBase = char?.talentBaseStore;
+		storeBaseEP = char?.talentBaseEPStore;
+		storeEffective = char?.talentEffectiveStore;
+	}
 
 	const uuid = uuidv4();
 

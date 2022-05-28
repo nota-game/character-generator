@@ -24,7 +24,17 @@
 		return writable(t as any);
 	}
 
-	const list = derived(
+	let list: Readable<
+		{
+			abbr: string;
+			name: string;
+			value: number;
+			missing: number;
+			order: number;
+			toExpensiv: boolean;
+		}[]
+	>;
+	$: list = derived(
 		[toStore(cost), toStore(replaceCost), toStore(paid), toStore(char?.punkteStore)],
 		([cc, rc, p, ps]) => {
 			if (!cc) return [];
@@ -72,7 +82,10 @@
 		}
 	);
 
-	export const isToexpensiv = derived(list, (l) => {
+	export let isToexpensiv: Readable<boolean> = derived(list, (l) => {
+		return l.some((x) => x.toExpensiv);
+	});
+	$: isToexpensiv = derived(list, (l) => {
 		return l.some((x) => x.toExpensiv);
 	});
 
@@ -81,15 +94,13 @@
 
 {#each $list as c}
 	{#if oneLine}
-		
-			{#if c.missing}
-				<span class="missing"
-					><abbr title={c.name}>{c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)} (-{c.missing})</span
-				>
-			{:else}
-				<abbr title={c.name}> {c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)}
-			{/if}
-		
+		{#if c.missing}
+			<span class="missing"
+				><abbr title={c.name}>{c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)} (-{c.missing})</span
+			>
+		{:else}
+			<abbr title={c.name}> {c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)}
+		{/if}
 	{:else}
 		<div>
 			{#if c.missing}

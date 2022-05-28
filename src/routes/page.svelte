@@ -22,7 +22,7 @@
 	let char: Charakter | undefined;
 
 	onMount(async () => {
-		const currentChar = local<CharakterData>(window.location.hash.slice(1));
+		const currentChar = local<CharakterData>('c' + window.location.hash.slice(1));
 
 		data = await Data.init();
 		if (data) {
@@ -192,13 +192,10 @@
 		PagedRregisterHandlers(RepeatingTableHeaders);
 		let paged = new Previewer();
 		const flow = paged.preview().then((flow: any) => {
-			console.log('////////////////');
-
 			const nav = document.createElement('nav');
 			let pageLink: string;
-			pageLink = ($dev
-				? '/'
-				: '/character-generator/') + '#i' + (window.location.hash.slice(1) ?? '');
+			pageLink =
+				($dev ? '/' : '/character-generator/') + '#i' + (window.location.hash.slice(1) ?? '');
 
 			nav.innerHTML = `
 		
@@ -212,24 +209,6 @@
 				.getElementsByTagName('body')[0]
 				.insertBefore(nav, document.getElementsByTagName('body')[0].childNodes[0]);
 		});
-		//eval(paged);
-		// 		const nav = document.createElement('nav');
-		// 		let pageLink: string;
-		// 	 pageLink = $dev ? '/' : '/character-generator/';
-		// 		nav.innerHTML= `
-
-		// 				<a href=${pageLink} role="button"  rel="external"
-		// 					>Editor</a
-		// 				>
-
-		// `;
-		// console.log(document.getElementsByTagName('body')[0].childNodes[0])
-		// document.getElementsByTagName('body')[0].insertBefore(nav,document.getElementsByTagName('body')[0].childNodes[0]);
-
-		// (window as any).PagedConfig = {
-		// 		auto: true,
-		// 		after: (flow : any) => { console.log("after", flow) },
-		// 	};
 	});
 
 	let dev = writable(true);
@@ -386,7 +365,7 @@
 	<div class="extra">
 		{#each Object.keys(data.besonderheitenCategoryMap) as bKey}
 			{#if Object.keys(data.besonderheitenCategoryMap[bKey]).some((x) => (char?.besonderheiten[x] ?? 0) > 0)}
-				<div>
+				<div class="list">
 					<strong>{bKey}</strong>
 					<ul>
 						{#each Object.keys(data.besonderheitenCategoryMap[bKey]).filter((x) => (char?.besonderheiten[x] ?? 0) > 0) as b2Key}
@@ -405,7 +384,7 @@
 
 		{#each Object.keys(data.fertigkeitenCategoryMap) as bKey}
 			{#if Object.keys(data.fertigkeitenCategoryMap[bKey]).some((x) => (char?.fertigkeiten[x] ?? 0) > 0)}
-				<div>
+				<div class="list">
 					<strong>{bKey}</strong>
 					<ul>
 						{#each Object.keys(data.fertigkeitenCategoryMap[bKey]).filter((x) => (char?.fertigkeiten[x] ?? 0) > 0) as b2Key}
@@ -483,7 +462,18 @@
 					</tbody>
 				</table>
 			{:else}
-				Keine Erlernten Talente
+				<table class="talent">
+					<thead>
+						<tr>
+							<th colspan="2" style="padding-top: 0.5em;padding-bottom: 0.5em; font-size: large;">
+								{tk}</th
+							>
+						</tr>
+					</thead>
+					<tbody>
+						<tr> <td> Keine Erlernten Talente </td></tr>
+					</tbody>
+				</table>
 			{/if}
 		{/each}
 	</div>
@@ -642,13 +632,12 @@
 		<div style="grid-column: 1;">
 			<Armor {char} />
 		</div>
-		<div style="grid-column: 2;" />
 		<div style="grid-column: 3;">
 			<h6>Ausdauer & Wunden</h6>
 			<Hitman {char} />
 
 			<table class="aussdauer">
-				{#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as y}
+				{#each [1, 2, 3, 4, 5, 6, 7, 8, 9,10,11] as y}
 					{@const au = Math.floor(
 						70 -
 							(2 * (char?.eigenschaftenData.Konstitution.current ?? 21) +
@@ -670,6 +659,47 @@
 					</tr>
 				{/each}
 			</table>
+		</div>
+		<div
+			class="kampf-info"
+			style="grid-column: 2; grid-row: 1; display: flex; flex-wrap: wrap; justify-content: space-evenly ;"
+		>
+			{#each Object.keys(data.besonderheitenCategoryMap) as bKey}
+				{#if Object.keys(data.besonderheitenCategoryMap[bKey]).some((x) => (char?.besonderheiten[x] ?? 0) > 0 && (data?.besonderheitenMap[x].SubKategorie ?? []).includes('Kampf'))}
+					<div class="list">
+						<strong>{bKey}</strong>
+						<ul>
+							{#each Object.keys(data.besonderheitenCategoryMap[bKey]).filter((x) => (char?.besonderheiten[x] ?? 0) > 0 && (data?.besonderheitenMap[x].SubKategorie ?? []).includes('Kampf')) as b2Key}
+								<li>
+									{getTextBesonderheit(
+										data.besonderheitenMap[b2Key],
+										char?.besonderheiten[b2Key] ?? 0
+									)}
+								</li>
+							{/each}
+						</ul>
+						<hr />
+					</div>
+				{/if}
+			{/each}
+
+			{#if Object.keys(data.fertigkeitenCategoryMap['Kampf']).some((x) => (char?.fertigkeiten[x] ?? 0) > 0)}
+				<div class="list">
+					<strong>Fertigkeiten</strong>
+					<ul>
+						{#each Object.keys(data.fertigkeitenCategoryMap['Kampf']).filter((x) => (char?.fertigkeiten[x] ?? 0) > 0) as b2Key}
+							<li>
+								{getTextFertigkeit(data.fertigkeitenMap[b2Key], char?.fertigkeiten[b2Key] ?? 0)}
+							</li>
+						{/each}
+					</ul>
+					<hr />
+				</div>
+			{/if}
+
+			{#each [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] as p}
+				<div style="height: 220px; border: 1px solid black">Platzhalter</div>
+			{/each}
 		</div>
 	</div>
 {:else}
@@ -750,6 +780,10 @@
 		nav {
 			display: none;
 		}
+
+		.kampf-right > div:only-child {
+			grid-column: 1 / 4 !important;
+		}
 	}
 
 	* {
@@ -762,9 +796,8 @@
 		font-weight: lighter;
 	}
 	.aussdauer {
-		width: 100%;
+		
 		border: 1px solid black;
-		width: 100%;
 		padding: 8px;
 		border-collapse: collapse;
 		margin-bottom: 8px;
@@ -782,6 +815,7 @@
 		}
 		td {
 			height: 34px;
+			width:  34px;
 			vertical-align: middle;
 			text-align: center;
 
@@ -849,7 +883,15 @@
 			break-before: avoid;
 		}
 		padding: 8px;
-		ul {
+	}
+	.kampf-info {
+		& > * {
+			width: 210px;
+			margin: 0.5rem;
+		}
+	}
+	.list {
+		& > ul {
 			margin-block-start: 0px;
 			margin-block-end: 0.2rem;
 
@@ -859,6 +901,7 @@
 			}
 			li {
 				display: inline;
+				font-size: smaller;
 			}
 			li:not(:first-child)::before {
 				content: ', ';
@@ -912,7 +955,7 @@
 
 	.kampf-right {
 		display: grid;
-		grid-template-columns: 1fr 1fr 205px;
+		grid-template-columns: auto 1fr auto;
 		width: 100%;
 	}
 

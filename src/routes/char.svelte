@@ -29,28 +29,29 @@
 
 	let selection: string = 'Gattung/Art';
 
+	Data.init().then((t) => {
+		$data = t;
+	});
 	onMount(async () => {
-		const currentChar = local<CharakterData>(charId);
-		window.addEventListener('close', (e) => {
-			if ($char) {
-				currentChar.set($char.Data);
-			}
-		});
-		$data = await Data.init();
-		if ($data) {
-			const j = get(currentChar);
-			$char = new Charakter($data, j);
-
-			$char?.DataStore.subscribe((v) => currentChar.set(v));
-		}
-
 		dev.set(!window.location.pathname.includes('character-generator'));
 	});
+
+	$: {
+		if (charId) {
+			const currentChar = local<CharakterData>('c' + charId);
+			if ($data) {
+				const j = get(currentChar);
+				$char = new Charakter($data, j);
+
+				$char?.DataStore.subscribe((v) => currentChar.set(v));
+			}
+		}
+	}
 
 	let dev = writable(true);
 	let pageLink: string;
 	let charLink: string;
-	$: pageLink = ($dev ? '/page' : '/character-generator/page')+'#'+charId;
+	$: pageLink = ($dev ? '/page' : '/character-generator/page') + '#' + charId;
 	let persistionData = $char?.DataStore;
 	$: persistionData = $char?.DataStore;
 	$: {
@@ -64,8 +65,8 @@
 </script>
 
 {#if $data && $char}
-	<!-- <Hitman {char}></Hitman> -->
-	<!-- <Armor {char}></Armor> -->
+	<!-- <Hitman char={$char}></Hitman> -->
+	<!-- <Armor char={$char}></Armor> -->
 	<nav>
 		<ul>
 			<li>
@@ -189,7 +190,7 @@
 					style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; "
 				>
 					{#each EIGENRSCHAFTEN as e}
-						<EigenschaftsControl char={$char} data={$data} eigenschaft={e} />
+						<EigenschaftsControl bind:char={$char} data={$data} eigenschaft={e} />
 					{/each}
 				</div>
 			{:else if selection == 'Pfade'}

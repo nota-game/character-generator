@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type {  Readable } from 'svelte/store';
+	import type { Readable } from 'svelte/store';
 
 	import type { Charakter, Eigenschaft } from '../models/Character';
 	import type { Data } from '../models/Data';
@@ -9,11 +9,19 @@
 	export let char: Charakter;
 	export let eigenschaft: Eigenschaft;
 
-	const chareigenschaftenDataMutincreaseCostStore =
+	let chareigenschaftenDataMutincreaseCostStore =
 		char?.eigenschaftenData[eigenschaft].increaseCostStore;
-	const chareigenschaftenDataMutdecreaseCostStore =
+	let chareigenschaftenDataMutdecreaseCostStore =
 		char?.eigenschaftenData[eigenschaft].decreaseCostStore;
-	const charMutStore = char?.eigenschaftenData[eigenschaft].currentStore;
+	let charMutStore = char?.eigenschaftenData[eigenschaft].currentStore;
+
+	$: {
+		chareigenschaftenDataMutincreaseCostStore =
+			char?.eigenschaftenData[eigenschaft].increaseCostStore;
+		chareigenschaftenDataMutdecreaseCostStore =
+			char?.eigenschaftenData[eigenschaft].decreaseCostStore;
+		charMutStore = char?.eigenschaftenData[eigenschaft].currentStore;
+	}
 
 	let isIncreaseToexpensiv: Readable<boolean>;
 	let isDecreaseToexpensiv: Readable<boolean>;
