@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import type { _Gattung, _Lebensabschnitt, _Morph, Art_lebewesen, _Art2, _LevelVoraussetzung, _LevelAuswahlen, _LevelAuswahl, _Level8, _Level1, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc } from "src/data/nota.g";
 import { type Readable, get, derived, writable, type Writable } from "svelte/store";
 import { derivedLazy } from "../lazyDerivied";
@@ -11,24 +12,19 @@ type selection = {
     g: _Gattung;
 } | undefined;
 
-export type Eigenschaft = 'Mut' | 'Glück' | 'Klugheit' | 'Intuition' | 'Gewandtheit' | 'Feinmotorik' | 'Sympathie' | 'Antipathie' | 'Stärke' |'Konstitution' | 'Fokus'| 'Einfluss';
+export type Eigenschaft = 'Mut' | 'Glück' | 'Klugheit' | 'Intuition' | 'Gewandtheit' | 'Feinmotorik' | 'Sympathie' | 'Antipathie' | 'Stärke' | 'Konstitution' | 'Fokus' | 'Einfluss';
 
 class EigenschaftenData {
+    public readonly eigenschaft: Eigenschaft;
 
-    public readonly startStore = writable(0);
-    public get start() {
-        return get(this.startStore);
+    /**
+     *
+     */
+    constructor(e: Eigenschaft) {
+        this.eigenschaft = e;
     }
-    public set start(value) {
-        this.startStore.set(value);
-    }
-    public readonly modifiedStore = writable({} as Record<Eigenschaft, number>);
-    public get modified() {
-        return get(this.modifiedStore);
-    }
-    public set modified(value) {
-        this.modifiedStore.set(value);
-    }
+
+
     public readonly acciredStore = writable(0);
     public get accired() {
         return get(this.acciredStore);
@@ -36,13 +32,7 @@ class EigenschaftenData {
     public set accired(value) {
         this.acciredStore.set(value);
     }
-    public readonly costStore = writable({} as Record<number, KostenDefinition_misc[] | undefined>);
-    public get cost() {
-        return get(this.costStore);
-    }
-    public set cost(value) {
-        this.costStore.set(value);
-    }
+
 }
 
 interface EigenschaftsMap<T> {
@@ -80,12 +70,12 @@ class EigenschaftenDataAccess {
     /**
      *
      */
-    constructor(base: EigenschaftenData) {
+    constructor(base: EigenschaftenData, startPropertysStore: Readable<Record<Eigenschaft, { start: number; mod: number; cost: Record<number, KostenDefinition_misc[] | undefined> }>>) {
         this.base = base;
-        this.startStore = derived(this.base.startStore, (value) => value);
-        this.modifiedStore = derived(this.base.modifiedStore, (value) => value);
+        this.startStore = derived(startPropertysStore, (value) => value[base.eigenschaft].start);
+        this.modifiedStore = derived(startPropertysStore, (value) => value[base.eigenschaft].mod);
+        this.costStore = derived(startPropertysStore, (value) => value[base.eigenschaft].cost);
         this.acciredStore = derived(this.base.acciredStore, (value) => value);
-        this.costStore = derived(this.base.costStore, (value) => value);
         this.increaseCostStore = derived([this.costStore, this.acciredStore], ([c, a]) =>
             a <= -1
                 ? c[-1]?.map(x => ({ Id: x.Id, Wert: -x.Wert }))
@@ -100,7 +90,7 @@ class EigenschaftenDataAccess {
     private readonly base: EigenschaftenData;
     public readonly startStore: Readable<number>;
     public readonly currentStore: Readable<number>;
-    public readonly modifiedStore: Readable<Record<Eigenschaft, number>>;
+    public readonly modifiedStore: Readable<number>;
     public readonly acciredStore: Readable<number>;
     public readonly costStore: Readable<Record<number, KostenDefinition_misc[] | undefined>>;
     public readonly increaseCostStore: Readable<KostenDefinition_misc[] | undefined>;
@@ -368,6 +358,8 @@ export type MissingRequirements = { type: 'tag', id: string }
 
 
 export type CharakterData = {
+    id: string,
+    name: string,
     lebensabschnittId: string | undefined,
     eigenschaften: Record<string, number>
     besonderheiten: Record<string, number>;
@@ -378,9 +370,20 @@ export type CharakterData = {
 
 export class Charakter {
     private readonly data: Data;
+    private readonly id: string;
 
     public readonly organismusStore = writable<selection>(undefined);
+    public readonly nameStore = writable<string>(undefined);
+    public get name() {
+        return get(this.nameStore);
+    }
+    public set name(name: string) {
+        this.nameStore.set(name);
+    }
     public readonly punkteStore: Readable<Record<string, number>>;
+
+
+    public readonly startPropertysStore: Readable<Record<Eigenschaft, { start: number; mod: number; cost: Record<number, KostenDefinition_misc[] | undefined> }>>;
 
     private readonly pfadLevelDataStore = writable({} as Record<string, Record<string, Record<string, number>>>);
     public readonly pfadLevelStore: Readable<Readonly<Record<string, Record<string, Record<string, number>>>>>;
@@ -389,6 +392,7 @@ export class Charakter {
     private readonly besonderheitenFixDataStore: Readable<Record<string, number | undefined>>;
     public readonly besonderheitenPurchasedStore: Readable<Record<string, number | undefined>>;
     public readonly besonderheitenStore: Readable<Readonly<Record<string, number | undefined>>>;
+
     public get besonderheiten(): Readonly<Record<string, number | undefined>> {
         return get(this.besonderheitenStore);
     }
@@ -413,7 +417,7 @@ export class Charakter {
     private readonly talentFixEP: Readable<Record<string, number>>;
     public readonly talentPurchasedEP: Readable<Record<string, number | undefined>>;
     public readonly talentBaseEPStore: Readable<Record<string, number>>;
-    public get talentBaseEP(): Record<string, number>{
+    public get talentBaseEP(): Record<string, number> {
         return get(this.talentBaseEPStore)
     }
     public readonly talentBaseStore: Readable<Record<string, number>>;
@@ -429,7 +433,7 @@ export class Charakter {
         return get(this.talentEffectiveStore);
     }
     public readonly talentEffectiveIgnoreRequirementsStore: Readable<Record<string, number>>;
-    public get talentEffectiveIgnoreRequirements(): Record<string, number>{
+    public get talentEffectiveIgnoreRequirements(): Record<string, number> {
         return get(this.talentEffectiveIgnoreRequirementsStore);
     }
     public readonly talentMissingRequirement: Readable<Record<string, { Wert: number; missing: MissingRequirements; }[]>>;
@@ -440,10 +444,12 @@ export class Charakter {
     }
 
     public get DataStore(): Readable<CharakterData> {
-        return derived([this.pfadLevelStore, this.talentPurchasedEPData, this.organismusStore, this.fertigkeitenPurchasedStore, this.besonderheitenPurchasedStore, ...EIGENRSCHAFTEN.map(key => this.eigenrschaften[key].acciredStore)], ([pfadLevelStore, talentPurchasedEPData, organismusStore, fertigkeitenPurchasedStore, besonderheitenPurchasedStore, ...eigenschaften]) => {
+        return derived([this.pfadLevelStore, this.talentPurchasedEPData, this.organismusStore, this.fertigkeitenPurchasedStore, this.besonderheitenPurchasedStore, this.nameStore, ...EIGENRSCHAFTEN.map(key => this.eigenrschaften[key].acciredStore)], ([pfadLevelStore, talentPurchasedEPData, organismusStore, fertigkeitenPurchasedStore, besonderheitenPurchasedStore, name, ...eigenschaften]) => {
 
 
             return {
+                id: this.id,
+                name: name,
                 eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map((key, i) => [key, eigenschaften[i]]).filter(([_, v]) => (v as number) != 0)),
                 besonderheiten: Object.fromEntries(Object.entries(besonderheitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
                 fertigkeiten: Object.fromEntries(Object.entries(fertigkeitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
@@ -457,6 +463,8 @@ export class Charakter {
 
     public get Data(): CharakterData {
         return {
+            id: this.id,
+            name: this.name,
             eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map(key => [key, this.eigenrschaften[key].accired]).filter(([_, v]) => (v as number) != 0)),
             besonderheiten: Object.fromEntries(Object.entries(get(this.besonderheitenPurchasedStore)).filter((([key, value]) => (value ?? 0) > 0))) as any,
             fertigkeiten: Object.fromEntries(Object.entries(get(this.fertigkeitenPurchasedStore)).filter((([key, value]) => (value ?? 0) > 0))) as any,
@@ -468,7 +476,7 @@ export class Charakter {
 
 
 
-    public set Data(v: CharakterData) {
+    private set Data(v: CharakterData) {
 
         EIGENRSCHAFTEN.forEach((key) => {
             this.eigenrschaften[key].accired = v.eigenschaften[key] ?? 0;
@@ -483,6 +491,7 @@ export class Charakter {
         }
         this.talentPurchasedEPData.set(v.talentEP);
         this.pfadLevelDataStore.set(v.pfade);
+        this.name=v.name;
     }
 
 
@@ -589,8 +598,64 @@ export class Charakter {
     /**
      *
      */
-    constructor(data: Data) {
+    constructor(data: Data, old?: CharakterData) {
         this.data = data;
+
+
+        this.startPropertysStore = derived(this.organismusStore, v => {
+            return Object.fromEntries(EIGENRSCHAFTEN.map(att => {
+                if (v) {
+
+                    const mod = v.l.Mods?.Eigenschaften?.[att]?.Mod ?? 0;
+
+
+
+
+                    const start = v.m.Eigenschaften?.[att].Start
+                        ?? v.a.Eigenschaften?.[att].Start
+                        ?? v.g.Eigenschaften?.[att].Start
+                        ?? NaN;
+                    if (isNaN(start)) {
+                        throw Error(`Stammdaten fehlerhft Eigenschaft nicht definiert ${att} ${v.m.Id}`)
+                    }
+
+                    const definedCosts = (v.a.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0])
+                        .concat((v.g.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
+                        .concat((v.m.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
+                        .concat((this.data.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
+                        ;
+                    const maxCost = Math.max(...definedCosts);
+                    const minCost = Math.min(...definedCosts);
+
+                    const cost: Record<number, KostenDefinition_misc[] | undefined> = {};
+                    for (let i = minCost; i <= maxCost; i++) {
+                        const c = v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.a.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.g.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? this.data.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.a.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.g.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? this.data.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten;
+                        if (typeof c == 'object') {
+                            cost[i] = c;
+                        } else if (i == 0) {
+                            cost[i] = [];
+                        }
+                    }
+
+                    return [att, { start, mod, cost }] as const;
+                }
+                return [att, { start: 0, cost: {}, mod: 0 }] as const;
+            })) as Record<Eigenschaft, { start: number; mod: number; cost: Record<number, KostenDefinition_misc[] | undefined> }>;
+
+        });
+
+        this.eigenrschaften = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenData(att)] as const)) as any;
+        this.eigenschaftenData = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenDataAccess(this.eigenrschaften[att], this.startPropertysStore)] as const)) as any;
+
 
         this.talentPurchasedEPData.set({} as Record<string, number>);
 
@@ -774,7 +839,7 @@ export class Charakter {
 
 
 
-        this.besonderheitenFixDataStore = derived(this.pfadLevelStore, (levels) => {
+        this.besonderheitenFixDataStore = derived([this.pfadLevelStore, this.organismusStore], ([levels, o]) => {
             return (Object.keys(levels)
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
@@ -786,10 +851,12 @@ export class Charakter {
                                 .Pfad.filter(x => x.Id == pfad)[0]
                                 .Levels.Level.filter(x => x.Id == level)[0];
                             return l.Besonderheit ?? [];
-                        })))).reduce((p, c) => {
-                            p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
-                            return p;
-                        }, {} as Record<string, number | undefined>);
+                        }))))
+                .concat(o?.l.Mods?.Besonderheiten?.Besonderheit ?? [])
+                .reduce((p, c) => {
+                    p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
+                    return p;
+                }, {} as Record<string, number | undefined>);
 
         });
         this.besonderheitenStoreIgnoreRequirements =
@@ -846,52 +913,16 @@ export class Charakter {
                     .reduce((p, c) => { p[c] = true; return p; }, {} as Record<string, true | undefined>)
             });
 
-        this.organismusStore.subscribe((v) => {
-            if (v) {
-                EIGENRSCHAFTEN.forEach(att => {
-                    const e = this.eigenrschaften[att];
-                    e.start = v.m.Eigenschaften?.[att].Start
-                        ?? v.a.Eigenschaften?.[att].Start
-                        ?? v.g.Eigenschaften?.[att].Start
-                        ?? NaN;
-                    if (isNaN(e.start)) {
-                        throw Error(`Stammdaten fehlerhft Eigenschaft nicht definiert ${att} ${v.m.Id}`)
-                    }
 
-                    const definedCosts = (v.a.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0])
-                        .concat((v.g.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
-                        .concat((v.m.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
-                        .concat((this.data.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
-                        ;
-                    const maxCost = Math.max(...definedCosts);
-                    const minCost = Math.min(...definedCosts);
-
-                    e.cost = {};
-                    for (let i = minCost; i <= maxCost; i++) {
-                        const c = v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.a.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.g.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? this.data.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.a.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.g.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? this.data.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten;
-                        if (typeof c == 'object') {
-                            e.cost[i] = c;
-                        } else if (i == 0) {
-                            e.cost[i] = [];
-                        }
-                    }
-                });
-            }
-        });
 
         besonderheitenInit.init([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
         fertigkeitenInit.init([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
         talentMissingRequirementInit.init([this.talentEffectiveIgnoreRequirementsStore, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
         talentEffectiveInit.init([this.talentEffectiveIgnoreRequirementsStore, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
+
+
+
+
 
         this.punkteStore = derived([
             this.organismusStore,
@@ -1078,6 +1109,11 @@ export class Charakter {
             }
 
         });
+
+        if (old)
+            this.Data = old;
+        this.id = old?.id ?? uuidv4();
+
     }
 
     getTalentPurchasedEPStore(id: string): Writable<number> {
@@ -1366,34 +1402,8 @@ export class Charakter {
     };
 
 
-    private readonly eigenrschaften: Readonly<EigenschaftsMap<EigenschaftenData>> = {
-        Mut: new EigenschaftenData(),
-        Glück: new EigenschaftenData(),
-        Klugheit: new EigenschaftenData(),
-        Intuition: new EigenschaftenData(),
-        Gewandtheit: new EigenschaftenData(),
-        Feinmotorik: new EigenschaftenData(),
-        Sympathie: new EigenschaftenData(),
-        Antipathie: new EigenschaftenData(),
-        Stärke: new EigenschaftenData(),
-        Konstitution: new EigenschaftenData(),
-        Fokus: new EigenschaftenData(),
-        Einfluss: new EigenschaftenData(),
-    }
-    public readonly eigenschaftenData: Readonly<EigenschaftsMap<EigenschaftenDataAccess>> = {
-        Mut: new EigenschaftenDataAccess(this.eigenrschaften.Mut),
-        Glück: new EigenschaftenDataAccess(this.eigenrschaften.Glück),
-        Klugheit: new EigenschaftenDataAccess(this.eigenrschaften.Klugheit),
-        Intuition: new EigenschaftenDataAccess(this.eigenrschaften.Intuition),
-        Gewandtheit: new EigenschaftenDataAccess(this.eigenrschaften.Gewandtheit),
-        Feinmotorik: new EigenschaftenDataAccess(this.eigenrschaften.Feinmotorik),
-        Sympathie: new EigenschaftenDataAccess(this.eigenrschaften.Sympathie),
-        Antipathie: new EigenschaftenDataAccess(this.eigenrschaften.Antipathie),
-        Stärke: new EigenschaftenDataAccess(this.eigenrschaften.Stärke),
-        Konstitution: new EigenschaftenDataAccess(this.eigenrschaften.Konstitution),
-        Fokus: new EigenschaftenDataAccess(this.eigenrschaften.Fokus),
-        Einfluss: new EigenschaftenDataAccess(this.eigenrschaften.Einfluss),
-    }
+    private readonly eigenrschaften: Readonly<EigenschaftsMap<EigenschaftenData>>;
+    public readonly eigenschaftenData: Readonly<EigenschaftsMap<EigenschaftenDataAccess>>;
 
 
 

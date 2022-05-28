@@ -1,0 +1,259 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import pako from 'pako';
+	import * as base64 from 'base64-uint8';
+	import { Data } from './models/Data';
+	import { Charakter, EIGENRSCHAFTEN, type CharakterData } from './models/Character';
+	import PointControl from './controls/PointControl.svelte';
+	import OrganismSelect from './controls/OrganismSelect.svelte';
+	import EigenschaftsControl from './controls/EigenschaftsControl.svelte';
+
+	import {} from '@picocss/pico/css/pico.css';
+	import TalentList from './controls/TalentList.svelte';
+	import FertigkeitenList from './controls/FertigkeitenList.svelte';
+	import BesonderheitenList from './controls/BesonderheitenList.svelte';
+	import PfadList from './controls/PfadList.svelte';
+	import { local } from './storage';
+	import { get, writable, type Writable } from 'svelte/store';
+	import Hitman from './controls/hitman.svelte';
+	import Armor from './controls/armor.svelte';
+
+	let data = writable<Data | undefined>(undefined);
+	let char = writable<Charakter | undefined>(undefined);
+	export let charId: string;
+
+	let charOrganismusStore = $char?.organismusStore;
+	$: charOrganismusStore = $char?.organismusStore;
+	let nameStore = $char?.nameStore;
+	$: nameStore = $char?.nameStore;
+
+	let selection: string = 'Gattung/Art';
+
+	onMount(async () => {
+		const currentChar = local<CharakterData>(charId);
+		window.addEventListener('close', (e) => {
+			if ($char) {
+				currentChar.set($char.Data);
+			}
+		});
+		$data = await Data.init();
+		if ($data) {
+			const j = get(currentChar);
+			$char = new Charakter($data, j);
+
+			$char?.DataStore.subscribe((v) => currentChar.set(v));
+		}
+
+		dev.set(!window.location.pathname.includes('character-generator'));
+	});
+
+	let dev = writable(true);
+	let pageLink: string;
+	let charLink: string;
+	$: pageLink = ($dev ? '/page' : '/character-generator/page')+'#'+charId;
+	let persistionData = $char?.DataStore;
+	$: persistionData = $char?.DataStore;
+	$: {
+		const d = JSON.stringify($persistionData ?? {});
+		const packed = base64.encode(pako.deflate(d));
+
+		charLink =
+			($dev ? '/' : '/character-generator/') +
+			`#d${(packed?.length ?? NaN) < d.length ? packed : d}`;
+	}
+</script>
+
+{#if $data && $char}
+	<!-- <Hitman {char}></Hitman> -->
+	<!-- <Armor {char}></Armor> -->
+	<nav>
+		<ul>
+			<li>
+				<a
+					href={pageLink}
+					role="button"
+					disabled={char == undefined ? true : undefined}
+					rel="external">Character Blatt</a
+				>
+			</li>
+			<li>
+				<a
+					href={charLink}
+					role="button"
+					disabled={char == undefined ? true : undefined}
+					rel="external">Link {charLink?.length ?? -1}</a
+				>
+			</li>
+		</ul>
+		<ul>
+			<li>
+				<input
+					id="Gattung/ArtSelecs"
+					type="radio"
+					name="top"
+					value="Gattung/Art"
+					bind:group={selection}
+				/>
+				<label for="Gattung/ArtSelecs">Gattung/Art </label>
+			</li>
+			{#if $charOrganismusStore}
+				<li>
+					<input
+						id="EigenschaftenSelecs"
+						type="radio"
+						name="top"
+						value="Eigenschaften"
+						bind:group={selection}
+					/>
+					<label for="EigenschaftenSelecs">Eigenschaften </label>
+				</li>
+				<li>
+					<input id="PfadeSelecs" type="radio" name="top" value="Pfade" bind:group={selection} />
+					<label for="PfadeSelecs">Pfade </label>
+				</li>
+				<li>
+					<input
+						id="TalenteSelecs"
+						type="radio"
+						name="top"
+						value="Talente"
+						bind:group={selection}
+					/>
+					<label for="TalenteSelecs">Talente </label>
+				</li>
+				<li>
+					<input
+						id="FertigkeitenSelecs"
+						type="radio"
+						name="top"
+						value="Fertigkeiten"
+						bind:group={selection}
+					/>
+					<label for="FertigkeitenSelecs">Fertigkeiten </label>
+				</li>
+				<li>
+					<input
+						id="BesonderheitenSelecs"
+						type="radio"
+						name="top"
+						value="Besonderheiten"
+						bind:group={selection}
+					/>
+					<label for="BesonderheitenSelecs">Besonderheiten </label>
+				</li>
+			{/if}
+		</ul>
+		<ul>
+			<li>
+				<button
+					disabled={char == undefined}
+					on:click={() => {
+						// if ($char)
+						// 	$char.Data = {
+						// 		id
+						// 		besonderheiten: {},
+						// 		eigenschaften: {},
+						// 		fertigkeiten: {},
+						// 		talentEP: {},
+						// 		pfade: {},
+						// 		lebensabschnittId: undefined
+						// 	};
+						selection = 'Gattung/Art';
+					}}>Reset</button
+				>
+			</li>
+		</ul>
+	</nav>
+
+	<article class="hover">
+		<header>Punkte</header>
+		<div>
+			<PointControl char={$char} data={$data} />
+		</div>
+		<div>
+			<strong>Punkte</strong>
+			<PointControl char={$char} data={$data} compact />
+		</div>
+	</article>
+
+	<main class="container">
+		{#if selection == 'Gattung/Art'}
+			<article>
+				<input type="text" placeholder="Name" bind:value={$nameStore} />
+				<OrganismSelect char={$char} data={$data} />
+			</article>
+		{/if}
+		{#if $charOrganismusStore}
+			{#if selection == 'Eigenschaften'}
+				<div
+					style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; "
+				>
+					{#each EIGENRSCHAFTEN as e}
+						<EigenschaftsControl char={$char} data={$data} eigenschaft={e} />
+					{/each}
+				</div>
+			{:else if selection == 'Pfade'}
+				<PfadList char={$char} data={$data} />
+			{:else if selection == 'Talente'}
+				<TalentList char={$char} data={$data} />
+			{:else if selection == 'Fertigkeiten'}
+				<FertigkeitenList char={$char} data={$data} />
+			{:else if selection == 'Besonderheiten'}
+				<BesonderheitenList char={$char} data={$data} />
+			{/if}
+		{/if}
+	</main>
+{:else}
+	<p>Loding…</p>
+{/if}
+
+<style lang="scss">
+	:global {
+		.missing {
+			color: brown;
+		}
+		button.missing {
+			background-color: brown;
+			color: white;
+		}
+	}
+	.hover {
+		width: 10rem;
+		position: sticky;
+		float: right;
+		right: 50px;
+		top: 5px;
+
+		div:nth-child(3) {
+			display: none;
+		}
+
+		@media (max-width: 1500px) {
+			float: none;
+			width: unset;
+			right: unset;
+			top: 0px;
+			z-index: 999;
+
+			header {
+				display: none;
+			}
+			div:nth-child(2) {
+				display: none;
+			}
+			div:nth-child(3) {
+				display: block;
+			}
+		}
+	}
+
+	input[type='radio'] {
+		display: none;
+		&:checked + label {
+			color: var(--primary);
+		}
+	}
+	label {
+		display: inline;
+	}
+</style>

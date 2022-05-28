@@ -3,41 +3,204 @@
 	import { Data } from './models/Data';
 	import { Charakter, EIGENRSCHAFTEN, type CharakterData } from './models/Character';
 	import paged from './../../node_modules/pagedjs/dist/paged.polyfill.js?raw';
+	import {
+		Handler as PagedHandler,
+		registerHandlers as PagedRregisterHandlers,
+		Previewer
+	} from './../../node_modules/pagedjs/dist/paged.esm';
 
-	import { getText } from './misc';
+	import { getText, getTextBesonderheit, getTextFertigkeit } from './misc';
 
 	import Hitman from './controls/hitman.svelte';
 	import { local } from './storage';
 	import { get, writable } from 'svelte/store';
-import Armor from './controls/armor.svelte';
+	import Armor from './controls/armor.svelte';
+	import BesonderheitenContro from './controls/BesonderheitenContro.svelte';
+	import { map } from 'mathjs';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
 
-	let charOrganismusStore = char?.organismusStore;
-	$: charOrganismusStore = char?.organismusStore;
-
-	let selection: string = 'Gattung/Art';
-
 	onMount(async () => {
-		const currentChar = local<CharakterData>('currentChar');
+		const currentChar = local<CharakterData>(window.location.hash.slice(1));
+
 		data = await Data.init();
 		if (data) {
-			char = new Charakter(data);
-
 			const j = get(currentChar);
-			if (j) {
-				char.Data = j;
-			}
+			char = new Charakter(data, j);
 		}
 		dev.set(!window.location.pathname.includes('character-generator'));
-		(window as any).PagedConfig = {
-			auto: true,
-			after: (flow: any) => {
-				const nav = document.createElement('nav');
-				let pageLink: string;
-				pageLink = $dev ? '/' : '/character-generator/';
-				nav.innerHTML = `
+
+		class RepeatingTableHeaders extends PagedHandler {
+			splitTablesRefs: any[];
+			constructor(chunker: any, polisher: any, caller: any) {
+				super(chunker, polisher, caller);
+				this.splitTablesRefs = [];
+			}
+
+			afterPageLayout(
+				pageElement: any,
+				page: any,
+				breakToken: { node: any },
+				chunker: { source: any }
+			) {
+				this.chunker = chunker;
+				this.splitTablesRefs = [];
+
+				if (breakToken) {
+					const node = breakToken.node;
+					const tables = this.findAllAncestors(node, 'table');
+					if (node.tagName === 'TABLE') {
+						tables.push(node);
+					}
+
+					if (tables.length > 0) {
+						this.splitTablesRefs = tables.map((t) => t.dataset.ref);
+
+						//checks if split inside thead and if so, set breakToken to next sibling element
+						let thead = node.tagName === 'THEAD' ? node : this.findFirstAncestor(node, 'thead');
+						if (thead) {
+							let lastTheadNode = thead.hasChildNodes() ? thead.lastChild : thead;
+							breakToken.node = this.nodeAfter(lastTheadNode, chunker.source);
+						}
+
+						this.hideEmptyTables(pageElement, node);
+					}
+				}
+			}
+
+			hideEmptyTables(pageElement: { querySelector: (arg0: string) => any }, breakTokenNode: any) {
+				this.splitTablesRefs.forEach((ref) => {
+					let table = pageElement.querySelector("[data-ref='" + ref + "']");
+					if (table) {
+						let sourceBody = table.querySelector('tbody > tr');
+						if (!sourceBody || this.refEquals(sourceBody.firstElementChild, breakTokenNode)) {
+							table.style.visibility = 'hidden';
+							table.style.position = 'absolute';
+							let lineSpacer = table.nextSibling;
+							if (lineSpacer) {
+								lineSpacer.style.visibility = 'hidden';
+								lineSpacer.style.position = 'absolute';
+							}
+						}
+					}
+				});
+			}
+
+			refEquals(a: { dataset: { ref: any } }, b: { dataset: { ref: any } }) {
+				return a && a.dataset && b && b.dataset && a.dataset.ref === b.dataset.ref;
+			}
+
+			findFirstAncestor(element: { parentNode: any }, selector: string) {
+				while (element.parentNode && element.parentNode.nodeType === 1) {
+					if (element.parentNode.matches(selector)) {
+						return element.parentNode;
+					}
+					element = element.parentNode;
+				}
+				return null;
+			}
+
+			findAllAncestors(element: { parentNode: any }, selector: string) {
+				const ancestors = [];
+				while (element.parentNode && element.parentNode.nodeType === 1) {
+					if (element.parentNode.matches(selector)) {
+						ancestors.unshift(element.parentNode);
+					}
+					element = element.parentNode;
+				}
+				return ancestors;
+			}
+
+			// The addition of repeating Table Headers is done here because this hook is triggered before overflow handling
+			layout(rendered: any, layout: any) {
+				this.splitTablesRefs.forEach((ref) => {
+					const renderedTable = rendered.querySelector("[data-ref='" + ref + "']");
+					if (renderedTable) {
+						// this event can be triggered multiple times
+						// added a flag repeated-headers to control when table headers already repeated in current page.
+						if (!renderedTable.getAttribute('repeated-headers')) {
+							const sourceTable = (this as any).chunker.source.querySelector(
+								"[data-ref='" + ref + "']"
+							);
+							this.repeatColgroup(sourceTable, renderedTable);
+							this.repeatTHead(sourceTable, renderedTable);
+							renderedTable.setAttribute('repeated-headers', true);
+						}
+					}
+				});
+			}
+
+			repeatColgroup(sourceTable: any, renderedTable: any) {
+				let colgroup = sourceTable.querySelectorAll('colgroup');
+				let firstChild = renderedTable.firstChild;
+				colgroup.forEach((colgroup: any) => {
+					let clonedColgroup = colgroup.cloneNode(true);
+					renderedTable.insertBefore(clonedColgroup, firstChild);
+				});
+			}
+
+			repeatTHead(sourceTable: any, renderedTable: any) {
+				let thead = sourceTable.querySelector('thead');
+				if (thead) {
+					let clonedThead = thead.cloneNode(true);
+					renderedTable.insertBefore(clonedThead, renderedTable.firstChild);
+				}
+			}
+
+			// the functions below are from pagedjs utils/dom.js
+			nodeAfter(node: any, limiter: any) {
+				if (limiter && node === limiter) {
+					return;
+				}
+				let significantNode = this.nextSignificantNode(node);
+				if (significantNode) {
+					return significantNode;
+				}
+				if (node.parentNode) {
+					while ((node = node.parentNode)) {
+						if (limiter && node === limiter) {
+							return;
+						}
+						significantNode = this.nextSignificantNode(node);
+						if (significantNode) {
+							return significantNode;
+						}
+					}
+				}
+			}
+
+			nextSignificantNode(sib: any) {
+				while ((sib = sib.nextSibling)) {
+					if (!this.isIgnorable(sib)) return sib;
+				}
+				return null;
+			}
+
+			isIgnorable(node: any) {
+				return (
+					node.nodeType === 8 || // A comment node
+					(node.nodeType === 3 && this.isAllWhitespace(node))
+				); // a text node, all whitespace
+			}
+
+			isAllWhitespace(node: any) {
+				return !/[^\t\n\r ]/.test(node.textContent);
+			}
+		}
+
+		PagedRregisterHandlers(RepeatingTableHeaders);
+		let paged = new Previewer();
+		const flow = paged.preview().then((flow: any) => {
+			console.log('////////////////');
+
+			const nav = document.createElement('nav');
+			let pageLink: string;
+			pageLink = ($dev
+				? '/'
+				: '/character-generator/') + '#i' + (window.location.hash.slice(1) ?? '');
+
+			nav.innerHTML = `
 		
 				<a href=${pageLink} role="button"  rel="external" 
 					>Zum Editor</a
@@ -45,14 +208,11 @@ import Armor from './controls/armor.svelte';
 
 
 `;
-				console.log(document.getElementsByTagName('body')[0].childNodes[0]);
-				document
-					.getElementsByTagName('body')[0]
-					.insertBefore(nav, document.getElementsByTagName('body')[0].childNodes[0]);
-			}
-		};
-
-		eval(paged);
+			document
+				.getElementsByTagName('body')[0]
+				.insertBefore(nav, document.getElementsByTagName('body')[0].childNodes[0]);
+		});
+		//eval(paged);
 		// 		const nav = document.createElement('nav');
 		// 		let pageLink: string;
 		// 	 pageLink = $dev ? '/' : '/character-generator/';
@@ -73,8 +233,6 @@ import Armor from './controls/armor.svelte';
 	});
 
 	let dev = writable(true);
-	let pageLink: string;
-	$: pageLink = $dev ? '/' : '/character-generator/';
 </script>
 
 {#if data && char}
@@ -88,7 +246,7 @@ import Armor from './controls/armor.svelte';
 	</div> -->
 
 	<table class="stammdaten">
-		<tr><td>Name </td><td>{'Platzhalter'}</td></tr>
+		<tr><td>Name </td><td>{char.name}</td></tr>
 		<tr
 			><td>Gattung/Art</td><td>
 				{getText(char.organismus?.g.Name)}
@@ -110,25 +268,157 @@ import Armor from './controls/armor.svelte';
 		{/each}
 	</table>
 
-	<table class="eigenschaften">
-		<thead>
-			<th>Eigenschaften</th>
-			<th />
-		</thead>
-		<tr><td>Konstitution</td><td> {char.eigenschaftenData.Konstitution.current}</td></tr>
-		<tr><td>Stärke</td><td> {char.eigenschaftenData.Stärke.current}</td></tr>
-		<tr><td>Gewandtheit</td><td> {char.eigenschaftenData.Gewandtheit.current}</td></tr>
-		<tr><td>Feinmotorik</td><td> {char.eigenschaftenData.Feinmotorik.current}</td></tr>
-		<tr><td>Antipathie</td><td> {char.eigenschaftenData.Antipathie.current}</td></tr>
-		<tr><td>Sympathie</td><td> {char.eigenschaftenData.Sympathie.current}</td></tr>
-		<tr><td>Klugheit</td><td> {char.eigenschaftenData.Klugheit.current}</td></tr>
-		<tr><td>Intuition</td><td> {char.eigenschaftenData.Intuition.current}</td></tr>
-		<tr><td>Fokus</td><td> {char.eigenschaftenData.Fokus.current}</td></tr>
-		<tr><td>Einfluss</td><td> {char.eigenschaftenData.Einfluss.current}</td></tr>
-		<tr><td>Mut</td><td> {char.eigenschaftenData.Mut.current}</td></tr>
-		<tr><td>Glück</td><td> {char.eigenschaftenData.Glück.current}</td></tr>
-	</table>
+	<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+		<table class="eigenschaften" style="grid-column: 1;">
+			<thead>
+				<th>Eigenschaften</th>
+				<th style="text-align: center;">Grund</th>
+				<th style="text-align: center;">Mod</th>
+				<th>Aktuell</th>
+			</thead>
+			<tr
+				><td>Konstitution</td><td>
+					{char.eigenschaftenData.Konstitution.current -
+						char.eigenschaftenData.Konstitution.modified}</td
+				><td
+					>{char.eigenschaftenData.Konstitution.modified
+						? char.eigenschaftenData.Konstitution.modified
+						: ''}</td
+				><td> {char.eigenschaftenData.Konstitution.current}</td></tr
+			>
+			<tr
+				><td>Stärke</td><td>
+					{char.eigenschaftenData.Stärke.current - char.eigenschaftenData.Stärke.modified}</td
+				><td
+					>{char.eigenschaftenData.Stärke.modified
+						? char.eigenschaftenData.Stärke.modified
+						: ''}</td
+				><td> {char.eigenschaftenData.Stärke.current}</td></tr
+			>
+			<tr
+				><td>Gewandtheit</td><td>
+					{char.eigenschaftenData.Gewandtheit.current -
+						char.eigenschaftenData.Gewandtheit.modified}</td
+				><td
+					>{char.eigenschaftenData.Gewandtheit.modified
+						? char.eigenschaftenData.Gewandtheit.modified
+						: ''}</td
+				><td> {char.eigenschaftenData.Gewandtheit.current}</td></tr
+			>
+			<tr
+				><td>Feinmotorik</td><td>
+					{char.eigenschaftenData.Feinmotorik.current -
+						char.eigenschaftenData.Feinmotorik.modified}</td
+				><td
+					>{char.eigenschaftenData.Feinmotorik.modified
+						? char.eigenschaftenData.Feinmotorik.modified
+						: ''}</td
+				><td> {char.eigenschaftenData.Feinmotorik.current}</td></tr
+			>
+			<tr
+				><td>Antipathie</td><td>
+					{char.eigenschaftenData.Antipathie.current -
+						char.eigenschaftenData.Antipathie.modified}</td
+				><td
+					>{char.eigenschaftenData.Antipathie.modified
+						? char.eigenschaftenData.Antipathie.modified
+						: ''}</td
+				><td> {char.eigenschaftenData.Antipathie.current}</td></tr
+			>
+			<tr
+				><td>Sympathie</td><td>
+					{char.eigenschaftenData.Sympathie.current - char.eigenschaftenData.Sympathie.modified}</td
+				><td
+					>{char.eigenschaftenData.Sympathie.modified
+						? char.eigenschaftenData.Sympathie.modified
+						: ''}</td
+				><td> {char.eigenschaftenData.Sympathie.current}</td></tr
+			>
+			<tr
+				><td>Klugheit</td><td>
+					{char.eigenschaftenData.Klugheit.current - char.eigenschaftenData.Klugheit.modified}</td
+				><td
+					>{char.eigenschaftenData.Klugheit.modified
+						? char.eigenschaftenData.Klugheit.modified
+						: ''}</td
+				><td> {char.eigenschaftenData.Klugheit.current}</td></tr
+			>
+			<tr
+				><td>Intuition</td><td>
+					{char.eigenschaftenData.Intuition.current - char.eigenschaftenData.Intuition.modified}</td
+				><td
+					>{char.eigenschaftenData.Intuition.modified
+						? char.eigenschaftenData.Intuition.modified
+						: ''}</td
+				><td> {char.eigenschaftenData.Intuition.current}</td></tr
+			>
+			<tr
+				><td>Fokus</td><td>
+					{char.eigenschaftenData.Fokus.current - char.eigenschaftenData.Fokus.modified}</td
+				><td
+					>{char.eigenschaftenData.Fokus.modified ? char.eigenschaftenData.Fokus.modified : ''}</td
+				><td> {char.eigenschaftenData.Fokus.current}</td></tr
+			>
+			<tr
+				><td>Einfluss</td><td>
+					{char.eigenschaftenData.Einfluss.current - char.eigenschaftenData.Einfluss.modified}</td
+				><td
+					>{char.eigenschaftenData.Einfluss.modified
+						? char.eigenschaftenData.Einfluss.modified
+						: ''}</td
+				><td> {char.eigenschaftenData.Einfluss.current}</td></tr
+			>
+			<tr
+				><td>Mut</td><td>
+					{char.eigenschaftenData.Mut.current - char.eigenschaftenData.Mut.modified}</td
+				><td>{char.eigenschaftenData.Mut.modified ? char.eigenschaftenData.Mut.modified : ''}</td
+				><td> {char.eigenschaftenData.Mut.current}</td></tr
+			>
+			<tr
+				><td>Glück</td><td>
+					{char.eigenschaftenData.Glück.current - char.eigenschaftenData.Glück.modified}</td
+				><td
+					>{char.eigenschaftenData.Glück.modified ? char.eigenschaftenData.Glück.modified : ''}</td
+				><td> {char.eigenschaftenData.Glück.current}</td></tr
+			>
+		</table>
+	</div>
+	<div class="extra">
+		{#each Object.keys(data.besonderheitenCategoryMap) as bKey}
+			{#if Object.keys(data.besonderheitenCategoryMap[bKey]).some((x) => (char?.besonderheiten[x] ?? 0) > 0)}
+				<div>
+					<strong>{bKey}</strong>
+					<ul>
+						{#each Object.keys(data.besonderheitenCategoryMap[bKey]).filter((x) => (char?.besonderheiten[x] ?? 0) > 0) as b2Key}
+							<li>
+								{getTextBesonderheit(
+									data.besonderheitenMap[b2Key],
+									char?.besonderheiten[b2Key] ?? 0
+								)}
+							</li>
+						{/each}
+					</ul>
+					<hr />
+				</div>
+			{/if}
+		{/each}
 
+		{#each Object.keys(data.fertigkeitenCategoryMap) as bKey}
+			{#if Object.keys(data.fertigkeitenCategoryMap[bKey]).some((x) => (char?.fertigkeiten[x] ?? 0) > 0)}
+				<div>
+					<strong>{bKey}</strong>
+					<ul>
+						{#each Object.keys(data.fertigkeitenCategoryMap[bKey]).filter((x) => (char?.fertigkeiten[x] ?? 0) > 0) as b2Key}
+							<li>
+								{getTextFertigkeit(data.fertigkeitenMap[b2Key], char?.fertigkeiten[b2Key] ?? 0)}
+							</li>
+						{/each}
+					</ul>
+					<hr />
+				</div>
+			{/if}
+		{/each}
+	</div>
 	<div class="header">
 		<table style="margin: auto; border-spacing: 0.8rem ; font-size: 14pt;">
 			<tr>
@@ -152,12 +442,18 @@ import Armor from './controls/armor.svelte';
 	<hr />
 	<div style="column-count:2 ;">
 		{#each Object.keys(data.talentCategoryMap) as tk}
-			<h3 style="break-after: avoid;">{tk}</h3>
 			{#if Object.keys(data.talentCategoryMap[tk]).some((t) => (char?.talentEffective[t] ?? 0) > 0 || (char?.talentEffectiveIgnoreRequirements[t] ?? 0) > 0)}
 				<table class="talent">
 					<thead>
-						<th> Name </th>
-						<th> TaW </th>
+						<tr>
+							<th colspan="2" style="padding-top: 0.5em;padding-bottom: 0.5em; font-size: large;">
+								{tk}</th
+							>
+						</tr>
+						<tr>
+							<th> Name </th>
+							<th> TaW </th>
+						</tr>
 					</thead>
 					<tbody>
 						{#each Object.keys(data.talentCategoryMap[tk]).sort() as t}
@@ -344,9 +640,9 @@ import Armor from './controls/armor.svelte';
 	</table>
 	<div class="kampf-right">
 		<div style="grid-column: 1;">
-			<Armor {char}></Armor>
+			<Armor {char} />
 		</div>
-		<div style="grid-column: 2;"/>
+		<div style="grid-column: 2;" />
 		<div style="grid-column: 3;">
 			<h6>Ausdauer & Wunden</h6>
 			<Hitman {char} />
@@ -405,34 +701,31 @@ import Armor from './controls/armor.svelte';
 			nav {
 				display: block !important;
 				position: sticky;
-				top: 0px ;
+				top: 0px;
 				width: fit-content;
 				padding: 2rem;
 				border-bottom-right-radius: 99rem;
-			z-index: 999;
+				z-index: 999;
 
-			
 				background-color: cadetblue;
 				border: 1px solid blueviolet;
 
-				a{
-					color: #FFF;
+				a {
+					color: #fff;
 					font-family: Verdana, Geneva, Tahoma, sans-serif;
 					text-decoration: none;
 					transition: all 1000ms;
 				}
-				a:hover{
+				a:hover {
 					color: #00f;
 					font-family: Verdana, Geneva, Tahoma, sans-serif;
 					text-decoration: none;
 				}
-
-
 			}
 			:root {
 				--screen-pages-spacing: 10rem;
-				--color-paper:white;
-				--background:lightgray;
+				--color-paper: white;
+				--background: lightgray;
 			}
 			body {
 				background-color: var(--background);
@@ -444,7 +737,7 @@ import Armor from './controls/armor.svelte';
 				flex: 0;
 				flex-wrap: wrap;
 				margin: 0 auto;
-				margin-top:var(--screen-pages-spacing);
+				margin-top: var(--screen-pages-spacing);
 			}
 			.pagedjs_page {
 				background: var(--color-paper);
@@ -457,9 +750,7 @@ import Armor from './controls/armor.svelte';
 		nav {
 			display: none;
 		}
-
 	}
-	
 
 	* {
 		box-sizing: border-box;
@@ -529,9 +820,11 @@ import Armor from './controls/armor.svelte';
 	}
 	.eigenschaften {
 		border: 1px solid black;
-		width: 50%;
 		padding: 8px;
-
+		th,
+		td {
+			text-align: center;
+		}
 		th:last-child,
 		td:last-child {
 			text-align: right;
@@ -539,6 +832,37 @@ import Armor from './controls/armor.svelte';
 		th:first-child,
 		td:first-child {
 			text-align: left;
+		}
+	}
+	.extra {
+		border: 1px solid black;
+		margin-top: 1rem;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		& > * {
+			width: 48%;
+		}
+
+		hr {
+			margin-top: 0px;
+			break-before: avoid;
+		}
+		padding: 8px;
+		ul {
+			margin-block-start: 0px;
+			margin-block-end: 0.2rem;
+
+			padding-inline-start: 0px;
+			&:empty {
+				display: none;
+			}
+			li {
+				display: inline;
+			}
+			li:not(:first-child)::before {
+				content: ', ';
+			}
 		}
 	}
 	table.ḱampf {
