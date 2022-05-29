@@ -17,7 +17,7 @@
 	import { get, writable, type Writable } from 'svelte/store';
 	import Hitman from './controls/hitman.svelte';
 	import Armor from './controls/armor.svelte';
-import AusrstungList from './controls/AusrüstungList.svelte';
+import AusrstungList from './controls/AusrustungList.svelte';
 
 	let data = writable<Data | undefined>(undefined);
 	let char = writable<Charakter | undefined>(undefined);
@@ -68,114 +68,6 @@ import AusrstungList from './controls/AusrüstungList.svelte';
 {#if $data && $char}
 	<!-- <Hitman char={$char}></Hitman> -->
 	<!-- <Armor char={$char}></Armor> -->
-	<nav>
-		<ul>
-			<li>
-				<a
-					href={pageLink}
-					role="button"
-					disabled={char == undefined ? true : undefined}
-					rel="external">Character Blatt</a
-				>
-			</li>
-			<li>
-				<a
-					href={charLink}
-					role="button"
-					disabled={char == undefined ? true : undefined}
-					rel="external">Link {charLink?.length ?? -1}</a
-				>
-			</li>
-		</ul>
-		<ul>
-			<li>
-				<input
-					id="Gattung/ArtSelecs"
-					type="radio"
-					name="top"
-					value="Gattung/Art"
-					bind:group={selection}
-				/>
-				<label for="Gattung/ArtSelecs">Gattung/Art </label>
-			</li>
-			{#if $charOrganismusStore}
-				<li>
-					<input
-						id="EigenschaftenSelecs"
-						type="radio"
-						name="top"
-						value="Eigenschaften"
-						bind:group={selection}
-					/>
-					<label for="EigenschaftenSelecs">Eigenschaften </label>
-				</li>
-				<li>
-					<input id="PfadeSelecs" type="radio" name="top" value="Pfade" bind:group={selection} />
-					<label for="PfadeSelecs">Pfade </label>
-				</li>
-				<li>
-					<input
-						id="TalenteSelecs"
-						type="radio"
-						name="top"
-						value="Talente"
-						bind:group={selection}
-					/>
-					<label for="TalenteSelecs">Talente </label>
-				</li>
-				<li>
-					<input
-						id="FertigkeitenSelecs"
-						type="radio"
-						name="top"
-						value="Fertigkeiten"
-						bind:group={selection}
-					/>
-					<label for="FertigkeitenSelecs">Fertigkeiten </label>
-				</li>
-				<li>
-					<input
-						id="BesonderheitenSelecs"
-						type="radio"
-						name="top"
-						value="Besonderheiten"
-						bind:group={selection}
-					/>
-					<label for="BesonderheitenSelecs">Besonderheiten </label>
-				</li>
-				<li>
-					<input
-						id="AusrüstungSelecs"
-						type="radio"
-						name="top"
-						value="Ausrüstung"
-						bind:group={selection}
-					/>
-					<label for="AusrüstungSelecs">Ausrüstung</label>
-				</li>
-			{/if}
-		</ul>
-		<ul>
-			<li>
-				<button
-					disabled={char == undefined}
-					on:click={() => {
-						// if ($char)
-						// 	$char.Data = {
-						// 		id
-						// 		besonderheiten: {},
-						// 		eigenschaften: {},
-						// 		fertigkeiten: {},
-						// 		talentEP: {},
-						// 		pfade: {},
-						// 		lebensabschnittId: undefined
-						// 	};
-						selection = 'Gattung/Art';
-					}}>Reset</button
-				>
-			</li>
-		</ul>
-	</nav>
 
 	<article class="hover">
 		<header>Punkte</header>
@@ -189,6 +81,115 @@ import AusrstungList from './controls/AusrüstungList.svelte';
 	</article>
 
 	<main class="container">
+		<nav>
+			<ul>
+				<li>
+					<a
+						href={pageLink}
+						role="button"
+						disabled={char == undefined ? true : undefined}
+						rel="external">Character Blatt</a
+					>
+				</li>
+				<li>
+					<a
+						href={charLink}
+						role="button"
+						disabled={char == undefined ? true : undefined}
+						rel="external">Link {charLink?.length ?? -1}</a
+					>
+				</li>
+			</ul>
+			<ul>
+				<li>
+					<input
+						id="Gattung/ArtSelecs"
+						type="radio"
+						name="top"
+						value="Gattung/Art"
+						bind:group={selection}
+					/>
+					<label for="Gattung/ArtSelecs">Gattung/Art </label>
+				</li>
+				{#if $charOrganismusStore}
+					<li>
+						<input
+							id="EigenschaftenSelecs"
+							type="radio"
+							name="top"
+							value="Eigenschaften"
+							bind:group={selection}
+						/>
+						<label for="EigenschaftenSelecs">Eigenschaften </label>
+					</li>
+					<li>
+						<input id="PfadeSelecs" type="radio" name="top" value="Pfade" bind:group={selection} />
+						<label for="PfadeSelecs">Pfade </label>
+					</li>
+					<li>
+						<input
+							id="TalenteSelecs"
+							type="radio"
+							name="top"
+							value="Talente"
+							bind:group={selection}
+						/>
+						<label for="TalenteSelecs">Talente </label>
+					</li>
+					<li>
+						<input
+							id="FertigkeitenSelecs"
+							type="radio"
+							name="top"
+							value="Fertigkeiten"
+							bind:group={selection}
+						/>
+						<label for="FertigkeitenSelecs">Fertigkeiten </label>
+					</li>
+					<li>
+						<input
+							id="BesonderheitenSelecs"
+							type="radio"
+							name="top"
+							value="Besonderheiten"
+							bind:group={selection}
+						/>
+						<label for="BesonderheitenSelecs">Besonderheiten </label>
+					</li>
+					<li>
+						<input
+							id="AusrüstungSelecs"
+							type="radio"
+							name="top"
+							value="Ausrüstung"
+							bind:group={selection}
+						/>
+						<label for="AusrüstungSelecs">Ausrüstung</label>
+					</li>
+				{/if}
+			</ul>
+			<ul>
+				<li>
+					<button
+						disabled={char == undefined}
+						on:click={() => {
+							// if ($char)
+							// 	$char.Data = {
+							// 		id
+							// 		besonderheiten: {},
+							// 		eigenschaften: {},
+							// 		fertigkeiten: {},
+							// 		talentEP: {},
+							// 		pfade: {},
+							// 		lebensabschnittId: undefined
+							// 	};
+							selection = 'Gattung/Art';
+						}}>Reset</button
+					>
+				</li>
+			</ul>
+		</nav>
+	
 		{#if selection == 'Gattung/Art'}
 			<article>
 				<input type="text" placeholder="Name" bind:value={$nameStore} />
