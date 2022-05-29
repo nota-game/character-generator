@@ -1,4 +1,4 @@
-import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigkeit, Lokalisierungen_misc, Lokalisirung } from "src/data/nota.g";
+import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigkeit, Lokalisierungen_misc, Lokalisirung, TalentDefinition_talent } from "src/data/nota.g";
 import type { MissingRequirements } from "./models/Character";
 import type { Data } from "./models/Data";
 
@@ -12,6 +12,54 @@ export function getText(p: Lokalisierungen_misc | undefined): string {
         ?? p.Lokalisirung[0]).value;
 }
 
+export function getTextTalent(p: TalentDefinition_talent | undefined): string {
+    if (!p) {
+        return '';
+    }
+    const probe = [];
+    
+    for (let i = 0;  i < (p.Probe.Antipathie?.length ?? 0); i++) {
+        probe.push('AN');
+    }
+    for (let i = 0; i < (p.Probe.Einfluss?.length ?? 0); i++) {
+        probe.push('EI');
+    }
+    for (let i = 0; i < (p.Probe.Fokus?.length ?? 0); i++) {
+        probe.push('FO');
+    }
+    for (let i = 0; i < (p.Probe.Gewandtheit?.length ?? 0); i++) {
+        probe.push('GE');
+    }
+    for (let i = 0; i < (p.Probe.Glück?.length ?? 0); i++) {
+        probe.push('GL');
+    }
+    for (let i = 0; i < (p.Probe.Intuition?.length ?? 0); i++) {
+        probe.push('IN');
+    }
+    for (let i = 0; i < (p.Probe.Klugheit?.length ?? 0); i++) {
+        probe.push('KL');
+    }
+    for (let i = 0; i < (p.Probe.Konstitution?.length ?? 0); i++) {
+        probe.push('KO');
+    }
+    for (let i = 0; i < (p.Probe.Mut?.length ?? 0); i++) {
+        probe.push('MU');
+    }
+    for (let i = 0; i < (p.Probe.Präzision?.length ?? 0); i++) {
+        probe.push('PR');
+    }
+    for (let i = 0; i < (p.Probe.Stärke?.length ?? 0); i++) {
+        probe.push('ST');
+    }
+    for (let i = 0; i < (p.Probe.Sympathie?.length ?? 0); i++) {
+        probe.push('SY');
+    }
+    if(probe.length!==3){
+        console.error('Falche anzahl Attibute', probe)
+        throw Error('Falche anzahl Attibute');
+    }
+    return `${getText(p.Name)} (${probe[0]}•${probe[1]}•${probe[2]})`
+}
 export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number): string {
     if (!p) {
         return '';
@@ -55,9 +103,9 @@ export function getTextFertigkeit(p: FertigkeitDefinition_fertigkeit | undefined
 }
 
 
-export function renderRequirement(req: MissingRequirements, data: Data|undefined) {
-    if(!data)
-    return "";
+export function renderRequirement(req: MissingRequirements, data: Data | undefined) {
+    if (!data)
+        return "";
     const buildname = (
         m: MissingRequirements & { type: 'Besonderheit' | 'Fertigkeit' | 'tag' | 'Talent' }
     ) => {

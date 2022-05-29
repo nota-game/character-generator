@@ -17,6 +17,7 @@
 	import { get, writable, type Writable } from 'svelte/store';
 	import Hitman from './controls/hitman.svelte';
 	import Armor from './controls/armor.svelte';
+import AusrstungList from './controls/AusrüstungList.svelte';
 
 	let data = writable<Data | undefined>(undefined);
 	let char = writable<Charakter | undefined>(undefined);
@@ -41,7 +42,7 @@
 			const currentChar = local<CharakterData>('c' + charId);
 			if ($data) {
 				const j = get(currentChar);
-				$char = new Charakter($data, j);
+				$char = new Charakter($data, j ?? charId);
 
 				$char?.DataStore.subscribe((v) => currentChar.set(v));
 			}
@@ -142,6 +143,16 @@
 					/>
 					<label for="BesonderheitenSelecs">Besonderheiten </label>
 				</li>
+				<li>
+					<input
+						id="AusrüstungSelecs"
+						type="radio"
+						name="top"
+						value="Ausrüstung"
+						bind:group={selection}
+					/>
+					<label for="AusrüstungSelecs">Ausrüstung</label>
+				</li>
 			{/if}
 		</ul>
 		<ul>
@@ -201,6 +212,8 @@
 				<FertigkeitenList char={$char} data={$data} />
 			{:else if selection == 'Besonderheiten'}
 				<BesonderheitenList char={$char} data={$data} />
+			{:else if selection == 'Ausrüstung'}
+				<AusrstungList char={$char} data={$data} />
 			{/if}
 		{/if}
 	</main>

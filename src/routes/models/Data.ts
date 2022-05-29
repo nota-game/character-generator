@@ -6,7 +6,7 @@ import notaStructure from './../../data/nota-structure.g.json';
 import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
-import type { ArtDefinition_lebewesen, Art_lebewesen, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, MorphDefinition_lebewesen, Morph_lebewesen, PfadDefinition_pfad, TagDefinition_misc, TalentDefinition_talent, _Talent4 } from 'src/data/nota.g';
+import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, _Talent4 } from 'src/data/nota.g';
 
 type lebensabschnittData =
     | {
@@ -40,13 +40,19 @@ export class Data {
     public readonly fertigkeitenCategoryMap: Record<string, Record<string, Readonly<FertigkeitDefinition_fertigkeit>>>;
     public readonly StandardKosten: string;
     public readonly lebensabschnittLookup: { [key: string]: lebensabschnittData };
+
+
+    public readonly AusrüstungsEigenschaftMap: Record<string, Readonly<AusrüstungEigengchaftDefinition_kampf_ausstattung>>;
+
+    public readonly nahkampfMap: Record<string, Readonly<NahkampfWaffenDefinition_kampf_ausstattung>>;
+    public readonly fernkampfMap: Record<string, Readonly<FernkampfwaffenDafinition_kampf_ausstattung>>;
+    public readonly RüstungMap: Record<string, Readonly<RüstungDefinition_kampf_ausstattung>>;
     //talentCostTabel: readonly { Kosten: { Wert: number; Id: string; }[]; }[][];
     /**
      *
      */
     constructor(data: Daten) {
         this.instance = data;
-
 
         this.lebensabschnittLookup = Object.fromEntries(
             data.Daten.Organismen.Gattung.flatMap((x) =>
@@ -66,6 +72,11 @@ export class Data {
                 )
             )
         );
+
+        this.AusrüstungsEigenschaftMap = data.Daten.Ausstattung.Eigenschaften.Eigenschaft.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, AusrüstungEigengchaftDefinition_kampf_ausstattung>)
+        this.nahkampfMap = data.Daten.Ausstattung.Waffen.Nahkampfwaffe.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, NahkampfWaffenDefinition_kampf_ausstattung>)
+        this.fernkampfMap = data.Daten.Ausstattung.Waffen.Fernkampfwaffe.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, FernkampfwaffenDafinition_kampf_ausstattung>)
+        this.RüstungMap = data.Daten.Ausstattung.Rüstungen.Rüstung.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, RüstungDefinition_kampf_ausstattung>)
 
         this.StandardKosten = data.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten === true)[0].Id
         this.talentMap = data.Daten.Talente.flatMap(x => x.Talent.map(y => ({ ...y, Kategorie: x.KategorieId }))).reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, TalentDefinition_talent & { Kategorie: string }>);

@@ -5,7 +5,7 @@ import { derivedLazy } from "../lazyDerivied";
 
 import type { Data } from "./Data";
 
- export type selection = {
+export type selection = {
     l: LebensabschnittDefinition_lebewesen;
     m: MorphDefinition_lebewesen;
     a: ArtDefinition_lebewesen;
@@ -366,10 +366,15 @@ export type CharakterData = {
     pfade: Readonly<Record<string, Record<string, Record<string, number>>>>;
     fertigkeiten: Record<string, number>;
     talentEP: Record<string, number>;
+    ausrüstung: {
+        nahkampf: string[],
+        fernkampf: string[],
+        rüstung: string[],
+    };
 };
 
 export class Charakter {
-    private readonly data: Data;
+    public readonly stammdaten: Data;
     private readonly id: string;
 
     public readonly organismusStore = writable<selection>(undefined);
@@ -381,6 +386,107 @@ export class Charakter {
         this.nameStore.set(name);
     }
     public readonly punkteStore: Readable<Record<string, number>>;
+
+    private readonly closeConbatWeaponsStoreData = writable<Record<string, true | undefined>>({});
+    public readonly closeConbatWeaponsStore = derived(this.closeConbatWeaponsStoreData, x => ({ ...x }));
+    public get closeConbatWeapons() { return get(this.closeConbatWeaponsStore) };
+    public getCloseConbatWeaponsStore(id: string): Writable<boolean> {
+        const d = derived(this.closeConbatWeaponsStore, x => x[id] ?? false);
+
+        return {
+            subscribe: d.subscribe,
+            set: (v) => {
+                this.closeConbatWeaponsStoreData.update(o => {
+                    const n = v;
+                    o[id] = n ? n : undefined;
+                    return o;
+                })
+            },
+            update: (u) => {
+                this.closeConbatWeaponsStoreData.update(o => {
+                    const n = u(o[id] ?? false);
+                    o[id] = n ? n : undefined;
+                    return o;
+                })
+            }
+        }
+    };
+    public getCloseConbatWeapons(id: string) {
+        return get(this.getCloseConbatWeaponsStore(id));
+    };
+    public setCloseConbatWeapons(id: string, value:boolean) {
+        return this.getCloseConbatWeaponsStore(id).set(value);
+    };
+
+    private readonly distanceWeaponsStoreData = writable<Record<string, true | undefined>>({});
+    public readonly distanceWeaponsStore = derived(this.distanceWeaponsStoreData, x => ({ ...x }));
+    public get distanceWeapons() { return get(this.distanceWeaponsStore) };
+    public getDistanceWeaponsStore(id: string): Writable<boolean> {
+        const d = derived(this.distanceWeaponsStore, x => x[id] ?? false);
+
+        return {
+            subscribe: d.subscribe,
+            set: (v) => {
+                this.distanceWeaponsStoreData.update(o => {
+                    const n = v;
+                    o[id] = n ? n : undefined;
+                    return o;
+                })
+            },
+            update: (u) => {
+                this.distanceWeaponsStoreData.update(o => {
+                    const n = u(o[id] ?? false);
+                    o[id] = n ? n : undefined;
+                    return o;
+                })
+            }
+        }
+    };
+    public getDistanceWeapons(id: string) {
+        return get(this.getDistanceWeaponsStore(id));
+    };
+    public setDistanceWeapons(id: string, value:boolean) {
+        return this.getDistanceWeaponsStore(id).set(value);
+    };
+
+
+
+
+
+
+
+
+    private readonly armorStoreData = writable<Record<string, true | undefined>>({});
+    public readonly armorStore = derived(this.armorStoreData, x => ({ ...x }));
+    public get armor() { return get(this.armorStore) };
+    public getArmorStore(id: string): Writable<boolean> {
+        const d = derived(this.armorStore, x => x[id] ?? false);
+
+        return {
+            subscribe: d.subscribe,
+            set: (v) => {
+                this.armorStoreData.update(o => {
+                    const n = v;
+                    o[id] = n ? n : undefined;
+                    return o;
+                })
+            },
+            update: (u) => {
+                this.armorStoreData.update(o => {
+                    const n = u(o[id] ?? false);
+                    o[id] = n ? n : undefined;
+                    return o;
+                })
+            }
+        }
+    };
+    public getArmor(id: string) {
+        return get(this.getArmorStore(id));
+    };
+    public setArmor(id: string, value:boolean) {
+        return this.getArmorStore(id).set(value);
+    };
+
 
 
     public readonly startPropertysStore: Readable<Record<Eigenschaft, { start: number; mod: number; cost: Record<number, KostenDefinition_misc[] | undefined> }>>;
@@ -444,7 +550,7 @@ export class Charakter {
     }
 
     public get DataStore(): Readable<CharakterData> {
-        return derived([this.pfadLevelStore, this.talentPurchasedEPData, this.organismusStore, this.fertigkeitenPurchasedStore, this.besonderheitenPurchasedStore, this.nameStore, ...EIGENRSCHAFTEN.map(key => this.eigenrschaften[key].acciredStore)], ([pfadLevelStore, talentPurchasedEPData, organismusStore, fertigkeitenPurchasedStore, besonderheitenPurchasedStore, name, ...eigenschaften]) => {
+        return derived([this.closeConbatWeaponsStore, this.distanceWeaponsStore, this.armorStore, this.pfadLevelStore, this.talentPurchasedEPData, this.organismusStore, this.fertigkeitenPurchasedStore, this.besonderheitenPurchasedStore, this.nameStore, ...EIGENRSCHAFTEN.map(key => this.eigenrschaften[key].acciredStore)], ([closeConbatWeaponsStore, distanceWeaponsStore, armorStore, pfadLevelStore, talentPurchasedEPData, organismusStore, fertigkeitenPurchasedStore, besonderheitenPurchasedStore, name, ...eigenschaften]) => {
 
 
             return {
@@ -455,23 +561,20 @@ export class Charakter {
                 fertigkeiten: Object.fromEntries(Object.entries(fertigkeitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
                 lebensabschnittId: organismusStore?.l.Id,
                 talentEP: Object.fromEntries(Object.entries(talentPurchasedEPData).filter(([_, value]) => (value ?? 0) > 0)),
-                pfade: pfadLevelStore
+                pfade: pfadLevelStore,
+                ausrüstung: {
+                    nahkampf: Object.entries(closeConbatWeaponsStore).filter(x => x[1]).map(x => x[0]).sort(),
+                    fernkampf: Object.entries(distanceWeaponsStore).filter(x => x[1]).map(x => x[0]).sort(),
+                    rüstung: Object.entries(armorStore).filter(x => x[1]).map(x => x[0]).sort()
+                }
+
             };
         })
 
     }
 
     public get Data(): CharakterData {
-        return {
-            id: this.id,
-            name: this.name,
-            eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map(key => [key, this.eigenrschaften[key].accired]).filter(([_, v]) => (v as number) != 0)),
-            besonderheiten: Object.fromEntries(Object.entries(get(this.besonderheitenPurchasedStore)).filter((([key, value]) => (value ?? 0) > 0))) as any,
-            fertigkeiten: Object.fromEntries(Object.entries(get(this.fertigkeitenPurchasedStore)).filter((([key, value]) => (value ?? 0) > 0))) as any,
-            lebensabschnittId: this.organismus?.l.Id,
-            talentEP: Object.fromEntries(Object.entries(get(this.talentPurchasedEPData)).filter(([_, value]) => (value ?? 0) > 0)),
-            pfade: this.pfadLevel
-        };
+        return get(this.DataStore);
     }
 
 
@@ -484,23 +587,26 @@ export class Charakter {
         this.besonderheitenPurchasedDataStore.set(v.besonderheiten);
         this.fertigkeitenPurchasedDataStore.set(v.fertigkeiten);
         if (v.lebensabschnittId) {
-            const x = this.data.lebensabschnittLookup[v.lebensabschnittId];
+            const x = this.stammdaten.lebensabschnittLookup[v.lebensabschnittId];
             this.organismusStore.set(x);
         } else {
             this.organismusStore.set(undefined);
         }
         this.talentPurchasedEPData.set(v.talentEP);
         this.pfadLevelDataStore.set(v.pfade);
-        this.name=v.name;
+        this.name = v.name;
+        this.closeConbatWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.nahkampf?.map(x => [x, true]) ?? []))
+        this.distanceWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.fernkampf?.map(x => [x, true]) ?? []))
+        this.armorStoreData.set(Object.fromEntries(v.ausrüstung?.rüstung?.map(x => [x, true]) ?? []))
     }
 
 
 
     public getFertigkeitInfo(id: string) {
-        return new FertigkeitInfo(this.data.StandardKosten, this.data.fertigkeitenMap[id], this.fertigkeitenStore, this.fertigkeitenPurchasedDataStore, this.fertigkeitenFixDataStore);
+        return new FertigkeitInfo(this.stammdaten.StandardKosten, this.stammdaten.fertigkeitenMap[id], this.fertigkeitenStore, this.fertigkeitenPurchasedDataStore, this.fertigkeitenFixDataStore);
     }
     public getBesonderheitInfo(id: string) {
-        return new BesonderheitenInfo(this.data.besonderheitenMap[id], this.besonderheitenStore, this.besonderheitenPurchasedDataStore, this.besonderheitenFixDataStore);
+        return new BesonderheitenInfo(this.stammdaten.besonderheitenMap[id], this.besonderheitenStore, this.besonderheitenPurchasedDataStore, this.besonderheitenFixDataStore);
     }
 
     public getMissingRequirements(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): MissingRequirements | null {
@@ -598,8 +704,8 @@ export class Charakter {
     /**
      *
      */
-    constructor(data: Data, old?: CharakterData) {
-        this.data = data;
+    constructor(data: Data, idOrOld: CharakterData | string) {
+        this.stammdaten = data;
 
 
         this.startPropertysStore = derived(this.organismusStore, v => {
@@ -622,7 +728,7 @@ export class Charakter {
                     const definedCosts = (v.a.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0])
                         .concat((v.g.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
                         .concat((v.m.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
-                        .concat((this.data.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
+                        .concat((this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
                         ;
                     const maxCost = Math.max(...definedCosts);
                     const minCost = Math.min(...definedCosts);
@@ -633,12 +739,12 @@ export class Charakter {
                             ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
                             ?? v.a.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
                             ?? v.g.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? this.data.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
                             ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
                             ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
                             ?? v.a.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
                             ?? v.g.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? this.data.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten;
+                            ?? this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten;
                         if (typeof c == 'object') {
                             cost[i] = c;
                         } else if (i == 0) {
@@ -668,7 +774,7 @@ export class Charakter {
                         .flatMap(level => {
                             if ((levels[gruppe][pfad][level] ?? 0) == 0)
                                 return [];
-                            const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+                            const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
                                 .Pfad.filter(x => x.Id == pfad)[0]
                                 .Levels.Level.filter(x => x.Id == level)[0];
                             return l.Fertigkeit ?? [];
@@ -719,7 +825,7 @@ export class Charakter {
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
                         .flatMap(level => {
-                            const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+                            const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
                                 .Pfad.filter(x => x.Id == pfad)[0]
                                 .Levels.Level.filter(x => x.Id == level)[0];
                             const count = levels[gruppe][pfad][level];
@@ -748,7 +854,7 @@ export class Charakter {
             for (const key of Object.keys(data.talentMap)) {
                 const ep = b[key] ?? 0;
                 const complexity = data.talentMap[key].Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
-                const levelCots = this.data.talentCostTabel[complexity]
+                const levelCots = this.stammdaten.talentCostTabel[complexity]
 
 
                 for (let i = levelCots.length - 1; i >= 0; i--) {
@@ -847,7 +953,7 @@ export class Charakter {
                             if ((levels[gruppe][pfad][level] ?? 0) == 0)
                                 return [];
 
-                            const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+                            const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
                                 .Pfad.filter(x => x.Id == pfad)[0]
                                 .Levels.Level.filter(x => x.Id == level)[0];
                             return l.Besonderheit ?? [];
@@ -893,20 +999,20 @@ export class Charakter {
                     .flatMap(gruppe => Object.keys(levels[gruppe])
                         .flatMap(pfad => Object.keys(levels[gruppe][pfad])
                             .flatMap(level => {
-                                const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+                                const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
                                     .Pfad.filter(x => x.Id == pfad)[0]
                                     .Levels.Level.filter(x => x.Id == level)[0];
                                 return l.Tag?.map(x => x.Id) ?? [];
                             })))
                     .concat(Object.entries(besonderheiten).filter(x => (x[1] ?? 0) > 0)
                         .flatMap(([bid, stufe]) => {
-                            return this.data.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit).filter(x => x.Id == bid)[0]
+                            return this.stammdaten.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit).filter(x => x.Id == bid)[0]
                                 .Stufe[stufe! - 1]
                                 .Tags?.Tag.map(x => x.Id) ?? [];
                         })))
                     .concat(Object.entries(fertigkeiten).filter(x => (x[1] ?? 0) > 0)
                         .flatMap(([bid, stufe]) => {
-                            return this.data.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit).filter(x => x.Id == bid)[0]
+                            return this.stammdaten.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit).filter(x => x.Id == bid)[0]
                                 .Stufe[stufe! - 1]
                                 .Tags?.Tag.map(x => x.Id) ?? [];
                         }))
@@ -1005,7 +1111,7 @@ export class Charakter {
         ]) => {
 
             const r: Record<string, number> = {};
-            for (const s of this.data.Instance.Daten.KostenDefinitionen.KostenDefinition) {
+            for (const s of this.stammdaten.Instance.Daten.KostenDefinitionen.KostenDefinition) {
                 r[s.Id] = 0;
             }
             const earray = [
@@ -1022,7 +1128,7 @@ export class Charakter {
                 { cost: eCostFokus, accired: acciredFokus },
                 { cost: eCostEinfluss, accired: acciredEinfluss },
             ]
-            applyCredit(this.data.Instance.Daten.GenerierungsDaten.Kosten)
+            applyCredit(this.stammdaten.Instance.Daten.GenerierungsDaten.Kosten)
 
             if (organismus?.l.Spielbar?.Kosten) {
                 applyCost(organismus.l.Spielbar.Kosten);
@@ -1110,9 +1216,13 @@ export class Charakter {
 
         });
 
-        if (old)
-            this.Data = old;
-        this.id = old?.id ?? uuidv4();
+        if (typeof idOrOld === 'string') {
+            this.id = idOrOld;
+
+        } else {
+            this.Data = idOrOld;
+            this.id = idOrOld.id;
+        }
 
     }
 
@@ -1235,7 +1345,7 @@ export class Charakter {
         if (instance[gruppe][pfad][level] == undefined) {
             return true;
         }
-        const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+        const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
             .Pfad.filter(x => x.Id == pfad)[0]
             .Levels.Level.filter(x => x.Id == level)[0]
 
@@ -1281,7 +1391,7 @@ export class Charakter {
                 old[gruppe][pfad][level] = 0;
             }
 
-            const l = this.data.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+            const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
                 .Pfad.filter(x => x.Id == pfad)[0]
                 .Levels.Level.filter(x => x.Id == level)[0]
 
@@ -1382,7 +1492,7 @@ export class Charakter {
                 (e.Not?.some(x => !single(x))
                     ?? true)
         }
-        const l = this.data.Instance.Daten.Pfade.filter((x) => x.Id == gruppe)[0]
+        const l = this.stammdaten.Instance.Daten.Pfade.filter((x) => x.Id == gruppe)[0]
             ?.Pfad.filter((x) => x.Id == pfad)[0]
             ?.Levels.Level.filter((x) => x.Id == level)[0];
 
