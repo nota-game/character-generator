@@ -17,7 +17,7 @@
 	import { get, writable, type Writable } from 'svelte/store';
 	import Hitman from './controls/hitman.svelte';
 	import Armor from './controls/armor.svelte';
-import AusrstungList from './controls/AusrustungList.svelte';
+	import AusrstungList from './controls/AusrustungList.svelte';
 
 	let data = writable<Data | undefined>(undefined);
 	let char = writable<Charakter | undefined>(undefined);
@@ -25,8 +25,30 @@ import AusrstungList from './controls/AusrustungList.svelte';
 
 	let charOrganismusStore = $char?.organismusStore;
 	$: charOrganismusStore = $char?.organismusStore;
+
 	let nameStore = $char?.nameStore;
 	$: nameStore = $char?.nameStore;
+
+	let sizeStore = $char?.sizeStore;
+	$: sizeStore = $char?.sizeStore;
+	let weightStore = $char?.weightStore;
+	$: weightStore = $char?.weightStore;
+	let weightMinStore = $char?.weightMinStore;
+	$: weightMinStore = $char?.weightMinStore;
+	let weightMaxStore = $char?.weightMaxStore;
+	$: weightMaxStore = $char?.weightMaxStore;
+
+	let ausdauerStore = $char?.ausdauerStore;
+	$: ausdauerStore = $char?.ausdauerStore;
+
+	let initiativeStore = $char?.initiativeStore;
+	$: initiativeStore = $char?.initiativeStore;
+
+	let geschwindigkeitStore = $char?.geschwindigkeitStore;
+	$: geschwindigkeitStore = $char?.geschwindigkeitStore;
+
+	let kraftStore = $char?.kraftStore;
+	$: kraftStore = $char?.kraftStore;
 
 	let selection: string = 'Gattung/Art';
 
@@ -189,15 +211,60 @@ import AusrstungList from './controls/AusrustungList.svelte';
 				</li>
 			</ul>
 		</nav>
-	
+
 		{#if selection == 'Gattung/Art'}
 			<article>
-				<input type="text" placeholder="Name" bind:value={$nameStore} />
 				<OrganismSelect char={$char} data={$data} />
 			</article>
 		{/if}
 		{#if $charOrganismusStore}
 			{#if selection == 'Eigenschaften'}
+				<article>
+					<label>
+						Name
+						<input type="text" placeholder="Name" bind:value={$nameStore} />
+					</label>
+
+					<div
+						style="display: grid; grid-template-columns: auto 1fr auto ; gap: 1rem; align-items: end; margin-bottom: var(--spacing);"
+					>
+						<small>{$charOrganismusStore?.l.minGröße} m</small>
+						<label>
+							Größe {$sizeStore} m
+							<input
+								type="range"
+								step="0.01"
+								bind:value={$sizeStore}
+								min={$charOrganismusStore?.l.minGröße}
+								max={$charOrganismusStore?.l.maxGröße}
+								style="margin-bottom: 0px;"
+							/>
+						</label>
+						<small>{$charOrganismusStore?.l.maxGröße} m</small>
+					</div>
+					<div
+						style="display: grid; grid-template-columns: auto 1fr auto ; gap: 1rem; align-items: end; margin-bottom: var(--spacing);"
+					>
+						<small>{$weightMinStore} Kg</small>
+						<label>
+							Gewicht {$weightStore} Kg
+							<input
+								type="range"
+								step="0.1"
+								bind:value={$weightStore}
+								min={$weightMinStore}
+								max={$weightMaxStore}
+								style="margin-bottom: 0px;"
+							/>
+						</label>
+						<small>{$weightMaxStore} Kg</small>
+					</div>
+					AU {$ausdauerStore}
+					Initiative {$initiativeStore}
+					Geschwindigkeit {$geschwindigkeitStore}
+					Kraft {$kraftStore}
+				</article>
+
 				<div
 					style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; "
 				>
