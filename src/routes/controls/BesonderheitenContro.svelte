@@ -71,7 +71,7 @@
 			{char}
 			{data}
 			bind:itFullfiled={requirementsBuy}
-			requirement={besonderheit?.Stufe[$boughtLevel]?.Bedingung}
+			requirement={besonderheit?.Stufe[$boughtLevel]?.Voraussetzung}
 		/>
 		<p>
 			{getText(besonderheit.Stufe[$boughtLevel].Beschreibung)}
@@ -105,7 +105,7 @@
 			{char}
 			{data}
 			bind:itFullfiled={requirementsBuy}
-			requirement={besonderheit?.Stufe[$boughtLevel - 1]?.Bedingung}
+			requirement={besonderheit?.Stufe[$boughtLevel - 1]?.Voraussetzung}
 		/>
 		<p>
 			{getText(besonderheit.Stufe[$boughtLevel - 1].Beschreibung)}
@@ -127,7 +127,7 @@
 					{char}
 					{data}
 					bind:itFullfiled={requirementsBuy}
-					requirement={besonderheit?.Stufe[$boughtLevel]?.Bedingung}
+					requirement={besonderheit?.Stufe[$boughtLevel]?.Voraussetzung}
 				/>
 			</div>
 		{/if}
@@ -147,7 +147,7 @@
 					{char}
 					{data}
 					bind:itFullfiled={requirementsBuy}
-					requirement={besonderheit?.Stufe[$boughtLevel - 2]?.Bedingung}
+					requirement={besonderheit?.Stufe[$boughtLevel - 2]?.Voraussetzung}
 				/>
 			</div>
 		{/if}
