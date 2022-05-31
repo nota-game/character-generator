@@ -12,13 +12,13 @@ export function getText(p: Lokalisierungen_misc | undefined): string {
         ?? p.Lokalisirung[0]).value;
 }
 
-export function getTextTalent(p: TalentDefinition_talent | undefined): string {
+export function getTextTalent(p: TalentDefinition_talent | undefined, format: 'Name' | 'Probe' | 'NameProbe' = 'NameProbe'): string {
     if (!p) {
         return '';
     }
     const probe = [];
-    
-    for (let i = 0;  i < (p.Probe.Antipathie?.length ?? 0); i++) {
+
+    for (let i = 0; i < (p.Probe.Antipathie?.length ?? 0); i++) {
         probe.push('AN');
     }
     for (let i = 0; i < (p.Probe.Einfluss?.length ?? 0); i++) {
@@ -54,11 +54,17 @@ export function getTextTalent(p: TalentDefinition_talent | undefined): string {
     for (let i = 0; i < (p.Probe.Sympathie?.length ?? 0); i++) {
         probe.push('SY');
     }
-    if(probe.length!==3){
+    if (probe.length !== 3) {
         console.error('Falche anzahl Attibute', probe)
         throw Error('Falche anzahl Attibute');
     }
-    return `${getText(p.Name)} (${probe[0]}•${probe[1]}•${probe[2]})`
+    if (format == 'NameProbe')
+        return `${getText(p.Name)} (${probe[0]}•${probe[1]}•${probe[2]})`
+    else if (format == 'Name')
+        return getText(p.Name)
+    else if (format == 'Probe')
+        return `${probe[0]}•${probe[1]}•${probe[2]}`
+        throw Error('Unbekantes Format')
 }
 export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number): string {
     if (!p) {

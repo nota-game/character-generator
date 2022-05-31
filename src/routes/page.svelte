@@ -11,7 +11,7 @@
 	import { doPaged } from './controls/paged';
 	import { noop } from 'svelte/internal';
 	import CloseCombatWeapon from './controls/CloseCombatWeapon.svelte';
-import { kldivergence } from 'mathjs';
+	import { kldivergence } from 'mathjs';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -491,10 +491,10 @@ import { kldivergence } from 'mathjs';
 			</tr>
 		</table>
 		<div class="kampf-right">
-			<div style="grid-column: 1;">
+			<div style="grid-column: 1; grid-row: 1;">
 				<Armor {char} />
 			</div>
-			<div style="grid-column: 3;">
+			<div style="grid-column: 3; grid-row: 1;">
 				<h6>Ausdauer & Wunden</h6>
 				<Hitman {char} />
 
@@ -559,11 +559,13 @@ import { kldivergence } from 'mathjs';
 					</div>
 				{/if}
 
-				{#each  Object.entries(char.closeConbatWeapons).filter(([k,v])=>v).map(([k])=>k) as x}
-				{@const p =  data?.nahkampfMap[x]}
-				<div class="list">
-					<CloseCombatWeapon {char} weapon={p} />
-				</div>
+				{#each Object.entries(char.closeConbatWeapons)
+					.filter(([k, v]) => v)
+					.map(([k]) => k) as x}
+					{@const p = data?.nahkampfMap[x]}
+					<div class="list">
+						<CloseCombatWeapon {char} weapon={p} />
+					</div>
 				{/each}
 			</div>
 		</div>
@@ -622,6 +624,9 @@ import { kldivergence } from 'mathjs';
 				--screen-pages-spacing: 10rem;
 				--color-paper: white;
 				--background: lightgray;
+				--muted-color: #dfdfdf;
+				--background-color: white;
+				--color: black;
 			}
 			body {
 				background-color: var(--background);
@@ -820,7 +825,7 @@ import { kldivergence } from 'mathjs';
 	.kampf-right {
 		display: grid;
 		grid-template-columns: auto 1fr auto;
-		width: 100%;
+		width: 99%;
 	}
 
 	.header {

@@ -26,7 +26,7 @@
 		<td>{weapon?.Id}</td>
 		<td class="one ">
 			<div class=" center">
-				<div><Schnitt /></div>
+				<div><Schnitt size={18} stroke="var(--color)" fill="var(--muted-color)" /></div>
 				<div>
 					{render(weapon?.Schaden.Schnitt?.Schaden)}
 				</div>
@@ -34,7 +34,7 @@
 		</td>
 		<td class="one ">
 			<div class=" center">
-				<div><Wucht /></div>
+				<div><Wucht size={18} stroke="var(--color)" fill="var(--muted-color)" /></div>
 				<div>
 					{render(weapon?.Schaden.Wucht?.Schaden)}
 				</div>
@@ -63,7 +63,7 @@
 			{/if}
 		</td>
 		<td class="one ">
-			<div class=" center">
+			<div class="center">
 				<div>DK</div>
 				<div>
 					{render(weapon?.Distanzklasse)}
@@ -88,8 +88,10 @@
 			{#if weapon?.Talente?.Talent}
 				<ul class="list">
 					{#each weapon?.Talente?.Talent.sort((a, b) => (char?.talentEffective[b.Id] ?? 0) - (char?.talentEffective[a.Id] ?? 0)) as t}
-						<li>{getTextTalent(char?.stammdaten.talentMap[t.Id])}
-							<strong style="font-size: small;">{char?.talentEffective[t.Id]}</strong></li>
+						<li>
+							{getTextTalent(char?.stammdaten.talentMap[t.Id])}
+							<strong style="font-size: small;">{char?.talentEffective[t.Id]}</strong>
+						</li>
 					{/each}
 				</ul>
 			{/if}
@@ -111,12 +113,20 @@
 		grid-row: 1;
 	}
 	.center > *:first-child {
-		color: #dedede;
+		z-index: 1;
+		opacity: 0.6;
+		color: var(--muted-color);
+		font-size: smaller;
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+		text-shadow: -1px -1px 0 var(--color), 1px -1px 0 var(--color), -1px 1px 0 var(--color),
+			1px 1px 0 var(--color);
 	}
 	.center > *:not(:first-child) {
+		z-index: 2;
 		font-size: x-large;
 		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-		text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+		text-shadow: -1px -1px 0 var(--background-color), 1px -1px 0 var(--background-color),
+			-1px 1px 0 var(--background-color), 1px 1px 0 var(--background-color);
 	}
 	table {
 		table-layout: fixed;
@@ -135,7 +145,8 @@
 	table,
 	tr,
 	td {
-		border: 1px solid black;
+		padding: 1px;
+		border: 1px solid var(--color);
 	}
 	ul.list {
 		margin-block-start: 0px;

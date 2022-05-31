@@ -24,13 +24,17 @@
 		{#each Object.keys(data.talentCategoryMap) as key}
 			{#if key === selected}
 				{#each Object.keys(data.talentCategoryMap[key]).sort() as t}
-					<TalentControl {char} {data} talent={data.talentMap[t]} showTaken={true} />
+					<TalentControl {char} {data} talent={data.talentMap[t]} showTaken={'gesteigert'} />
 				{/each}
-				<hr>
+				<hr />
+				{#each Object.keys(data.talentCategoryMap[key]).sort() as t}
+					<TalentControl {char} {data} talent={data.talentMap[t]} showTaken={'abgeleitet'} />
+				{/each}
+				<hr />
 				<details>
 					<summary>Nicht gekauft</summary>
 					{#each Object.keys(data.talentCategoryMap[key]).sort() as t}
-						<TalentControl {char} {data} talent={data.talentMap[t]} showTaken={false} />
+						<TalentControl {char} {data} talent={data.talentMap[t]} showTaken={'nicht gekauft'} />
 					{/each}
 				</details>
 			{/if}

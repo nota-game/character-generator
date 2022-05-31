@@ -12,7 +12,7 @@
 	export let data: Data | undefined;
 	export let char: Charakter | undefined;
 	export let talent: TalentDefinition_talent | undefined;
-	export let showTaken: boolean | undefined = undefined;
+	export let showTaken: 'gesteigert' | 'abgeleitet' | 'nicht gekauft' | 'alle' = 'alle';
 
 	let charPurchasedStore = char?.getTalentPurchasedEPStore(talent?.Id ?? '');
 	let charEPStore = char?.getTalentEPStore(talent?.Id ?? '');
@@ -161,7 +161,7 @@
 </script>
 
 {#if charEPStore && talent && data}
-	{#if showTaken === (($charEPStore ?? 0) > 0 || ($talentEffectiveIgnoreRequirements ?? 0) > 0) || showTaken === undefined}
+	{#if showTaken === 'alle' || (showTaken === 'gesteigert' && ($charEPStore ?? 0) > 0) || (showTaken === 'abgeleitet' && ($charEPStore ?? 0) == 0 && ($charDerivatValueStore ?? 0) > 0) || (showTaken === 'nicht gekauft' && ($charEPStore ?? 0) == 0 && ($charDerivatValueStore ?? 0) == 0)}
 		<div class="root">
 			{getText(data?.talentMap[talent.Id].Name)}
 			<strong>{$charEffectiveValueStore} TaW</strong> ({$charEPStore} EP, {$charBaseValueStore} TaB +

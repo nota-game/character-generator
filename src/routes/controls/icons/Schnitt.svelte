@@ -1,5 +1,7 @@
 <script lang="ts">
 	export let size = 10;
+	export let fill: string = '#878787';
+	export let stroke: string = '#000000';
 </script>
 
 <svg
@@ -16,9 +18,8 @@
 	xml:space="preserve"
 >
 	<path
-		opacity="0.6"
-		fill="#878787"
-		stroke="#000000"
+		{fill}
+		{stroke}
 		stroke-width="0.25"
 		stroke-miterlimit="10"
 		d="M3.996,2.732H2.734l5.915,5.913
