@@ -12,7 +12,7 @@
 
 	export let data: Data | undefined;
 	export let char: Charakter | undefined;
-	let selected: 'Nahkampf' | 'Fernkampf' | 'Rüstung' = 'Rüstung';
+	let selected: 'Nahkampf' | 'Fernkampf' | 'Rüstung' = 'Nahkampf';
 
 	const closeConbatWeapons = char?.closeConbatWeaponsStore;
 	const distanceWeapons = char?.distanceWeaponsStore;
