@@ -492,7 +492,7 @@
 		</table>
 		<div class="kampf-right">
 			<div style="grid-column: 1; grid-row: 1;">
-				<Armor {char} />
+				<Armor input={char} />
 			</div>
 			<div style="grid-column: 3; grid-row: 1;">
 				<h6>Ausdauer & Wunden</h6>

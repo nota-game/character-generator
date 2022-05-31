@@ -6,12 +6,13 @@
 
 	import type { Charakter } from '../models/Character';
 	import type { Data } from '../models/Data';
+	import Armor from './armor.svelte';
 	import CloseCombatWeapon from './CloseCombatWeapon.svelte';
 	import TalentControl from './TalentControl.svelte';
 
 	export let data: Data | undefined;
 	export let char: Charakter | undefined;
-	let selected: 'Nahkampf' | 'Fernkampf' | 'Rüstung' = 'Nahkampf';
+	let selected: 'Nahkampf' | 'Fernkampf' | 'Rüstung' = 'Rüstung';
 
 	const closeConbatWeapons = char?.closeConbatWeaponsStore;
 	const distanceWeapons = char?.distanceWeaponsStore;
@@ -145,18 +146,23 @@
 						>
 					{/if}
 				</small>
-				<h1>{getText(item?.Name)}</h1>
+				<hgroup>
 
-				Erschwernis {item?.Erschwernis}
-				Dämpfung {item?.Schutz.Dämpfung}
-				Flexibilität {item?.Schutz.Flexibilität}
-				Härte {item?.Schutz.Härte}
-				Trefferzonen {item?.Trefferzonen}
+					<h1>{getText(item?.Name)}</h1>
+					<h2>Erschwernis {item?.Erschwernis??'keine'}</h2>
+				</hgroup>
+				<div style="float: left;">
+					<Armor lanes={1} input={item?.Id} {data} />
+				</div>
 
-				{#each item?.Eigenschaften?.Eigenschaft ?? [] as e}
-					{getText(data.AusrüstungsEigenschaftMap[e.Id].Name)}
-				{/each}
+				
+
 				{getText(item?.Beschreibung)}
+				{#each item?.Eigenschaften?.Eigenschaft ?? [] as e}
+					<h4>{getText(data.AusrüstungsEigenschaftMap[e.Id].Name)}</h4>
+					{getText(data.AusrüstungsEigenschaftMap[e.Id].Beschreibung)}
+				{/each}
+				<div style="clear: left;" />
 			{/each}
 		{/if}
 	</article>
