@@ -2,6 +2,9 @@ import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigke
 import type { MissingRequirements } from "./models/Character";
 import type { Data } from "./models/Data";
 
+export function filterNull<T>(x: (T | null| undefined)[]): T[] {
+    return x.filter(y => y !== null && y!==undefined) as T[];
+}
 
 export function getText(p: Lokalisierungen_misc | undefined): string {
     const languege = 'de';
@@ -64,7 +67,7 @@ export function getTextTalent(p: TalentDefinition_talent | undefined, format: 'N
         return getText(p.Name)
     else if (format == 'Probe')
         return `${probe[0]}•${probe[1]}•${probe[2]}`
-        throw Error('Unbekantes Format')
+    throw Error('Unbekantes Format')
 }
 export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number): string {
     if (!p) {

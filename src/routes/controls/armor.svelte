@@ -8,7 +8,7 @@
 	import type { Data } from '../models/Data';
 
 	export let input: Charakter | string | undefined;
-	export let data: Data | undefined;
+	export let data: Data | undefined = undefined;
 
 	let char = input instanceof Charakter ? input : undefined;
 	let armorStore = char instanceof Charakter ? char.armorStore : undefined;
@@ -16,10 +16,7 @@
 	$: {
 		char = input instanceof Charakter ? input : undefined;
 		armorStore = char instanceof Charakter ? char.armorStore : undefined;
-		console.log('data')
-		console.log(char)
-		console.log(input)
-		console.log(data)
+
 	}
 
 	function keys<T>(t: T | undefined): (keyof T)[] {

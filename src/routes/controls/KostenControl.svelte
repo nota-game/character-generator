@@ -15,6 +15,7 @@
 	export let char: Charakter | undefined = undefined;
 	export let paid: boolean | Readable<boolean> = false;
 	export let oneLine: boolean = false;
+	export let onlyNegatve: boolean = false;
 
 	function toStore<T>(t: T | Readable<T>): Readable<T> {
 		if (t !== undefined && typeof (t as any).subscribe === 'function') {
@@ -77,7 +78,7 @@
 					}).filter((x) => x.Id == c.Id)[0].i;
 					return { abbr, name, value, missing, order, toExpensiv };
 				})
-				.filter((x) => x.value != 0)
+				.filter((x) => (onlyNegatve ? x.value < 0 : x.value != 0))
 				.sort((a, b) => a.order - b.order);
 		}
 	);

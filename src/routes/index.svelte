@@ -56,9 +56,9 @@
 	<button on:click={()=>add()} >Neuer Charackter</button>
 </div>
 
-{#if selection}
+
 	<Char charId={selection} />
-{/if}
+
 
 <style lang="scss">
 	.head{

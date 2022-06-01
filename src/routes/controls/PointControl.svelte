@@ -8,6 +8,8 @@
 	export let data: Data;
 	export let char: Charakter;
 	export let compact: boolean = false;
+	export let onlyNegatve: boolean = false;
+	export let hasNegativ: boolean = false;
 
 	let list: { abbr: string; name: string; value: number }[];
 
@@ -36,6 +38,10 @@
 					return { abbr, name, value, order };
 				})
 				.sort((a, b) => a.order - b.order);
+			hasNegativ = list.filter((x) => x.value < 0).length > 0;
+			if (onlyNegatve) {
+				list = list.filter((x) => x.value < 0);
+			}
 		});
 	}
 </script>

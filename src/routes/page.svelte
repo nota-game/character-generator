@@ -43,7 +43,6 @@
 
 		renderPromise = new Promise<void>(async (r) => {
 			await renderPromise;
-			document.getElementById('source')?.addEventListener('change', () => console.log('changed22'));
 			document.getElementById('target')!.innerHTML = '';
 			const flow = await doPaged(
 				document.getElementById('source')?.innerHTML!,
@@ -96,7 +95,7 @@
 				<tr
 					><td>{p}</td><td>
 						{Object.keys(data.pfadCategoryMap[p])
-							.filter((ps) => Object.keys(char.pfadLevel[p]?.[ps] ?? {}).length > 0)
+							.filter((ps) => Object.keys(char?.pfadLevel[p]?.[ps] ?? {}).length > 0)
 							.sort()
 							.reduce((p, c) => (p == '' ? c : `${p}, ${c}`), '')}
 					</td></tr
@@ -545,6 +544,19 @@
 					{/if}
 				{/each}
 
+				{#if Object.keys(data.fertigkeitenCategoryMap['Kampfstiele']??{}).some((x) => (char?.fertigkeiten[x] ?? 0) > 0)}
+					<div class="list">
+						<strong>Kampfstiele</strong>
+						<ul>
+							{#each Object.keys(data.fertigkeitenCategoryMap['Kampfstiele']).filter((x) => (char?.fertigkeiten[x] ?? 0) > 0) as b2Key}
+								<li>
+									{getTextFertigkeit(data.fertigkeitenMap[b2Key], char?.fertigkeiten[b2Key] ?? 0)}
+								</li>
+							{/each}
+						</ul>
+						<hr />
+					</div>
+				{/if}
 				{#if Object.keys(data.fertigkeitenCategoryMap['Kampf']).some((x) => (char?.fertigkeiten[x] ?? 0) > 0)}
 					<div class="list">
 						<strong>Fertigkeiten</strong>

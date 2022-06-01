@@ -3,7 +3,7 @@ import type { Writable } from "svelte/store";
 
 
 export function local<T>(name: string): Writable<T | undefined> {
-console.log(name)
+
     const set = (v: T | undefined): void => {
         if (v)
             window.localStorage.setItem(name, JSON.stringify(v));

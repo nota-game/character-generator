@@ -18,10 +18,15 @@
 	import Hitman from './controls/hitman.svelte';
 	import Armor from './controls/armor.svelte';
 	import AusrstungList from './controls/AusrustungList.svelte';
+	import RequirementsControl from './controls/RequirementsControl.svelte';
+	import { renderRequirement } from './misc';
 
 	let data = writable<Data | undefined>(undefined);
 	let char = writable<Charakter | undefined>(undefined);
-	export let charId: string;
+	export let charId: string | undefined;
+
+	let allMissingRequirements = $char?.allMissingRequirements;
+	$: allMissingRequirements = $char?.allMissingRequirements;
 
 	let charOrganismusStore = $char?.organismusStore;
 	$: charOrganismusStore = $char?.organismusStore;
@@ -50,7 +55,7 @@
 	let kraftStore = $char?.kraftStore;
 	$: kraftStore = $char?.kraftStore;
 
-	let selection: string = 'Gattung/Art';
+	let selection: string = 'Übersicht';
 
 	Data.init().then((t) => {
 		$data = t;
@@ -71,6 +76,8 @@
 		}
 	}
 
+	let hasNegativPoints: boolean = false;
+
 	let dev = writable(true);
 	let pageLink: string;
 	let charLink: string;
@@ -87,52 +94,67 @@
 	}
 </script>
 
-{#if $data && $char}
+{#if $data && (charId === undefined || $char)}
 	<!-- <Hitman char={$char}></Hitman> -->
 	<!-- <Armor char={$char}></Armor> -->
 
-	<article class="hover">
-		<header>Punkte</header>
-		<div>
-			<PointControl char={$char} data={$data} />
-		</div>
-		<div>
-			<strong>Punkte</strong>
-			<PointControl char={$char} data={$data} compact />
-		</div>
-	</article>
-
+	{#if $char}
+		<article class="hover">
+			<header>Punkte</header>
+			<div>
+				<PointControl char={$char} data={$data} />
+			</div>
+			<div>
+				<strong>Punkte</strong>
+				<PointControl char={$char} data={$data} compact />
+			</div>
+		</article>
+	{/if}
 	<main class="container">
 		<nav>
 			<ul>
-				<li>
-					<a
-						href={pageLink}
-						role="button"
-						disabled={char == undefined ? true : undefined}
-						rel="external">Character Blatt</a
-					>
-				</li>
-				<li>
-					<a
-						href={charLink}
-						role="button"
-						disabled={char == undefined ? true : undefined}
-						rel="external">Link {charLink?.length ?? -1}</a
-					>
-				</li>
+				{#if $char}
+					<li>
+						<a
+							href={pageLink}
+							role="button"
+							disabled={char == undefined ? true : undefined}
+							rel="external">Character Blatt</a
+						>
+					</li>
+					<li>
+						<a
+							href={charLink}
+							role="button"
+							disabled={char == undefined ? true : undefined}
+							rel="external">Link {charLink?.length ?? -1}</a
+						>
+					</li>
+				{/if}
 			</ul>
 			<ul>
 				<li>
 					<input
-						id="Gattung/ArtSelecs"
+						id="ÜbersichtSelecs"
 						type="radio"
 						name="top"
-						value="Gattung/Art"
+						value="Übersicht"
 						bind:group={selection}
 					/>
-					<label for="Gattung/ArtSelecs">Gattung/Art </label>
+					<label for="ÜbersichtSelecs">Übersicht</label>
 				</li>
+				{#if $char}
+					<li>
+						<input
+							id="Gattung/ArtSelecs"
+							type="radio"
+							name="top"
+							value="Gattung/Art"
+							bind:group={selection}
+						/>
+						<label for="Gattung/ArtSelecs">Gattung/Art </label>
+					</li>
+				{/if}
 				{#if $charOrganismusStore}
 					<li>
 						<input
@@ -192,7 +214,7 @@
 			</ul>
 			<ul>
 				<li>
-					<button
+					<!-- <button
 						disabled={char == undefined}
 						on:click={() => {
 							// if ($char)
@@ -207,17 +229,54 @@
 							// 	};
 							selection = 'Gattung/Art';
 						}}>Reset</button
-					>
+					> -->
 				</li>
 			</ul>
 		</nav>
 
-		{#if selection == 'Gattung/Art'}
+		{#if selection == 'Übersicht'}
+			<article>
+				{#if $char}
+					{#if $allMissingRequirements && $allMissingRequirements.length == 0 && !hasNegativPoints}
+						<p>Der Charakter ist Gültig.</p>
+					{/if}
+
+					<p style={hasNegativPoints ? '' : 'display: none;'}>
+						Es wurden zu viele Punkte ausgegeben
+
+						<PointControl
+							onlyNegatve
+							char={$char}
+							data={$data}
+							bind:hasNegativ={hasNegativPoints}
+						/>
+					</p>
+					{#if $allMissingRequirements && $allMissingRequirements.length > 0}
+						<p>Es fehlen folgende Voraussetzungen</p>
+						<ul>
+							{#each $allMissingRequirements as r}
+								<li>{renderRequirement(r, $data)}</li>
+							{/each}
+						</ul>
+					{/if}
+				{:else}
+					<p>
+						Wählen Sie einen Charackter in der Auswahlbox am oberen Bildschirmrand aus oder erzeugen
+						sie einen neuen
+					</p>
+					<p>
+						Characktere werden lokal in ihrem Browser gespeichert. Sie können zurzeit nicht einfach
+						übertragen werden.
+					</p>
+				{/if}
+			</article>
+		{/if}
+		{#if selection == 'Gattung/Art' && $char}
 			<article>
 				<OrganismSelect char={$char} data={$data} />
 			</article>
 		{/if}
-		{#if $charOrganismusStore}
+		{#if $charOrganismusStore && $char}
 			{#if selection == 'Eigenschaften'}
 				<article>
 					<label>

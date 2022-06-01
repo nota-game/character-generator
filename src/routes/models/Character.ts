@@ -1,6 +1,7 @@
 import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen } from "src/data/nota.g";
 import { type Readable, get, derived, writable, type Writable } from "svelte/store";
 import { derivedLazy } from "../lazyDerivied";
+import { filterNull } from "../misc";
 
 import type { Data } from "./Data";
 
@@ -395,6 +396,8 @@ export class Charakter {
 
     public readonly glückMaxStore: Readable<number>;
 
+    public readonly allMissingRequirements: Readable<MissingRequirements[]>;
+
 
     private readonly closeConbatWeaponsStoreData = writable<Record<string, true | undefined>>({});
     public readonly closeConbatWeaponsStore = derived(this.closeConbatWeaponsStoreData, x => ({ ...x }));
@@ -717,9 +720,7 @@ export class Charakter {
 
 
         }
-        function filterNull<T>(x: (T | null)[]): T[] {
-            return x.filter(y => y !== null) as T[];
-        }
+
         const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit, negate: boolean): MissingRequirements[] => {
             return [
                 ... (filterNull<MissingRequirements>(requirements.And?.map(x => singel({ "#": "And", And: x } as any, negate)) ?? [])),
@@ -1112,6 +1113,44 @@ export class Charakter {
             return Math.ceil(r);
         })
 
+
+
+        this.allMissingRequirements = derived([this.talentEffectiveStore, this.talentEffectiveIgnoreRequirementsStore, this.talentDerivationStore, this.talentBaseStore, this.besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, this.fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore, this.pfadLevelStore], ([talentEffective, talentAll, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags, pfade]) => {
+
+            return filterNull<MissingRequirements>(Object.entries(talentAll)
+                .filter(([key, value]) => value > 0)
+                .flatMap(([key, value]) => this.stammdaten.talentMap[key].Level
+                    .filter(x => x.Wert <= value)
+                    .flatMap(x => this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags))
+                ).concat(
+                    Object.entries(fertigkeitenIgnored)
+                        .filter(([key, value]) => (value ?? 0) > 0)
+                        .flatMap(([key, value]) => this.stammdaten.fertigkeitenMap[key].Stufe
+                            .filter((_, i) => i < (value ?? 0))
+                            .flatMap(x => this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags))
+                        )).concat(
+                            Object.entries(besonderheitenTgnored)
+                                .filter(([key, value]) => (value ?? 0) > 0)
+                                .flatMap(([key, value]) => this.stammdaten.besonderheitenMap[key].Stufe
+                                    .filter((_, i) => i < (value ?? 0))
+                                    .flatMap(x => this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags))
+                                ))
+                .concat(
+                    Object.entries(pfade).flatMap(([gruppe, gv]) => Object.entries(gv).flatMap(([pfad, pv]) => Object.entries(pv)
+                        .filter(([level, value]) => (value ?? 0) > 0)
+                        .flatMap(([level, value]) => {
+
+                            const pi = this.stammdaten.pfadMap[pfad];
+                            const li = pi.Levels.Level.filter(x => x.Id == level);
+                            return [this.getMissingInternal(pi.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags)].concat(
+                                li.flatMap(x => this.getMissingInternal(x.Voraussetzung?.Zusätzlich, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags)))
+
+                        }
+                        )))))
+
+
+
+        });
 
 
         this.punkteStore = derived([
