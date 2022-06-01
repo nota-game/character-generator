@@ -75,6 +75,7 @@
 				{/each}
 			{/each}
 		{:else if selected === 'Fernkampf'}
+		<h1>Under Construction</h1>
 			{#each Object.keys(data.fernkampfMap).sort() as t}
 				{@const item = data?.fernkampfMap[t]}
 				<small class="right-handler">
