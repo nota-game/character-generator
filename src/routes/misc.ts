@@ -2,8 +2,8 @@ import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigke
 import type { MissingRequirements } from "./models/Character";
 import type { Data } from "./models/Data";
 
-export function filterNull<T>(x: (T | null| undefined)[]): T[] {
-    return x.filter(y => y !== null && y!==undefined) as T[];
+export function filterNull<T>(x: (T | null | undefined)[]): T[] {
+    return x.filter(y => y !== null && y !== undefined) as T[];
 }
 
 export function getText(p: Lokalisierungen_misc | undefined): string {
@@ -143,83 +143,82 @@ export function renderRequirement(req: MissingRequirements, data: Data | undefin
     if (req.type === 'And' && req.sub.every((x) => x.type !== 'Or' && x.type !== 'And')) {
         const neg = req.sub.filter((x) => x.type === 'Not');
         const pos = req.sub.filter((x) => x.type !== 'Not');
+        const posNames = pos
+            .map((x) => buildname(x as any));
+        const negNames = neg
+            .map((x) => buildname((x as any).sub));
+
         if (neg.length > 0 && pos.length > 0) {
             const posString =
                 pos.length > 1
-                    ? `Es werden ${pos
+                    ? `Es werden ${posNames
                         .slice(0, pos.length - 1)
-                        .map((x) => buildname(x as any))
-                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${pos[pos.length - 1]
+                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${posNames[pos.length - 1]
                     } benötigt und `
-                    : `Es wird ${pos
-                        .map((x) => buildname(x as any))
+                    : `Es wird ${posNames
                         .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} benötigt und `;
             const negString =
                 neg.length > 1
-                    ? `${neg
+                    ? `${negNames
                         .slice(0, neg.length - 1)
-                        .map((x) => buildname((neg[0] as any).sub))
-                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${neg[neg.length - 1]
+                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
                     } dürfen nicht vorhanden sein.`
-                    : `${buildname((neg[0] as any).sub as any)} darf nicht vorhanden sein.`;
+                    : `${negNames[0]} darf nicht vorhanden sein.`;
             return posString + negString;
         } else if (neg.length > 0) {
             return neg.length > 1
-                ? `${neg
+                ? `${negNames
                     .slice(0, neg.length - 1)
-                    .map((x) => buildname((neg[0] as any).sub))
-                    .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${neg[neg.length - 1]
+                    .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
                 } dürfen nicht vorhanden sein.`
-                : `${buildname((neg[0] as any).sub as any)} darf nicht vorhanden sein.`;
+                : `${negNames} darf nicht vorhanden sein.`;
         } else if (pos.length > 0) {
-            pos.length > 1
-                ? `Es werden ${pos
+            return pos.length > 1
+                ? `Es werden ${posNames
                     .slice(0, pos.length - 1)
-                    .map((x) => buildname(x as any))
-                    .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${pos[pos.length - 1]} benötigt.`
-                : `Es wird ${pos
-                    .map((x) => buildname(x as any))
+                    .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${posNames[pos.length - 1]} benötigt.`
+                : `Es wird ${posNames
                     .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} benötigt.`;
         }
     } else if (req.type === 'Or' && req.sub.every((x) => x.type !== 'Or' && x.type !== 'And')) {
         {
             const neg = req.sub.filter((x) => x.type === 'Not');
             const pos = req.sub.filter((x) => x.type !== 'Not');
+            const posNames = pos
+                .map((x) => buildname(x as any));
+            const negNames = neg
+                .map((x) => buildname((x as any).sub));
             if (neg.length > 0 && pos.length > 0) {
                 const posString =
                     pos.length > 1
-                        ? `${pos
+                        ? `${posNames
                             .slice(0, pos.length - 1)
-                            .map((x) => buildname(x as any))
-                            .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} oder ${pos[pos.length - 1]
+                            .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} oder ${posNames[pos.length - 1]
                         } muss vorhanden sein oder `
-                        : `Es wird ${buildname(pos[0] as any)} benötigt oder `;
+                        : `Es wird ${posNames[0]} benötigt oder `;
                 const negString =
                     neg.length > 1
-                        ? `eines der folgenden, ${neg
+                        ? `eines der folgenden, ${negNames
                             .slice(0, neg.length - 1)
-                            .map((x) => buildname((neg[0] as any).sub))
-                            .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${neg[neg.length - 1]
+                            .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
                         } darf nicht vorhanden sein.`
-                        : ` ${buildname((neg[0] as any).sub as any)} darf nicht vorhanden sein.`;
+                        : ` ${negNames[0]} darf nicht vorhanden sein.`;
                 return posString + negString;
             } else if (neg.length > 0) {
                 return neg.length > 1
-                    ? `Eines von ${neg
+                    ? `Eines von ${negNames
                         .slice(0, neg.length - 1)
-                        .map((x) => buildname((neg[0] as any).sub))
-                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${neg[neg.length - 1]
+                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
                     } darf nicht vorhanden sein.`
-                    : `${buildname((neg[0] as any).sub as any)} darf nicht vorhanden sein.`;
+                    : `${negNames[0]} darf nicht vorhanden sein.`;
             } else if (pos.length > 0) {
+
                 pos.length > 1
-                    ? `Es wird ${pos
+                    ? `Es wird ${posNames
                         .slice(0, pos.length - 1)
-                        .map((x) => buildname(x as any))
-                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} oder ${pos[pos.length - 1]
+                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} oder ${posNames[pos.length - 1]
                     } benötigt.`
-                    : `Es wird ${pos
-                        .map((x) => buildname(x as any))
+                    : `Es wird ${posNames
                         .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} benötigt.`;
             }
         }
