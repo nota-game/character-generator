@@ -21,12 +21,13 @@
 	onMount(async () => {
 		ready = true;
 		const currentChar = local<CharakterData>('c' + window.location.hash.slice(1));
-
-		data = await Data.init();
-		if (data) {
-			const j = get(currentChar);
-			if (j) {
-				char = new Charakter(data, j);
+		const j = get(currentChar);
+		if (j) {
+			data = await Data.init(false, j?.stammdatenId);
+			if (data) {
+				if (j) {
+					char = new Charakter(data, j);
+				}
 			}
 		}
 		dev.set(!window.location.pathname.includes('character-generator'));
@@ -544,7 +545,7 @@
 					{/if}
 				{/each}
 
-				{#if Object.keys(data.fertigkeitenCategoryMap['Kampfstiele']??{}).some((x) => (char?.fertigkeiten[x] ?? 0) > 0)}
+				{#if Object.keys(data.fertigkeitenCategoryMap['Kampfstiele'] ?? {}).some((x) => (char?.fertigkeiten[x] ?? 0) > 0)}
 					<div class="list">
 						<strong>Kampfstiele</strong>
 						<ul>

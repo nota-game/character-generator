@@ -57,24 +57,30 @@
 
 	let selection: string = 'Übersicht';
 
-	Data.init().then((t) => {
-		$data = t;
-	});
+	let mounted = false;
+
 	onMount(async () => {
 		dev.set(!window.location.pathname.includes('character-generator'));
+		mounted = true;
+		updete(charId);
 	});
 
-	$: {
-		if (charId) {
+	async function updete(charId: string | undefined) {
+		console.log('charId');
+		if (mounted && charId) {
 			const currentChar = local<CharakterData>('c' + charId);
+			const j = get(currentChar);
+			console.log(j);
+			$data = await Data.init(false, j?.stammdatenId);
 			if ($data) {
-				const j = get(currentChar);
 				$char = new Charakter($data, j ?? charId);
 
 				$char?.DataStore.subscribe((v) => currentChar.set(v));
 			}
 		}
 	}
+
+	$: updete(charId);
 
 	let hasNegativPoints: boolean = false;
 
@@ -237,6 +243,7 @@
 		{#if selection == 'Übersicht'}
 			<article>
 				{#if $char}
+					<p>Stammdaten {$char.stammdaten.id}</p>
 					{#if $allMissingRequirements && $allMissingRequirements.length == 0 && !hasNegativPoints}
 						<p>Der Charakter ist Gültig.</p>
 					{/if}

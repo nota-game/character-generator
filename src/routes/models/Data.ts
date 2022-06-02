@@ -1,4 +1,4 @@
-
+import * as base64 from 'base64-uint8';
 import * as mathjs from 'mathjs'
 import { Parser } from 'xsd-ts';
 import nota from './../../data/nota.g.xml?raw';
@@ -19,7 +19,8 @@ type lebensabschnittData =
 export class Data {
 
 
-    private instance: Daten | undefined
+    private instance: Daten
+    public readonly id: string
 
     public static readonly MAX_TALENT = 130;
 
@@ -51,8 +52,13 @@ export class Data {
     /**
      *
      */
-    constructor(data: Daten) {
+    constructor(data: Daten, digest: string) {
+        this.id = digest;
         this.instance = data;
+
+        window.localStorage.setItem('s' + digest, JSON.stringify(data));
+
+
 
         this.lebensabschnittLookup = Object.fromEntries(
             data.Daten.Organismen.Gattung.flatMap((x) =>
@@ -151,20 +157,31 @@ export class Data {
     /**
      * init
      */
-    public static async init() {
-        // const data = fetch('https://nota-game.github.io/Content/vNext/data/nota.xml')
-        const data = nota
-            .replace(/http:\/\/nota.org\/schema\//g, 'https://nota-game.github.io/schema/vNext/');
+    public static async init(local: boolean,id?: string) {
+        const { notaData, digest } = id && window.localStorage.getItem('s' + id)
+            ? { notaData: JSON.parse(window.localStorage.getItem('s' + id)!), digest: id }
+            : await download(local);
+
+        return notaData ? new Data(notaData, digest) : undefined;
+
+        async function download(local: boolean) {
+            const data = local ?
+                nota
+                    .replace(/http:\/\/nota.org\/schema\//g, 'https://nota-game.github.io/schema/vNext/')
+                : await (await fetch('https://nota-game.github.io/Content/vNext/data/nota.xml')).text()
 
 
 
-        // the result will be a replica of the original object
-        const deserialized = deserialize(notaStructure as SerializedRecord) as Array<element>;
-        const dat = deserialized.filter((x) => x.name.local === 'Daten')[0];
-        const parser = new Parser<Daten>(dat);
-        const notaData = parser.parse(data);
+            // the result will be a replica of the original object
+            const deserialized = deserialize(notaStructure as SerializedRecord) as Array<element>;
+            const dat = deserialized.filter((x) => x.name.local === 'Daten')[0];
+            const parser = new Parser<Daten>(dat);
+            const notaData = parser.parse(data);
 
-        return notaData ? new Data(notaData) : undefined;
+            const enc = new TextEncoder(); // always utf-8
+            const digest = base64.encode(new Uint8Array((await window.crypto.subtle.digest('SHA-256', enc.encode(JSON.stringify(notaData))))));
+            return { notaData, digest };
+        }
     }
 
 

@@ -359,6 +359,7 @@ export type MissingRequirements = { type: 'tag', id: string }
 
 export type CharakterData = {
     id: string,
+    stammdatenId: string,
     name: string,
     größe: number,
     gewicht: number,
@@ -594,6 +595,7 @@ export class Charakter {
 
             return {
                 id: this.id,
+                stammdatenId:this.stammdaten.id,
                 name: name,
                 größe: sizeStore,
                 gewicht: weightStore,
