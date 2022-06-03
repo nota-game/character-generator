@@ -595,7 +595,7 @@ export class Charakter {
 
             return {
                 id: this.id,
-                stammdatenId:this.stammdaten.id,
+                stammdatenId: this.stammdaten.id,
                 name: name,
                 größe: sizeStore,
                 gewicht: weightStore,
@@ -627,20 +627,25 @@ export class Charakter {
         EIGENRSCHAFTEN.forEach((key) => {
             this.eigenrschaften[key].accired = v.eigenschaften[key] ?? 0;
         });
-        this.besonderheitenPurchasedDataStore.set(v.besonderheiten);
-        this.fertigkeitenPurchasedDataStore.set(v.fertigkeiten);
+
+        function filter<T extends { [key: string]: unknown }>(t: T, map: { [key: string]: unknown }): T {
+            return Object.fromEntries(Object.entries(t).filter(([key]) => map[key] !== undefined)) as any;
+        }
+
+        this.besonderheitenPurchasedDataStore.set(filter(v.besonderheiten, this.stammdaten.besonderheitenMap));
+        this.fertigkeitenPurchasedDataStore.set(filter(v.fertigkeiten, this.stammdaten.fernkampfMap));
         if (v.lebensabschnittId) {
             const x = this.stammdaten.lebensabschnittLookup[v.lebensabschnittId];
             this.organismusStore.set(x);
         } else {
             this.organismusStore.set(undefined);
         }
-        this.talentPurchasedEPData.set(v.talentEP);
+        this.talentPurchasedEPData.set(filter(v.talentEP,this.stammdaten.talentMap));
         this.pfadLevelDataStore.set(v.pfade);
         this.name = v.name;
-        this.closeConbatWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.nahkampf?.map(x => [x, true]) ?? []))
-        this.distanceWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.fernkampf?.map(x => [x, true]) ?? []))
-        this.armorStoreData.set(Object.fromEntries(v.ausrüstung?.rüstung?.map(x => [x, true]) ?? []))
+        this.closeConbatWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.nahkampf?.filter(x => this.stammdaten.nahkampfMap[x])?.map(x => [x, true]) ?? []))
+        this.distanceWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.fernkampf?.filter(x => this.stammdaten.fernkampfMap[x])?.map(x => [x, true]) ?? []))
+        this.armorStoreData.set(Object.fromEntries(v.ausrüstung?.rüstung?.filter(x => this.stammdaten.RüstungMap[x])?.map(x => [x, true]) ?? []))
         this.sizeStore.set(v.größe ?? this.organismus?.l.minGröße ?? 0)
         this.weightStore.set(v.gewicht ?? get(this.weightMinStore))
     }
@@ -695,7 +700,7 @@ export class Charakter {
                 }
             } else if (requirements["#"] === 'And') {
                 const temp = multy(requirements.And, negate);
-                if (temp === null) {
+                if (temp === null || temp.length==0) {
                     return null;
                 }
                 else if (temp.length == 1) {
@@ -706,7 +711,7 @@ export class Charakter {
                 }
             } else if (requirements["#"] === 'Or') {
                 const temp = multy(requirements.Or, negate);
-                if (temp.length === 0) {
+                if (temp === null || temp.length === 0) {
                     return null;
                 }
                 else if (temp.length == 1) {

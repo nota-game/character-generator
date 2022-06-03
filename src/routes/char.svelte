@@ -20,6 +20,7 @@
 	import AusrstungList from './controls/AusrustungList.svelte';
 	import RequirementsControl from './controls/RequirementsControl.svelte';
 	import { renderRequirement } from './misc';
+	import { prevent_default } from 'svelte/internal';
 
 	let data = writable<Data | undefined>(undefined);
 	let char = writable<Charakter | undefined>(undefined);
@@ -66,12 +67,24 @@
 	});
 
 	async function updete(charId: string | undefined) {
-		console.log('charId');
 		if (mounted && charId) {
 			const currentChar = local<CharakterData>('c' + charId);
 			const j = get(currentChar);
 			console.log(j);
 			$data = await Data.init(false, j?.stammdatenId);
+			if ($data) {
+				$char = new Charakter($data, j ?? charId);
+
+				$char?.DataStore.subscribe((v) => currentChar.set(v));
+			}
+		}
+	}
+	async function refresh() {
+		if (mounted && charId) {
+			const currentChar = local<CharakterData>('c' + charId);
+			const j = get(currentChar);
+			console.log(j);
+			$data = await Data.init(false);
 			if ($data) {
 				$char = new Charakter($data, j ?? charId);
 
@@ -243,7 +256,20 @@
 		{#if selection == 'Übersicht'}
 			<article>
 				{#if $char}
-					<p>Stammdaten {$char.stammdaten.id}</p>
+					<p>
+						Stammdaten {$char.stammdaten.id}
+						<a style="font-size: xx-large;"
+							href="#"
+							data-tooltip="Stammdaten aktualisieren"
+							on:click={(e) => {
+								e.preventDefault();
+								refresh();
+							}}
+							>
+							
+							&#128472;
+						</a>
+					</p>
 					{#if $allMissingRequirements && $allMissingRequirements.length == 0 && !hasNegativPoints}
 						<p>Der Charakter ist Gültig.</p>
 					{/if}
