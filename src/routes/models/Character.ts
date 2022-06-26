@@ -361,6 +361,7 @@ export type CharakterData = {
     id: string,
     stammdatenId: string,
     name: string,
+    alter: number,
     größe: number,
     gewicht: number,
     lebensabschnittId: string | undefined,
@@ -390,6 +391,7 @@ export class Charakter {
     }
     public readonly punkteStore: Readable<Record<string, number>>;
 
+    public readonly ageStore = writable<number>(0);
     public readonly sizeStore = writable<number>(0);
     public readonly weightStore = writable<number>(0);
     public readonly weightMinStore: Readable<number>;
@@ -590,13 +592,14 @@ export class Charakter {
 
 
     public get DataStore(): Readable<CharakterData> {
-        return derived([this.weightStore, this.sizeStore, this.closeConbatWeaponsStore, this.distanceWeaponsStore, this.armorStore, this.pfadLevelStore, this.talentPurchasedEPData, this.organismusStore, this.fertigkeitenPurchasedStore, this.besonderheitenPurchasedStore, this.nameStore, ...EIGENRSCHAFTEN.map(key => this.eigenrschaften[key].acciredStore)], ([weightStore, sizeStore, closeConbatWeaponsStore, distanceWeaponsStore, armorStore, pfadLevelStore, talentPurchasedEPData, organismusStore, fertigkeitenPurchasedStore, besonderheitenPurchasedStore, name, ...eigenschaften]) => {
+        return derived([this.weightStore, this.sizeStore, this.ageStore, this.closeConbatWeaponsStore, this.distanceWeaponsStore, this.armorStore, this.pfadLevelStore, this.talentPurchasedEPData, this.organismusStore, this.fertigkeitenPurchasedStore, this.besonderheitenPurchasedStore, this.nameStore, ...EIGENRSCHAFTEN.map(key => this.eigenrschaften[key].acciredStore)], ([weightStore, sizeStore, ageStore, closeConbatWeaponsStore, distanceWeaponsStore, armorStore, pfadLevelStore, talentPurchasedEPData, organismusStore, fertigkeitenPurchasedStore, besonderheitenPurchasedStore, name, ...eigenschaften]) => {
 
 
             return {
                 id: this.id,
                 stammdatenId: this.stammdaten.id,
                 name: name,
+                alter: ageStore,
                 größe: sizeStore,
                 gewicht: weightStore,
                 eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map((key, i) => [key, eigenschaften[i]]).filter(([_, v]) => (v as number) != 0)),
@@ -647,6 +650,7 @@ export class Charakter {
         this.distanceWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.fernkampf?.filter(x => this.stammdaten.fernkampfMap[x])?.map(x => [x, true]) ?? []))
         this.armorStoreData.set(Object.fromEntries(v.ausrüstung?.rüstung?.filter(x => this.stammdaten.RüstungMap[x])?.map(x => [x, true]) ?? []))
         this.sizeStore.set(v.größe ?? this.organismus?.l.minGröße ?? 0)
+        this.ageStore.set(v.alter ?? this.organismus?.l.startAlter ?? 0)
         this.weightStore.set(v.gewicht ?? get(this.weightMinStore))
     }
 

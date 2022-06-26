@@ -43,7 +43,10 @@
     "tslib": "^2.3.1",
     "typescript": "~4.6.2",
     "uuid": "^8.3.2",
-    "xsd-ts": "^0.0.26"
+    "xsd-ts": "^0.0.27"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "svelte-range-slider-pips": "^2.0.3"
+  }
 }
