@@ -1079,6 +1079,7 @@ export class Charakter {
 
         this.weightMinStore = derived([this.organismusStore, this.sizeStore, this.getMods('Gewicht')], ([o, s, { addMod, multiMod }]) => {
             // BMI = gewicht in kg / größe in m zum quadrat => Kg = BMI * m^2
+            
             const minBMI = o?.l.minBMI ?? 1;
             const kgRaw = minBMI * s * s;
             const kg = kgRaw * multiMod + addMod;

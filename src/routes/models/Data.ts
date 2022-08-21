@@ -157,7 +157,7 @@ export class Data {
     /**
      * init
      */
-    public static async init(local: boolean,id?: string) {
+    public static async init(local: boolean, id?: string) {
         const { notaData, digest } = id && window.localStorage.getItem('s' + id)
             ? { notaData: JSON.parse(window.localStorage.getItem('s' + id)!), digest: id }
             : await download(local);
@@ -165,10 +165,20 @@ export class Data {
         return notaData ? new Data(notaData, digest) : undefined;
 
         async function download(local: boolean) {
-            const data = local ?
-                nota
+            // const data = local ?
+            //     nota
+            //         .replace(/http:\/\/nota.org\/schema\//g, 'https://nota-game.github.io/schema/vNext/')
+            //     : await (await fetch('https://nota-game.github.io/Content/vNext/data/nota.xml')).text()
+            let data: string;
+            try {
+                data = await (await fetch('https://nota-game.github.io/Content/vNext/data/nota.xml')).text();
+
+            } catch (error) {
+                data = nota
                     .replace(/http:\/\/nota.org\/schema\//g, 'https://nota-game.github.io/schema/vNext/')
-                : await (await fetch('https://nota-game.github.io/Content/vNext/data/nota.xml')).text()
+                    ;
+            }
+
 
 
 

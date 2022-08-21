@@ -23,6 +23,7 @@
 	import { log, min, number } from 'mathjs';
 	import Armor from './armor.svelte';
 	import { init } from 'svelte/internal';
+	import EntwicklungReihe from './../../controls/organismus/EntwicklungReihe.svelte';
 
 	export let data: Data | undefined;
 	export let char: Charakter | undefined;
@@ -78,8 +79,8 @@
 	}
 
 	function age2Lebensabschnitt(
-		m: MorphDefinition_lebewesen,
-		age: number
+		m: MorphDefinition_lebewesen | undefined,
+		age: number | undefined
 	): LebensabschnittDefinition_lebewesen | undefined {
 		if (!m) return undefined;
 		if (!age) return undefined;
@@ -105,32 +106,40 @@
 					{getText(m.Name)}
 				</label>
 				<p>{getText(m.Beschreibung)}</p>
-				{#if m == selectedMorph}
-					<label>
-						Alter
-						<RangeSlider
-							all="label"
-							float
-							formatter={(v) => v}
-							handleFormatter={(v) => {
-								let l = age2Lebensabschnitt(m, v);
-								return (l ? getText(l.Name) : '') + ` (${v} Jahre)`;
-							}}
-							bind:values={ageArray}
-							pips
-							min={Math.min(...m.Lebensabschnitte.Lebensabschnitt.map((x) => x.startAlter))}
-							max={Math.max(...m.Lebensabschnitte.Lebensabschnitt.map((x) => x.endAlter))}
-						/>
-					</label>
-					{#if selectedL}
-						{selectedL.Id}
-
-						{getText(selectedL.Name)}
-						<KostenControl cost={selectedL.Spielbar.Kosten} {data} {char} />
-						{getText(selectedL.Beschreibung)}
-					{/if}
-				{/if}
 			{/each}
+			{#if a.Morphe.Morph.includes(selectedMorph)}
+				<label>
+					Alter
+					<RangeSlider
+						all="label"
+						float
+						formatter={(v) => v}
+						handleFormatter={(v) => {
+							let l = age2Lebensabschnitt(selectedMorph, v);
+							return (l ? getText(l.Name) : '') + ` (${v} Jahre)`;
+						}}
+						bind:values={ageArray}
+						pips
+						min={Math.min(
+							...selectedMorph.Lebensabschnitte.Lebensabschnitt.map((x) => x.startAlter)
+						)}
+						max={Math.max(...selectedMorph.Lebensabschnitte.Lebensabschnitt.map((x) => x.endAlter))}
+					/>
+				</label>
+				{#if selectedL}
+					{selectedL.Id}
+
+					{getText(selectedL.Name)}
+					{#if selectedL.Spielbar}
+						<KostenControl cost={selectedL.Spielbar.Kosten} {data} {char} />
+					{/if}
+					{getText(selectedL.Beschreibung)}
+				{/if}
+
+				{#each selectedMorph.Entwiklung.Reihe ?? [] as r}
+					<EntwicklungReihe {char} {data} reihe={r} />
+				{/each}
+			{/if}
 		{/each}
 	{/each}
 {/if}
