@@ -6,10 +6,10 @@ import { filterNull } from "../misc";
 import type { Data } from "./Data";
 
 export type selection = {
-    l: LebensabschnittDefinition_lebewesen;
-    m: MorphDefinition_lebewesen;
-    a: ArtDefinition_lebewesen;
-    g: GattungDefinition_lebewesen;
+    lebensabschnitt: LebensabschnittDefinition_lebewesen;
+    morph: MorphDefinition_lebewesen;
+    art: ArtDefinition_lebewesen;
+    gattung: GattungDefinition_lebewesen;
 } | undefined;
 
 export type Eigenschaft = 'Mut' | 'Glück' | 'Klugheit' | 'Intuition' | 'Gewandtheit' | 'Feinmotorik' | 'Sympathie' | 'Antipathie' | 'Stärke' | 'Konstitution' | 'Fokus' | 'Einfluss';
@@ -362,10 +362,9 @@ export type CharakterData = {
     stammdatenId: string,
     name: string,
     alter: number,
-    größe: number,
-    gewicht: number,
-    lebensabschnittId: string | undefined,
-    eigenschaften: Record<string, number>
+    morphId: string | undefined,
+    eigenschaften: Record<string, number>;
+    sekundäreEigenschaften: Record<string, number>;
     besonderheiten: Record<string, number>;
     pfade: Readonly<Record<string, Record<string, Record<string, number>>>>;
     fertigkeiten: Record<string, number>;
@@ -381,7 +380,8 @@ export class Charakter {
     public readonly stammdaten: Data;
     private readonly id: string;
 
-    public readonly organismusStore = writable<selection>(undefined);
+    public readonly organismusStore: Readable<selection>;
+    public readonly morphIdStore = writable<string | undefined>(undefined);
     public readonly nameStore = writable<string>(undefined);
     public get name() {
         return get(this.nameStore);
@@ -392,12 +392,10 @@ export class Charakter {
     public readonly punkteStore: Readable<Record<string, number>>;
 
     public readonly ageStore = writable<number>(0);
-    public readonly sizeStore = writable<number>(0);
-    public readonly weightStore = writable<number>(0);
-    public readonly weightMinStore: Readable<number>;
-    public readonly weightMaxStore: Readable<number>;
 
     public readonly glückMaxStore: Readable<number>;
+    public readonly sizeStore: Readable<number>;
+    public readonly weightStore: Readable<number>;
 
     public readonly allMissingRequirements: Readable<MissingRequirements[]>;
 
@@ -534,6 +532,8 @@ export class Charakter {
         return get(this.fertigkeitenStoreIgnoreRequirements);
     }
 
+    private readonly propertyScaleData = writable({} as Record<string, number>);
+
     private readonly talentPurchasedEPData = writable({} as Record<string, number>);
     private readonly talentFixEP: Readable<Record<string, number>>;
     public readonly talentPurchasedEP: Readable<Record<string, number | undefined>>;
@@ -592,7 +592,7 @@ export class Charakter {
 
 
     public get DataStore(): Readable<CharakterData> {
-        return derived([this.weightStore, this.sizeStore, this.ageStore, this.closeConbatWeaponsStore, this.distanceWeaponsStore, this.armorStore, this.pfadLevelStore, this.talentPurchasedEPData, this.organismusStore, this.fertigkeitenPurchasedStore, this.besonderheitenPurchasedStore, this.nameStore, ...EIGENRSCHAFTEN.map(key => this.eigenrschaften[key].acciredStore)], ([weightStore, sizeStore, ageStore, closeConbatWeaponsStore, distanceWeaponsStore, armorStore, pfadLevelStore, talentPurchasedEPData, organismusStore, fertigkeitenPurchasedStore, besonderheitenPurchasedStore, name, ...eigenschaften]) => {
+        return derived([this.propertyScaleData, this.ageStore, this.closeConbatWeaponsStore, this.distanceWeaponsStore, this.armorStore, this.pfadLevelStore, this.talentPurchasedEPData, this.morphIdStore, this.fertigkeitenPurchasedStore, this.besonderheitenPurchasedStore, this.nameStore, ...EIGENRSCHAFTEN.map(key => this.eigenrschaften[key].acciredStore)], ([propertyScaleData, ageStore, closeConbatWeaponsStore, distanceWeaponsStore, armorStore, pfadLevelStore, talentPurchasedEPData, morphIdStore, fertigkeitenPurchasedStore, besonderheitenPurchasedStore, name, ...eigenschaften]) => {
 
 
             return {
@@ -600,12 +600,11 @@ export class Charakter {
                 stammdatenId: this.stammdaten.id,
                 name: name,
                 alter: ageStore,
-                größe: sizeStore,
-                gewicht: weightStore,
+                sekundäreEigenschaften: Object.fromEntries(Object.entries(propertyScaleData).filter((([key, value]) => (value ?? 0) > 0))) as any,
                 eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map((key, i) => [key, eigenschaften[i]]).filter(([_, v]) => (v as number) != 0)),
                 besonderheiten: Object.fromEntries(Object.entries(besonderheitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
                 fertigkeiten: Object.fromEntries(Object.entries(fertigkeitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
-                lebensabschnittId: organismusStore?.l.Id,
+                morphId: morphIdStore,
                 talentEP: Object.fromEntries(Object.entries(talentPurchasedEPData).filter(([_, value]) => (value ?? 0) > 0)),
                 pfade: pfadLevelStore,
                 ausrüstung: {
@@ -637,21 +636,20 @@ export class Charakter {
 
         this.besonderheitenPurchasedDataStore.set(filter(v.besonderheiten, this.stammdaten.besonderheitenMap));
         this.fertigkeitenPurchasedDataStore.set(filter(v.fertigkeiten, this.stammdaten.fernkampfMap));
-        if (v.lebensabschnittId) {
-            const x = this.stammdaten.lebensabschnittLookup[v.lebensabschnittId];
-            this.organismusStore.set(x);
-        } else {
-            this.organismusStore.set(undefined);
-        }
-        this.talentPurchasedEPData.set(filter(v.talentEP,this.stammdaten.talentMap));
+
+        this.propertyScaleData.set(v.sekundäreEigenschaften);
+
+        this.morphId = v.morphId;
+
+        this.talentPurchasedEPData.set(filter(v.talentEP, this.stammdaten.talentMap));
         this.pfadLevelDataStore.set(v.pfade);
         this.name = v.name;
         this.closeConbatWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.nahkampf?.filter(x => this.stammdaten.nahkampfMap[x])?.map(x => [x, true]) ?? []))
         this.distanceWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.fernkampf?.filter(x => this.stammdaten.fernkampfMap[x])?.map(x => [x, true]) ?? []))
         this.armorStoreData.set(Object.fromEntries(v.ausrüstung?.rüstung?.filter(x => this.stammdaten.RüstungMap[x])?.map(x => [x, true]) ?? []))
-        this.sizeStore.set(v.größe ?? this.organismus?.l.minGröße ?? 0)
-        this.ageStore.set(v.alter ?? this.organismus?.l.startAlter ?? 0)
-        this.weightStore.set(v.gewicht ?? get(this.weightMinStore))
+
+        this.ageStore.set(v.alter ?? this.organismus?.lebensabschnitt.startAlter ?? 0)
+
     }
 
 
@@ -704,7 +702,7 @@ export class Charakter {
                 }
             } else if (requirements["#"] === 'And') {
                 const temp = multy(requirements.And, negate);
-                if (temp === null || temp.length==0) {
+                if (temp === null || temp.length == 0) {
                     return null;
                 }
                 else if (temp.length == 1) {
@@ -761,6 +759,49 @@ export class Charakter {
 
 
 
+        this.sizeStore = derived([this.propertyScaleData], ([propertyScaleData]) => {
+            return propertyScaleData['größe'] ?? 0;
+        });
+        this.weightStore = derived([this.propertyScaleData,this.getMods('Gewicht')], ([propertyScaleData, { addMod, multiMod }]) => {
+            const height =(propertyScaleData['größe'] ?? 0)/100;
+            const bmi =propertyScaleData['bmi'] ?? 0;
+
+            const kgRaw = bmi * height * height;
+            const kg = kgRaw * multiMod + addMod;
+            return Math.floor(kg * 10) / 10;
+        });
+
+        this.organismusStore = derived([this.ageStore, this.morphIdStore], ([age, morphId]) => {
+            if (morphId == undefined) {
+                console.log('no morph')
+                return undefined;
+            }
+
+            function age2Lebensabschnitt(
+                m: MorphDefinition_lebewesen | undefined,
+                age: number | undefined
+            ): LebensabschnittDefinition_lebewesen | undefined {
+                if (!m) return undefined;
+                if (!age) return undefined;
+                let last = m.Lebensabschnitte.Lebensabschnitt[0];
+                for (const l of m.Lebensabschnitte.Lebensabschnitt) {
+                    if (l.startAlter > age) return last;
+                    last = l;
+                }
+                return m.Lebensabschnitte.Lebensabschnitt[m.Lebensabschnitte.Lebensabschnitt.length - 1];
+            }
+
+            const lookedup = this.stammdaten.morphLookup[morphId];
+            const lebensabschnitt = age2Lebensabschnitt(lookedup.morph, age);
+            if (lebensabschnitt == undefined) {
+                console.log('no age')
+                return undefined;
+            }
+            return {
+                lebensabschnitt,
+                ...lookedup
+            };
+        });
 
         this.startPropertysStore = derived(this.organismusStore, v => {
             return Object.fromEntries(EIGENRSCHAFTEN.map(att => {
@@ -770,17 +811,17 @@ export class Charakter {
 
 
 
-                    const start = v.m.Eigenschaften?.[att].Start
-                        ?? v.a.Eigenschaften?.[att].Start
-                        ?? v.g.Eigenschaften?.[att].Start
+                    const start = v.morph.Eigenschaften?.[att].Start
+                        ?? v.art.Eigenschaften?.[att].Start
+                        ?? v.gattung.Eigenschaften?.[att].Start
                         ?? NaN;
                     if (isNaN(start)) {
-                        throw Error(`Stammdaten fehlerhft Eigenschaft nicht definiert ${att} ${v.m.Id}`)
+                        throw Error(`Stammdaten fehlerhft Eigenschaft nicht definiert ${att} ${v.morph.Id}`)
                     }
 
-                    const definedCosts = (v.a.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0])
-                        .concat((v.g.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
-                        .concat((v.m.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
+                    const definedCosts = (v.art.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0])
+                        .concat((v.gattung.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
+                        .concat((v.morph.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
                         .concat((this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
                         ;
                     const maxCost = Math.max(...definedCosts);
@@ -788,15 +829,15 @@ export class Charakter {
 
                     const cost: Record<number, KostenDefinition_misc[] | undefined> = {};
                     for (let i = minCost; i <= maxCost; i++) {
-                        const c = v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.a.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.g.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                        const c = v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.art.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.gattung.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
                             ?? this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.m.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.a.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.g.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.art.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+                            ?? v.gattung.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
                             ?? this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten;
                         if (typeof c == 'object') {
                             cost[i] = c;
@@ -1008,7 +1049,7 @@ export class Charakter {
                                 .Levels.Level.filter(x => x.Id == level)[0];
                             return l.Besonderheit ?? [];
                         }))))
-                .concat(o?.l.Mods?.Besonderheiten?.Besonderheit ?? [])
+                .concat(o?.lebensabschnitt.Mods?.Besonderheiten?.Besonderheit ?? [])
                 .reduce((p, c) => {
                     p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
                     return p;
@@ -1077,23 +1118,7 @@ export class Charakter {
         talentEffectiveInit.init([this.talentEffectiveIgnoreRequirementsStore, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
 
 
-        this.weightMinStore = derived([this.organismusStore, this.sizeStore, this.getMods('Gewicht')], ([o, s, { addMod, multiMod }]) => {
-            // BMI = gewicht in kg / größe in m zum quadrat => Kg = BMI * m^2
-            
-            const minBMI = o?.l.minBMI ?? 1;
-            const kgRaw = minBMI * s * s;
-            const kg = kgRaw * multiMod + addMod;
-            return Math.floor(kg * 10) / 10;
-        });
-
-        this.weightMaxStore = derived([this.organismusStore, this.sizeStore, this.getMods('Gewicht')], ([o, s, { addMod, multiMod }]) => {
-            // BMI = gewicht in kg / größe in m zum quadrat => Kg = BMI * m^2
-            const maxBMI = o?.l.maxBMI ?? 1;
-            const kgRaw = maxBMI * s * s;
-
-            const kg = kgRaw * multiMod + addMod;
-            return Math.ceil(kg * 10) / 10;
-        });
+   
 
         this.eigenrschaften = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenData(att)] as const)) as any;
         this.eigenschaftenData = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenDataAccess(this.eigenrschaften[att], this.startPropertysStore, this.getMods(att))] as const)) as any;
@@ -1265,8 +1290,8 @@ export class Charakter {
             ]
             applyCredit(this.stammdaten.Instance.Daten.GenerierungsDaten.Kosten)
 
-            if (organismus?.l.Spielbar?.Kosten) {
-                applyCost(organismus.l.Spielbar.Kosten);
+            if (organismus?.lebensabschnitt.Spielbar?.Kosten) {
+                applyCost(organismus.lebensabschnitt.Spielbar.Kosten);
             }
 
 
@@ -1362,19 +1387,19 @@ export class Charakter {
 
     private getMods(keyt: keyof EigenschaftsMods_lebewesen) {
         return derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore], ([o, b, f, t]) => {
-            const mods = Object.entries(b).flatMap(([key, value]) => {
+            const mods = Object.entries(b??{}).flatMap(([key, value]) => {
                 return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.[keyt] ?? [])
             })
-                .concat(Object.entries(f).flatMap(([key, value]) => {
+                .concat(Object.entries(f??{}).flatMap(([key, value]) => {
                     return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.fertigkeitenMap[key].Stufe[i].Mods?.Eigenschaften?.[keyt] ?? [])
                 }))
-                .concat(Object.entries(t).flatMap(([key, value]) => {
+                .concat(Object.entries(t??{}).flatMap(([key, value]) => {
                     return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.[keyt] ?? [])
                 }))
-                .concat(o?.l.Mods?.Eigenschaften?.[keyt] ?? [])
-                .concat(o?.m.Mods?.Eigenschaften?.[keyt] ?? [])
-                .concat(o?.a.Mods?.Eigenschaften?.[keyt] ?? [])
-                .concat(o?.g.Mods?.Eigenschaften?.[keyt] ?? [])
+                .concat(o?.lebensabschnitt.Mods?.Eigenschaften?.[keyt] ?? [])
+                .concat(o?.morph.Mods?.Eigenschaften?.[keyt] ?? [])
+                .concat(o?.art.Mods?.Eigenschaften?.[keyt] ?? [])
+                .concat(o?.gattung.Mods?.Eigenschaften?.[keyt] ?? [])
                 .flatMap(x => x);
             const addMod = mods.filter(x => x.Type = 'additiv').reduce((p, c) => p + c.Mod, 0);
             const multiMod = mods.filter(x => x.Type = 'additiv').reduce((p, c) => p + (1 - c.Mod), 1);
@@ -1422,9 +1447,17 @@ export class Charakter {
         return get(this.talentPurchasedEPData)[id] ?? 0;
     }
     setTalentPurchasedEP(id: string, value: number): void {
-        const x = get(this.talentBaseEPStore);
+        const x = get(this.talentPurchasedEPData);
         x[id] = value;
         this.talentPurchasedEPData.set(x);
+    }
+    getPropertyScale(id: string): number {
+        return get(this.propertyScaleData)[id] ?? 0;
+    }
+    setPropertyScale(id: string, value: number): void {
+        const x = get(this.propertyScaleData);
+        x[id] = value;
+        this.propertyScaleData.set(x);
     }
 
 
@@ -1689,14 +1722,16 @@ export class Charakter {
 
 
 
-
-
     public get organismus(): selection {
         return get(this.organismusStore);
     }
 
-    public set organismus(v: selection) {
-        this.organismusStore.set(v);
+    public get morphId(): string | undefined {
+        return get(this.morphIdStore);
+    }
+
+    public set morphId(v: string | undefined) {
+        this.morphIdStore.set(v);
     }
 
 

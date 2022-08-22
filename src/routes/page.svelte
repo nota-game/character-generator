@@ -85,11 +85,11 @@
 			<tr><td>Name </td><td>{char.name}</td></tr>
 			<tr
 				><td>Gattung/Art</td><td>
-					{getText(char.organismus?.g.Name)}
-					{getText(char.organismus?.a.Art)}
-					({getText(char.organismus?.a.Name)})
-					{getText(char.organismus?.m.Name)}
-					({getText(char.organismus?.l.Name)})</td
+					{getText(char.organismus?.gattung.Name)}
+					{getText(char.organismus?.art.Art)}
+					({getText(char.organismus?.art.Name)})
+					{getText(char.organismus?.morph.Name)}
+					({getText(char.organismus?.lebensabschnitt.Name)})</td
 				></tr
 			>
 			{#each Object.keys(data.pfadCategoryMap) as p}

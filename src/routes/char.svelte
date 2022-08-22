@@ -31,6 +31,9 @@
 
 	let charOrganismusStore = $char?.organismusStore;
 	$: charOrganismusStore = $char?.organismusStore;
+	$: console.log (charOrganismusStore) ;
+	$: console.log ($charOrganismusStore) ;
+	$: console.log ($char) ;
 
 	let nameStore = $char?.nameStore;
 	$: nameStore = $char?.nameStore;
@@ -320,36 +323,36 @@
 					<div
 						style="display: grid; grid-template-columns: auto 1fr auto ; gap: 1rem; align-items: end; margin-bottom: var(--spacing);"
 					>
-						<small>{$charOrganismusStore?.l.minGröße} m</small>
+						<!-- <small>{$charOrganismusStore?.lebensabschnitt.minGröße} m</small> -->
 						<label>
-							Größe {$sizeStore} m
-							<input
+							Größe {($sizeStore??0)/100} m
+							<!-- <input
 								type="range"
 								step="0.01"
 								bind:value={$sizeStore}
-								min={$charOrganismusStore?.l.minGröße}
-								max={$charOrganismusStore?.l.maxGröße}
+								min={$charOrganismusStore?.lebensabschnitt.minGröße}
+								max={$charOrganismusStore?.lebensabschnitt.maxGröße}
 								style="margin-bottom: 0px;"
-							/>
+							/> -->
 						</label>
-						<small>{$charOrganismusStore?.l.maxGröße} m</small>
+						<!-- <small>{$charOrganismusStore?.lebensabschnitt.maxGröße} m</small> -->
 					</div>
 					<div
 						style="display: grid; grid-template-columns: auto 1fr auto ; gap: 1rem; align-items: end; margin-bottom: var(--spacing);"
 					>
-						<small>{$weightMinStore} Kg</small>
+						<!-- <small>{$weightMinStore} Kg</small> -->
 						<label>
 							Gewicht {$weightStore} Kg
-							<input
+							<!-- <input
 								type="range"
 								step="0.1"
 								bind:value={$weightStore}
 								min={$weightMinStore}
 								max={$weightMaxStore}
 								style="margin-bottom: 0px;"
-							/>
+							/> -->
 						</label>
-						<small>{$weightMaxStore} Kg</small>
+						<!-- <small>{$weightMaxStore} Kg</small> -->
 					</div>
 					AU {$ausdauerStore}
 					Initiative {$initiativeStore}

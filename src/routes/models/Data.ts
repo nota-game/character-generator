@@ -41,6 +41,13 @@ export class Data {
     public readonly fertigkeitenCategoryMap: Record<string, Record<string, Readonly<FertigkeitDefinition_fertigkeit>>>;
     public readonly StandardKosten: string;
     public readonly lebensabschnittLookup: { [key: string]: lebensabschnittData };
+    public readonly morphLookup: {
+        [key: string]: {
+            morph: MorphDefinition_lebewesen,
+            art:ArtDefinition_lebewesen,
+            gattung:GattungDefinition_lebewesen
+        }
+    };
 
 
     public readonly AusrüstungsEigenschaftMap: Record<string, Readonly<AusrüstungEigengchaftDefinition_kampf_ausstattung>>;
@@ -59,6 +66,20 @@ export class Data {
         window.localStorage.setItem('s' + digest, JSON.stringify(data));
 
 
+
+        this.morphLookup = Object.fromEntries(
+            data.Daten.Organismen.Gattung.flatMap((x) =>
+                x.Art.flatMap((y) =>
+                    y.Morphe.Morph.map((z) =>
+                        [z.Id, {
+                            morph: z,
+                            art:y,
+                            gattung:x
+                        }]
+                    )
+                )
+            )
+        );
 
         this.lebensabschnittLookup = Object.fromEntries(
             data.Daten.Organismen.Gattung.flatMap((x) =>
