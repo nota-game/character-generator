@@ -1,4 +1,4 @@
-import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1 } from "src/data/nota.g";
+import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe } from "src/data/nota.g";
 import { type Readable, get, derived, writable, type Writable } from "svelte/store";
 import { derivedLazy } from "../lazyDerivied";
 import { filterNull } from "../misc";
@@ -762,14 +762,6 @@ export class Charakter {
         this.sizeStore = derived([this.propertyScaleData], ([propertyScaleData]) => {
             return propertyScaleData['größe'] ?? 0;
         });
-        this.weightStore = derived([this.propertyScaleData,this.getMods('Gewicht')], ([propertyScaleData, { addMod, multiMod }]) => {
-            const height =(propertyScaleData['größe'] ?? 0)/100;
-            const bmi =propertyScaleData['bmi'] ?? 0;
-
-            const kgRaw = bmi * height * height;
-            const kg = kgRaw * multiMod + addMod;
-            return Math.floor(kg * 10) / 10;
-        });
 
         this.organismusStore = derived([this.ageStore, this.morphIdStore], ([age, morphId]) => {
             if (morphId == undefined) {
@@ -1118,7 +1110,7 @@ export class Charakter {
         talentEffectiveInit.init([this.talentEffectiveIgnoreRequirementsStore, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
 
 
-   
+
 
         this.eigenrschaften = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenData(att)] as const)) as any;
         this.eigenschaftenData = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenDataAccess(this.eigenrschaften[att], this.startPropertysStore, this.getMods(att))] as const)) as any;
@@ -1228,6 +1220,8 @@ export class Charakter {
             this.besonderheitenFixDataStore,
             this.besonderheitenPurchasedStore,
 
+            this.propertyScaleData,
+            this.ageStore,
 
         ], ([
             organismus,
@@ -1267,6 +1261,8 @@ export class Charakter {
 
             besonderheitenFix,
             besonderheitenPurchaseu,
+            propertyScale,
+            age,
 
         ]) => {
 
@@ -1360,6 +1356,23 @@ export class Charakter {
             );
 
 
+            applyCost(
+                Object.entries(propertyScale).flatMap(([key, value]) => {
+                    const r: KostenDefinition_misc[] = [];
+
+                    const reihe = organismus?.morph.Entwiklung.Reihe?.filter(x => x.id == key)?.[0];
+                    if (reihe == undefined) { return r; }
+
+                    const { schwellen } = Charakter.applyAge(age, reihe);
+
+                    const schwelle = schwellen.filter(x => x.Wert <= value).reverse()[0]
+                        ;
+                    r.push(...(schwelle?.Kosten??[]));
+                    return r;
+                })
+            );
+
+
             return r;
 
             ///////////
@@ -1376,6 +1389,16 @@ export class Charakter {
 
         });
 
+        this.weightStore = derived([this.propertyScaleData, this.getMods('Gewicht')], ([propertyScaleData, { addMod, multiMod }]) => {
+            const height = (propertyScaleData['größe'] ?? 0) / 100;
+            const bmi = propertyScaleData['bmi'] ?? 0;
+
+            const kgRaw = bmi * height * height;
+            const kg = kgRaw * multiMod + addMod;
+            return Math.floor(kg * 10) / 10;
+        });
+
+
         if (typeof idOrOld === 'string') {
             this.id = idOrOld;
 
@@ -1385,15 +1408,51 @@ export class Charakter {
         }
     }
 
+
+    public static applyAge(age: number, reihe: _Reihe) {
+        const a = age;
+        const tempIndex = Math.round(
+            (a - (reihe?.startAlter ?? 0)) / (reihe?.step ?? 1) + (reihe?.startAlter ?? 0)
+        );
+
+        const index = Math.min((reihe?.Schwelle?.[0]?.Wert?.length ?? 0) - 1, Math.max(tempIndex, 0));
+        const indexVerteilung = Math.min(
+            (reihe?.Verteilung?.[0]?.Wert?.length ?? 0) - 1,
+            Math.max(tempIndex, 0)
+        );
+
+        // console.log("Verteilung",indexVerteilung,reihe?.Verteilung.map((x) =>
+        // 					x.Wert[indexVerteilung]
+        // 				));
+
+        const schwellen =
+            reihe?.Schwelle?.map((x) => ({
+                ...x,
+                Wert: x.Wert[index]
+            }))
+                .sort((a, b) => a.Wert - b.Wert)
+                .filter((x) => x.Wert !== undefined) ?? [];
+        const quantile =
+            reihe?.Verteilung?.map((x) => ({
+                ...x,
+                Wert: x.Wert[indexVerteilung]
+            }))
+                .sort((a, b) => a.Wert - b.Wert)
+                .filter((x) => x.Wert !== undefined) ?? [];
+
+        return { schwellen, quantile };
+
+    }
+
     private getMods(keyt: keyof EigenschaftsMods_lebewesen) {
         return derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore], ([o, b, f, t]) => {
-            const mods = Object.entries(b??{}).flatMap(([key, value]) => {
+            const mods = Object.entries(b/* if null it was used to early */).flatMap(([key, value]) => {
                 return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.[keyt] ?? [])
             })
-                .concat(Object.entries(f??{}).flatMap(([key, value]) => {
+                .concat(Object.entries(f).flatMap(([key, value]) => {
                     return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.fertigkeitenMap[key].Stufe[i].Mods?.Eigenschaften?.[keyt] ?? [])
                 }))
-                .concat(Object.entries(t??{}).flatMap(([key, value]) => {
+                .concat(Object.entries(t).flatMap(([key, value]) => {
                     return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.[keyt] ?? [])
                 }))
                 .concat(o?.lebensabschnitt.Mods?.Eigenschaften?.[keyt] ?? [])

@@ -1,11 +1,12 @@
 <script lang="ts">
-	import type { _Reihe } from './../../data/nota.g';
+	import type { KostenDefinitionen_misc, KostenDefinitions_misc, KostenDefinition_misc, Lokalisierungen_misc, _Reihe } from './../../data/nota.g';
 	import { getText } from './../../routes/misc';
-	import type { Charakter } from './../../routes/models/Character';
+	import { Charakter } from './../../routes/models/Character';
 	import type { Data } from './../../routes/models/Data';
 	import RangeSlider from 'svelte-range-slider-pips';
 	import Chart from './../../routes/controls/Chart.svelte';
 	import { round } from 'mathjs';
+import KostenControl from './../../routes/controls/KostenControl.svelte';
 
 	export let data: Data | undefined;
 	export let char: Charakter | undefined;
@@ -16,41 +17,21 @@
 	$: selected = selectedArray[0];
 
 	$: age = char?.ageStore;
-	let index: number;
-	let indexVerteilung: number;
-	let values: { Wert: number }[];
-	let quantle: { Wert: number; Quantil: number }[];
+	// let index: number;
+	// let indexVerteilung: number;
+	let schwellen: { Wert: number , Name:Lokalisierungen_misc, Kosten:KostenDefinition_misc[]}[];
+	let quantile: { Wert: number; Quantil: number }[];
 	$: {
 		const a = age ? $age ?? 0 : 0;
+		if(reihe)
+		({quantile,schwellen}=Charakter.applyAge(a,reihe));
 		const tempIndex = Math.round(
 			(a - (reihe?.startAlter ?? 0)) / (reihe?.step ?? 1) + (reihe?.startAlter ?? 0)
 		);
 
-		index = Math.min((reihe?.Schwelle?.[0]?.Wert?.length ?? 0) - 1, Math.max(tempIndex, 0));
-		indexVerteilung = Math.min(
-			(reihe?.Verteilung?.[0]?.Wert?.length ?? 0) - 1,
-			Math.max(tempIndex, 0)
-		);
-
-		// console.log("Verteilung",indexVerteilung,reihe?.Verteilung.map((x) =>
-		// 					x.Wert[indexVerteilung]
-		// 				));
-
-		values =
-			reihe?.Schwelle?.map((x) => ({
-				...x,
-				Wert: x.Wert[index]
-			}))
-				.sort((a, b) => a.Wert - b.Wert)
-				.filter((x) => x.Wert !== undefined) ?? [];
-		quantle =
-			reihe?.Verteilung?.map((x) => ({
-				...x,
-				Wert: x.Wert[index]
-			}))
-				.sort((a, b) => a.Wert - b.Wert)
-				.filter((x) => x.Wert !== undefined) ?? [];
+		;
 	}
+	$: currentSchwelle = schwellen.filter(x => x.Wert <= selectedArray[0]).reverse()[0]
 	$: {
 		if (char && reihe) {
 			initChar(char, reihe);
@@ -62,9 +43,9 @@
 			// not yet set
 
 			const defaultValue =
-				quantle.sort((a, b) => 50 - a.Quantil - (50 - b.Quantil))[0]?.Wert ??
-				(Math.max(...values.map((x) => x.Wert)) - Math.min(...values.map((x) => x.Wert))) / 2 +
-					Math.min(...values.map((x) => x.Wert));
+			quantile.sort((a, b) => 50 - a.Quantil - (50 - b.Quantil))[0]?.Wert ??
+				(Math.max(...schwellen.map((x) => x.Wert)) - Math.min(...schwellen.map((x) => x.Wert))) / 2 +
+					Math.min(...schwellen.map((x) => x.Wert));
 
 			char.setPropertyScale(reihe.id, defaultValue);
 			selectedArray[0] = defaultValue;
@@ -81,16 +62,20 @@
 
 {#if reihe}
 	<label>
-		{getText(reihe.Name)}
+		{getText(reihe.Name)} 
+		{#if currentSchwelle}
+		<small>({getText(currentSchwelle.Name)}		<KostenControl oneLine cost={currentSchwelle.Kosten} {data} ></KostenControl>
+		)</small>
+		{/if}
 		<input type="number" bind:value={selectedArray[0]} />
-		{#if char && data && values.length > 1}
+		{#if char && data && schwellen.length > 1}
 			{#if reihe.Verteilung && reihe.Verteilung.length > 0}
 				<Chart
 					unit="%"
 					position={selected}
 					data={{
-						points: reihe.Verteilung.map((x) => [
-							x.Wert[indexVerteilung],
+						points: quantile.map((x) => [
+							x.Wert,
 							50 - Math.abs(50 - x.Quantil)
 						]).filter((x) => x[0] != undefined),
 						lable: 't'
@@ -106,16 +91,16 @@
 				bind:values={selectedArray}
 				pips={true}
 				pipstep={Math.round(
-					((Math.max(...values.map((x) => x.Wert)) - Math.min(...values.map((x) => x.Wert))) / 5) *
+					((Math.max(...schwellen.map((x) => x.Wert)) - Math.min(...schwellen.map((x) => x.Wert))) / 5) *
 						100
 				)}
 				step={0.01}
-				min={Math.min(...values.map((x) => x.Wert))}
-				max={Math.max(...values.map((x) => x.Wert))}
+				min={Math.min(...schwellen.map((x) => x.Wert))}
+				max={Math.max(...schwellen.map((x) => x.Wert))}
 			/>
-		{:else if values.length == 1}
-			{`${values[0].Wert} ${reihe?.einheit}`}
-		{:else if values.length == 0}
+		{:else if schwellen.length == 1}
+			{`${schwellen[0].Wert} ${reihe?.einheit}`}
+		{:else if schwellen.length == 0}
 			Keine Argaben
 		{/if}
 	</label>
