@@ -600,7 +600,15 @@ export class Charakter {
                 stammdatenId: this.stammdaten.id,
                 name: name,
                 alter: ageStore,
-                sekundäreEigenschaften: Object.fromEntries(Object.entries(propertyScaleData).filter((([key, value]) => (value ?? 0) > 0))) as any,
+                sekundäreEigenschaften: Object.fromEntries(Object.entries(propertyScaleData).filter((([key, value]) => {
+                    if (this.morphId) {
+                        const morph = this.stammdaten.morphLookup[this.morphId];
+                        if (!morph.morph.Entwiklung.Reihe?.some(x => x.id == key)) {
+                            return false;
+                        }
+                    }
+                    return (value ?? 0) > 0;
+                }))) as any,
                 eigenschaften: Object.fromEntries(EIGENRSCHAFTEN.map((key, i) => [key, eigenschaften[i]]).filter(([_, v]) => (v as number) != 0)),
                 besonderheiten: Object.fromEntries(Object.entries(besonderheitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
                 fertigkeiten: Object.fromEntries(Object.entries(fertigkeitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
@@ -1389,9 +1397,9 @@ export class Charakter {
                     const reihe = organismus?.morph.Entwiklung.Reihe?.filter(x => x.id == key)?.[0];
                     if (reihe == undefined) { return r; }
 
-                    const { currentSchwelle } = Charakter.applyAge(age, reihe,value);
+                    const { currentSchwelle } = Charakter.applyAge(age, reihe, value);
 
-                        ;
+                    ;
                     r.push(...(currentSchwelle?.Kosten ?? []));
                     return r;
                 })
@@ -1477,14 +1485,14 @@ export class Charakter {
                 .concat(o?.lebensabschnitt.Mods?.Eigenschaften?.[keyt] ?? [])
                 .concat(o?.morph.Mods?.Eigenschaften?.[keyt] ?? [])
                 .concat(o?.morph.Entwiklung.Reihe?.flatMap(reihe => {
-                            if(propertyScale[reihe.id]){
-                                const {currentSchwelle}= Charakter.applyAge(age,reihe, propertyScale[reihe.id]);
-                                return currentSchwelle.Mods?.Eigenschaften?.[keyt]??[];
-                            }
-    
-                            return [];
-                        }) ??[])
-              
+                    if (propertyScale[reihe.id]) {
+                        const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
+                        return currentSchwelle.Mods?.Eigenschaften?.[keyt] ?? [];
+                    }
+
+                    return [];
+                }) ?? [])
+
                 .concat(o?.art.Mods?.Eigenschaften?.[keyt] ?? [])
                 .concat(o?.gattung.Mods?.Eigenschaften?.[keyt] ?? [])
                 .flatMap(x => x);
