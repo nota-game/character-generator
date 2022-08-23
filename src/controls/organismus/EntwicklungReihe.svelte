@@ -1,12 +1,18 @@
 <script lang="ts">
-	import type { KostenDefinitionen_misc, KostenDefinitions_misc, KostenDefinition_misc, Lokalisierungen_misc, _Reihe } from './../../data/nota.g';
+	import type {
+		KostenDefinitionen_misc,
+		KostenDefinitions_misc,
+		KostenDefinition_misc,
+		Lokalisierungen_misc,
+		_Reihe
+	} from './../../data/nota.g';
 	import { getText } from './../../routes/misc';
 	import { Charakter } from './../../routes/models/Character';
 	import type { Data } from './../../routes/models/Data';
 	import RangeSlider from 'svelte-range-slider-pips';
 	import Chart from './../../routes/controls/Chart.svelte';
 	import { round } from 'mathjs';
-import KostenControl from './../../routes/controls/KostenControl.svelte';
+	import KostenControl from './../../routes/controls/KostenControl.svelte';
 
 	export let data: Data | undefined;
 	export let char: Charakter | undefined;
@@ -19,19 +25,18 @@ import KostenControl from './../../routes/controls/KostenControl.svelte';
 	$: age = char?.ageStore;
 	// let index: number;
 	// let indexVerteilung: number;
-	let schwellen: { Wert: number , Name:Lokalisierungen_misc, Kosten:KostenDefinition_misc[]}[];
+	let schwellen: { Wert: number; Name: Lokalisierungen_misc; Kosten: KostenDefinition_misc[] }[];
+	let currentSchwelle: {
+		Wert: number;
+		Name: Lokalisierungen_misc;
+		Kosten: KostenDefinition_misc[];
+	};
 	let quantile: { Wert: number; Quantil: number }[];
 	$: {
 		const a = age ? $age ?? 0 : 0;
-		if(reihe)
-		({quantile,schwellen}=Charakter.applyAge(a,reihe));
-		const tempIndex = Math.round(
-			(a - (reihe?.startAlter ?? 0)) / (reihe?.step ?? 1) + (reihe?.startAlter ?? 0)
-		);
-
-		;
+		if (reihe)
+			({ quantile, schwellen, currentSchwelle } = Charakter.applyAge(a, reihe, selectedArray[0]));
 	}
-	$: currentSchwelle = schwellen.filter(x => x.Wert <= selectedArray[0]).reverse()[0]
 	$: {
 		if (char && reihe) {
 			initChar(char, reihe);
@@ -39,18 +44,21 @@ import KostenControl from './../../routes/controls/KostenControl.svelte';
 	}
 	function initChar(char: Charakter, reihe: _Reihe) {
 		const currentValue = char.getPropertyScale(reihe.id);
-		if (currentValue == 0) {
-			// not yet set
+		if (selectedArray[0] == 0) {
+			if (currentValue == 0) {
+				// not yet set
 
-			const defaultValue =
-			quantile.sort((a, b) => 50 - a.Quantil - (50 - b.Quantil))[0]?.Wert ??
-				(Math.max(...schwellen.map((x) => x.Wert)) - Math.min(...schwellen.map((x) => x.Wert))) / 2 +
-					Math.min(...schwellen.map((x) => x.Wert));
+				const defaultValue =
+					quantile.sort((a, b) => 50 - a.Quantil - (50 - b.Quantil))[0]?.Wert ??
+					(Math.max(...schwellen.map((x) => x.Wert)) - Math.min(...schwellen.map((x) => x.Wert))) /
+						2 +
+						Math.min(...schwellen.map((x) => x.Wert));
 
-			char.setPropertyScale(reihe.id, defaultValue);
-			selectedArray[0] = defaultValue;
-		} else {
-			selectedArray[0] = currentValue;
+				char.setPropertyScale(reihe.id, defaultValue);
+				selectedArray[0] = defaultValue;
+			} else {
+				selectedArray[0] = currentValue;
+			}
 		}
 	}
 	$: {
@@ -62,10 +70,13 @@ import KostenControl from './../../routes/controls/KostenControl.svelte';
 
 {#if reihe}
 	<label>
-		{getText(reihe.Name)} 
+		{getText(reihe.Name)}
 		{#if currentSchwelle}
-		<small>({getText(currentSchwelle.Name)}		<KostenControl oneLine cost={currentSchwelle.Kosten} {data} ></KostenControl>
-		)</small>
+			<small
+				>({getText(currentSchwelle.Name)}
+				<KostenControl oneLine cost={currentSchwelle.Kosten} {data} />
+				)</small
+			>
 		{/if}
 		<input type="number" bind:value={selectedArray[0]} />
 		{#if char && data && schwellen.length > 1}
@@ -74,10 +85,9 @@ import KostenControl from './../../routes/controls/KostenControl.svelte';
 					unit="%"
 					position={selected}
 					data={{
-						points: quantile.map((x) => [
-							x.Wert,
-							50 - Math.abs(50 - x.Quantil)
-						]).filter((x) => x[0] != undefined),
+						points: quantile
+							.map((x) => [x.Wert, 50 - Math.abs(50 - x.Quantil)])
+							.filter((x) => x[0] != undefined),
 						lable: 't'
 					}}
 				/>
@@ -91,7 +101,8 @@ import KostenControl from './../../routes/controls/KostenControl.svelte';
 				bind:values={selectedArray}
 				pips={true}
 				pipstep={Math.round(
-					((Math.max(...schwellen.map((x) => x.Wert)) - Math.min(...schwellen.map((x) => x.Wert))) / 5) *
+					((Math.max(...schwellen.map((x) => x.Wert)) - Math.min(...schwellen.map((x) => x.Wert))) /
+						5) *
 						100
 				)}
 				step={0.01}

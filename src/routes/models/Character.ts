@@ -765,7 +765,7 @@ export class Charakter {
 
         this.organismusStore = derived([this.ageStore, this.morphIdStore], ([age, morphId]) => {
             if (morphId == undefined) {
-                console.log('no morph')
+                console.debug('no morph')
                 return undefined;
             }
 
@@ -786,7 +786,7 @@ export class Charakter {
             const lookedup = this.stammdaten.morphLookup[morphId];
             const lebensabschnitt = age2Lebensabschnitt(lookedup.morph, age);
             if (lebensabschnitt == undefined) {
-                console.log('no age')
+                console.debug('no age')
                 return undefined;
             }
             return {
@@ -1028,7 +1028,7 @@ export class Charakter {
 
 
 
-        this.besonderheitenFixDataStore = derived([this.pfadLevelStore, this.organismusStore], ([levels, o]) => {
+        this.besonderheitenFixDataStore = derived([this.pfadLevelStore, this.organismusStore, this.propertyScaleData, this.ageStore], ([levels, o, propertyScale, age]) => {
             return (Object.keys(levels)
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
@@ -1042,6 +1042,14 @@ export class Charakter {
                             return l.Besonderheit ?? [];
                         }))))
                 .concat(o?.lebensabschnitt.Mods?.Besonderheiten?.Besonderheit ?? [])
+                .concat(o?.morph.Entwiklung.Reihe?.flatMap(reihe => {
+                    if (propertyScale[reihe.id]) {
+                        const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
+                        return currentSchwelle.Mods?.Besonderheiten?.Besonderheit ?? [];
+                    }
+
+                    return [];
+                }) ?? [])
                 .reduce((p, c) => {
                     p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
                     return p;
@@ -1077,7 +1085,7 @@ export class Charakter {
 
 
         this.tagsStore =
-            derived([this.besonderheitenStore, this.pfadLevelStore, this.fertigkeitenStore], ([besonderheiten, levels, fertigkeiten]) => {
+            derived([this.besonderheitenStore, this.pfadLevelStore, this.organismusStore, this.fertigkeitenStore, this.propertyScaleData, this.ageStore], ([besonderheiten, levels, o, fertigkeiten, propertyScale, age]) => {
                 return (Object.keys(levels)
                     .flatMap(gruppe => Object.keys(levels[gruppe])
                         .flatMap(pfad => Object.keys(levels[gruppe][pfad])
@@ -1093,6 +1101,15 @@ export class Charakter {
                                 .Stufe[stufe! - 1].Mods
                                 ?.Tags?.Tag.map(x => x.Id) ?? [];
                         })))
+                    .concat(o?.morph.Entwiklung.Reihe?.flatMap(reihe => {
+                        if (propertyScale[reihe.id]) {
+                            const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
+                            return currentSchwelle.Mods?.Tags?.Tag.map(x => x.Id) ?? [];
+                        }
+
+                        return [];
+                    }) ?? [])
+
                     .concat(Object.entries(fertigkeiten).filter(x => (x[1] ?? 0) > 0)
                         .flatMap(([bid, stufe]) => {
                             return this.stammdaten.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit).filter(x => x.Id == bid)[0]
@@ -1130,6 +1147,15 @@ export class Charakter {
             const r = raw * multiMod + addMod;
             return Math.ceil(r);
         })
+        this.weightStore = derived([this.propertyScaleData, this.getMods('Gewicht')], ([propertyScaleData, { addMod, multiMod }]) => {
+            const height = (propertyScaleData['größe'] ?? 0) / 100;
+            const bmi = propertyScaleData['bmi'] ?? 0;
+
+            const kgRaw = bmi * height * height;
+            const kg = kgRaw * multiMod + addMod;
+            return Math.floor(kg * 10) / 10;
+        });
+
         this.kraftStore = derived([this.eigenschaftenData.Stärke.currentStore, this.weightStore, this.getMods('Kraft')], ([x, w, { addMod, multiMod }]) => {
             const f = 91 / 30 * (1 / (x * x)) + 1529 / 300 * (1 / x) + 3 / 50;
             const raw = f * w;
@@ -1363,11 +1389,10 @@ export class Charakter {
                     const reihe = organismus?.morph.Entwiklung.Reihe?.filter(x => x.id == key)?.[0];
                     if (reihe == undefined) { return r; }
 
-                    const { schwellen } = Charakter.applyAge(age, reihe);
+                    const { currentSchwelle } = Charakter.applyAge(age, reihe,value);
 
-                    const schwelle = schwellen.filter(x => x.Wert <= value).reverse()[0]
                         ;
-                    r.push(...(schwelle?.Kosten??[]));
+                    r.push(...(currentSchwelle?.Kosten ?? []));
                     return r;
                 })
             );
@@ -1389,14 +1414,6 @@ export class Charakter {
 
         });
 
-        this.weightStore = derived([this.propertyScaleData, this.getMods('Gewicht')], ([propertyScaleData, { addMod, multiMod }]) => {
-            const height = (propertyScaleData['größe'] ?? 0) / 100;
-            const bmi = propertyScaleData['bmi'] ?? 0;
-
-            const kgRaw = bmi * height * height;
-            const kg = kgRaw * multiMod + addMod;
-            return Math.floor(kg * 10) / 10;
-        });
 
 
         if (typeof idOrOld === 'string') {
@@ -1409,7 +1426,7 @@ export class Charakter {
     }
 
 
-    public static applyAge(age: number, reihe: _Reihe) {
+    public static applyAge(age: number, reihe: _Reihe, currentValue: number) {
         const a = age;
         const tempIndex = Math.round(
             (a - (reihe?.startAlter ?? 0)) / (reihe?.step ?? 1) + (reihe?.startAlter ?? 0)
@@ -1440,12 +1457,14 @@ export class Charakter {
                 .sort((a, b) => a.Wert - b.Wert)
                 .filter((x) => x.Wert !== undefined) ?? [];
 
-        return { schwellen, quantile };
+        const currentSchwelle = schwellen.filter(x => x.Wert <= currentValue).reverse()[0]
+
+        return { schwellen, quantile, currentSchwelle };
 
     }
 
     private getMods(keyt: keyof EigenschaftsMods_lebewesen) {
-        return derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore], ([o, b, f, t]) => {
+        return derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore, this.ageStore, this.propertyScaleData], ([o, b, f, t, age, propertyScale]) => {
             const mods = Object.entries(b/* if null it was used to early */).flatMap(([key, value]) => {
                 return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.[keyt] ?? [])
             })
@@ -1457,6 +1476,15 @@ export class Charakter {
                 }))
                 .concat(o?.lebensabschnitt.Mods?.Eigenschaften?.[keyt] ?? [])
                 .concat(o?.morph.Mods?.Eigenschaften?.[keyt] ?? [])
+                .concat(o?.morph.Entwiklung.Reihe?.flatMap(reihe => {
+                            if(propertyScale[reihe.id]){
+                                const {currentSchwelle}= Charakter.applyAge(age,reihe, propertyScale[reihe.id]);
+                                return currentSchwelle.Mods?.Eigenschaften?.[keyt]??[];
+                            }
+    
+                            return [];
+                        }) ??[])
+              
                 .concat(o?.art.Mods?.Eigenschaften?.[keyt] ?? [])
                 .concat(o?.gattung.Mods?.Eigenschaften?.[keyt] ?? [])
                 .flatMap(x => x);
