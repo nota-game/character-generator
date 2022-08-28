@@ -1514,8 +1514,10 @@ export class Charakter {
                 .concat(o?.art.Mods?.Eigenschaften?.[keyt] ?? [])
                 .concat(o?.gattung.Mods?.Eigenschaften?.[keyt] ?? [])
                 .flatMap(x => x);
-            const addMod = mods.filter(x => x.Type = 'additiv').reduce((p, c) => p + c.Mod, 0);
-            const multiMod = mods.filter(x => x.Type = 'additiv').reduce((p, c) => p + (1 - c.Mod), 1);
+            const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
+            const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
+            console.log(`modt for ${keyt}`, { addMod, multiMod }, mods)
+
             return { addMod, multiMod };
         });
     }
