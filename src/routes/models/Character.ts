@@ -1053,7 +1053,7 @@ export class Charakter {
                 .concat(o?.morph.Entwiklung.Reihe?.flatMap(reihe => {
                     if (propertyScale[reihe.id]) {
                         const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
-                        return currentSchwelle.Mods?.Besonderheiten?.Besonderheit ?? [];
+                        return currentSchwelle?.Mods?.Besonderheiten?.Besonderheit ?? [];
                     }
 
                     return [];
@@ -1112,7 +1112,7 @@ export class Charakter {
                     .concat(o?.morph.Entwiklung.Reihe?.flatMap(reihe => {
                         if (propertyScale[reihe.id]) {
                             const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
-                            return currentSchwelle.Mods?.Tags?.Tag.map(x => x.Id) ?? [];
+                            return currentSchwelle?.Mods?.Tags?.Tag.map(x => x.Id) ?? [];
                         }
 
                         return [];
@@ -1442,7 +1442,7 @@ export class Charakter {
 
         const index = Math.min((reihe?.Schwelle?.[0]?.Wert?.length ?? 0) - 1, Math.max(tempIndex, 0));
         const indexVerteilung = Math.min(
-            (reihe?.Verteilung?.[0]?.Wert?.length ?? 0) - 1,
+            (reihe?.Verteilung?.length ?? 0) - 1,
             Math.max(tempIndex, 0)
         );
 
@@ -1457,15 +1457,33 @@ export class Charakter {
             }))
                 .sort((a, b) => a.Wert - b.Wert)
                 .filter((x) => x.Wert !== undefined) ?? [];
-        const quantile =
-            reihe?.Verteilung?.map((x) => ({
-                ...x,
-                Wert: x.Wert[indexVerteilung]
-            }))
-                .sort((a, b) => a.Wert - b.Wert)
-                .filter((x) => x.Wert !== undefined) ?? [];
 
-        const currentSchwelle = schwellen.filter(x => x.Wert <= currentValue).reverse()[0]
+
+        const quantile =
+            reihe?.Verteilung[indexVerteilung]?.Wert
+                ?.sort((a, b) => a.meta.Quantil - b.meta.Quantil)
+                .map(x => ({ Wert: x.value, Quantil: x.meta.Quantil }))
+            ?? [];
+
+
+
+        // const quantile =
+        //     reihe?.Verteilung?.map((x) => ({
+        //         ...x,
+        //         Wert: x.Wert[indexVerteilung]
+        //     }))
+        //         .sort((a, b) => a.Wert - b.Wert)
+        //         .filter((x) => x.Wert !== undefined) ?? [];
+
+        const filtert = schwellen.filter(x => x.Wert <= currentValue);
+        const currentSchwelle = filtert.length > 0 ? filtert.reverse()[0] : undefined;
+        if (!currentSchwelle) {
+            console.log('Current Value', currentValue)
+            console.log('schwelle', schwellen)
+            console.log('age', age)
+            console.log('reihe', reihe)
+            // currentSchwelle = schwellen[0];
+        }
 
         return { schwellen, quantile, currentSchwelle };
 
@@ -1487,7 +1505,7 @@ export class Charakter {
                 .concat(o?.morph.Entwiklung.Reihe?.flatMap(reihe => {
                     if (propertyScale[reihe.id]) {
                         const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
-                        return currentSchwelle.Mods?.Eigenschaften?.[keyt] ?? [];
+                        return currentSchwelle?.Mods?.Eigenschaften?.[keyt] ?? [];
                     }
 
                     return [];

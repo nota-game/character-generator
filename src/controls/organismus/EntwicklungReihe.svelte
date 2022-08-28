@@ -79,7 +79,7 @@
 			>
 		{/if}
 		<input type="number" bind:value={selectedArray[0]} />
-		{#if char && data && schwellen.length > 1}
+		{#if char && data && quantile.length > 1}
 			{#if reihe.Verteilung && reihe.Verteilung.length > 0}
 				<Chart
 					unit="%"
@@ -101,17 +101,17 @@
 				bind:values={selectedArray}
 				pips={true}
 				pipstep={Math.round(
-					((Math.max(...schwellen.map((x) => x.Wert)) - Math.min(...schwellen.map((x) => x.Wert))) /
+					((Math.max(...quantile.map((x) => x.Wert)) - Math.min(...quantile.map((x) => x.Wert))) /
 						5) *
 						100
 				)}
 				step={0.01}
-				min={Math.min(...schwellen.map((x) => x.Wert))}
-				max={Math.max(...schwellen.map((x) => x.Wert))}
+				min={Math.min(...quantile.map((x) => x.Wert))}
+				max={Math.max(...quantile.map((x) => x.Wert))}
 			/>
-		{:else if schwellen.length == 1}
-			{`${schwellen[0].Wert} ${reihe?.einheit}`}
-		{:else if schwellen.length == 0}
+		{:else if quantile.length == 1}
+			{`${quantile[0].Wert} ${reihe?.einheit}`}
+		{:else if quantile.length == 0}
 			Keine Argaben
 		{/if}
 	</label>
