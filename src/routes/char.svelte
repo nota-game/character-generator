@@ -32,9 +32,6 @@
 
 	let charOrganismusStore = $char?.morphIdStore;
 	$: charOrganismusStore = $char?.morphIdStore;
-	$: console.log(charOrganismusStore);
-	$: console.log($charOrganismusStore);
-	$: console.log($char);
 
 	let nameStore = $char?.nameStore;
 	$: nameStore = $char?.nameStore;
@@ -70,7 +67,6 @@
 		if (mounted && charId) {
 			const currentChar = local<CharakterData>('c' + charId);
 			const j = get(currentChar);
-			console.log(j);
 			$data = await Data.init(false, j?.stammdatenId);
 			if ($data) {
 				$char = new Charakter($data, j ?? charId);
@@ -83,7 +79,6 @@
 		if (mounted && charId) {
 			const currentChar = local<CharakterData>('c' + charId);
 			const j = get(currentChar);
-			console.log(j);
 			$data = await Data.init(false);
 			if ($data) {
 				$char = new Charakter($data, j ?? charId);

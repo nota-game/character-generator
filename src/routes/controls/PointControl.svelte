@@ -11,7 +11,7 @@
 	export let onlyNegatve: boolean = false;
 	export let hasNegativ: boolean = false;
 
-	let list: { abbr: string; name: string; value: number }[];
+	let list: { abbr: string; name: string; value: number; toExpensiv: boolean }[];
 
 	let unsubscriber: Unsubscriber | undefined;
 	$: {
@@ -30,12 +30,21 @@
 						data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter((x) => x.Id == c.Id)[0]
 							.Abkürzung
 					);
+
+					const type = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(
+						(x) => x.Id == c.Id
+					)[0].type;
+
 					const value = c.Store;
 
 					const order = data.Instance.Daten.KostenDefinitionen.KostenDefinition.map((x, i) => {
 						return { i, Id: x.Id };
 					}).filter((x) => x.Id == c.Id)[0].i;
-					return { abbr, name, value, order };
+
+					let toExpensiv =
+						type == 'below zero' ? value > 0 : type == 'epual zero' ? value != 0 : value < 0;
+
+					return { abbr, name, value, order, toExpensiv };
 				})
 				.sort((a, b) => a.order - b.order);
 			hasNegativ = list.filter((x) => x.value < 0).length > 0;
@@ -49,7 +58,7 @@
 {#if compact}
 	{#if list}
 		{#each list as c}
-			{#if c.value < 0}
+			{#if c.toExpensiv}
 				<span class="missing"><abbr title={c.name}>{c.abbr}</abbr>: {c.value}</span>
 			{:else}
 				<abbr title={c.name}> {c.abbr}</abbr>:{c.value}
@@ -61,7 +70,7 @@
 		{#if list}
 			{#each list as c}
 				<li>
-					{#if c.value < 0}
+					{#if c.toExpensiv}
 						<span class="missing"><abbr title={c.name}>{c.abbr}</abbr>: {c.value}</span>
 					{:else}
 						<abbr title={c.name}> {c.abbr}</abbr>:{c.value}

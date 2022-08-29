@@ -1454,9 +1454,7 @@ export class Charakter {
             Math.max(tempIndex, 0)
         );
 
-        // console.log("Verteilung",indexVerteilung,reihe?.Verteilung.map((x) =>
-        // 					x.Wert[indexVerteilung]
-        // 				));
+  
 
         const schwellen =
             reihe?.Schwelle?.map((x) => ({
@@ -1485,14 +1483,7 @@ export class Charakter {
 
         const filtert = schwellen.filter(x => x.Wert <= currentValue);
         const currentSchwelle = filtert.length > 0 ? filtert.reverse()[0] : undefined;
-        if (!currentSchwelle) {
-            console.log('Current Value', currentValue)
-            console.log('schwelle', schwellen)
-            console.log('age', age)
-            console.log('reihe', reihe)
-            // currentSchwelle = schwellen[0];
-        }
-
+  
         return { schwellen, quantile, currentSchwelle };
 
     }
@@ -1524,7 +1515,7 @@ export class Charakter {
                 .flatMap(x => x);
             const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
             const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
-            console.log(`modt for ${keyt}`, { addMod, multiMod }, mods)
+            
 
             return { addMod, multiMod };
         });

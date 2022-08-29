@@ -59,6 +59,9 @@
 						data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter((x) => x.Id == c.Id)[0]
 							.Abkürzung
 					);
+					const type = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(
+						(x) => x.Id == c.Id
+					)[0].type;
 					const red =
 						rc
 							?.filter((x) => x.Id == c.Id)
@@ -66,12 +69,34 @@
 							.reduce((p, c) => p + c, 0) ?? 0;
 
 					const value = red != 0 ? c.Wert - red : p ? -c.Wert : c.Wert;
-					let missing = ps ? Math.max(0, value - ps[c.Id] ?? 0) : 0;
-					let toExpensiv = missing > 0;
-					if (missing > 0 && ps![c.Id] < 0 && missing < -ps![c.Id]) {
-						missing = 0;
-						toExpensiv = false;
+					let missing = ps ? value - ps[c.Id] ?? 0 : 0;
+
+					// let toExpensiv = missing != 0;
+					let toExpensiv =
+						type == 'below zero' ? missing < 0 : type == 'epual zero' ? missing != 0 : missing > 0;
+
+					if (type == 'over zero') {
+						if (missing > 0 && ps![c.Id] < 0 && missing < -ps![c.Id]) {
+							missing = 0;
+							toExpensiv = false;
+						}
+					} else if (type == 'below zero') {
+						if (missing < 0 && ps![c.Id] > 0 && missing > -ps![c.Id]) {
+							missing = 0;
+							toExpensiv = false;
+						}
+					} else {
+						if (missing < 0 && ps![c.Id] > 0 && missing > -ps![c.Id]) {
+							missing = 0;
+							toExpensiv = false;
+						}
+						if (missing > 0 && ps![c.Id] < 0 && missing < -ps![c.Id]) {
+							missing = 0;
+							toExpensiv = false;
+						}
 					}
+
+					console.log("temp", {missing, toExpensiv,type})
 
 					const order = data.Instance.Daten.KostenDefinitionen.KostenDefinition.map((x, i) => {
 						return { i, Id: x.Id };
