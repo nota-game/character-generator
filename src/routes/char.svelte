@@ -21,6 +21,7 @@
 	import RequirementsControl from './controls/RequirementsControl.svelte';
 	import { renderRequirement } from './misc';
 	import { prevent_default } from 'svelte/internal';
+	import MorpeSetting from './controls/MorpeSetting.svelte';
 
 	let data = writable<Data | undefined>(undefined);
 	let char = writable<Charakter | undefined>(undefined);
@@ -29,11 +30,11 @@
 	let allMissingRequirements = $char?.allMissingRequirements;
 	$: allMissingRequirements = $char?.allMissingRequirements;
 
-	let charOrganismusStore = $char?.organismusStore;
-	$: charOrganismusStore = $char?.organismusStore;
-	$: console.log (charOrganismusStore) ;
-	$: console.log ($charOrganismusStore) ;
-	$: console.log ($char) ;
+	let charOrganismusStore = $char?.morphIdStore;
+	$: charOrganismusStore = $char?.morphIdStore;
+	$: console.log(charOrganismusStore);
+	$: console.log($charOrganismusStore);
+	$: console.log($char);
 
 	let nameStore = $char?.nameStore;
 	$: nameStore = $char?.nameStore;
@@ -42,10 +43,6 @@
 	$: sizeStore = $char?.sizeStore;
 	let weightStore = $char?.weightStore;
 	$: weightStore = $char?.weightStore;
-	let weightMinStore = $char?.weightMinStore;
-	$: weightMinStore = $char?.weightMinStore;
-	let weightMaxStore = $char?.weightMaxStore;
-	$: weightMaxStore = $char?.weightMaxStore;
 
 	let ausdauerStore = $char?.ausdauerStore;
 	$: ausdauerStore = $char?.ausdauerStore;
@@ -261,15 +258,15 @@
 				{#if $char}
 					<p>
 						Stammdaten {$char.stammdaten.id}
-						<a style="font-size: xx-large;"
+						<a
+							style="font-size: xx-large;"
 							href="#"
 							data-tooltip="Stammdaten aktualisieren"
 							on:click={(e) => {
 								e.preventDefault();
 								refresh();
 							}}
-							>
-							
+						>
 							&#128472;
 						</a>
 					</p>
@@ -320,39 +317,22 @@
 						<input type="text" placeholder="Name" bind:value={$nameStore} />
 					</label>
 
+					<MorpeSetting char={$char} data={$data} />
+
 					<div
 						style="display: grid; grid-template-columns: auto 1fr auto ; gap: 1rem; align-items: end; margin-bottom: var(--spacing);"
 					>
-						<!-- <small>{$charOrganismusStore?.lebensabschnitt.minGröße} m</small> -->
 						<label>
-							Größe {($sizeStore??0)/100} m
-							<!-- <input
-								type="range"
-								step="0.01"
-								bind:value={$sizeStore}
-								min={$charOrganismusStore?.lebensabschnitt.minGröße}
-								max={$charOrganismusStore?.lebensabschnitt.maxGröße}
-								style="margin-bottom: 0px;"
-							/> -->
+							Größe {($sizeStore ?? 0) / 100} m
+			
 						</label>
-						<!-- <small>{$charOrganismusStore?.lebensabschnitt.maxGröße} m</small> -->
 					</div>
 					<div
 						style="display: grid; grid-template-columns: auto 1fr auto ; gap: 1rem; align-items: end; margin-bottom: var(--spacing);"
 					>
-						<!-- <small>{$weightMinStore} Kg</small> -->
 						<label>
 							Gewicht {$weightStore} Kg
-							<!-- <input
-								type="range"
-								step="0.1"
-								bind:value={$weightStore}
-								min={$weightMinStore}
-								max={$weightMaxStore}
-								style="margin-bottom: 0px;"
-							/> -->
 						</label>
-						<!-- <small>{$weightMaxStore} Kg</small> -->
 					</div>
 					AU {$ausdauerStore}
 					Initiative {$initiativeStore}
@@ -380,6 +360,13 @@
 			{/if}
 		{/if}
 	</main>
+{:else if !charId && mounted}
+<main>
+	<article style="height: 80vh; display: grid;">
+		<h1 style="margin: auto;" >Bitte einen Charakter <label for="charSelector" >Auswählen</label> oder <label for="newCharButton">erstellen</label>.</h1>
+
+	</article>
+</main>
 {:else}
 	<p>Loding…</p>
 {/if}

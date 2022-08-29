@@ -31,8 +31,8 @@
 
 	// let current = char?.morphId;
 
-	let selectedMorphId: string | undefined;
-	$: selectedMorph = selectedMorphId ? data?.morphLookup[selectedMorphId].morph : undefined;
+	$: morphStore = char?.morphStore;
+	$: selectedMorph = $morphStore;
 	let ageArray = [0];
 	$: age = ageArray[0];
 
@@ -46,28 +46,18 @@
 	// }
 	$: {
 		if (char) {
-			[ageArray[0], selectedMorphId] = initChar(char, ageArray[0], selectedMorphId);
+			ageArray[0] = initChar(char, ageArray[0]);
 		}
 	}
-	function initChar(
-		char: Charakter,
-		age: number,
-		selectedMorphId: string | undefined
-	): [number, string | undefined] {
+	function initChar(char: Charakter, age: number): number {
 		if (char) {
-			console.log('init', char, age, selectedMorphId);
 			if (age == 0) {
 				age = get(char.ageStore);
 			} else {
 				char.ageStore.set(age);
 			}
-			if (selectedMorphId == undefined) {
-				selectedMorphId = char.morphId;
-			} else {
-				char.morphId = selectedMorphId;
-			}
 		}
-		return[age,selectedMorphId]
+		return age;
 	}
 
 	char?.allMissingRequirements;
@@ -102,21 +92,44 @@
 </script>
 
 {#if data}
-	{#each data.Instance.Daten.Organismen.Gattung ?? [] as g}
-		<h2>{getText(g.Name)}</h2>
-		<p>{getText(g.Beschreibung)}</p>
-		{#each g.Art as a}
-			<h3>{getText(a.Name)}</h3>
-			<p>{getText(a.Beschreibung)}</p>
-			{#each a.Morphe.Morph as m}
-				<label>
-					<input type="radio" value={m.Id} bind:group={selectedMorphId} />
-					{getText(m.Name)}
-				</label>
-				<p>{getText(m.Beschreibung)}</p>
-			{/each}
-			
-			
+	{#if selectedMorph}
+		<!-- svelte-ignore a11y-label-has-associated-control -->
+		<label>
+			Alter
+			<RangeSlider
+				all="label"
+				float
+				formatter={(v) => v}
+				handleFormatter={(v) => {
+					let l = age2Lebensabschnitt(selectedMorph, v);
+					const year = Math.floor(v);
+					const month = Math.round ((v-year) * 12);
+					const age = month==0
+					?` (${year} Jahre)`
+					:` (${year} Jahre und ${month} Monate)`
+
+					return (l ? getText(l.Name) : '') + age;
+				}}
+				bind:values={ageArray}
+				pips
+				pipstep={120}
+				step={1/12}
+				min={Math.min(...selectedMorph.Lebensabschnitte.Lebensabschnitt.map((x) => x.startAlter))}
+				max={Math.max(...selectedMorph.Lebensabschnitte.Lebensabschnitt.map((x) => x.endAlter))}
+			/>
+		</label>
+		{#if selectedL}
+			{selectedL.Id}
+
+			{getText(selectedL.Name)}
+			{#if selectedL.Spielbar}
+				<KostenControl cost={selectedL.Spielbar.Kosten} {data} {char} />
+			{/if}
+			{getText(selectedL.Beschreibung)}
+		{/if}
+
+		{#each selectedMorph.Entwiklung.Reihe ?? [] as r}
+			<EntwicklungReihe {char} {data} reihe={r} />
 		{/each}
-	{/each}
+	{/if}
 {/if}

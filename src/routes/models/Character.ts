@@ -399,6 +399,8 @@ export class Charakter {
 
     public readonly allMissingRequirements: Readable<MissingRequirements[]>;
 
+    public readonly morphStore: Readable<MorphDefinition_lebewesen | undefined>;
+
 
     private readonly closeConbatWeaponsStoreData = writable<Record<string, true | undefined>>({});
     public readonly closeConbatWeaponsStore = derived(this.closeConbatWeaponsStoreData, x => ({ ...x }));
@@ -769,6 +771,12 @@ export class Charakter {
 
         this.sizeStore = derived([this.propertyScaleData], ([propertyScaleData]) => {
             return propertyScaleData['größe'] ?? 0;
+        });
+
+        this.morphStore = derived(this.morphIdStore, mid => {
+            if (mid)
+                return this.stammdaten.morphLookup[mid].morph;
+            return undefined;
         });
 
         this.organismusStore = derived([this.ageStore, this.morphIdStore], ([age, morphId]) => {
@@ -1839,6 +1847,10 @@ export class Charakter {
 
     public get organismus(): selection {
         return get(this.organismusStore);
+    }
+
+    public get morph(): MorphDefinition_lebewesen | undefined {
+        return get(this.morphStore);
     }
 
     public get morphId(): string | undefined {

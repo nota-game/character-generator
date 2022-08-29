@@ -95,12 +95,12 @@
 	<button on:click={() => reset()}>NO</button>
 {:else}
 	<div class="head">
-		<select bind:value={selection}>
+		<select id="charSelector" bind:value={selection}>
 			{#each list as e}
 				<option value={e}>{getName(e)}</option>
 			{/each}
 		</select>
-		<button on:click={() => add()}>Neuer Charackter</button>
+		<button id="newCharButton" on:click={() => add()}>Neuer Charackter</button>
 	</div>
 
 	<Char charId={selection} />
