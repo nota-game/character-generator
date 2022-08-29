@@ -76,11 +76,17 @@
 						type == 'below zero' ? missing < 0 : type == 'epual zero' ? missing != 0 : missing > 0;
 
 					if (type == 'over zero') {
+						if(missing < 0){
+							missing = 0;
+						}
 						if (missing > 0 && ps![c.Id] < 0 && missing < -ps![c.Id]) {
 							missing = 0;
 							toExpensiv = false;
 						}
 					} else if (type == 'below zero') {
+						if(missing > 0){
+							missing = 0;
+						}
 						if (missing < 0 && ps![c.Id] > 0 && missing > -ps![c.Id]) {
 							missing = 0;
 							toExpensiv = false;
@@ -122,7 +128,7 @@
 	{#if oneLine}
 		{#if c.missing}
 			<span class="missing"
-				><abbr title={c.name}>{c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)} (-{c.missing})</span
+				><abbr title={c.name}>{c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)} ({c.missing <= 0 ? '+' : '-'}{Math.abs(c.missing)})</span
 			>
 		{:else}
 			<abbr title={c.name}> {c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)}
@@ -131,7 +137,7 @@
 		<div>
 			{#if c.missing}
 				<span class="missing"
-					><abbr title={c.name}>{c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)} (-{c.missing})</span
+					><abbr title={c.name}>{c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)} ({c.missing <= 0 ? '+' : '-'}{Math.abs(c.missing)})</span
 				>
 			{:else}
 				<abbr title={c.name}> {c.abbr}</abbr>: {c.value <= 0 ? '+' : '-'}{Math.abs(c.value)}
