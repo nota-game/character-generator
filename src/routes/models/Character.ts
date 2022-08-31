@@ -1,3 +1,4 @@
+import { or } from "mathjs";
 import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe } from "src/data/nota.g";
 import { dataset_dev } from "svelte/internal";
 import { type Readable, get, derived, writable, type Writable } from "svelte/store";
@@ -507,6 +508,7 @@ export class Charakter {
 
     public readonly startPropertysStore: Readable<Record<Eigenschaft, { start: number; cost: Record<number, KostenDefinition_misc[] | undefined> }>>;
 
+    public readonly defaultPathStore: Readable<ReadonlyArray<string>>;
     private readonly pfadLevelDataStore = writable({} as Record<string, Record<string, Record<string, number>>>);
     public readonly pfadLevelStore: Readable<Readonly<Record<string, Record<string, Record<string, number>>>>>;
 
@@ -762,12 +764,15 @@ export class Charakter {
         });
     }
 
+
+   
+
+
     /**
      *
      */
     constructor(data: Data, idOrOld: CharakterData | string) {
         this.stammdaten = data;
-
 
 
         this.sizeStore = derived([this.propertyScaleData], ([propertyScaleData]) => {
@@ -796,6 +801,15 @@ export class Charakter {
                 lebensabschnitt,
                 ...lookedup
             };
+        });
+
+        this.defaultPathStore = derived(this.organismusStore, (organismus) => {
+
+            return (organismus?.morph.StandardPfade?.Pfad.map(x => x.Id)??[])
+                .concat(
+                    organismus?.art.StandardPfade?.Pfad.map(x => x.Id)??[])
+            // organismus?.gattung.StandardPfade?.Pfad.map(x=>x.Id)
+
         });
 
         this.startPropertysStore = derived(this.organismusStore, v => {
