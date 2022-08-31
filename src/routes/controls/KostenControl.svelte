@@ -102,7 +102,6 @@
 						}
 					}
 
-					console.log("temp", {missing, toExpensiv,type})
 
 					const order = data.Instance.Daten.KostenDefinitionen.KostenDefinition.map((x, i) => {
 						return { i, Id: x.Id };

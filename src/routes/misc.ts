@@ -6,6 +6,10 @@ export function filterNull<T>(x: (T | null | undefined)[]): T[] {
     return x.filter(y => y !== null && y !== undefined) as T[];
 }
 
+export function distinct<T>(t:T[]) {
+    return t.filter((v,i,a)=>a.indexOf(v)===i);
+}
+
 export function getText(p: Lokalisierungen_misc | undefined): string {
     const languege = 'de';
     if (!p) {

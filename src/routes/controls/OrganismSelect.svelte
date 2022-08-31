@@ -16,7 +16,7 @@
 
 	import { getText } from '../misc';
 	import type { Charakter, selection } from '../models/Character';
-	import type { Data } from '../models/Data';
+	import { Data } from '../models/Data';
 	import KostenControl from './KostenControl.svelte';
 	import Tree from './tree/tree.svelte';
 	import RangeSlider from 'svelte-range-slider-pips';
@@ -32,18 +32,19 @@
 	// let current = char?.morphId;
 
 	let selectedMorphId: string | undefined;
-	$: selectedMorph = selectedMorphId ? data?.morphLookup[selectedMorphId].morph : undefined;
+	// $: selectedGattungArtMorp = selectedMorphId ? data?.morphLookup[selectedMorphId] : undefined;
+	// $: selectedMorph = selectedMorphId ? data?.morphLookup[selectedMorphId].morph : undefined;
 	let ageArray = [0];
 	$: age = ageArray[0];
 
-	$: selectedL = age2Lebensabschnitt(selectedMorph, age);
+	// $: selectedL = Data.age2Lebensabschnitte(age, selectedGattungArtMorp?.morph, selectedGattungArtMorp?.art, selectedGattungArtMorp?.gattung);
 
-	// $: {
-	// 	if (data && selectedL && char) {
-	// 		const x = data.lebensabschnittLookup[selectedL.Id];
-	// 		char.organismus = x;
-	// 	}
-	// }
+	// // $: {
+	// // 	if (data && selectedL && char) {
+	// // 		const x = data.lebensabschnittLookup[selectedL.Id];
+	// // 		char.organismus = x;
+	// // 	}
+	// // }
 	$: {
 		if (char) {
 			[ageArray[0], selectedMorphId] = initChar(char, ageArray[0], selectedMorphId);
@@ -67,7 +68,7 @@
 				char.morphId = selectedMorphId;
 			}
 		}
-		return[age,selectedMorphId]
+		return [age, selectedMorphId];
 	}
 
 	char?.allMissingRequirements;
@@ -82,23 +83,23 @@
 			// });
 
 			w = char?.organismusStore ?? readable();
-			wc = derived(w, (x) => x?.lebensabschnitt?.Spielbar?.Kosten ?? []);
+			wc = derived(w, (x) => x?.lebensabschnitt?.flatMap((y) => y.Spielbar?.Kosten ?? []) ?? []);
 		}
 	}
 
-	function age2Lebensabschnitt(
-		m: MorphDefinition_lebewesen | undefined,
-		age: number | undefined
-	): LebensabschnittDefinition_lebewesen | undefined {
-		if (!m) return undefined;
-		if (!age) return undefined;
-		let last = m.Lebensabschnitte.Lebensabschnitt[0];
-		for (const l of m.Lebensabschnitte.Lebensabschnitt) {
-			if (l.startAlter > age) return last;
-			last = l;
-		}
-		return m.Lebensabschnitte.Lebensabschnitt[m.Lebensabschnitte.Lebensabschnitt.length - 1];
-	}
+	// function age2Lebensabschnitt(
+	// 	m: MorphDefinition_lebewesen | undefined,
+	// 	age: number | undefined
+	// ): LebensabschnittDefinition_lebewesen | undefined {
+	// 	if (!m) return undefined;
+	// 	if (!age) return undefined;
+	// 	let last = m.Lebensabschnitte.Lebensabschnitt[0];
+	// 	for (const l of m.Lebensabschnitte.Lebensabschnitt) {
+	// 		if (l.startAlter > age) return last;
+	// 		last = l;
+	// 	}
+	// 	return m.Lebensabschnitte.Lebensabschnitt[m.Lebensabschnitte.Lebensabschnitt.length - 1];
+	// }
 </script>
 
 {#if data}
@@ -115,8 +116,6 @@
 				</label>
 				<p>{getText(m.Beschreibung)}</p>
 			{/each}
-			
-			
 		{/each}
 	{/each}
 {/if}

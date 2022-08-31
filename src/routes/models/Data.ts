@@ -8,13 +8,13 @@ import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
 import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, _Talent4 } from 'src/data/nota.g';
 
-type lebensabschnittData =
-    | {
-        l: LebensabschnittDefinition_lebewesen;
-        m: MorphDefinition_lebewesen;
-        a: ArtDefinition_lebewesen;
-        g: GattungDefinition_lebewesen;
-    }
+// type lebensabschnittData =
+//     | {
+//         l: LebensabschnittDefinition_lebewesen;
+//         m: MorphDefinition_lebewesen;
+//         a: ArtDefinition_lebewesen;
+//         g: GattungDefinition_lebewesen;
+//     }
 
 export class Data {
 
@@ -40,12 +40,12 @@ export class Data {
     public readonly fertigkeitenMap: Record<string, Readonly<FertigkeitDefinition_fertigkeit & { Kategorie: string }>>;
     public readonly fertigkeitenCategoryMap: Record<string, Record<string, Readonly<FertigkeitDefinition_fertigkeit>>>;
     public readonly StandardKosten: string;
-    public readonly lebensabschnittLookup: { [key: string]: lebensabschnittData };
+    // public readonly lebensabschnittLookup: { [key: string]: lebensabschnittData };
     public readonly morphLookup: {
         [key: string]: {
             morph: MorphDefinition_lebewesen,
-            art:ArtDefinition_lebewesen,
-            gattung:GattungDefinition_lebewesen
+            art: ArtDefinition_lebewesen,
+            gattung: GattungDefinition_lebewesen
         }
     };
 
@@ -73,32 +73,15 @@ export class Data {
                     y.Morphe.Morph.map((z) =>
                         [z.Id, {
                             morph: z,
-                            art:y,
-                            gattung:x
+                            art: y,
+                            gattung: x
                         }]
                     )
                 )
             )
         );
 
-        this.lebensabschnittLookup = Object.fromEntries(
-            data.Daten.Organismen.Gattung.flatMap((x) =>
-                x.Art.flatMap((y) =>
-                    y.Morphe.Morph.flatMap((z) =>
-                        z.Lebensabschnitte.Lebensabschnitt.filter((l) => l.Spielbar).map((l) => {
-                            const newLocal: lebensabschnittData = {
-                                l: l,
-                                m: z,
-                                a: y,
-                                g: x
-                            };
 
-                            return [l.Id, newLocal];
-                        })
-                    )
-                )
-            )
-        );
 
         this.AusrüstungsEigenschaftMap = data.Daten.Ausstattung.Eigenschaften.Eigenschaft.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, AusrüstungEigengchaftDefinition_kampf_ausstattung>)
         this.nahkampfMap = data.Daten.Ausstattung.Waffen.Nahkampfwaffe.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, NahkampfWaffenDefinition_kampf_ausstattung>)
@@ -205,6 +188,7 @@ export class Data {
 
             // the result will be a replica of the original object
             const deserialized = deserialize(notaStructure as SerializedRecord) as Array<element>;
+            console.info(deserialized);
             const dat = deserialized.filter((x) => x.name.local === 'Daten')[0];
             const parser = new Parser<Daten>(dat);
             const notaData = parser.parse(data);
@@ -214,6 +198,31 @@ export class Data {
             return { notaData, digest };
         }
     }
+
+
+    public static age2Lebensabschnitte(
+        age: number | undefined,
+        morph?: MorphDefinition_lebewesen | undefined,
+        art?: ArtDefinition_lebewesen | undefined,
+        gattung?: GattungDefinition_lebewesen | undefined
+    ): LebensabschnittDefinition_lebewesen[] | undefined {
+        if (!age) return undefined;
+
+        function getLast<T>(array?: T[]) {
+            if (array == undefined) return undefined;
+            return array.length == 0 ? undefined : array[array.length - 1];
+        }
+
+        function notUndefined<T>(array: (T | undefined)[]): T[] {
+            return array.filter(x => x !== undefined) as T[];
+        }
+
+        return notUndefined([getLast(morph?.Lebensabschnitte.Lebensabschnitt.filter(m => age >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age))),
+        getLast(art?.Lebensabschnitte?.Lebensabschnitt.filter(m => !(morph?.Lebensabschnitte.IgnoriereHöhere ?? false) && age >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age))),
+        getLast(gattung?.Lebensabschnitte?.Lebensabschnitt.filter(m => !(morph?.Lebensabschnitte.IgnoriereHöhere ?? false) && !(art?.Lebensabschnitte?.IgnoriereHöhere ?? false) && age >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age)))]);
+    }
+
+
 
 
     public get Instance(): Daten {

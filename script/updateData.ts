@@ -18,6 +18,9 @@ async function main() {
     const x = await xml.parseSchemas('https://nota-game.github.io/schema/vNext/nota.xsd');
     const types = await xml.generateTypes(x,(name)=>`${name.local}_${name.namespace.replace(/https:\/\/nota-game.github.io\/schema\/vNext\//g,'').replace(/\//g,'_').replace(/\.xsd/g,'')}`);
     const txt = xml.toTsTypes(types);
+
+    
+
     await fs.promises.writeFile('src/data/nota.g.ts', txt);
     await fs.promises.writeFile('src/data/nota.g.xml', data);
     const serialized = serialize(x,{ lossy:true});

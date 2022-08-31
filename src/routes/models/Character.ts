@@ -1,12 +1,13 @@
 import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe } from "src/data/nota.g";
+import { dataset_dev } from "svelte/internal";
 import { type Readable, get, derived, writable, type Writable } from "svelte/store";
 import { derivedLazy } from "../lazyDerivied";
 import { filterNull } from "../misc";
 
-import type { Data } from "./Data";
+import { Data } from "./Data";
 
 export type selection = {
-    lebensabschnitt: LebensabschnittDefinition_lebewesen;
+    lebensabschnitt: LebensabschnittDefinition_lebewesen[];
     morph: MorphDefinition_lebewesen;
     art: ArtDefinition_lebewesen;
     gattung: GattungDefinition_lebewesen;
@@ -658,7 +659,7 @@ export class Charakter {
         this.distanceWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.fernkampf?.filter(x => this.stammdaten.fernkampfMap[x])?.map(x => [x, true]) ?? []))
         this.armorStoreData.set(Object.fromEntries(v.ausrüstung?.rüstung?.filter(x => this.stammdaten.RüstungMap[x])?.map(x => [x, true]) ?? []))
 
-        this.ageStore.set(v.alter ?? this.organismus?.lebensabschnitt.startAlter ?? 0)
+        this.ageStore.set(v.alter ?? this.morph?.Lebensabschnitte.Lebensabschnitt[0].startAlter ?? 0)
 
     }
 
@@ -785,22 +786,8 @@ export class Charakter {
                 return undefined;
             }
 
-            function age2Lebensabschnitt(
-                m: MorphDefinition_lebewesen | undefined,
-                age: number | undefined
-            ): LebensabschnittDefinition_lebewesen | undefined {
-                if (!m) return undefined;
-                if (!age) return undefined;
-                let last = m.Lebensabschnitte.Lebensabschnitt[0];
-                for (const l of m.Lebensabschnitte.Lebensabschnitt) {
-                    if (l.startAlter > age) return last;
-                    last = l;
-                }
-                return m.Lebensabschnitte.Lebensabschnitt[m.Lebensabschnitte.Lebensabschnitt.length - 1];
-            }
-
             const lookedup = this.stammdaten.morphLookup[morphId];
-            const lebensabschnitt = age2Lebensabschnitt(lookedup.morph, age);
+            const lebensabschnitt = Data.age2Lebensabschnitte(age, lookedup.morph, lookedup.art, lookedup.gattung);
             if (lebensabschnitt == undefined) {
                 console.debug('no age')
                 return undefined;
@@ -1057,7 +1044,7 @@ export class Charakter {
                                 .Levels.Level.filter(x => x.Id == level)[0];
                             return l.Besonderheit ?? [];
                         }))))
-                .concat(o?.lebensabschnitt.Mods?.Besonderheiten?.Besonderheit ?? [])
+                .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Besonderheiten?.Besonderheit ?? []) ?? [])
                 .concat(o?.morph.Entwiklung.Reihe?.flatMap(reihe => {
                     if (propertyScale[reihe.id]) {
                         const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
@@ -1328,8 +1315,10 @@ export class Charakter {
             ]
             applyCredit(this.stammdaten.Instance.Daten.GenerierungsDaten.Kosten)
 
-            if (organismus?.lebensabschnitt.Spielbar?.Kosten) {
-                applyCost(organismus.lebensabschnitt.Spielbar.Kosten);
+            for (const l of organismus?.lebensabschnitt ?? []) {
+                if (l.Spielbar?.Kosten) {
+                    applyCost(l.Spielbar.Kosten);
+                }
             }
 
 
@@ -1454,7 +1443,7 @@ export class Charakter {
             Math.max(tempIndex, 0)
         );
 
-  
+
 
         const schwellen =
             reihe?.Schwelle?.map((x) => ({
@@ -1483,7 +1472,7 @@ export class Charakter {
 
         const filtert = schwellen.filter(x => x.Wert <= currentValue);
         const currentSchwelle = filtert.length > 0 ? filtert.reverse()[0] : undefined;
-  
+
         return { schwellen, quantile, currentSchwelle };
 
     }
@@ -1499,7 +1488,7 @@ export class Charakter {
                 .concat(Object.entries(t).flatMap(([key, value]) => {
                     return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.[keyt] ?? [])
                 }))
-                .concat(o?.lebensabschnitt.Mods?.Eigenschaften?.[keyt] ?? [])
+                .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Eigenschaften?.[keyt] ?? []) ?? [])
                 .concat(o?.morph.Mods?.Eigenschaften?.[keyt] ?? [])
                 .concat(o?.morph.Entwiklung.Reihe?.flatMap(reihe => {
                     if (propertyScale[reihe.id]) {
@@ -1515,7 +1504,7 @@ export class Charakter {
                 .flatMap(x => x);
             const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
             const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
-            
+
 
             return { addMod, multiMod };
         });

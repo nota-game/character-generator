@@ -10,17 +10,17 @@
 		_Gattung,
 		_Lebensabschnitt,
 		_Morph
-	} from 'src/data/nota.g';
+	} from '../../data/nota.g';
 	import { derived, get, readable, writable, type Readable, type Writable } from 'svelte/store';
 	import type { choise } from 'xsd-ts/dist/xsd';
 
-	import { getText } from '../misc';
+	import { distinct, getText } from '../misc';
 	import type { Charakter, selection } from '../models/Character';
-	import type { Data } from '../models/Data';
+	import { Data } from '../models/Data';
 	import KostenControl from './KostenControl.svelte';
 	import Tree from './tree/tree.svelte';
 	import RangeSlider from 'svelte-range-slider-pips';
-	import { log, map, min, number, string, xgcd } from 'mathjs';
+	import { filter, log, map, min, number, string, xgcd } from 'mathjs';
 	import Armor from './armor.svelte';
 	import { init } from 'svelte/internal';
 	import EntwicklungReihe from './../../controls/organismus/EntwicklungReihe.svelte';
@@ -32,18 +32,20 @@
 	// let current = char?.morphId;
 
 	$: morphStore = char?.morphStore;
+	$: organismStore = char?.organismusStore;
+	$: selectedOrganism = $organismStore;
 	$: selectedMorph = $morphStore;
 	let ageArray = [0];
 	$: age = ageArray[0];
 
-	$: selectedL = age2Lebensabschnitt(selectedMorph, age);
+	$: selectedL = selectedOrganism?.lebensabschnitt;
 
-	// $: {
-	// 	if (data && selectedL && char) {
-	// 		const x = data.lebensabschnittLookup[selectedL.Id];
-	// 		char.organismus = x;
-	// 	}
-	// }
+	// // $: {
+	// // 	if (data && selectedL && char) {
+	// // 		const x = data.lebensabschnittLookup[selectedL.Id];
+	// // 		char.organismus = x;
+	// // 	}
+	// // }
 	$: {
 		if (char) {
 			ageArray[0] = initChar(char, ageArray[0]);
@@ -72,22 +74,8 @@
 			// });
 
 			w = char?.organismusStore ?? readable();
-			wc = derived(w, (x) => x?.lebensabschnitt?.Spielbar?.Kosten ?? []);
+			wc = derived(w, (x) => x?.lebensabschnitt?.flatMap((l) => l.Spielbar?.Kosten ?? []) ?? []);
 		}
-	}
-
-	function age2Lebensabschnitt(
-		m: MorphDefinition_lebewesen | undefined,
-		age: number | undefined
-	): LebensabschnittDefinition_lebewesen | undefined {
-		if (!m) return undefined;
-		if (!age) return undefined;
-		let last = m.Lebensabschnitte.Lebensabschnitt[0];
-		for (const l of m.Lebensabschnitte.Lebensabschnitt) {
-			if (l.startAlter > age) return last;
-			last = l;
-		}
-		return m.Lebensabschnitte.Lebensabschnitt[m.Lebensabschnitte.Lebensabschnitt.length - 1];
 	}
 </script>
 
@@ -101,31 +89,43 @@
 				float
 				formatter={(v) => v}
 				handleFormatter={(v) => {
-					let l = age2Lebensabschnitt(selectedMorph, v);
+					let l = Data.age2Lebensabschnitte(
+						v,
+						selectedOrganism?.morph,
+						selectedOrganism?.art,
+						selectedOrganism?.gattung
+					);
 					const year = Math.floor(v);
-					const month = Math.round ((v-year) * 12);
-					const age = month==0
-					?` (${year} Jahre)`
-					:` (${year} Jahre und ${month} Monate)`
+					const month = Math.round((v - year) * 12);
+					const age = month == 0 ? ` (${year} Jahre)` : ` (${year} Jahre und ${month} Monate)`;
 
-					return (l ? getText(l.Name) : '') + age;
+					if (l === undefined) return age;
+					else
+						return (
+							distinct(l.map((x) => (x ? getText(x.Name) : '')))
+								.filter((x) => x != '')
+								.join(', ') + age
+						);
 				}}
 				bind:values={ageArray}
 				pips
 				pipstep={120}
-				step={1/12}
+				step={1 / 12}
 				min={Math.min(...selectedMorph.Lebensabschnitte.Lebensabschnitt.map((x) => x.startAlter))}
-				max={Math.max(...selectedMorph.Lebensabschnitte.Lebensabschnitt.map((x) => x.endAlter))}
+				max={Math.max(
+					...selectedMorph.Lebensabschnitte.Lebensabschnitt.map((x) => x.endAlter ?? 0),
+					...selectedMorph.Lebensabschnitte.Lebensabschnitt.map((x) => x.startAlter)
+				)}
 			/>
 		</label>
 		{#if selectedL}
-			{selectedL.Id}
-
-			{getText(selectedL.Name)}
-			{#if selectedL.Spielbar}
-				<KostenControl cost={selectedL.Spielbar.Kosten} {data} {char} />
-			{/if}
-			{getText(selectedL.Beschreibung)}
+			{#each selectedL as l}
+				{getText(l.Name)}
+				{#if l.Spielbar}
+					<KostenControl cost={l.Spielbar.Kosten} {data} {char} />
+				{/if}
+				{getText(l.Beschreibung)}
+			{/each}
 		{/if}
 
 		{#each selectedMorph.Entwiklung.Reihe ?? [] as r}
