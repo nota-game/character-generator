@@ -19,14 +19,11 @@
 	$: pfade = $pfadeStore;
 	let defaultPfadeStore = char?.defaultPathStore;
 	$: defaultPfade = $defaultPfadeStore ?? [];
-	
-	$: {
-		
 
+	$: {
 		anyBought = Object.values(pfade?.[selected] ?? {}).some((x) =>
 			Object.values(x).some((y) => y > 0)
 		);
-		console.log(anyBought);
 	}
 </script>
 
@@ -43,12 +40,16 @@
 			{#if key === selected}
 				{#if !anyBought}
 					<p>Wählen Sie eni Parket</p>
-					{#each Object.keys(data.pfadCategoryMap[key]).filter(x=>defaultPfade.includes(x)).sort() as t}
+					{#each Object.keys(data.pfadCategoryMap[key])
+						.filter((x) => defaultPfade.includes(x))
+						.sort() as t}
 						<PfadControl {char} {data} gruppeId={key} pfad={data.pfadMap[t]} showTaken={false} />
 					{/each}
-					<hr>
+					<hr />
 					<h2>Ungewöhliche Pfade</h2>
-					{#each Object.keys(data.pfadCategoryMap[key]).filter(x=>!defaultPfade.includes(x)).sort() as t}
+					{#each Object.keys(data.pfadCategoryMap[key])
+						.filter((x) => !defaultPfade.includes(x))
+						.sort() as t}
 						<PfadControl {char} {data} gruppeId={key} pfad={data.pfadMap[t]} showTaken={false} />
 					{/each}
 				{:else}

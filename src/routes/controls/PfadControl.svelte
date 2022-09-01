@@ -52,9 +52,7 @@
 		<div class="columns">
 			{#if pfad.Levels?.Level}
 				{#each pfad.Levels.Level as lvl}
-					<div
-						style="border: 1px solid var(--primary); margin: 8px; padding: 4px; break-inside:avoid ;"
-					>
+					<div class="element">
 						<PathSelectChild {char} {data} path={pfad.Id} gruppe={gruppeId} lvl={lvl.Id} />
 					</div>
 				{/each}
@@ -71,12 +69,30 @@
 {/if}
 
 <style lang="scss">
+	.element {
+		width: 20rem;
+		border: 1px solid var(--primary);
+		margin: 8px;
+		padding: 4px;
+		break-inside: avoid;
+		overflow: hidden;
+	}
+	.element:hover {
+		// height: unset;
+	}
 	.right-handler {
 		float: right;
 		text-align: right;
 	}
 	.columns {
-		column-count: 3;
+		display: flex;
+		flex-wrap: wrap;
+
+		justify-content: space-evenly;
+
+
+
+		// column-count: 3;
 	}
 	.columns > *:only-child {
 		display: inline-block;

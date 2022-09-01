@@ -1,9 +1,10 @@
-import { or } from "mathjs";
+import { i, number, or } from "mathjs";
 import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe } from "src/data/nota.g";
+import StoreManager from "../../misc/StoreManager";
 import { dataset_dev } from "svelte/internal";
-import { type Readable, get, derived, writable, type Writable } from "svelte/store";
+import { type Readable, get, type Writable } from "svelte/store";
 import { derivedLazy } from "../lazyDerivied";
-import { filterNull } from "../misc";
+import { distinct, filterNull } from "../misc";
 
 import { Data } from "./Data";
 
@@ -22,12 +23,14 @@ class EigenschaftenData {
     /**
      *
      */
-    constructor(e: Eigenschaft) {
+    constructor(e: Eigenschaft, storeManager: StoreManager) {
         this.eigenschaft = e;
+        this.acciredStore = storeManager.writable(0);
     }
 
 
-    public readonly acciredStore = writable(0);
+
+    public readonly acciredStore: Writable<number>;
     public get accired() {
         return get(this.acciredStore);
     }
@@ -72,21 +75,21 @@ class EigenschaftenDataAccess {
     /**
      *
      */
-    constructor(base: EigenschaftenData, startPropertysStore: Readable<Record<Eigenschaft, { start: number; cost: Record<number, KostenDefinition_misc[] | undefined> }>>, mods: Readable<{ addMod: number, multiMod: number }>) {
+    constructor(storemaneger: StoreManager, base: EigenschaftenData, startPropertysStore: Readable<Record<Eigenschaft, { start: number; cost: Record<number, KostenDefinition_misc[] | undefined> }>>, mods: Readable<{ addMod: number, multiMod: number }>) {
         this.base = base;
-        this.startStore = derived(startPropertysStore, (value) => value[base.eigenschaft].start);
-        this.costStore = derived(startPropertysStore, (value) => value[base.eigenschaft].cost);
-        this.acciredStore = derived(this.base.acciredStore, (value) => value);
-        this.modifiedStore = derived([this.acciredStore, mods], ([a, { addMod, multiMod }]) => addMod + (a * multiMod - a));
-        this.increaseCostStore = derived([this.costStore, this.acciredStore], ([c, a]) =>
+        this.startStore = storemaneger.derived(startPropertysStore, (value) => value[base.eigenschaft].start);
+        this.costStore = storemaneger.derived(startPropertysStore, (value) => value[base.eigenschaft].cost);
+        this.acciredStore = storemaneger.derived(this.base.acciredStore, (value) => value);
+        this.modifiedStore = storemaneger.derived([this.acciredStore, mods], ([a, { addMod, multiMod }]) => addMod + (a * multiMod - a));
+        this.increaseCostStore = storemaneger.derived([this.costStore, this.acciredStore], ([c, a]) =>
             a <= -1
                 ? c[-1]?.map(x => ({ Id: x.Id, Wert: -x.Wert }))
                 : c[a + 1]);
-        this.decreaseCostStore = derived([this.costStore, this.acciredStore], ([c, a]) =>
+        this.decreaseCostStore = storemaneger.derived([this.costStore, this.acciredStore], ([c, a]) =>
             a >= 1
                 ? c[1]?.map(x => ({ Id: x.Id, Wert: -x.Wert }))
                 : c[a - 1]);
-        this.currentStore = derived([this.startStore, this.modifiedStore, this.acciredStore], ([s, m, a]) => s - Object.values(m).reduce((c, p) => c + p, 0) - a)
+        this.currentStore = storemaneger.derived([this.startStore, this.modifiedStore, this.acciredStore], ([s, m, a]) => s - Object.values(m).reduce((c, p) => c + p, 0) - a)
     }
 
     private readonly base: EigenschaftenData;
@@ -148,24 +151,24 @@ class FertigkeitInfo {
     /**
      *
      */
-    constructor(costId: string, fertigkeitData: FertigkeitDefinition_fertigkeit, actualStore: Readable<Record<string, number | undefined>>, purchaseStore: Writable<Record<string, number | undefined>>, fixStore: Readable<Record<string, number | undefined>>) {
+    constructor(storemanager: StoreManager, costId: string, fertigkeitData: FertigkeitDefinition_fertigkeit, actualStore: Readable<Record<string, number | undefined>>, purchaseStore: Writable<Record<string, number | undefined>>, fixStore: Readable<Record<string, number | undefined>>) {
 
-        this.canBeBoght = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+        this.canBeBoght = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
             const p = purchased[fertigkeitData.Id];
             const f = fixed[fertigkeitData.Id];
             return ((p == undefined) || p < fertigkeitData.Stufe.length) && (f == undefined || f < fertigkeitData.Stufe.length);
         })
-        this.canBeSoled = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+        this.canBeSoled = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
             const p = purchased[fertigkeitData.Id];
             const f = fixed[fertigkeitData.Id];
             return ((p != undefined) && p > (f ?? 0));
         })
-        this.canBeRemoved = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+        this.canBeRemoved = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
             const p = purchased[fertigkeitData.Id];
             const f = fixed[fertigkeitData.Id];
             return ((p != undefined) && (f ?? 0) == 0);
         })
-        this.actualLevel = derived(actualStore, a => a[fertigkeitData.Id] ?? 0);
+        this.actualLevel = storemanager.derived(actualStore, a => a[fertigkeitData.Id] ?? 0);
 
         this.boughtLevel = {
             set: (v) => {
@@ -194,14 +197,14 @@ class FertigkeitInfo {
                 })
 
             },
-            ...derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+            ...storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
                 const p = purchased[fertigkeitData.Id];
                 const f = fixed[fertigkeitData.Id];
                 return Math.max(p ?? 0, f ?? 0);
             })
         };
 
-        this.buyCost = derived([purchaseStore, fixStore, this.canBeBoght], ([purchased, fixed, can]) => {
+        this.buyCost = storemanager.derived([purchaseStore, fixStore, this.canBeBoght], ([purchased, fixed, can]) => {
             if (!can) {
                 return [];
             }
@@ -211,7 +214,7 @@ class FertigkeitInfo {
                 Wert: fertigkeitData.Stufe[target - 1].Kosten
             }];
         })
-        this.sellCost = derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+        this.sellCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
             if (!can) {
                 return [];
             }
@@ -221,7 +224,7 @@ class FertigkeitInfo {
                 Wert: fertigkeitData.Stufe[target - 1].Kosten * -1
             }];
         })
-        this.removeCost = derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+        this.removeCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
             if (!can) {
                 return [];
             }
@@ -258,24 +261,24 @@ class BesonderheitenInfo {
     /**
      *
      */
-    constructor(besonderheitData: BesonderheitDefinition_besonderheit, actualStore: Readable<Record<string, number | undefined>>, purchaseStore: Writable<Record<string, number | undefined>>, fixStore: Readable<Record<string, number | undefined>>) {
+    constructor(storemanager: StoreManager, besonderheitData: BesonderheitDefinition_besonderheit, actualStore: Readable<Record<string, number | undefined>>, purchaseStore: Writable<Record<string, number | undefined>>, fixStore: Readable<Record<string, number | undefined>>) {
 
-        this.canBeBoght = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+        this.canBeBoght = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
             const p = purchased[besonderheitData.Id] ?? 0;
             const f = fixed[besonderheitData.Id] ?? 0;
             return ((p == undefined) || p < besonderheitData.Stufe.length) && (f == undefined || f < besonderheitData.Stufe.length);
         })
-        this.canBeSoled = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+        this.canBeSoled = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
             const p = purchased[besonderheitData.Id] ?? 0;
             const f = fixed[besonderheitData.Id] ?? 0;
             return ((p != undefined) && p > (f ?? 0));
         })
-        this.canBeRemoved = derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+        this.canBeRemoved = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
             const p = purchased[besonderheitData.Id] ?? 0;
             const f = fixed[besonderheitData.Id] ?? 0;
             return ((p != undefined) && (f ?? 0) == 0);
         })
-        this.actualLevel = derived(actualStore, a => a[besonderheitData.Id] ?? 0);
+        this.actualLevel = storemanager.derived(actualStore, a => a[besonderheitData.Id] ?? 0);
 
         this.boughtLevel = {
             set: (v) => {
@@ -304,28 +307,28 @@ class BesonderheitenInfo {
                 })
 
             },
-            ...derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+            ...storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
                 const p = purchased[besonderheitData.Id] ?? 0;
                 const f = fixed[besonderheitData.Id] ?? 0;
                 return Math.max(p ?? 0, f ?? 0);
             })
         };
 
-        this.buyCost = derived([purchaseStore, fixStore, this.canBeBoght], ([purchased, fixed, can]) => {
+        this.buyCost = storemanager.derived([purchaseStore, fixStore, this.canBeBoght], ([purchased, fixed, can]) => {
             if (!can) {
                 return [];
             }
             const target = Math.max(purchased?.[besonderheitData.Id] ?? 0, fixed?.[besonderheitData.Id] ?? 0) + 1;
             return besonderheitData.Stufe[target - 1].Kosten;
         })
-        this.sellCost = derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+        this.sellCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
             if (!can) {
                 return [];
             }
             const target = Math.max(purchased[besonderheitData.Id] ?? 0, fixed[besonderheitData.Id] ?? 0);
             return besonderheitData.Stufe[target - 1].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }));
         })
-        this.removeCost = derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+        this.removeCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
             if (!can) {
                 return [];
             }
@@ -349,6 +352,65 @@ class BesonderheitenInfo {
 
 
 }
+
+
+function equalRequirement(a: MissingRequirements, b: MissingRequirements) {
+    return compareRequirement(a, b) == 0
+}
+function compareRequirement(a: MissingRequirements, b: MissingRequirements): 0 | -1 | 1 {
+    function typeOrder(type: 'tag' | 'Fertigkeit' | 'Besonderheit' | 'Talent' | 'Not' | 'And' | 'Or') {
+        switch (type) {
+            case 'Talent': return 1;
+            case 'Fertigkeit': return 2;
+            case 'Besonderheit': return 3;
+            case 'tag': return 4;
+            case 'Not': return 5;
+            case 'And': return 6;
+            case 'Or': return 7;
+            default:
+                return -1;
+        }
+    }
+    if (a.type != b.type) {
+        return typeOrder(a.type) < typeOrder(b.type) ? -1 : 1;
+    } else {
+
+        if ((a.type == 'Fertigkeit' || a.type == 'Besonderheit' || a.type == 'tag' || a.type == 'Talent')
+            && (b.type == 'Fertigkeit' || b.type == 'Besonderheit' || b.type == 'tag' || b.type == 'Talent')) {
+
+            if (a.id != b.id) {
+                return a.id.localeCompare(b.id) as 1 | -1;
+            }
+            else if ((a.type == 'Fertigkeit' || a.type == 'Talent' || a.type == 'Besonderheit') && (b.type == 'Fertigkeit' || b.type == 'Talent' || b.type == 'Besonderheit') && a.Stufe != b.Stufe) {
+                return a.Stufe < b.Stufe ? -1 : 1;
+            }
+            if (a.type == 'Talent' && b.type == 'Talent' && a.Kind != b.Kind) {
+                return a.Kind.localeCompare(b.Kind) as 1 | -1;
+            }
+        } else if (a.type == 'Not' && b.type == 'Not') {
+            return compareRequirement(a.sub, b.sub);
+        } else if (a.type == 'And' && b.type == 'And' || a.type == 'Or' && b.type == 'Or') {
+            for (let i = 0; i < a.sub.length; i++) {
+                const aSub = a.sub[i];
+                const bSub = b.sub[i];
+                if (bSub === undefined) {
+                    // a is Longer
+                    return 1;
+                }
+                const subComp = compareRequirement(aSub, bSub);
+                if (subComp != 0) {
+                    return subComp;
+                }
+            }
+            if (b.sub.length > a.sub.length) {
+                return -1;
+            }
+        }
+    }
+    return 0;
+
+}
+
 
 export type MissingRequirements = { type: 'tag', id: string }
     | { type: 'Fertigkeit', id: string, Stufe: number }
@@ -382,9 +444,12 @@ export class Charakter {
     public readonly stammdaten: Data;
     private readonly id: string;
 
+    private readonly storeManager = new StoreManager();
+
+
     public readonly organismusStore: Readable<selection>;
-    public readonly morphIdStore = writable<string | undefined>(undefined);
-    public readonly nameStore = writable<string>(undefined);
+    public readonly morphIdStore = this.storeManager.writable<string | undefined>(undefined);
+    public readonly nameStore = this.storeManager.writable<string>("");
     public get name() {
         return get(this.nameStore);
     }
@@ -393,22 +458,22 @@ export class Charakter {
     }
     public readonly punkteStore: Readable<Record<string, number>>;
 
-    public readonly ageStore = writable<number>(0);
+    public readonly ageStore = this.storeManager.writable<number>(0);
 
     public readonly glückMaxStore: Readable<number>;
     public readonly sizeStore: Readable<number>;
     public readonly weightStore: Readable<number>;
 
-    public readonly allMissingRequirements: Readable<MissingRequirements[]>;
+    public readonly allMissingRequirementsStore: Readable<MissingRequirements[]>;
 
     public readonly morphStore: Readable<MorphDefinition_lebewesen | undefined>;
 
 
-    private readonly closeConbatWeaponsStoreData = writable<Record<string, true | undefined>>({});
-    public readonly closeConbatWeaponsStore = derived(this.closeConbatWeaponsStoreData, x => ({ ...x }));
+    private readonly closeConbatWeaponsStoreData = this.storeManager.writable<Record<string, true | undefined>>({});
+    public readonly closeConbatWeaponsStore = this.storeManager.derived(this.closeConbatWeaponsStoreData, x => ({ ...x }));
     public get closeConbatWeapons() { return get(this.closeConbatWeaponsStore) };
     public getCloseConbatWeaponsStore(id: string): Writable<boolean> {
-        const d = derived(this.closeConbatWeaponsStore, x => x[id] ?? false);
+        const d = this.storeManager.derived(this.closeConbatWeaponsStore, x => x[id] ?? false);
 
         return {
             subscribe: d.subscribe,
@@ -428,6 +493,11 @@ export class Charakter {
             }
         }
     };
+
+    public get allMissingRequirements() {
+        return get(this.allMissingRequirementsStore);
+    }
+
     public getCloseConbatWeapons(id: string) {
         return get(this.getCloseConbatWeaponsStore(id));
     };
@@ -435,11 +505,11 @@ export class Charakter {
         return this.getCloseConbatWeaponsStore(id).set(value);
     };
 
-    private readonly distanceWeaponsStoreData = writable<Record<string, true | undefined>>({});
-    public readonly distanceWeaponsStore = derived(this.distanceWeaponsStoreData, x => ({ ...x }));
+    private readonly distanceWeaponsStoreData = this.storeManager.writable<Record<string, true | undefined>>({});
+    public readonly distanceWeaponsStore = this.storeManager.derived(this.distanceWeaponsStoreData, x => ({ ...x }));
     public get distanceWeapons() { return get(this.distanceWeaponsStore) };
     public getDistanceWeaponsStore(id: string): Writable<boolean> {
-        const d = derived(this.distanceWeaponsStore, x => x[id] ?? false);
+        const d = this.storeManager.derived(this.distanceWeaponsStore, x => x[id] ?? false);
 
         return {
             subscribe: d.subscribe,
@@ -473,11 +543,11 @@ export class Charakter {
 
 
 
-    private readonly armorStoreData = writable<Record<string, true | undefined>>({});
-    public readonly armorStore = derived(this.armorStoreData, x => ({ ...x }));
+    private readonly armorStoreData = this.storeManager.writable<Record<string, true | undefined>>({});
+    public readonly armorStore = this.storeManager.derived(this.armorStoreData, x => ({ ...x }));
     public get armor() { return get(this.armorStore) };
     public getArmorStore(id: string): Writable<boolean> {
-        const d = derived(this.armorStore, x => x[id] ?? false);
+        const d = this.storeManager.derived(this.armorStore, x => x[id] ?? false);
 
         return {
             subscribe: d.subscribe,
@@ -509,10 +579,10 @@ export class Charakter {
     public readonly startPropertysStore: Readable<Record<Eigenschaft, { start: number; cost: Record<number, KostenDefinition_misc[] | undefined> }>>;
 
     public readonly defaultPathStore: Readable<ReadonlyArray<string>>;
-    private readonly pfadLevelDataStore = writable({} as Record<string, Record<string, Record<string, number>>>);
+    private readonly pfadLevelDataStore = this.storeManager.writable({} as Record<string, Record<string, Record<string, number>>>);
     public readonly pfadLevelStore: Readable<Readonly<Record<string, Record<string, Record<string, number>>>>>;
 
-    private readonly besonderheitenPurchasedDataStore = writable({} as Record<string, number | undefined>);
+    private readonly besonderheitenPurchasedDataStore = this.storeManager.writable({} as Record<string, number | undefined>);
     private readonly besonderheitenFixDataStore: Readable<Record<string, number | undefined>>;
     public readonly besonderheitenPurchasedStore: Readable<Record<string, number | undefined>>;
     public readonly besonderheitenStore: Readable<Readonly<Record<string, number | undefined>>>;
@@ -525,7 +595,7 @@ export class Charakter {
         return get(this.besonderheitenStoreIgnoreRequirements)
     }
 
-    private readonly fertigkeitenPurchasedDataStore = writable({} as Record<string, number | undefined>);
+    private readonly fertigkeitenPurchasedDataStore = this.storeManager.writable({} as Record<string, number | undefined>);
     private readonly fertigkeitenFixDataStore: Readable<Record<string, number | undefined>>;
     public readonly fertigkeitenPurchasedStore: Readable<Record<string, number | undefined>>;
     public readonly fertigkeitenStore: Readable<Readonly<Record<string, number | undefined>>>;
@@ -537,9 +607,9 @@ export class Charakter {
         return get(this.fertigkeitenStoreIgnoreRequirements);
     }
 
-    private readonly propertyScaleData = writable({} as Record<string, number>);
+    private readonly propertyScaleData = this.storeManager.writable({} as Record<string, number>);
 
-    private readonly talentPurchasedEPData = writable({} as Record<string, number>);
+    private readonly talentPurchasedEPData = this.storeManager.writable({} as Record<string, number>);
     private readonly talentFixEP: Readable<Record<string, number>>;
     public readonly talentPurchasedEP: Readable<Record<string, number | undefined>>;
     public readonly talentBaseEPStore: Readable<Record<string, number>>;
@@ -597,7 +667,8 @@ export class Charakter {
 
 
     public get DataStore(): Readable<CharakterData> {
-        return derived([this.propertyScaleData, this.ageStore, this.closeConbatWeaponsStore, this.distanceWeaponsStore, this.armorStore, this.pfadLevelStore, this.talentPurchasedEPData, this.morphIdStore, this.fertigkeitenPurchasedStore, this.besonderheitenPurchasedStore, this.nameStore, ...EIGENRSCHAFTEN.map(key => this.eigenrschaften[key].acciredStore)], ([propertyScaleData, ageStore, closeConbatWeaponsStore, distanceWeaponsStore, armorStore, pfadLevelStore, talentPurchasedEPData, morphIdStore, fertigkeitenPurchasedStore, besonderheitenPurchasedStore, name, ...eigenschaften]) => {
+        return this.storeManager.derived([this.propertyScaleData, this.ageStore, this.closeConbatWeaponsStore, this.distanceWeaponsStore, this.armorStore, this.pfadLevelStore, this.talentPurchasedEPData, this.morphIdStore, this.fertigkeitenPurchasedStore, this.besonderheitenPurchasedStore, this.nameStore, ...EIGENRSCHAFTEN.map(key => this.eigenrschaften[key].acciredStore)], ([propertyScaleData, ageStore, closeConbatWeaponsStore, distanceWeaponsStore, armorStore, pfadLevelStore, talentPurchasedEPData, morphIdStore, fertigkeitenPurchasedStore, besonderheitenPurchasedStore, name, ...eigenschaften]) => {
+
 
 
             return {
@@ -619,7 +690,7 @@ export class Charakter {
                 fertigkeiten: Object.fromEntries(Object.entries(fertigkeitenPurchasedStore).filter((([key, value]) => (value ?? 0) > 0))) as any,
                 morphId: morphIdStore,
                 talentEP: Object.fromEntries(Object.entries(talentPurchasedEPData).filter(([_, value]) => (value ?? 0) > 0)),
-                pfade: pfadLevelStore,
+                pfade: JSON.parse(JSON.stringify(pfadLevelStore)),
                 ausrüstung: {
                     nahkampf: Object.entries(closeConbatWeaponsStore).filter(x => x[1]).map(x => x[0]).sort(),
                     fernkampf: Object.entries(distanceWeaponsStore).filter(x => x[1]).map(x => x[0]).sort(),
@@ -656,6 +727,7 @@ export class Charakter {
 
         this.talentPurchasedEPData.set(filter(v.talentEP, this.stammdaten.talentMap));
         this.pfadLevelDataStore.set(v.pfade);
+
         this.name = v.name;
         this.closeConbatWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.nahkampf?.filter(x => this.stammdaten.nahkampfMap[x])?.map(x => [x, true]) ?? []))
         this.distanceWeaponsStoreData.set(Object.fromEntries(v.ausrüstung?.fernkampf?.filter(x => this.stammdaten.fernkampfMap[x])?.map(x => [x, true]) ?? []))
@@ -668,10 +740,10 @@ export class Charakter {
 
 
     public getFertigkeitInfo(id: string) {
-        return new FertigkeitInfo(this.stammdaten.StandardKosten, this.stammdaten.fertigkeitenMap[id], this.fertigkeitenStore, this.fertigkeitenPurchasedDataStore, this.fertigkeitenFixDataStore);
+        return new FertigkeitInfo(this.storeManager, this.stammdaten.StandardKosten, this.stammdaten.fertigkeitenMap[id], this.fertigkeitenStore, this.fertigkeitenPurchasedDataStore, this.fertigkeitenFixDataStore);
     }
     public getBesonderheitInfo(id: string) {
-        return new BesonderheitenInfo(this.stammdaten.besonderheitenMap[id], this.besonderheitenStore, this.besonderheitenPurchasedDataStore, this.besonderheitenFixDataStore);
+        return new BesonderheitenInfo(this.storeManager, this.stammdaten.besonderheitenMap[id], this.besonderheitenStore, this.besonderheitenPurchasedDataStore, this.besonderheitenFixDataStore);
     }
 
     public getMissingRequirements(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): MissingRequirements | null {
@@ -758,14 +830,14 @@ export class Charakter {
     }
     public getMissingRequirementsStore(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): Readable<MissingRequirements | null> {
         if (requirements == undefined)
-            return writable(null);
-        return derived([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, this.besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, this.fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore], ([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+            return this.storeManager.writable(null);
+        return this.storeManager.derived([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, this.besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, this.fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore], ([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
             return this.getMissingInternal(requirements, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags);
         });
     }
 
 
-   
+
 
 
     /**
@@ -775,17 +847,17 @@ export class Charakter {
         this.stammdaten = data;
 
 
-        this.sizeStore = derived([this.propertyScaleData], ([propertyScaleData]) => {
+        this.sizeStore = this.storeManager.derived([this.propertyScaleData], ([propertyScaleData]) => {
             return propertyScaleData['größe'] ?? 0;
         });
 
-        this.morphStore = derived(this.morphIdStore, mid => {
+        this.morphStore = this.storeManager.derived(this.morphIdStore, mid => {
             if (mid)
                 return this.stammdaten.morphLookup[mid].morph;
             return undefined;
         });
 
-        this.organismusStore = derived([this.ageStore, this.morphIdStore], ([age, morphId]) => {
+        this.organismusStore = this.storeManager.derived([this.ageStore, this.morphIdStore], ([age, morphId]) => {
             if (morphId == undefined) {
                 console.debug('no morph')
                 return undefined;
@@ -803,16 +875,16 @@ export class Charakter {
             };
         });
 
-        this.defaultPathStore = derived(this.organismusStore, (organismus) => {
+        this.defaultPathStore = this.storeManager.derived(this.organismusStore, (organismus) => {
 
-            return (organismus?.morph.StandardPfade?.Pfad.map(x => x.Id)??[])
+            return (organismus?.morph.StandardPfade?.Pfad.map(x => x.Id) ?? [])
                 .concat(
-                    organismus?.art.StandardPfade?.Pfad.map(x => x.Id)??[])
+                    organismus?.art.StandardPfade?.Pfad.map(x => x.Id) ?? [])
             // organismus?.gattung.StandardPfade?.Pfad.map(x=>x.Id)
 
         });
 
-        this.startPropertysStore = derived(this.organismusStore, v => {
+        this.startPropertysStore = this.storeManager.derived(this.organismusStore, v => {
             return Object.fromEntries(EIGENRSCHAFTEN.map(att => {
                 if (v) {
 
@@ -865,9 +937,9 @@ export class Charakter {
 
         this.talentPurchasedEPData.set({} as Record<string, number>);
 
-        this.fertigkeitenPurchasedStore = derived(this.fertigkeitenPurchasedDataStore, x => ({ ...x }));
+        this.fertigkeitenPurchasedStore = this.storeManager.derived(this.fertigkeitenPurchasedDataStore, x => ({ ...x }));
 
-        this.fertigkeitenFixDataStore = derived(this.pfadLevelDataStore, (levels) => {
+        this.fertigkeitenFixDataStore = this.storeManager.derived(this.pfadLevelDataStore, (levels) => {
             const costs = Object.keys(levels)
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
@@ -885,7 +957,7 @@ export class Charakter {
                 return p;
             }, {} as Record<string, number | undefined>);
         });
-        this.fertigkeitenStoreIgnoreRequirements = derived([this.fertigkeitenPurchasedStore, this.fertigkeitenFixDataStore], ([purchased, fixed]) => {
+        this.fertigkeitenStoreIgnoreRequirements = this.storeManager.derived([this.fertigkeitenPurchasedStore, this.fertigkeitenFixDataStore], ([purchased, fixed]) => {
             return Object.entries(fixed).reduce((p, c) => {
                 p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
                 return p;
@@ -913,14 +985,14 @@ export class Charakter {
                     }, {});
         this.fertigkeitenStore = fertigkeitenStore;
 
-        this.fertigkeitenStore = derived([this.fertigkeitenPurchasedStore, this.fertigkeitenFixDataStore], ([purchased, fixed]) => {
+        this.fertigkeitenStore = this.storeManager.derived([this.fertigkeitenPurchasedStore, this.fertigkeitenFixDataStore], ([purchased, fixed]) => {
             return Object.entries(fixed).reduce((p, c) => {
                 p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
                 return p;
             }, { ...purchased });
         });
 
-        this.talentFixEP = derived(this.pfadLevelDataStore, levels => {
+        this.talentFixEP = this.storeManager.derived(this.pfadLevelDataStore, levels => {
             const costs = Object.keys(levels)
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
@@ -938,8 +1010,8 @@ export class Charakter {
             }, {} as Record<string, number>);
         });
 
-        this.talentPurchasedEP = derived(this.talentPurchasedEPData, (b) => ({ ...Object.fromEntries(Object.keys(data.talentMap).map(k => [k, b[k] ?? 0])) }));
-        this.talentBaseEPStore = derived([this.talentPurchasedEPData, this.talentFixEP], ([b, fix]) => {
+        this.talentPurchasedEP = this.storeManager.derived(this.talentPurchasedEPData, (b) => ({ ...Object.fromEntries(Object.keys(data.talentMap).map(k => [k, b[k] ?? 0])) }));
+        this.talentBaseEPStore = this.storeManager.derived([this.talentPurchasedEPData, this.talentFixEP], ([b, fix]) => {
             const result = {} as Record<string, number>;
             for (const key of Object.keys(data.talentMap)) {
                 const ep = (fix[key] ?? 0) + (b[key] ?? 0);
@@ -949,7 +1021,7 @@ export class Charakter {
             }
             return result;
         });
-        this.talentBaseStore = derived(this.talentBaseEPStore, (b) => {
+        this.talentBaseStore = this.storeManager.derived(this.talentBaseEPStore, (b) => {
             const result = {} as Record<string, number>;
             for (const key of Object.keys(data.talentMap)) {
                 const ep = b[key] ?? 0;
@@ -987,7 +1059,7 @@ export class Charakter {
                     }, {});
         this.talentEffectiveStore = talentEffectiveStore;
 
-        this.talentDerivationStore = derived([this.talentBaseStore, this.talentEffectiveStore], ([b, e]) => {
+        this.talentDerivationStore = this.storeManager.derived([this.talentBaseStore, this.talentEffectiveStore], ([b, e]) => {
             const calc = (a: AbleitungsAuswahl_talent | undefined): number[] => {
                 return a
                     ? (a.Ableitung?.map(x => Math.floor(Math.min(b[x.Id], e[x.Id] ?? 0) / x.Anzahl)) ?? [])
@@ -1006,7 +1078,7 @@ export class Charakter {
 
         });
 
-        this.talentEffectiveIgnoreRequirementsStore = derived([this.talentBaseStore, this.talentDerivationStore], ([b, d]) => {
+        this.talentEffectiveIgnoreRequirementsStore = this.storeManager.derived([this.talentBaseStore, this.talentDerivationStore], ([b, d]) => {
             const result = { ...b };
             return Object.entries(d).reduce((p, [key, value]) => {
                 if (p[key]) {
@@ -1040,12 +1112,12 @@ export class Charakter {
 
 
 
-        this.pfadLevelStore = derived(this.pfadLevelDataStore, x => ({ ...x }));
-        this.besonderheitenPurchasedStore = derived(this.besonderheitenPurchasedDataStore, x => ({ ...x }));
+        this.pfadLevelStore = this.storeManager.derived(this.pfadLevelDataStore, x => JSON.parse(JSON.stringify(x ?? {})));
+        this.besonderheitenPurchasedStore = this.storeManager.derived(this.besonderheitenPurchasedDataStore, x => ({ ...x }));
 
 
 
-        this.besonderheitenFixDataStore = derived([this.pfadLevelStore, this.organismusStore, this.propertyScaleData, this.ageStore], ([levels, o, propertyScale, age]) => {
+        this.besonderheitenFixDataStore = this.storeManager.derived([this.pfadLevelStore, this.organismusStore, this.propertyScaleData, this.ageStore], ([levels, o, propertyScale, age]) => {
             return (Object.keys(levels)
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
@@ -1074,7 +1146,7 @@ export class Charakter {
 
         });
         this.besonderheitenStoreIgnoreRequirements =
-            derived([this.besonderheitenPurchasedStore, this.besonderheitenFixDataStore], ([purchased, fixed]) => {
+            this.storeManager.derived([this.besonderheitenPurchasedStore, this.besonderheitenFixDataStore], ([purchased, fixed]) => {
                 return Object.entries(fixed).reduce((p, c) => {
                     p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
                     return p;
@@ -1102,7 +1174,7 @@ export class Charakter {
 
 
         this.tagsStore =
-            derived([this.besonderheitenStore, this.pfadLevelStore, this.organismusStore, this.fertigkeitenStore, this.propertyScaleData, this.ageStore], ([besonderheiten, levels, o, fertigkeiten, propertyScale, age]) => {
+            this.storeManager.derived([this.besonderheitenStore, this.pfadLevelStore, this.organismusStore, this.fertigkeitenStore, this.propertyScaleData, this.ageStore], ([besonderheiten, levels, o, fertigkeiten, propertyScale, age]) => {
                 return (Object.keys(levels)
                     .flatMap(gruppe => Object.keys(levels[gruppe])
                         .flatMap(pfad => Object.keys(levels[gruppe][pfad])
@@ -1146,25 +1218,25 @@ export class Charakter {
 
 
 
-        this.eigenrschaften = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenData(att)] as const)) as any;
-        this.eigenschaftenData = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenDataAccess(this.eigenrschaften[att], this.startPropertysStore, this.getMods(att))] as const)) as any;
+        this.eigenrschaften = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenData(att, this.storeManager,)] as const)) as any;
+        this.eigenschaftenData = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenDataAccess(this.storeManager, this.eigenrschaften[att], this.startPropertysStore, this.getMods(att))] as const)) as any;
 
-        this.ausdauerStore = derived([this.eigenschaftenData.Konstitution.currentStore, this.eigenschaftenData.Stärke.currentStore, this.getMods('Ausdauer')], ([ko, st, { addMod, multiMod }]) => {
+        this.ausdauerStore = this.storeManager.derived([this.eigenschaftenData.Konstitution.currentStore, this.eigenschaftenData.Stärke.currentStore, this.getMods('Ausdauer')], ([ko, st, { addMod, multiMod }]) => {
             const raw = 70 - (ko + ko + st);
             const r = raw * multiMod + addMod;
             return Math.ceil(r);
         })
-        this.initiativeStore = derived([this.eigenschaftenData.Mut.currentStore, this.eigenschaftenData.Intuition.currentStore, this.eigenschaftenData.Gewandtheit.currentStore, this.getMods('Initiative')], ([MU, IN, GE, { addMod, multiMod }]) => {
+        this.initiativeStore = this.storeManager.derived([this.eigenschaftenData.Mut.currentStore, this.eigenschaftenData.Intuition.currentStore, this.eigenschaftenData.Gewandtheit.currentStore, this.getMods('Initiative')], ([MU, IN, GE, { addMod, multiMod }]) => {
             const raw = 100 - (MU + IN + GE + GE);
             const r = raw * multiMod + addMod;
             return Math.ceil(r);
         })
-        this.geschwindigkeitStore = derived([this.getMods('Geschwindigkeit')], ([{ addMod, multiMod }]) => {
+        this.geschwindigkeitStore = this.storeManager.derived([this.getMods('Geschwindigkeit')], ([{ addMod, multiMod }]) => {
             const raw = 6;
             const r = raw * multiMod + addMod;
             return Math.ceil(r);
         })
-        this.weightStore = derived([this.propertyScaleData, this.getMods('Gewicht')], ([propertyScaleData, { addMod, multiMod }]) => {
+        this.weightStore = this.storeManager.derived([this.propertyScaleData, this.getMods('Gewicht')], ([propertyScaleData, { addMod, multiMod }]) => {
             const height = (propertyScaleData['größe'] ?? 0) / 100;
             const bmi = propertyScaleData['bmi'] ?? 0;
 
@@ -1173,13 +1245,13 @@ export class Charakter {
             return Math.floor(kg * 10) / 10;
         });
 
-        this.kraftStore = derived([this.eigenschaftenData.Stärke.currentStore, this.weightStore, this.getMods('Kraft')], ([x, w, { addMod, multiMod }]) => {
+        this.kraftStore = this.storeManager.derived([this.eigenschaftenData.Stärke.currentStore, this.weightStore, this.getMods('Kraft')], ([x, w, { addMod, multiMod }]) => {
             const f = 91 / 30 * (1 / (x * x)) + 1529 / 300 * (1 / x) + 3 / 50;
             const raw = f * w;
             const r = raw * multiMod + addMod;
             return Math.ceil(r);
         })
-        this.glückMaxStore = derived([this.eigenschaftenData.Glück.currentStore, this.getMods('GlücksPunkte')], ([x, { addMod, multiMod }]) => {
+        this.glückMaxStore = this.storeManager.derived([this.eigenschaftenData.Glück.currentStore, this.getMods('GlücksPunkte')], ([x, { addMod, multiMod }]) => {
             const raw = 21 - x;
             const r = raw * multiMod + addMod;
             return Math.ceil(r);
@@ -1187,7 +1259,7 @@ export class Charakter {
 
 
 
-        this.allMissingRequirements = derived([this.talentEffectiveStore, this.talentEffectiveIgnoreRequirementsStore, this.talentDerivationStore, this.talentBaseStore, this.besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, this.fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore, this.pfadLevelStore], ([talentEffective, talentAll, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags, pfade]) => {
+        this.allMissingRequirementsStore = this.storeManager.derived([this.talentEffectiveStore, this.talentEffectiveIgnoreRequirementsStore, this.talentDerivationStore, this.talentBaseStore, this.besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, this.fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore, this.pfadLevelStore], ([talentEffective, talentAll, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags, pfade]) => {
 
             return filterNull<MissingRequirements>(Object.entries(talentAll)
                 .filter(([key, value]) => value > 0)
@@ -1225,7 +1297,7 @@ export class Charakter {
         });
 
 
-        this.punkteStore = derived([
+        this.punkteStore = this.storeManager.derived([
             this.organismusStore,
             this.eigenschaftenData.Mut.acciredStore,
             this.eigenschaftenData.Glück.acciredStore,
@@ -1492,7 +1564,7 @@ export class Charakter {
     }
 
     private getMods(keyt: keyof EigenschaftsMods_lebewesen) {
-        return derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore, this.ageStore, this.propertyScaleData], ([o, b, f, t, age, propertyScale]) => {
+        return this.storeManager.derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore, this.ageStore, this.propertyScaleData], ([o, b, f, t, age, propertyScale]) => {
             const mods = Object.entries(b/* if null it was used to early */).flatMap(([key, value]) => {
                 return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.[keyt] ?? [])
             })
@@ -1526,7 +1598,7 @@ export class Charakter {
 
 
     getTalentPurchasedEPStore(id: string): Writable<number> {
-        const d = derived(this.talentPurchasedEP, x => x[id] ?? 0);
+        const d = this.storeManager.derived(this.talentPurchasedEP, x => x[id] ?? 0);
         return {
             ...d,
             set: (v) => {
@@ -1542,22 +1614,22 @@ export class Charakter {
         }
     }
     getTalentBaseStore(id: string): Readable<number> {
-        return derived(this.talentBaseStore, x => x[id]);
+        return this.storeManager.derived(this.talentBaseStore, x => x[id]);
     }
     getTalentEPStore(id: string): Readable<number> {
-        return derived(this.talentBaseEPStore, x => x[id]);
+        return this.storeManager.derived(this.talentBaseEPStore, x => x[id]);
     }
     getTalentDerivedStore(id: string): Readable<number> {
-        return derived(this.talentDerivationStore, x => x[id]);
+        return this.storeManager.derived(this.talentDerivationStore, x => x[id]);
     }
     getTalentEffectiveStore(id: string): Readable<number> {
-        return derived(this.talentEffectiveStore, x => x[id]);
+        return this.storeManager.derived(this.talentEffectiveStore, x => x[id]);
     }
     gettalentEffectiveIgnoreRequirements(id: string) {
-        return derived(this.talentEffectiveIgnoreRequirementsStore, x => x[id]);
+        return this.storeManager.derived(this.talentEffectiveIgnoreRequirementsStore, x => x[id]);
     }
     gettalentMissingRequirement(id: string) {
-        return derived(this.talentMissingRequirement, x => x[id]);
+        return this.storeManager.derived(this.talentMissingRequirement, x => x[id]);
     }
 
     getTalentPurchasedEP(id: string): number {
@@ -1577,6 +1649,88 @@ export class Charakter {
         this.propertyScaleData.set(x);
     }
 
+    getSimulation(callback: (char: Charakter) => void, key?: string) {
+        let number = 0;
+        return this.storeManager.derived(this.DataStore, data => {
+            number++;
+            const copyData = JSON.parse(JSON.stringify(data));
+
+            const copy = new Charakter(this.stammdaten, copyData);
+            callback(copy);
+
+            const talentKeys = distinct(
+                Object.keys(copy.talentEffective).concat(Object.keys(this.talentEffective))
+            );
+            const changedTalents = talentKeys
+                .map((key) => {
+                    return {
+                        key: key,
+                        new: copy.talentEffective[key],
+                        old: this.talentEffective[key],
+                        newEp: copy.talentBaseEP[key] + copy.getTalentPurchasedEP(key),
+                        oldEp: this.talentBaseEP[key] + this.getTalentPurchasedEP(key)
+                    };
+                })
+                .filter((x) => x.old != x.new || x.oldEp != x.newEp);
+
+            const fertigkeitenKeys = distinct(
+                Object.keys(copy.fertigkeiten)
+                    .concat(Object.keys(this.fertigkeiten))
+                    .concat(Object.keys(copy.fertigkeitenIgnoreRequirements))
+                    .concat(Object.keys(this.fertigkeitenIgnoreRequirements))
+            );
+
+            const changedFertigkeiten = fertigkeitenKeys
+                .map((key) => {
+                    return {
+                        key: key,
+                        new: copy.fertigkeiten[key] ?? 0,
+                        old: this.fertigkeiten[key] ?? 0,
+                        newIgnored: copy.fertigkeitenIgnoreRequirements[key] ?? 0,
+                        oldIgnored: this.fertigkeitenIgnoreRequirements[key] ?? 0
+                    };
+                })
+                .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
+            const besonderheitenKeys = distinct(
+                Object.keys(copy.besonderheiten)
+                    .concat(Object.keys(this.besonderheiten))
+                    .concat(Object.keys(copy.besonderheitenIgnoreRequirements))
+                    .concat(Object.keys(this.besonderheitenIgnoreRequirements))
+            );
+
+            const changedBestonderheiten = besonderheitenKeys
+                .map((key) => {
+                    return {
+                        key: key,
+                        new: copy.besonderheiten[key] ?? 0,
+                        old: this.besonderheiten[key] ?? 0,
+                        newIgnored: copy.besonderheitenIgnoreRequirements[key] ?? 0,
+                        oldIgnored: this.besonderheitenIgnoreRequirements[key] ?? 0
+                    };
+                })
+                .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
+
+            const currentMissing = this.allMissingRequirements.sort(compareRequirement);
+            const copyMissing = copy.allMissingRequirements.sort(compareRequirement);
+
+            function contains(list: MissingRequirements[], element: MissingRequirements) {
+                for (const c of list) {
+                    const comp = compareRequirement(c, element);
+                    if (comp == 0) {
+                        return true;
+                    } else if (comp < 0) {
+                        // we can stop here since the lists are sorted
+                        return false;
+                    }
+                }
+                return false;
+            }
+            const newMissing = copyMissing.filter(x => !contains(currentMissing, x));
+            const removedMissing = currentMissing.filter(x => !contains(copyMissing, x));
+            return { changedTalents, changedFertigkeiten, changedBestonderheiten, requirements: { added: newMissing, removed: removedMissing } };
+
+        });
+    }
 
     pathChoosenTimes(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
         instance ??= this.pfadLevel;
@@ -1595,7 +1749,7 @@ export class Charakter {
         return instance[gruppe][pfad][level];
     }
     pathChoosenTimesStore(gruppe: string, pfad: string, level: string) {
-        return derived(this.pfadLevelDataStore, old => {
+        return this.storeManager.derived(this.pfadLevelDataStore, old => {
             return this.pathChoosenTimes(gruppe, pfad, level, old);
         });
     }
@@ -1623,7 +1777,7 @@ export class Charakter {
         return instance[gruppe][pfad][level] > 0;
     }
     canPathUnChoosenStore(gruppe: string, pfad: string, level: string) {
-        return derived(this.pfadLevelDataStore, old => {
+        return this.storeManager.derived(this.pfadLevelDataStore, old => {
             return this.canPathUnChoosen(gruppe, pfad, level, old);
         });
     }
@@ -1660,7 +1814,7 @@ export class Charakter {
     }
 
     canPathChoosenStore(gruppe: string, pfad: string, level: string) {
-        return derived(this.pfadLevelDataStore, old => {
+        return this.storeManager.derived(this.pfadLevelDataStore, old => {
             return this.canPathChoosen(gruppe, pfad, level, old);
         });
     }
@@ -1681,7 +1835,7 @@ export class Charakter {
     }
 
     hasPathChoosenStore(gruppe: string, pfad: string, level: string) {
-        return derived(this.pfadLevelDataStore, old => {
+        return this.storeManager.derived(this.pfadLevelDataStore, old => {
             return this.hasPathChoosen(gruppe, pfad, level, old);
         });
     }

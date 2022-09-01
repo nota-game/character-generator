@@ -7,8 +7,14 @@
 	import { derived, writable, type Readable } from 'svelte/store';
 	import type { choise } from 'xsd-ts/dist/xsd';
 
-	import { distinct, getText, getTextBesonderheit, getTextFertigkeit } from './../../misc';
-	import { Charakter } from './../../models/Character';
+	import {
+		distinct,
+		getText,
+		getTextBesonderheit,
+		getTextFertigkeit,
+		renderRequirement
+	} from './../../misc';
+	import type { Charakter } from './../../models/Character';
 	import type { Data } from './../../models/Data';
 	import KostenControl from './../KostenControl.svelte';
 
@@ -33,204 +39,12 @@
 
 	const level = char?.pathChoosenTimesStore(gruppe ?? '', path ?? '', lvl ?? '');
 
-	let charDataStor = char?.DataStore;
-	let copyHas: Charakter | undefined;
-	let copyCan: Charakter | undefined;
-	$: {
-		if (char && data && charDataStor && $charDataStor && (has || can)) {
-			const copyData = JSON.stringify({ ...$charDataStor, id: '0' });
-
-			if (has) {
-				copyHas = new Charakter(data, JSON.parse(copyData));
-				copyHas.removePath(gruppe ?? '', path ?? '', lvl ?? '');
-			} else {
-				copyHas = undefined;
-			}
-			if (can) {
-				copyCan = new Charakter(data, JSON.parse(copyData));
-				copyCan.addPath(gruppe ?? '', path ?? '', lvl ?? '');
-			} else {
-				copyCan = undefined;
-			}
-		} else {
-			copyHas = undefined;
-			copyCan = undefined;
-		}
-	}
-
-	let changedTalentsCan:
-		| {
-				key: string;
-				new: number;
-				old: number;
-				newEp: number;
-				oldEp: number;
-		  }[]
-		| undefined;
-	let changedTalentsHas:
-		| {
-				key: string;
-				new: number;
-				old: number;
-				newEp: number;
-				oldEp: number;
-		  }[]
-		| undefined;
-	let changedFertigkeitenCan:
-		| {
-				key: string;
-				new: number;
-				old: number;
-				newIgnored: number;
-				oldIgnored: number;
-		  }[]
-		| undefined;
-	let changedFertigkeitenHas:
-		| {
-				key: string;
-				new: number;
-				old: number;
-				newIgnored: number;
-				oldIgnored: number;
-		  }[]
-		| undefined;
-	let changedBestonderheitenCan:
-		| {
-				key: string;
-				new: number;
-				old: number;
-				newIgnored: number;
-				oldIgnored: number;
-		  }[]
-		| undefined;
-	let changedBestonderheitenHas:
-		| {
-				key: string;
-				new: number;
-				old: number;
-				newIgnored: number;
-				oldIgnored: number;
-		  }[]
-		| undefined;
-
-	$: {
-		if (copyCan && char) {
-			const current = copyCan;
-			const talentKeys = distinct(
-				Object.keys(current.talentEffective).concat(Object.keys(char.talentEffective))
-			);
-			changedTalentsCan = talentKeys
-				.map((key) => {
-					return {
-						key: key,
-						new: current.talentEffective[key],
-						old: char!.talentEffective[key],
-						newEp: current.talentBaseEP[key] + current.getTalentPurchasedEP(key),
-						oldEp: char!.talentBaseEP[key] + char!.getTalentPurchasedEP(key)
-					};
-				})
-				.filter((x) => x.old != x.new || x.oldEp != x.newEp);
-
-			const fertigkeitenKeys = distinct(
-				Object.keys(current.fertigkeiten)
-					.concat(Object.keys(char.fertigkeiten))
-					.concat(Object.keys(current.fertigkeitenIgnoreRequirements))
-					.concat(Object.keys(char.fertigkeitenIgnoreRequirements))
-			);
-
-			changedFertigkeitenCan = fertigkeitenKeys
-				.map((key) => {
-					return {
-						key: key,
-						new: current.fertigkeiten[key] ?? 0,
-						old: char!.fertigkeiten[key] ?? 0,
-						newIgnored: current.fertigkeitenIgnoreRequirements[key] ?? 0,
-						oldIgnored: char!.fertigkeitenIgnoreRequirements[key] ?? 0
-					};
-				})
-				.filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
-			const besonderheitenKeys = distinct(
-				Object.keys(current.besonderheiten)
-					.concat(Object.keys(char.besonderheiten))
-					.concat(Object.keys(current.besonderheitenIgnoreRequirements))
-					.concat(Object.keys(char.besonderheitenIgnoreRequirements))
-			);
-
-			changedBestonderheitenCan = besonderheitenKeys
-				.map((key) => {
-					return {
-						key: key,
-						new: current.besonderheiten[key] ?? 0,
-						old: char!.besonderheiten[key] ?? 0,
-						newIgnored: current.besonderheitenIgnoreRequirements[key] ?? 0,
-						oldIgnored: char!.besonderheitenIgnoreRequirements[key] ?? 0
-					};
-				})
-				.filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
-		} else {
-			changedTalentsCan = undefined;
-			changedFertigkeitenCan = undefined;
-			changedBestonderheitenCan= undefined;
-		}
-		if (copyHas && char) {
-			const current = copyHas;
-			const talentKeys = distinct(
-				Object.keys(current.talentEffective).concat(Object.keys(char.talentEffective))
-			);
-			changedTalentsHas = talentKeys
-				.map((key) => {
-					return {
-						key: key,
-						new: current.talentEffective[key],
-						old: char!.talentEffective[key],
-						newEp: current.talentBaseEP[key] + current.getTalentPurchasedEP(key),
-						oldEp: char!.talentBaseEP[key] + char!.getTalentPurchasedEP(key)
-					};
-				})
-				.filter((x) => x.old != x.new || x.oldEp != x.newEp);
-
-			const fertigkeitenKeys = distinct(
-				Object.keys(current.fertigkeiten)
-					.concat(Object.keys(char.fertigkeiten))
-					.concat(Object.keys(current.fertigkeitenIgnoreRequirements))
-					.concat(Object.keys(char.fertigkeitenIgnoreRequirements))
-			);
-
-			changedFertigkeitenHas = fertigkeitenKeys
-				.map((key) => {
-					return {
-						key: key,
-						new: current.fertigkeiten[key] ?? 0,
-						old: char!.fertigkeiten[key] ?? 0,
-						newIgnored: current.fertigkeitenIgnoreRequirements[key] ?? 0,
-						oldIgnored: char!.fertigkeitenIgnoreRequirements[key] ?? 0
-					};
-				})
-				.filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
-			const besonderheitenKeys = distinct(
-				Object.keys(current.fertigkeiten)
-					.concat(Object.keys(char.fertigkeiten))
-					.concat(Object.keys(current.fertigkeitenIgnoreRequirements))
-					.concat(Object.keys(char.fertigkeitenIgnoreRequirements))
-			);
-
-			changedBestonderheitenHas = besonderheitenKeys
-				.map((key) => {
-					return {
-						key: key,
-						new: current.besonderheiten[key] ?? 0,
-						old: char!.besonderheiten[key] ?? 0,
-						newIgnored: current.besonderheitenIgnoreRequirements[key] ?? 0,
-						oldIgnored: char!.besonderheitenIgnoreRequirements[key] ?? 0
-					};
-				})
-				.filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
-		} else {
-			changedTalentsHas = undefined;
-			changedFertigkeitenHas = undefined;
-			changedBestonderheitenHas = undefined;
-		}
-	}
+	$: simulationCanStore = can
+		? char?.getSimulation((x) => x.addPath(gruppe ?? '', path ?? '', lvl ?? ''), lvl + 'add')
+		: undefined;
+	$: simulationHasStore = has
+		? char?.getSimulation((x) => x.removePath(gruppe ?? '', path ?? '', lvl ?? ''), lvl + 'remove')
+		: undefined;
 
 	let l = data?.Instance.Daten.Pfade.filter((x) => x.Id == gruppe)[0]
 		?.Pfad.filter((x) => x.Id == path)[0]
@@ -242,7 +56,7 @@
 </script>
 
 {#if char && l && ImageData && data}
-	<div>
+	<div class="container" class:compact={!can && !has}>
 		{#if can}
 			<div class="up">
 				<a
@@ -266,191 +80,253 @@
 			</div>
 		{/if}
 		<div style="display: flex; flex-direction: row; justify-content:space-between ;">
-			<h4>
-				{getText(l?.Name)} ({$level}/{l?.WiederhoteNutzung})
-				<small>{l?.Id}</small>
+			<h4 style="margin-bottom: 1em;">
+				{l?.Name ? getText(l?.Name) : l?.Id} ({$level}/{l?.WiederhoteNutzung})
 			</h4>
 		</div>
 
 		<!-- {changedTalentsCan} -->
-		{#if changedTalentsCan}
-			{#each changedTalentsCan as t}
+		{#if simulationCanStore && $simulationCanStore}
+			<p class:hideOver={has}>
+				{#each $simulationCanStore.changedTalents as t}
+					<div class:hideOver={has}>
+						{getText(data.talentMap[t.key].Name)}
+						{#if t.new != t.old}
+							{t.old}=>{t.new}
+						{/if}
+						{#if t.newEp - t.oldEp != 0}
+							(+{t.newEp - t.oldEp} EP)
+						{/if}
+					</div>
+				{/each}
+
+				{#each $simulationCanStore.changedFertigkeiten as t}
+					{#if t.old != t.new}
+						<div class:hideOver={has}>
+							{#if t.old != 0}
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.old)} =>
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
+							{:else}
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
+							{/if}
+
+							<!-- {#if t.newEp - t.oldEp != 0} -->
+							<!-- (+{t.newEp - t.oldEp} EP) -->
+							<!-- {/if} -->
+						</div>
+					{/if}
+					{#if t.oldIgnored != t.newIgnored && t.new != t.newIgnored}
+						<div class:hideOver={has}>
+							<span style="text-decoration: wavy;">
+								{#if t.oldIgnored != 0}
+									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.oldIgnored)} =>
+									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored)}
+								{:else}
+									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored)}
+								{/if}
+							</span>
+
+							<!-- {#if t.newEp - t.oldEp != 0} -->
+							<!-- (+{t.newEp - t.oldEp} EP) -->
+							<!-- {/if} -->
+						</div>
+					{/if}
+				{/each}
+
+				{#each $simulationCanStore.changedBestonderheiten as t}
+					{#if t.old != t.new}
+						<div class:hideOver={has}>
+							{#if t.old != 0}
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.old)} =>
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
+							{:else}
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
+							{/if}
+
+							<!-- {#if t.newEp - t.oldEp != 0} -->
+							<!-- (+{t.newEp - t.oldEp} EP) -->
+							<!-- {/if} -->
+						</div>
+					{/if}
+					{#if t.oldIgnored != t.newIgnored && t.new != t.newIgnored}
+						<div class:hideOver={has}>
+							<span style="text-decoration: wavy;">
+								{#if t.oldIgnored != 0}
+									{getTextBesonderheit(data.besonderheitenMap[t.key], t.oldIgnored)} =>
+									{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored)}
+								{:else}
+									{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored)}
+								{/if}
+							</span>
+
+							<!-- {#if t.newEp - t.oldEp != 0} -->
+							<!-- (+{t.newEp - t.oldEp} EP) -->
+							<!-- {/if} -->
+						</div>
+					{/if}
+				{/each}
+			</p>
+			{#if $simulationCanStore.requirements.added.length > 0}
+				<p>
+					Einige Voraussetzungen sind nicht erfüllt, daher können Talente niedriger,bzw.
+					Fertigkeiten, und Besonderheiten nicht Aktiv sein.
+				</p>
+			{/if}
+			{#each $simulationCanStore.requirements.added as t}
 				<div class:hideOver={has}>
-					{getText(data.talentMap[t.key].Name)}
-					{#if t.new != t.old}
-						{t.old}=>{t.new}
-					{/if}
-					{#if t.newEp - t.oldEp != 0}
-						(+{t.newEp - t.oldEp} EP)
-					{/if}
+					{renderRequirement(t, data)}
+				</div>
+			{/each}
+			{#if $simulationCanStore.requirements.removed.length > 0}
+				<p>Hierdurch werden einige Voraussetzungen erfüllt.</p>
+			{/if}
+			{#each $simulationCanStore.requirements.removed as t}
+				<div class:hideOver={has}>
+					<span style="text-decoration: line-through;">
+						{renderRequirement(t, data)}
+					</span>
 				</div>
 			{/each}
 		{/if}
-		{#if changedFertigkeitenCan}
-			{#each changedFertigkeitenCan as t}
-				{#if t.old != t.new}
-					<div class:hideOver={has}>
-						{#if t.old != 0}
-							{getTextFertigkeit(data.fertigkeitenMap[t.key], t.old)} =>
-							{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
-						{:else}
-							{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
+		{#if simulationHasStore && $simulationHasStore}
+			<p class="showOver">
+				{#each $simulationHasStore.changedTalents as t}
+					<div >
+						{getText(data.talentMap[t.key].Name)}
+						{#if t.new != t.old}
+							{t.old}=>{t.new}
 						{/if}
-
-						<!-- {#if t.newEp - t.oldEp != 0} -->
-						<!-- (+{t.newEp - t.oldEp} EP) -->
-						<!-- {/if} -->
+						{#if t.newEp - t.oldEp != 0}
+							({t.newEp - t.oldEp} EP)
+						{/if}
 					</div>
-				{/if}
-				{#if t.oldIgnored != t.newIgnored && t.new != t.newIgnored}
-					<div class:hideOver={has}>
-						<span style="text-decoration: wavy;">
-							{#if t.oldIgnored != 0}
+				{/each}
+
+				{#each $simulationHasStore.changedFertigkeiten as t}
+					{#if t.old != t.new}
+						<div >
+							{#if t.new != 0}
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.old)} =>
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
+							{:else}
+								<span style="text-decoration: line-through;">
+									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
+								</span>
+							{/if}
+
+							<!-- {#if t.newEp - t.oldEp != 0} -->
+							<!-- (+{t.newEp - t.oldEp} EP) -->
+							<!-- {/if} -->
+						</div>
+					{/if}
+					{#if t.oldIgnored != t.newIgnored && t.new != t.newIgnored}
+						<div >
+							{#if t.newIgnored != 0}
 								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.oldIgnored)} =>
 								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored)}
 							{:else}
-								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored)}
+								<span style="text-decoration: line-through;">
+									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored)}
+								</span>
 							{/if}
-						</span>
 
-						<!-- {#if t.newEp - t.oldEp != 0} -->
-						<!-- (+{t.newEp - t.oldEp} EP) -->
-						<!-- {/if} -->
-					</div>
-				{/if}
-			{/each}
-		{/if}
-		{#if changedBestonderheitenCan}
-			{#each changedBestonderheitenCan as t}
-				{#if t.old != t.new}
-					<div class:hideOver={has}>
-						{#if t.old != 0}
-							{getTextBesonderheit(data.besonderheitenMap[t.key], t.old)} =>
-							{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
-						{:else}
-							{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
-						{/if}
+							<!-- {#if t.newEp - t.oldEp != 0} -->
+							<!-- (+{t.newEp - t.oldEp} EP) -->
+							<!-- {/if} -->
+						</div>
+					{/if}
+				{/each}
 
-						<!-- {#if t.newEp - t.oldEp != 0} -->
-						<!-- (+{t.newEp - t.oldEp} EP) -->
-						<!-- {/if} -->
-					</div>
-				{/if}
-				{#if t.oldIgnored != t.newIgnored && t.new != t.newIgnored}
-					<div class:hideOver={has}>
-						<span style="text-decoration: wavy;">
-							{#if t.oldIgnored != 0}
+				{#each $simulationHasStore.changedBestonderheiten as t}
+					{#if t.old != t.new}
+						<div >
+							{#if t.new != 0}
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.old)} =>
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
+							{:else}
+								<span style="text-decoration: line-through;">
+									{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
+								</span>
+							{/if}
+
+							<!-- {#if t.newEp - t.oldEp != 0} -->
+							<!-- (+{t.newEp - t.oldEp} EP) -->
+							<!-- {/if} -->
+						</div>
+					{/if}
+					{#if t.oldIgnored != t.newIgnored && t.new != t.newIgnored}
+						<div >
+							{#if t.newIgnored != 0}
 								{getTextBesonderheit(data.besonderheitenMap[t.key], t.oldIgnored)} =>
 								{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored)}
 							{:else}
-								{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored)}
+								<span style="text-decoration: line-through;">
+									{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored)}
+								</span>
 							{/if}
-						</span>
 
-						<!-- {#if t.newEp - t.oldEp != 0} -->
-						<!-- (+{t.newEp - t.oldEp} EP) -->
-						<!-- {/if} -->
-					</div>
-				{/if}
-			{/each}
-		{/if}
-		{#if changedTalentsHas}
-			{#each changedTalentsHas as t}
+							<!-- {#if t.newEp - t.oldEp != 0} -->
+							<!-- (+{t.newEp - t.oldEp} EP) -->
+							<!-- {/if} -->
+						</div>
+					{/if}
+				{/each}
+			</p>
+			{#if $simulationHasStore.requirements.added.length > 0}
+				<p class="showOver">
+					Einige Voraussetzungen sind nicht erfüllt, daher können Talente niedriger,bzw.
+					Fertigkeiten, und Besonderheiten nicht Aktiv sein.
+				</p>
+			{/if}
+			{#each $simulationHasStore.requirements.added as t}
 				<div class="showOver">
-					{getText(data.talentMap[t.key].Name)}
-					{#if t.new != t.old}
-						{t.old}=>{t.new}
-					{/if}
-					{#if t.newEp - t.oldEp != 0}
-						({t.newEp - t.oldEp} EP)
-					{/if}
+					{renderRequirement(t, data)}
+				</div>
+			{/each}
+			{#if $simulationHasStore.requirements.removed.length > 0}
+				<p class="showOver">Hierdurch entfallen einige Voraussetzungen.</p>
+			{/if}
+			{#each $simulationHasStore.requirements.removed as t}
+				<div class="showOver">
+					<span style="text-decoration: line-through;">
+						{renderRequirement(t, data)}
+					</span>
 				</div>
 			{/each}
 		{/if}
-		{#if changedFertigkeitenHas}
-			{#each changedFertigkeitenHas as t}
-				{#if t.old != t.new}
-					<div class="showOver">
-						{#if t.new != 0}
-							{getTextFertigkeit(data.fertigkeitenMap[t.key], t.old)} =>
-							{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
-						{:else}
-							<span style="text-decoration: line-through;">
-								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
-							</span>
-						{/if}
-
-						<!-- {#if t.newEp - t.oldEp != 0} -->
-						<!-- (+{t.newEp - t.oldEp} EP) -->
-						<!-- {/if} -->
-					</div>
-				{/if}
-				{#if t.oldIgnored != t.newIgnored && t.new != t.newIgnored}
-					<div class="showOver">
-						{#if t.newIgnored != 0}
-							{getTextFertigkeit(data.fertigkeitenMap[t.key], t.oldIgnored)} =>
-							{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored)}
-						{:else}
-							<span style="text-decoration: line-through;">
-								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored)}
-							</span>
-						{/if}
-
-						<!-- {#if t.newEp - t.oldEp != 0} -->
-						<!-- (+{t.newEp - t.oldEp} EP) -->
-						<!-- {/if} -->
-					</div>
-				{/if}
-			{/each}
-		{/if}
-		{#if changedBestonderheitenHas}
-			{#each changedBestonderheitenHas as t}
-				{#if t.old != t.new}
-					<div class="showOver">
-						{#if t.new != 0}
-							{getTextBesonderheit(data.besonderheitenMap[t.key], t.old)} =>
-							{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
-						{:else}
-							<span style="text-decoration: line-through;">
-								{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
-							</span>
-						{/if}
-
-						<!-- {#if t.newEp - t.oldEp != 0} -->
-						<!-- (+{t.newEp - t.oldEp} EP) -->
-						<!-- {/if} -->
-					</div>
-				{/if}
-				{#if t.oldIgnored != t.newIgnored && t.new != t.newIgnored}
-					<div class="showOver">
-						{#if t.newIgnored != 0}
-							{getTextBesonderheit(data.besonderheitenMap[t.key], t.oldIgnored)} =>
-							{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored)}
-						{:else}
-							<span style="text-decoration: line-through;">
-								{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored)}
-							</span>
-						{/if}
-
-						<!-- {#if t.newEp - t.oldEp != 0} -->
-						<!-- (+{t.newEp - t.oldEp} EP) -->
-						<!-- {/if} -->
-					</div>
-				{/if}
-			{/each}
-		{/if}
-		
 	</div>
 {/if}
 
 <style lang="scss">
-	.handel {
-		display: flex;
-		flex-direction: row;
-		gap: 0.5rem;
-		* {
-			min-width: 6rem;
-		}
+	.container {
+		position: relative;
+		min-height: 10rem;
+		height: 10rem;
+		padding: 4px;
+	}
+	.container:hover {
+		position: relative;
+		min-height: 10rem;
+		height: unset;
+		padding: 4px;
+	}
+	.compact,
+	.compact:hover {
+		height: 2.5rem !important;
+		min-height: 2.5rem;
+	}
+	.down {
+		right: 0px;
+		top: 1.5em;
+		position: absolute;
+	}
+	.up {
+		right: 0px;
+		position: absolute;
+	}
+
+	p:empty {
+		display: none;
 	}
 
 	.hideOver {

@@ -27,8 +27,8 @@
 	let char = writable<Charakter | undefined>(undefined);
 	export let charId: string | undefined;
 
-	let allMissingRequirements = $char?.allMissingRequirements;
-	$: allMissingRequirements = $char?.allMissingRequirements;
+	let allMissingRequirementsStore = $char?.allMissingRequirementsStore;
+	$: allMissingRequirementsStore = $char?.allMissingRequirementsStore;
 
 	let charOrganismusStore = $char?.morphIdStore;
 	$: charOrganismusStore = $char?.morphIdStore;
@@ -266,7 +266,7 @@
 							&#128472;
 						</a>
 					</p>
-					{#if $allMissingRequirements && $allMissingRequirements.length == 0 && !hasNegativPoints}
+					{#if $allMissingRequirementsStore && $allMissingRequirementsStore.length == 0 && !hasNegativPoints}
 						<p>Der Charakter ist Gültig.</p>
 					{/if}
 
@@ -280,10 +280,10 @@
 							bind:hasNegativ={hasNegativPoints}
 						/>
 					</p>
-					{#if $allMissingRequirements && $allMissingRequirements.length > 0}
+					{#if $allMissingRequirementsStore && $allMissingRequirementsStore.length > 0}
 						<p>Es fehlen folgende Voraussetzungen</p>
 						<ul>
-							{#each $allMissingRequirements as r}
+							{#each $allMissingRequirementsStore as r}
 								<li>{renderRequirement(r, $data)}</li>
 							{/each}
 						</ul>

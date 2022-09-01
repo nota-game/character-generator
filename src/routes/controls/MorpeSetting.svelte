@@ -62,7 +62,6 @@
 		return age;
 	}
 
-	char?.allMissingRequirements;
 	let w: Readable<selection>;
 	let wc: Readable<KostenDefinition_misc[]>;
 	$: {

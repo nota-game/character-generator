@@ -71,7 +71,6 @@
 		return [age, selectedMorphId];
 	}
 
-	char?.allMissingRequirements;
 	let w: Readable<selection>;
 	let wc: Readable<KostenDefinition_misc[]>;
 	$: {
