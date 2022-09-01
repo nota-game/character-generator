@@ -15,8 +15,11 @@
 
 	let info = char?.getBesonderheitInfo(besonderheit?.Id ?? '');
 	let canBeBoght = info?.canBeBoght;
+	let canBeBoghtReason = info?.canBeBoghtReason;
 	let canBeRemoved = info?.canBeRemoved;
+	let canBeRemovedReason = info?.canBeRemovedReason;
 	let canBeSoled = info?.canBeSoled;
+	let canBeSoledReason = info?.canBeSoledReason;
 	let boughtLevel = info?.boughtLevel!;
 	let actualLevel = info?.actualLevel!;
 	let buyCost = info?.buyCost;
@@ -26,8 +29,11 @@
 	$: {
 		info = char?.getBesonderheitInfo(besonderheit?.Id ?? '');
 		canBeBoght = info?.canBeBoght;
+		canBeBoghtReason = info?.canBeBoghtReason;
 		canBeRemoved = info?.canBeRemoved;
+		canBeRemovedReason = info?.canBeRemovedReason;
 		canBeSoled = info?.canBeSoled;
+		canBeSoledReason = info?.canBeSoledReason;
 		boughtLevel = info?.boughtLevel!;
 		actualLevel = info?.actualLevel!;
 		buyCost = info?.buyCost;
@@ -59,6 +65,7 @@
 				class:missing={$isToexpensiv || !requirementsBuy}
 				on:click={(e) => buy(1, e)}
 				disabled={$canBeBoght ? undefined : true}
+				data-tooltip={($canBeBoghtReason?.length ?? 0) > 0 ? $canBeBoghtReason : undefined}
 				class="outline">Hinzufügen</a
 			>
 
@@ -82,6 +89,7 @@
 				href="#"
 				on:click={(e) => buy(-($boughtLevel ?? 0), e)}
 				disabled={$canBeRemoved ? undefined : true}
+				data-tooltip={($canBeRemovedReason?.length ?? 0) > 0 ? $canBeRemovedReason : undefined}
 				class="outline">Entfernen</a
 			>
 			<KostenControl {char} {data} cost={removeCost} />
@@ -135,7 +143,9 @@
 			<div>
 				<a
 					href="#"
-					data-tooltip={getText(besonderheit.Stufe[$boughtLevel - 2].Beschreibung)}
+					data-tooltip={($canBeSoledReason?.length ?? 0) > 0
+						? $canBeSoledReason
+						: getText(besonderheit.Stufe[$boughtLevel - 2].Beschreibung)}
 					disabled={$canBeSoled ? undefined : true}
 					on:click={(e) => buy(-1, e)}
 					>Abwerten <small
@@ -157,6 +167,9 @@
 {/if}
 
 <style lang="scss">
+	a[disabled] {
+		color: var(--form-element-disabled-border-color);
+	}
 	.right-handler {
 		float: right;
 		text-align: right;

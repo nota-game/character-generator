@@ -1,5 +1,5 @@
 import { i, number, or } from "mathjs";
-import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe } from "src/data/nota.g";
+import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe, _Besonderheit } from "src/data/nota.g";
 import StoreManager from "../../misc/StoreManager";
 import { dataset_dev } from "svelte/internal";
 import { type Readable, get, type Writable } from "svelte/store";
@@ -250,8 +250,11 @@ class FertigkeitInfo {
 class BesonderheitenInfo {
 
     public readonly canBeBoght: Readable<boolean>
+    public readonly canBeBoghtReason: Readable<string>
     public readonly canBeSoled: Readable<boolean>
+    public readonly canBeSoledReason: Readable<string>
     public readonly canBeRemoved: Readable<boolean>
+    public readonly canBeRemovedReason: Readable<string>
     public readonly boughtLevel: Writable<number>
     public readonly actualLevel: Readable<number>
     public readonly buyCost: Readable<KostenDefinition_misc[]>
@@ -266,17 +269,44 @@ class BesonderheitenInfo {
         this.canBeBoght = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
             const p = purchased[besonderheitData.Id] ?? 0;
             const f = fixed[besonderheitData.Id] ?? 0;
+            if (besonderheitData.Gebunden)
+                return false;
             return ((p == undefined) || p < besonderheitData.Stufe.length) && (f == undefined || f < besonderheitData.Stufe.length);
+        })
+        this.canBeBoghtReason = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+            const p = purchased[besonderheitData.Id] ?? 0;
+            const f = fixed[besonderheitData.Id] ?? 0;
+            if (besonderheitData.Gebunden)
+                return "Kann nur indirekt Erworben werden, z.B. über einen Pafd.";
+            if (f != undefined && f >= besonderheitData.Stufe.length)
+                return "Wurde bereits indirekt Erworben, z.B. über einen Pafd.";
+            if ((p != undefined) && p >= besonderheitData.Stufe.length)
+                return "Wurde bereits Erworben.";
+            return "";
         })
         this.canBeSoled = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
             const p = purchased[besonderheitData.Id] ?? 0;
             const f = fixed[besonderheitData.Id] ?? 0;
             return ((p != undefined) && p > (f ?? 0));
         })
+        this.canBeSoledReason = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+            const p = purchased[besonderheitData.Id] ?? 0;
+            const f = fixed[besonderheitData.Id] ?? 0;
+            if ((p != undefined) && (f ?? 0) == 0)
+                return "";
+            return "Wurde indirekt Erworben, z.B. über einen Pafd.";
+        })
         this.canBeRemoved = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
             const p = purchased[besonderheitData.Id] ?? 0;
             const f = fixed[besonderheitData.Id] ?? 0;
             return ((p != undefined) && (f ?? 0) == 0);
+        })
+        this.canBeRemovedReason = storemanager.derived([purchaseStore, fixStore], ([purchased, fixed]) => {
+            const p = purchased[besonderheitData.Id] ?? 0;
+            const f = fixed[besonderheitData.Id] ?? 0;
+            if ((p != undefined) && (f ?? 0) == 0)
+                return "";
+            return "Wurde indirekt Erworben, z.B. über einen Pafd.";
         })
         this.actualLevel = storemanager.derived(actualStore, a => a[besonderheitData.Id] ?? 0);
 
@@ -1118,7 +1148,7 @@ export class Charakter {
 
 
         this.besonderheitenFixDataStore = this.storeManager.derived([this.pfadLevelStore, this.organismusStore, this.propertyScaleData, this.ageStore], ([levels, o, propertyScale, age]) => {
-            return (Object.keys(levels)
+            const besonderheiten = (Object.keys(levels)
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
                         .flatMap(level => {
@@ -1139,10 +1169,34 @@ export class Charakter {
 
                     return [];
                 }) ?? [])
+                .concat(o?.art.Mods?.Besonderheiten?.Besonderheit ?? [])
+                .concat(o?.gattung.Mods?.Besonderheiten?.Besonderheit ?? [])
+                .concat(o?.morph.Mods?.Besonderheiten?.Besonderheit ?? [])
                 .reduce((p, c) => {
                     p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
                     return p;
                 }, {} as Record<string, number | undefined>);
+
+
+            const newAdded: _Besonderheit[] = [];
+            do {
+                newAdded.length = 0;
+                for (const key of Object.keys(besonderheiten)) {
+                    const current = besonderheiten[key];
+                    const data = this.stammdaten.besonderheitenMap[key];
+                    for (let i = 0; i < (current ?? 0); i++) {
+                        const element = data.Stufe[i];
+                        newAdded.push(...element.Mods?.Besonderheiten?.Besonderheit.filter(x => (besonderheiten[x.Id] ?? 0) < x.Stufe) ?? []);
+                    }
+                }
+                for (const n of newAdded) {
+                    // since we already checked that only newer are present we can just assign
+                    besonderheiten[n.Id] = n.Stufe;
+                }
+            } while (newAdded.length > 0);
+
+
+            return besonderheiten;
 
         });
         this.besonderheitenStoreIgnoreRequirements =
