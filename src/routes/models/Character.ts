@@ -1147,7 +1147,7 @@ export class Charakter {
 
 
 
-        this.besonderheitenFixDataStore = this.storeManager.derived([this.pfadLevelStore, this.organismusStore, this.propertyScaleData, this.ageStore], ([levels, o, propertyScale, age]) => {
+        this.besonderheitenFixDataStore = this.storeManager.derived([this.pfadLevelStore, this.organismusStore, this.propertyScaleData, this.ageStore, this.besonderheitenPurchasedStore], ([levels, o, propertyScale, age, purchasedBesonderheiten]) => {
             const besonderheiten = (Object.keys(levels)
                 .flatMap(gruppe => Object.keys(levels[gruppe])
                     .flatMap(pfad => Object.keys(levels[gruppe][pfad])
@@ -1176,6 +1176,20 @@ export class Charakter {
                     p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
                     return p;
                 }, {} as Record<string, number | undefined>);
+
+
+
+
+            for (const key of Object.keys(purchasedBesonderheiten)) {
+                const current = purchasedBesonderheiten[key];
+                const data = this.stammdaten.besonderheitenMap[key];
+                for (let i = 0; i < (current ?? 0); i++) {
+                    const element = data.Stufe[i];
+                    for (const toAdd of element.Mods?.Besonderheiten?.Besonderheit.filter(x => (besonderheiten[x.Id] ?? 0) < x.Stufe) ?? []) {
+                        besonderheiten[toAdd.Id] = toAdd.Stufe;
+                    }
+                }
+            }
 
 
             const newAdded: _Besonderheit[] = [];
