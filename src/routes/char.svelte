@@ -33,7 +33,6 @@
 	let charOrganismusStore = $char?.morphIdStore;
 	$: charOrganismusStore = $char?.morphIdStore;
 
-
 	let nameStore = $char?.nameStore;
 	$: nameStore = $char?.nameStore;
 
@@ -315,12 +314,11 @@
 
 					<MorpeSetting char={$char} data={$data} />
 
-					<div
+					<!-- <div
 						style="display: grid; grid-template-columns: auto 1fr auto ; gap: 1rem; align-items: end; margin-bottom: var(--spacing);"
 					>
 						<label>
 							Größe {($sizeStore ?? 0) / 100} m
-			
 						</label>
 					</div>
 					<div
@@ -330,10 +328,32 @@
 							Gewicht {$weightStore} Kg
 						</label>
 					</div>
-					AU {$ausdauerStore}
-					Initiative {$initiativeStore}
-					Geschwindigkeit {$geschwindigkeitStore}
-					Kraft {$kraftStore}
+					<table>
+						<tr>
+							<td> AU </td>
+							<td>
+								{$ausdauerStore}
+							</td>
+						</tr>
+						<tr>
+							<td> Initiative </td>
+							<td>
+								{$initiativeStore}
+							</td>
+						</tr>
+						<tr>
+							<td>Geschwindigkeit </td>
+							<td>
+								{$geschwindigkeitStore}
+							</td>
+						</tr>
+						<tr>
+							<td>Kraft </td>
+							<td>
+								{$kraftStore}
+							</td>
+						</tr>
+					</table> -->
 				</article>
 
 				<div
@@ -357,12 +377,14 @@
 		{/if}
 	</main>
 {:else if !charId && mounted}
-<main>
-	<article style="height: 80vh; display: grid;">
-		<h1 style="margin: auto;" >Bitte einen Charakter <label for="charSelector" >Auswählen</label> oder <label for="newCharButton">erstellen</label>.</h1>
-
-	</article>
-</main>
+	<main>
+		<article style="height: 80vh; display: grid;">
+			<h1 style="margin: auto;">
+				Bitte einen Charakter <label for="charSelector">Auswählen</label> oder
+				<label for="newCharButton">erstellen</label>.
+			</h1>
+		</article>
+	</main>
 {:else}
 	<p>Loding…</p>
 {/if}

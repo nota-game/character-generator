@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { afterUpdate, onMount } from 'svelte';
-	import { Data } from './models/Data';
-	import { Charakter, EIGENRSCHAFTEN, type CharakterData } from './models/Character';
-	import { getText, getTextBesonderheit, getTextFertigkeit } from './misc';
+	import { Data } from '../models/Data';
+	import { Charakter, EIGENRSCHAFTEN, type CharakterData } from '../models/Character';
+	import { getText, getTextBesonderheit, getTextFertigkeit } from '../misc';
 
-	import Hitman from './controls/hitman.svelte';
-	import { local } from './storage';
+	import Hitman from '../controls/hitman.svelte';
+	import { local } from '../storage';
 	import { get, writable } from 'svelte/store';
-	import Armor from './controls/armor.svelte';
-	import { doPaged } from './controls/paged';
+	import Armor from '../controls/armor.svelte';
+	import { doPaged } from '../controls/paged';
 	import { noop } from 'svelte/internal';
-	import CloseCombatWeapon from './controls/CloseCombatWeapon.svelte';
+	import CloseCombatWeapon from '../controls/CloseCombatWeapon.svelte';
 	import { kldivergence } from 'mathjs';
 
 	let data: Data | undefined;

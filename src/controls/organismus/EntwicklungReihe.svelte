@@ -68,16 +68,17 @@
 	}
 </script>
 
-{#if reihe}
+{#if reihe && data}
 	<label>
-		{getText(reihe.Name)}
-		{#if currentSchwelle}
-			<small
-				>({getText(currentSchwelle.Name)}
-				<KostenControl oneLine cost={currentSchwelle.Kosten} {data} />
-				)</small
-			>
-		{/if}
+		<h4>
+			{getText(reihe.Name)}
+			{#if currentSchwelle}
+				{#if currentSchwelle.Name}
+					<small>({getText(currentSchwelle.Name)})</small>
+				{/if}
+				<small><KostenControl oneLine cost={currentSchwelle.Kosten} {data} /></small>
+			{/if}
+		</h4>
 		<input type="number" bind:value={selectedArray[0]} />
 		{#if char && data && quantile.length > 1}
 			{#if reihe.Verteilung && reihe.Verteilung.length > 0}
@@ -92,23 +93,25 @@
 					}}
 				/>
 			{/if}
+<div style="margin: 2rem;">
 
-			<RangeSlider
-				first="label"
-				last="label"
-				float
-				formatter={(v) => `${v} ${reihe?.einheit}`}
-				bind:values={selectedArray}
-				pips={true}
-				pipstep={Math.round(
-					((Math.max(...quantile.map((x) => x.Wert)) - Math.min(...quantile.map((x) => x.Wert))) /
+	<RangeSlider
+	first="label"
+	last="label"
+	float
+	formatter={(v) => `${v} ${reihe?.einheit}`}
+	bind:values={selectedArray}
+	pips={true}
+	pipstep={Math.round(
+		((Math.max(...quantile.map((x) => x.Wert)) - Math.min(...quantile.map((x) => x.Wert))) /
 						5) *
 						100
 				)}
 				step={0.01}
 				min={Math.min(...quantile.map((x) => x.Wert))}
 				max={Math.max(...quantile.map((x) => x.Wert))}
-			/>
+				/>
+			</div>
 		{:else if quantile.length == 1}
 			{`${quantile[0].Wert} ${reihe?.einheit}`}
 		{:else if quantile.length == 0}
@@ -116,3 +119,18 @@
 		{/if}
 	</label>
 {/if}
+
+<style lang="scss">
+	label{
+		overflow-x: hidden;
+		
+	}
+	h4 {
+		margin-top: 2rem;
+		margin-bottom: 0.25rem;
+		small {
+			font-weight: normal;
+			font-style: normal;
+		}
+	}
+</style>

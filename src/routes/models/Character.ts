@@ -1,10 +1,11 @@
-import { i, number, or } from "mathjs";
-import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe, _Besonderheit } from "src/data/nota.g";
+import { derivative, i, number, or } from "mathjs";
+import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe, _Besonderheit, EntwicklungDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen } from "src/data/nota.g";
 import StoreManager from "../../misc/StoreManager";
 import { dataset_dev } from "svelte/internal";
 import { type Readable, get, type Writable } from "svelte/store";
 import { derivedLazy } from "../lazyDerivied";
 import { distinct, filterNull } from "../misc";
+import * as mathjs from 'mathjs'
 
 import { Data } from "./Data";
 
@@ -67,6 +68,20 @@ export const EIGENRSCHAFTEN = [
     'Konstitution',
     'Fokus',
     'Einfluss',
+] as const;
+export const EIGENRSCHAFTEN_SHORT = [
+    'MU',
+    'GL',
+    'KL',
+    'IN',
+    'GE',
+    'PR',
+    'SY',
+    'AP',
+    'ST',
+    'KO',
+    'FO',
+    'EI',
 ] as const;
 class EigenschaftenDataAccess {
 
@@ -1287,24 +1302,24 @@ export class Charakter {
 
 
         this.eigenrschaften = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenData(att, this.storeManager,)] as const)) as any;
-        this.eigenschaftenData = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenDataAccess(this.storeManager, this.eigenrschaften[att], this.startPropertysStore, this.getMods(att))] as const)) as any;
+        this.eigenschaftenData = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenDataAccess(this.storeManager, this.eigenrschaften[att], this.startPropertysStore, this.getMod(att))] as const)) as any;
 
-        this.ausdauerStore = this.storeManager.derived([this.eigenschaftenData.Konstitution.currentStore, this.eigenschaftenData.Stärke.currentStore, this.getMods('Ausdauer')], ([ko, st, { addMod, multiMod }]) => {
+        this.ausdauerStore = this.storeManager.derived([this.eigenschaftenData.Konstitution.currentStore, this.eigenschaftenData.Stärke.currentStore, this.getMod('Ausdauer')], ([ko, st, { addMod, multiMod }]) => {
             const raw = 70 - (ko + ko + st);
             const r = raw * multiMod + addMod;
             return Math.ceil(r);
         })
-        this.initiativeStore = this.storeManager.derived([this.eigenschaftenData.Mut.currentStore, this.eigenschaftenData.Intuition.currentStore, this.eigenschaftenData.Gewandtheit.currentStore, this.getMods('Initiative')], ([MU, IN, GE, { addMod, multiMod }]) => {
+        this.initiativeStore = this.storeManager.derived([this.eigenschaftenData.Mut.currentStore, this.eigenschaftenData.Intuition.currentStore, this.eigenschaftenData.Gewandtheit.currentStore, this.getMod('Initiative')], ([MU, IN, GE, { addMod, multiMod }]) => {
             const raw = 100 - (MU + IN + GE + GE);
             const r = raw * multiMod + addMod;
             return Math.ceil(r);
         })
-        this.geschwindigkeitStore = this.storeManager.derived([this.getMods('Geschwindigkeit')], ([{ addMod, multiMod }]) => {
+        this.geschwindigkeitStore = this.storeManager.derived([this.getMod('Geschwindigkeit')], ([{ addMod, multiMod }]) => {
             const raw = 6;
             const r = raw * multiMod + addMod;
             return Math.ceil(r);
         })
-        this.weightStore = this.storeManager.derived([this.propertyScaleData, this.getMods('Gewicht')], ([propertyScaleData, { addMod, multiMod }]) => {
+        this.weightStore = this.storeManager.derived([this.propertyScaleData, this.getMod('Gewicht')], ([propertyScaleData, { addMod, multiMod }]) => {
             const height = (propertyScaleData['größe'] ?? 0) / 100;
             const bmi = propertyScaleData['bmi'] ?? 0;
 
@@ -1313,13 +1328,13 @@ export class Charakter {
             return Math.floor(kg * 10) / 10;
         });
 
-        this.kraftStore = this.storeManager.derived([this.eigenschaftenData.Stärke.currentStore, this.weightStore, this.getMods('Kraft')], ([x, w, { addMod, multiMod }]) => {
+        this.kraftStore = this.storeManager.derived([this.eigenschaftenData.Stärke.currentStore, this.weightStore, this.getMod('Kraft')], ([x, w, { addMod, multiMod }]) => {
             const f = 91 / 30 * (1 / (x * x)) + 1529 / 300 * (1 / x) + 3 / 50;
             const raw = f * w;
             const r = raw * multiMod + addMod;
             return Math.ceil(r);
         })
-        this.glückMaxStore = this.storeManager.derived([this.eigenschaftenData.Glück.currentStore, this.getMods('GlücksPunkte')], ([x, { addMod, multiMod }]) => {
+        this.glückMaxStore = this.storeManager.derived([this.eigenschaftenData.Glück.currentStore, this.getMod('GlücksPunkte')], ([x, { addMod, multiMod }]) => {
             const raw = 21 - x;
             const r = raw * multiMod + addMod;
             return Math.ceil(r);
@@ -1631,7 +1646,169 @@ export class Charakter {
 
     }
 
-    private getMods(keyt: keyof EigenschaftsMods_lebewesen) {
+
+    public getPropertyKeys() {
+        const keys: Record<string, number> = {};
+        const add = (input: EntwicklungDefinition_lebewesen) => {
+            for (const { id, Reihenfolge } of ([] as { id: string, Reihenfolge: number }[])
+                .concat(input.Berechnung ?? [])
+                .concat(input.Punkt ?? [])
+                .concat(input.Reihe ?? [])) {
+
+                if (keys[id] === undefined) {
+                    keys[id] = Reihenfolge;
+                }
+            }
+        }
+
+        if (this.organismus?.morph.Entwiklung) {
+            add(this.organismus?.morph.Entwiklung);
+        }
+        if (this.organismus?.art.Entwiklung) {
+            add(this.organismus?.art.Entwiklung);
+        }
+        if (this.organismus?.gattung.Entwiklung) {
+            add(this.organismus?.gattung.Entwiklung);
+        }
+        return Object.keys(keys).sort((a, b) => {
+            if (keys[a] == keys[b]) {
+                return a.localeCompare(b);
+            }
+            return keys[a] - keys[b];
+        });
+    }
+
+
+    public getPropertyStore(): Readable<{ [key: string]: number }> {
+        return this.storeManager.derived([this.getPropertysScopeStore(), this.getMods()], ([scope, mods]) => {
+            return Object.fromEntries(Object.keys(scope).filter(x => typeof scope[x] == "function").map(x => {
+                const v = scope[x]();
+                if (mods[x] !== undefined) {
+                    return ([x, (v * mods[x].multiMod) + mods[x].addMod]);
+                }
+                return ([x, v])
+            }))
+        })
+    }
+
+    public getPropertyTypeStore() {
+        return this.storeManager.derived(this.organismusStore, organismus => {
+
+            if (organismus == undefined) {
+                return {};
+            }
+
+            const keys: Record<string, (ReiheDefinition_lebewesen & { type: 'reihe' }) |
+                (PunktDefintion_lebewesen & { type: 'punkt' })
+                | (FormelDefintion_lebewesen & { type: 'calc' })> = {};
+            const add = (input: EntwicklungDefinition_lebewesen) => {
+
+                for (const r of input.Reihe ?? []) {
+                    if (keys[r.id] === undefined) {
+                        keys[r.id] = { ...r, type: 'reihe' };
+                    }
+                }
+                for (const r of input.Punkt ?? []) {
+                    if (keys[r.id] === undefined) {
+                        keys[r.id] = { ...r, type: 'punkt' };
+                    }
+                }
+                for (const r of input.Berechnung ?? []) {
+                    if (keys[r.id] === undefined) {
+                        keys[r.id] = { ...r, type: 'calc' };
+                    }
+                }
+
+            }
+
+            if (organismus.morph.Entwiklung) {
+                add(organismus.morph.Entwiklung);
+            }
+            if (organismus.art.Entwiklung) {
+                add(organismus.art.Entwiklung);
+            }
+            if (organismus.gattung.Entwiklung) {
+                add(organismus.gattung.Entwiklung);
+            }
+            return keys;
+
+
+        })
+    }
+
+    private getPropertysScopeStore(): Readable<any> {
+
+        const store = this.storeManager.derived([this.organismusStore, this.propertyScaleData, ...EIGENRSCHAFTEN.map(x => this.eigenschaftenData[x].currentStore)], ([organismus, property, ...eigenrschaften]) => {
+
+            const scope: any = {
+            };
+
+            for (let i = 0; i < EIGENRSCHAFTEN.length; i++) {
+                const key = EIGENRSCHAFTEN_SHORT[i];
+                scope[key] = eigenrschaften[i];
+            }
+
+            const buildScope = (e: EntwicklungDefinition_lebewesen | undefined) => {
+                if (!e) {
+                    return;
+                }
+                for (const r of e.Reihe ?? []) {
+                 
+                    mathjs.evaluate(`${r.id}()= ${property[r.id]??0}`, scope);
+                }
+                for (const p of e.Punkt ?? []) {
+                    mathjs.evaluate(`${p.id}()= ${property[p.id]??0}`, scope);
+                }
+                for (const c of e.Berechnung ?? []) {
+                    mathjs.evaluate(`${c.id}()= ${c.Formel}`, scope);
+                }
+            }
+            buildScope(organismus?.gattung.Entwiklung);
+            buildScope(organismus?.art.Entwiklung);
+            buildScope(organismus?.morph.Entwiklung);
+            return scope;
+
+        });
+        return store;
+
+    }
+
+    private getMods() {
+        return this.storeManager.derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore, this.ageStore, this.propertyScaleData], ([o, b, f, t, age, propertyScale]) => {
+
+            return Object.fromEntries((this.getPropertyKeys() as (keyof EigenschaftsMods_lebewesen)[]).map((keyt) => {
+                const mods = Object.entries(b/* if null it was used to early */).flatMap(([key, value]) => {
+                    return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.[keyt] ?? [])
+                })
+                    .concat(Object.entries(f).flatMap(([key, value]) => {
+                        return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.fertigkeitenMap[key].Stufe[i].Mods?.Eigenschaften?.[keyt] ?? [])
+                    }))
+                    .concat(Object.entries(t).flatMap(([key, value]) => {
+                        return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.[keyt] ?? [])
+                    }))
+                    .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Eigenschaften?.[keyt] ?? []) ?? [])
+                    .concat(o?.morph.Mods?.Eigenschaften?.[keyt] ?? [])
+                    .concat(o?.morph.Entwiklung.Reihe?.flatMap(reihe => {
+                        if (propertyScale[reihe.id]) {
+                            const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
+                            return currentSchwelle?.Mods?.Eigenschaften?.[keyt] ?? [];
+                        }
+
+                        return [];
+                    }) ?? [])
+
+                    .concat(o?.art.Mods?.Eigenschaften?.[keyt] ?? [])
+                    .concat(o?.gattung.Mods?.Eigenschaften?.[keyt] ?? [])
+                    .flatMap(x => x);
+                const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
+                const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
+
+
+                return [keyt, { addMod, multiMod }];
+            }));
+        });
+    }
+    private getMod(keyt: keyof EigenschaftsMods_lebewesen) {
         return this.storeManager.derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore, this.ageStore, this.propertyScaleData], ([o, b, f, t, age, propertyScale]) => {
             const mods = Object.entries(b/* if null it was used to early */).flatMap(([key, value]) => {
                 return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.[keyt] ?? [])
