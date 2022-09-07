@@ -1773,6 +1773,7 @@ export class Charakter {
             buildScope(organismus?.gattung.Entwiklung);
             buildScope(organismus?.art.Entwiklung);
             buildScope(organismus?.morph.Entwiklung);
+            console.debug("Generate Scope", scope);
             return scope;
 
         });
