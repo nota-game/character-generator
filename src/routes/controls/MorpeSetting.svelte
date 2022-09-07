@@ -137,7 +137,7 @@
 			<!-- svelte-ignore a11y-label-has-associated-control -->
 			<!-- <label> -->
 				{#if propStore && $propStore && propTypeStore && $propTypeStore}
-					{#if $propTypeStore[key].type == 'calc'}
+					{#if $propTypeStore[key]?.type == 'calc'}
 						{@const reihe = $propTypeStore[key]}
 						<label>
 							<h4>
@@ -146,7 +146,7 @@
 						</label>
 						{$propStore[key].toLocaleString() }
 						{reihe.einheit}
-					{:else if $propTypeStore[key].type == 'reihe'}
+					{:else if $propTypeStore[key]?.type == 'reihe'}
 						{@const reihe = $propTypeStore[key]}
 						<EntwicklungReihe {char} {data} {reihe} />
 					{/if}
@@ -163,7 +163,7 @@
 
 <style lang="scss">
 	label{
-		overflow-x: hidden;
+		padding: 1rem;
 		
 	}
 	h4 {

@@ -122,7 +122,7 @@
 
 <style lang="scss">
 	label{
-		overflow-x: hidden;
+		// overflow-x: hidden;
 		
 	}
 	h4 {
