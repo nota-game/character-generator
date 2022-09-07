@@ -1760,20 +1760,25 @@ export class Charakter {
                 }
                 for (const r of e.Reihe ?? []) {
                     console.debug("Evaluet Reihe", r.id);
-                    mathjs.evaluate(`${r.id}()= ${property[r.id]??0}`, scope);
+                    mathjs.evaluate(`${r.id}()= ${property[r.id] ?? 0}`, scope);
                 }
                 for (const p of e.Punkt ?? []) {
                     console.debug("Evaluet Punkt", p.id);
-                    mathjs.evaluate(`${p.id}()= ${property[p.id]??0}`, scope);
+                    mathjs.evaluate(`${p.id}()= ${property[p.id] ?? 0}`, scope);
                 }
                 for (const c of e.Berechnung ?? []) {
                     console.debug("Evaluet calculate", c.id);
                     mathjs.evaluate(`${c.id}()= ${c.Formel}`, scope);
                 }
             }
+            console.debug("Evalueta Scope", organismus);
+            console.debug("Evalueta Organismen", this.stammdaten.Instance.Daten.Organismen.Entwiklung);
             buildScope(this.stammdaten.Instance.Daten.Organismen.Entwiklung);
+            console.debug("Evalueta Gattung", organismus?.gattung.Entwiklung);
             buildScope(organismus?.gattung.Entwiklung);
+            console.debug("Evalueta Art", organismus?.art.Entwiklung);
             buildScope(organismus?.art.Entwiklung);
+            console.debug("Evalueta Morph", organismus?.morph.Entwiklung);
             buildScope(organismus?.morph.Entwiklung);
             console.debug("Generate Scope", scope);
             return scope;
@@ -1787,27 +1792,27 @@ export class Charakter {
         return this.storeManager.derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore, this.ageStore, this.propertyScaleData], ([o, b, f, t, age, propertyScale]) => {
             return Object.fromEntries((this.getPropertyKeys()).map((keyt) => {
                 const mods = Object.entries(b/* if null it was used to early */).flatMap(([key, value]) => {
-                    return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
+                    return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
                 })
                     .concat(Object.entries(f).flatMap(([key, value]) => {
-                        return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.fertigkeitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
+                        return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.fertigkeitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
                     }))
                     .concat(Object.entries(t).flatMap(([key, value]) => {
-                        return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
+                        return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
                     }))
-                    .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? []) ?? [])
-                    .concat(o?.morph.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
+                    .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? []) ?? [])
+                    .concat(o?.morph.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
                     .concat(o?.morph.Entwiklung?.Reihe?.flatMap(reihe => {
                         if (propertyScale[reihe.id]) {
                             const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
-                            return currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [];
+                            return currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [];
                         }
 
                         return [];
                     }) ?? [])
 
-                    .concat(o?.art.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
-                    .concat(o?.gattung.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
+                    .concat(o?.art.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+                    .concat(o?.gattung.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
                     .flatMap(x => x);
                 const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
                 const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
@@ -1817,30 +1822,30 @@ export class Charakter {
             }));
         });
     }
-    private getMod(keyt:string) {
+    private getMod(keyt: string) {
         return this.storeManager.derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore, this.ageStore, this.propertyScaleData], ([o, b, f, t, age, propertyScale]) => {
             const mods = Object.entries(b/* if null it was used to early */).flatMap(([key, value]) => {
-                return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
+                return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
             })
                 .concat(Object.entries(f).flatMap(([key, value]) => {
-                    return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.fertigkeitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
+                    return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.fertigkeitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
                 }))
                 .concat(Object.entries(t).flatMap(([key, value]) => {
-                    return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
+                    return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
                 }))
-                .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? []) ?? [])
-                .concat(o?.morph.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
+                .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? []) ?? [])
+                .concat(o?.morph.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
                 .concat(o?.morph.Entwiklung?.Reihe?.flatMap(reihe => {
                     if (propertyScale[reihe.id]) {
                         const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
-                        return currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [];
+                        return currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [];
                     }
 
                     return [];
                 }) ?? [])
 
-                .concat(o?.art.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
-                .concat(o?.gattung.Mods?.Eigenschaften?.Mod.filter(m=>m.Eigenschaft==keyt) ?? [])
+                .concat(o?.art.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+                .concat(o?.gattung.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
                 .flatMap(x => x);
             const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
             const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
