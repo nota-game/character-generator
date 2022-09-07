@@ -1759,13 +1759,15 @@ export class Charakter {
                     return;
                 }
                 for (const r of e.Reihe ?? []) {
-                 
+                    console.debug("Evaluet Reihe", r.id);
                     mathjs.evaluate(`${r.id}()= ${property[r.id]??0}`, scope);
                 }
                 for (const p of e.Punkt ?? []) {
+                    console.debug("Evaluet Punkt", p.id);
                     mathjs.evaluate(`${p.id}()= ${property[p.id]??0}`, scope);
                 }
                 for (const c of e.Berechnung ?? []) {
+                    console.debug("Evaluet calculate", c.id);
                     mathjs.evaluate(`${c.id}()= ${c.Formel}`, scope);
                 }
             }
