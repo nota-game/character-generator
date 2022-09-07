@@ -1694,7 +1694,7 @@ export class Charakter {
                     return ([x, v])
                 } catch (error) {
                     console.debug(`faild to get ${x}`, error);
-                    return 0;
+                    return [x, 0];
                 }
             }))
         })
