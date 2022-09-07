@@ -1746,8 +1746,12 @@ export class Charakter {
 
         const store = this.storeManager.derived([this.organismusStore, this.propertyScaleData, ...EIGENRSCHAFTEN.map(x => this.eigenschaftenData[x].currentStore)], ([organismus, property, ...eigenrschaften]) => {
 
+            
             const scope: any = {
             };
+            if(organismus?.morph== undefined){
+                return scope;
+            }
 
             for (let i = 0; i < EIGENRSCHAFTEN.length; i++) {
                 const key = EIGENRSCHAFTEN_SHORT[i];
