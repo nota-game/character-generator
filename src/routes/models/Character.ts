@@ -1685,11 +1685,17 @@ export class Charakter {
     public getPropertyStore(): Readable<{ [key: string]: number }> {
         return this.storeManager.derived([this.getPropertysScopeStore(), this.getMods()], ([scope, mods]) => {
             return Object.fromEntries(Object.keys(scope).filter(x => typeof scope[x] == "function").map(x => {
-                const v = scope[x]();
-                if (mods[x] !== undefined) {
-                    return ([x, (v * mods[x].multiMod) + mods[x].addMod]);
+                try {
+
+                    const v = scope[x]();
+                    if (mods[x] !== undefined) {
+                        return ([x, (v * mods[x].multiMod) + mods[x].addMod]);
+                    }
+                    return ([x, v])
+                } catch (error) {
+                    console.debug(`faild to get ${x}`, error);
+                    return 0;
                 }
-                return ([x, v])
             }))
         })
     }
@@ -1746,12 +1752,9 @@ export class Charakter {
 
         const store = this.storeManager.derived([this.organismusStore, this.propertyScaleData, ...EIGENRSCHAFTEN.map(x => this.eigenschaftenData[x].currentStore)], ([organismus, property, ...eigenrschaften]) => {
 
-            
+
             const scope: any = {
             };
-            if(organismus?.morph== undefined){
-                return scope;
-            }
 
             for (let i = 0; i < EIGENRSCHAFTEN.length; i++) {
                 const key = EIGENRSCHAFTEN_SHORT[i];
