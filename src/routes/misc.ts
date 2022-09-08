@@ -98,17 +98,19 @@ export function getTextFertigkeit(p: FertigkeitDefinition_fertigkeit | undefined
     if (!p) {
         return '';
     }
+
     const numbers = ['Ⅰ', 'Ⅱ', "Ⅲ", 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ', 'Ⅺ', 'Ⅻ']
-    const base = [
+    const list = [
         ...p.Stufe.filter((_, i) => i < stufe).map((x, i) => ({ name: x.Name, stufe: i + 1 })).reverse().filter(x => x.name),
         { name: p.Name, stufe: 1 }
-    ][0];
+    ];
+    const base = list[0];
     const next = [
         ...p.Stufe.map((x, i) => ({ name: x.Name, stufe: i + 1 })).filter((x) => x.stufe > base.stufe).filter(x => x.name)
     ][0]?.stufe ?? p.Stufe.length + 1;
 
     if (base.stufe < next - 1) {
-        return `${getText(base.name)} ${numbers[stufe - base.stufe + 1] ?? stufe - base.stufe + 1}`;
+        return `${getText(base.name)} ${numbers[stufe - base.stufe] ?? stufe - base.stufe + 1}`;
 
     } else {
         return getText(base.name);
