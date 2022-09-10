@@ -1285,7 +1285,7 @@ export class Charakter {
                     .concat(Object.entries(fertigkeiten).filter(x => (x[1] ?? 0) > 0)
                         .flatMap(([bid, stufe]) => {
                             return this.stammdaten.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit).filter(x => x.Id == bid)[0]
-                                .Stufe[stufe! - 1].Mods
+                                ?.Stufe[stufe! - 1]?.Mods
                                 ?.Tags?.Tag.map(x => x.Id) ?? [];
                         }))
                     .reduce((p, c) => { p[c] = true; return p; }, {} as Record<string, true | undefined>)
