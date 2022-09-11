@@ -246,7 +246,7 @@ class FertigkeitInfo {
             const array = [];
             for (let i = fixed[fertigkeitData.Id] ?? 0; i < (purchased[fertigkeitData.Id] ?? 0); i++) {
                 array.push(
-                    { Id: costId, Wert: -1 * fertigkeitData.Stufe[i - 1].Kosten }
+                    { Id: costId, Wert: -1 * fertigkeitData.Stufe[i].Kosten }
                 );
 
             }
@@ -380,7 +380,7 @@ class BesonderheitenInfo {
             const array = [];
             for (let i = fixed[besonderheitData.Id] ?? 0; i < (purchased[besonderheitData.Id] ?? 0); i++) {
                 array.push(
-                    besonderheitData.Stufe[i - 1].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }))
+                    besonderheitData.Stufe[i].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }))
                 );
 
             }
@@ -764,7 +764,7 @@ export class Charakter {
         }
 
         this.besonderheitenPurchasedDataStore.set(filter(v.besonderheiten, this.stammdaten.besonderheitenMap));
-        this.fertigkeitenPurchasedDataStore.set(filter(v.fertigkeiten, this.stammdaten.fernkampfMap));
+        this.fertigkeitenPurchasedDataStore.set(filter(v.fertigkeiten, this.stammdaten.fertigkeitenMap));
 
         this.propertyScaleData.set(v.sekundäreEigenschaften);
 
