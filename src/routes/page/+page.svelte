@@ -2,7 +2,7 @@
 	import { afterUpdate, onMount } from 'svelte';
 	import { Data } from '../models/Data';
 	import { Charakter, EIGENRSCHAFTEN, type CharakterData } from '../models/Character';
-	import { getText, getTextBesonderheit, getTextFertigkeit } from '../misc';
+	import { getText, getTextBesonderheit, getTextFertigkeit, getTextTalent } from '../misc';
 
 	import Hitman from '../controls/hitman.svelte';
 	import { local } from '../storage';
@@ -303,9 +303,9 @@
 									<tr>
 										<td>
 											{#if char.talentBase[t] == 0}
-												<span class="light"> {t}</span>
+												<span class="light"> {getTextTalent(data.talentMap[t], 'NameProbe')}</span>
 											{:else}
-												{t}
+												{getTextTalent(data.talentMap[t], 'NameProbe')}
 											{/if}
 										</td>
 										<td>
