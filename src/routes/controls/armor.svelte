@@ -1747,4 +1747,11 @@
 	// text[id|='Kopf'] {
 	// 	fill: white;
 	// }
+	@media print{
+		:root{
+			--color: black;
+			--background-color: white;
+			--primary: lightgray;
+		}
+	}
 </style>
