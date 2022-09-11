@@ -74,7 +74,7 @@ export function getTextTalent(p: TalentDefinition_talent | undefined, format: 'N
     for (let i = 0; i < (p.Probe.Mut?.length ?? 0); i++) {
         probe.push('MU');
     }
-    for (let i = 0; i < (p.Probe.Präzision?.length ?? 0); i++) {
+    for (let i = 0; i < (p.Probe.Feinmotorik?.length ?? 0); i++) {
         probe.push('FM');
     }
     for (let i = 0; i < (p.Probe.Stärke?.length ?? 0); i++) {
