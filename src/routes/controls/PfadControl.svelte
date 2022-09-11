@@ -38,7 +38,7 @@
 {#if char && pfad && data}
 	{#if anyTaken === showTaken}
 		<h3>
-			{getText(pfad.Name)}
+			{getText(pfad.Name,char)}
 		</h3>
 		<RequirementsControl
 			{char}
@@ -47,7 +47,7 @@
 			requirement={pfad?.Voraussetzung}
 		/>
 
-		{getText(pfad.Beschreibung)}
+		{getText(pfad.Beschreibung,char)}
 		<!-- <div style="display: flex; flex-wrap: wrap; flex-direction: column; justify-content: space-between;"> -->
 		<div class="columns">
 			{#if pfad.Levels?.Level}

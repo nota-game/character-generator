@@ -106,7 +106,7 @@
 						if (l === undefined) return age;
 						else
 							return (
-								distinct(l.map((x) => (x ? getText(x.Name) : '')))
+								distinct(l.map((x) => (x ? getText(x.Name,char) : '')))
 									.filter((x) => x != '')
 									.join(', ') + age
 							);
@@ -124,11 +124,11 @@
 			</label>
 			{#if selectedL}
 				{#each selectedL as l}
-					{getText(l.Name)}
+					{getText(l.Name,char)}
 					{#if l.Spielbar}
 						<KostenControl cost={l.Spielbar.Kosten} {data} {char} />
 					{/if}
-					{getText(l.Beschreibung)}
+					{getText(l.Beschreibung,char)}
 				{/each}
 			{/if}
 	

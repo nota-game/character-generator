@@ -103,17 +103,17 @@
 
 {#if data}
 	{#each data.Instance.Daten.Organismen.Gattung ?? [] as g}
-		<h2>{getText(g.Name)}</h2>
-		<p>{getText(g.Beschreibung)}</p>
+		<h2>{getText(g.Name,char)}</h2>
+		<p>{getText(g.Beschreibung,char)}</p>
 		{#each g.Art as a}
-			<h3>{getText(a.Name)}</h3>
-			<p>{getText(a.Beschreibung)}</p>
+			<h3>{getText(a.Name,char)}</h3>
+			<p>{getText(a.Beschreibung,char)}</p>
 			{#each a.Morphe.Morph as m}
 				<label>
 					<input type="radio" value={m.Id} bind:group={selectedMorphId} />
-					{getText(m.Name)}
+					{getText(m.Name,char)}
 				</label>
-				<p>{getText(m.Beschreibung)}</p>
+				<p>{getText(m.Beschreibung,char)}</p>
 			{/each}
 		{/each}
 	{/each}

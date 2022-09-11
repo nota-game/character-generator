@@ -14,7 +14,7 @@ export function join(array: string[], delimeter?: string): string {
     if (!delimeter) {
         delimeter = ', '
     }
-    return array.reduce((p,c)=>p.length==0?c: p+delimeter+c,"");
+    return array.reduce((p, c) => p.length == 0 ? c : p + delimeter + c, "");
 }
 
 export function getText(p: Lokalisierungen_misc | undefined, options?: { sex: Geschlecht_misc } | Charakter): string {
@@ -95,7 +95,7 @@ export function getTextTalent(p: TalentDefinition_talent | undefined, format: 'N
         return `${probe[0]}•${probe[1]}•${probe[2]}`
     throw Error('Unbekantes Format')
 }
-export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number): string {
+export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter): string {
     if (!p) {
         return '';
     }
@@ -110,13 +110,13 @@ export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | und
     ][0]?.stufe ?? p.Stufe.length + 1;
 
     if (base.stufe < next - 1) {
-        return `${getText(base.name)} ${numbers[stufe - base.stufe] ?? stufe - base.stufe + 1}`;
+        return `${getText(base.name, options)} ${numbers[stufe - base.stufe] ?? stufe - base.stufe + 1}`;
 
     } else {
-        return getText(base.name);
+        return getText(base.name, options);
     }
 }
-export function getTextFertigkeit(p: FertigkeitDefinition_fertigkeit | undefined, stufe: number): string {
+export function getTextFertigkeit(p: FertigkeitDefinition_fertigkeit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter): string {
     if (!p) {
         return '';
     }
@@ -132,10 +132,10 @@ export function getTextFertigkeit(p: FertigkeitDefinition_fertigkeit | undefined
     ][0]?.stufe ?? p.Stufe.length + 1;
 
     if (base.stufe < next - 1) {
-        return `${getText(base.name)} ${numbers[stufe - base.stufe] ?? stufe - base.stufe + 1}`;
+        return `${getText(base.name, options)} ${numbers[stufe - base.stufe] ?? stufe - base.stufe + 1}`;
 
     } else {
-        return getText(base.name);
+        return getText(base.name, options);
     }
 }
 

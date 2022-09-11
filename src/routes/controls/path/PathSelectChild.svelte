@@ -81,7 +81,7 @@
 		{/if}
 		<div style="display: flex; flex-direction: row; justify-content:space-between ;">
 			<h4 style="margin-bottom: 1em;">
-				{l?.Name ? getText(l?.Name) : l?.Id} ({$level}/{l?.WiederhoteNutzung})
+				{l?.Name ? getText(l?.Name, char) : l?.Id} ({$level}/{l?.WiederhoteNutzung})
 			</h4>
 		</div>
 
@@ -104,10 +104,10 @@
 					{#if t.old != t.new}
 						<div class:hideOver={has}>
 							{#if t.old != 0}
-								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.old)} =>
-								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.old,char)} =>
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new,char)}
 							{:else}
-								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new,char)}
 							{/if}
 
 							<!-- {#if t.newEp - t.oldEp != 0} -->
@@ -119,10 +119,10 @@
 						<div class:hideOver={has}>
 							<span style="text-decoration: wavy;">
 								{#if t.oldIgnored != 0}
-									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.oldIgnored)} =>
-									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored)}
+									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.oldIgnored,char)} =>
+									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored,char)}
 								{:else}
-									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored)}
+									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored,char)}
 								{/if}
 							</span>
 
@@ -137,10 +137,10 @@
 					{#if t.old != t.new}
 						<div class:hideOver={has}>
 							{#if t.old != 0}
-								{getTextBesonderheit(data.besonderheitenMap[t.key], t.old)} =>
-								{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.old,char)} =>
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.new,char)}
 							{:else}
-								{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.new,char)}
 							{/if}
 
 							<!-- {#if t.newEp - t.oldEp != 0} -->
@@ -152,10 +152,10 @@
 						<div class:hideOver={has}>
 							<span style="text-decoration: wavy;">
 								{#if t.oldIgnored != 0}
-									{getTextBesonderheit(data.besonderheitenMap[t.key], t.oldIgnored)} =>
-									{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored)}
+									{getTextBesonderheit(data.besonderheitenMap[t.key], t.oldIgnored,char)} =>
+									{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored,char)}
 								{:else}
-									{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored)}
+									{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored,char)}
 								{/if}
 							</span>
 
@@ -191,7 +191,7 @@
 		{#if simulationHasStore && $simulationHasStore}
 			<p class="showOver">
 				{#each $simulationHasStore.changedTalents as t}
-					<div >
+					<div>
 						{getText(data.talentMap[t.key].Name)}
 						{#if t.new != t.old}
 							{t.old}=>{t.new}
@@ -204,13 +204,13 @@
 
 				{#each $simulationHasStore.changedFertigkeiten as t}
 					{#if t.old != t.new}
-						<div >
+						<div>
 							{#if t.new != 0}
-								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.old)} =>
-								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.old, char)} =>
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new, char)}
 							{:else}
 								<span style="text-decoration: line-through;">
-									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new)}
+									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.new, char)}
 								</span>
 							{/if}
 
@@ -220,13 +220,13 @@
 						</div>
 					{/if}
 					{#if t.oldIgnored != t.newIgnored && t.new != t.newIgnored}
-						<div >
+						<div>
 							{#if t.newIgnored != 0}
-								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.oldIgnored)} =>
-								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored)}
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.oldIgnored, char)} =>
+								{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored, char)}
 							{:else}
 								<span style="text-decoration: line-through;">
-									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored)}
+									{getTextFertigkeit(data.fertigkeitenMap[t.key], t.newIgnored, char)}
 								</span>
 							{/if}
 
@@ -239,13 +239,13 @@
 
 				{#each $simulationHasStore.changedBestonderheiten as t}
 					{#if t.old != t.new}
-						<div >
+						<div>
 							{#if t.new != 0}
-								{getTextBesonderheit(data.besonderheitenMap[t.key], t.old)} =>
-								{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.old, char)} =>
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.new, char)}
 							{:else}
 								<span style="text-decoration: line-through;">
-									{getTextBesonderheit(data.besonderheitenMap[t.key], t.new)}
+									{getTextBesonderheit(data.besonderheitenMap[t.key], t.new, char)}
 								</span>
 							{/if}
 
@@ -255,13 +255,13 @@
 						</div>
 					{/if}
 					{#if t.oldIgnored != t.newIgnored && t.new != t.newIgnored}
-						<div >
+						<div>
 							{#if t.newIgnored != 0}
-								{getTextBesonderheit(data.besonderheitenMap[t.key], t.oldIgnored)} =>
-								{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored)}
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.oldIgnored, char)} =>
+								{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored, char)}
 							{:else}
 								<span style="text-decoration: line-through;">
-									{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored)}
+									{getTextBesonderheit(data.besonderheitenMap[t.key], t.newIgnored, char)}
 								</span>
 							{/if}
 

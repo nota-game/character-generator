@@ -72,7 +72,7 @@
 			<KostenControl {char} {data} cost={buyCost} bind:isToexpensiv />
 		</small>
 		<h3>
-			{getTextBesonderheit(besonderheit, 1)}
+			{getTextBesonderheit(besonderheit, 1,char)}
 		</h3>
 		<RequirementsControl
 			{char}
@@ -81,7 +81,7 @@
 			requirement={besonderheit?.Stufe[$boughtLevel]?.Voraussetzung}
 		/>
 		<p>
-			{getText(besonderheit.Stufe[$boughtLevel].Beschreibung)}
+			{getText(besonderheit.Stufe[$boughtLevel].Beschreibung,char)}
 		</p>
 	{:else if showTaken === true && $boughtLevel > 0}
 		<small class="right-handler"
@@ -97,16 +97,16 @@
 		<h3>
 			{#if $actualLevel == 0}
 				<span class="missing">
-					{getTextBesonderheit(besonderheit, $boughtLevel)}
+					{getTextBesonderheit(besonderheit, $boughtLevel,char)}
 					<small> (Voraussetzung nicht erfüllt)</small></span
 				>
 			{:else if $actualLevel !== $boughtLevel}
-				{getTextBesonderheit(besonderheit, $actualLevel)}
+				{getTextBesonderheit(besonderheit, $actualLevel,char)}
 				<small class="missing">
-					(Voraussetzung für {getTextBesonderheit(besonderheit, $boughtLevel)} nicht erfüllt)</small
+					(Voraussetzung für {getTextBesonderheit(besonderheit, $boughtLevel,char)} nicht erfüllt)</small
 				>
 			{:else}
-				{getTextBesonderheit(besonderheit, $boughtLevel)}
+				{getTextBesonderheit(besonderheit, $boughtLevel,char)}
 			{/if}
 		</h3>
 		<RequirementsControl
@@ -116,18 +116,18 @@
 			requirement={besonderheit?.Stufe[$boughtLevel - 1]?.Voraussetzung}
 		/>
 		<p>
-			{getText(besonderheit.Stufe[$boughtLevel - 1].Beschreibung)}
+			{getText(besonderheit.Stufe[$boughtLevel - 1].Beschreibung,char)}
 		</p>
 
 		{#if $canBeBoght}
 			<div>
 				<a
 					href="#"
-					data-tooltip={getText(besonderheit.Stufe[$boughtLevel].Beschreibung)}
+					data-tooltip={getText(besonderheit.Stufe[$boughtLevel].Beschreibung,char)}
 					disabled={$canBeBoght ? undefined : true}
 					on:click={(e) => buy(1, e)}
 					>Aufwerten <small
-						>({getTextBesonderheit(besonderheit, $boughtLevel + 1)}
+						>({getTextBesonderheit(besonderheit, $boughtLevel + 1,char)}
 						<KostenControl oneLine {char} {data} cost={buyCost} />)
 					</small></a
 				>
@@ -145,11 +145,11 @@
 					href="#"
 					data-tooltip={($canBeSoledReason?.length ?? 0) > 0
 						? $canBeSoledReason
-						: getText(besonderheit.Stufe[$boughtLevel - 2].Beschreibung)}
+						: getText(besonderheit.Stufe[$boughtLevel - 2].Beschreibung,char)}
 					disabled={$canBeSoled ? undefined : true}
 					on:click={(e) => buy(-1, e)}
 					>Abwerten <small
-						>({getTextBesonderheit(besonderheit, $boughtLevel - 1)}
+						>({getTextBesonderheit(besonderheit, $boughtLevel - 1,char)}
 						<KostenControl oneLine {char} {data} cost={sellCost} />)</small
 					></a
 				>

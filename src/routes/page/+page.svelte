@@ -89,20 +89,26 @@
 					{getText(char.organismus?.art.Art, char)}
 					({getText(char.organismus?.art.Name, char)})
 					{getText(char.organismus?.morph.Name, char)}
-					( {join(
-						char.organismus?.lebensabschnitt
+					{#if (char.organismus?.lebensabschnitt
 							.map((lebensabschnitt) => getText(lebensabschnitt.Name, char))
-							.filter((x) => x != '' && x != undefined) ?? []
-					)})</td
-				></tr
-			>
+							.filter((x) => x != '' && x != undefined) ?? []).length > 0}
+						({join(
+							char.organismus?.lebensabschnitt
+								.map((lebensabschnitt) => getText(lebensabschnitt.Name, char))
+								.filter((x) => x != '' && x != undefined) ?? []
+						)})
+					{/if}
+				</td>
+			</tr>
 			{#each Object.keys(data.pfadCategoryMap) as p}
 				<tr
-					><td>{p}</td><td>
-						{Object.keys(data.pfadCategoryMap[p])
-							.filter((ps) => Object.keys(char?.pfadLevel[p]?.[ps] ?? {}).length > 0)
-							.sort()
-							.reduce((p, c) => (p == '' ? c : `${p}, ${c}`), '')}
+					><td>{getText(data.pfadCategoryMap[p].Name)}</td><td>
+						{join(
+							Object.keys(data.pfadCategoryMap[p])
+								.filter((ps) => Object.keys(char?.pfadLevel[p]?.[ps] ?? {}).length > 0)
+								.map((x) => getText(data?.pfadMap[x].Name, char))
+								.sort()
+						)}
 					</td></tr
 				>
 			{/each}
@@ -241,24 +247,28 @@
 										<span class="light">
 											{getTextBesonderheit(
 												data.besonderheitenMap[b2Key],
-												char?.besonderheitenIgnoreRequirements[b2Key] ?? 0
+												char?.besonderheitenIgnoreRequirements[b2Key] ?? 0,
+												char
 											)}
 										</span>
 									{:else if (char?.besonderheiten[b2Key] ?? 0) < (char?.besonderheitenIgnoreRequirements[b2Key] ?? 0)}
 										{getTextBesonderheit(
 											data.besonderheitenMap[b2Key],
-											char?.besonderheiten[b2Key] ?? 0
+											char?.besonderheiten[b2Key] ?? 0,
+											char
 										)}
 										<span class="light">
 											({getTextBesonderheit(
 												data.besonderheitenMap[b2Key],
-												char?.besonderheitenIgnoreRequirements[b2Key] ?? 0
+												char?.besonderheitenIgnoreRequirements[b2Key] ?? 0,
+												char
 											)})
 										</span>
 									{:else}
 										{getTextBesonderheit(
 											data.besonderheitenMap[b2Key],
-											char?.besonderheiten[b2Key] ?? 0
+											char?.besonderheiten[b2Key] ?? 0,
+											char
 										)}
 									{/if}
 								</li>
@@ -280,19 +290,29 @@
 										<span class="light">
 											{getTextFertigkeit(
 												data.fertigkeitenMap[b2Key],
-												char?.fertigkeitenIgnoreRequirements[b2Key] ?? 0
+												char?.fertigkeitenIgnoreRequirements[b2Key] ?? 0,
+												char
 											)}
 										</span>
 									{:else if (char?.fertigkeiten[b2Key] ?? 0) < (char?.fertigkeitenIgnoreRequirements[b2Key] ?? 0)}
-										{getTextFertigkeit(data.fertigkeitenMap[b2Key], char?.fertigkeiten[b2Key] ?? 0)}
+										{getTextFertigkeit(
+											data.fertigkeitenMap[b2Key],
+											char?.fertigkeiten[b2Key] ?? 0,
+											char
+										)}
 										<span class="light">
 											({getTextFertigkeit(
 												data.fertigkeitenMap[b2Key],
-												char?.fertigkeitenIgnoreRequirements[b2Key] ?? 0
+												char?.fertigkeitenIgnoreRequirements[b2Key] ?? 0,
+												char
 											)})
 										</span>
 									{:else}
-										{getTextFertigkeit(data.fertigkeitenMap[b2Key], char?.fertigkeiten[b2Key] ?? 0)}
+										{getTextFertigkeit(
+											data.fertigkeitenMap[b2Key],
+											char?.fertigkeiten[b2Key] ?? 0,
+											char
+										)}
 									{/if}
 								</li>
 							{/each}
@@ -576,7 +596,8 @@
 									<li>
 										{getTextBesonderheit(
 											data.besonderheitenMap[b2Key],
-											char?.besonderheiten[b2Key] ?? 0
+											char?.besonderheiten[b2Key] ?? 0,
+											char
 										)}
 									</li>
 								{/each}
@@ -592,7 +613,11 @@
 						<ul>
 							{#each Object.keys(data.fertigkeitenCategoryMap['Kampfstiele']).filter((x) => (char?.fertigkeiten[x] ?? 0) > 0) as b2Key}
 								<li>
-									{getTextFertigkeit(data.fertigkeitenMap[b2Key], char?.fertigkeiten[b2Key] ?? 0)}
+									{getTextFertigkeit(
+										data.fertigkeitenMap[b2Key],
+										char?.fertigkeiten[b2Key] ?? 0,
+										char
+									)}
 								</li>
 							{/each}
 						</ul>
@@ -605,7 +630,11 @@
 						<ul>
 							{#each Object.keys(data.fertigkeitenCategoryMap['Kampf']).filter((x) => (char?.fertigkeiten[x] ?? 0) > 0) as b2Key}
 								<li>
-									{getTextFertigkeit(data.fertigkeitenMap[b2Key], char?.fertigkeiten[b2Key] ?? 0)}
+									{getTextFertigkeit(
+										data.fertigkeitenMap[b2Key],
+										char?.fertigkeiten[b2Key] ?? 0,
+										char
+									)}
 								</li>
 							{/each}
 						</ul>

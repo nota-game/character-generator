@@ -66,7 +66,7 @@
 			<KostenControl {char} {data} cost={buyCost} bind:isToexpensiv />
 		</small>
 		<h3>
-			{getTextFertigkeit(fertigkeit, 1)}
+			{getTextFertigkeit(fertigkeit, 1, char)}
 		</h3>
 		<RequirementsControl
 			{char}
@@ -75,7 +75,7 @@
 			requirement={fertigkeit?.Stufe[$boughtLevel]?.Voraussetzung}
 		/>
 		<p>
-			{getText(fertigkeit.Stufe[$boughtLevel].Beschreibung)}
+			{getText(fertigkeit.Stufe[$boughtLevel].Beschreibung, char)}
 		</p>
 	{:else if showTaken === true && $boughtLevel > 0}
 		<small class="right-handler"
@@ -91,16 +91,16 @@
 		<h3>
 			{#if $actualLevel == 0}
 				<span class="missing">
-					{getTextFertigkeit(fertigkeit, $boughtLevel)}
+					{getTextFertigkeit(fertigkeit, $boughtLevel, char)}
 					<small> (Voraussetzung nicht erfüllt)</small></span
 				>
 			{:else if $actualLevel !== $boughtLevel}
-				{getTextFertigkeit(fertigkeit, $actualLevel)}
+				{getTextFertigkeit(fertigkeit, $actualLevel, char)}
 				<small class="missing">
-					(Voraussetzung für {getTextFertigkeit(fertigkeit, $boughtLevel)} nicht erfüllt)</small
+					(Voraussetzung für {getTextFertigkeit(fertigkeit, $boughtLevel, char)} nicht erfüllt)</small
 				>
 			{:else}
-				{getTextFertigkeit(fertigkeit, $boughtLevel)}
+				{getTextFertigkeit(fertigkeit, $boughtLevel, char)}
 			{/if}
 		</h3>
 		<RequirementsControl
@@ -110,18 +110,18 @@
 			requirement={fertigkeit?.Stufe[$boughtLevel - 1]?.Voraussetzung}
 		/>
 		<p>
-			{getText(fertigkeit.Stufe[$boughtLevel - 1].Beschreibung)}
+			{getText(fertigkeit.Stufe[$boughtLevel - 1].Beschreibung, char)}
 		</p>
 
 		{#if $canBeBoght}
 			<div>
 				<a
 					href="#"
-					data-tooltip={getText(fertigkeit.Stufe[$boughtLevel].Beschreibung)}
+					data-tooltip={getText(fertigkeit.Stufe[$boughtLevel].Beschreibung, char)}
 					disabled={!$canBeBoght}
 					on:click={(e) => buy(1, e)}
 					>Aufwerten <small
-						>({getTextFertigkeit(fertigkeit, $boughtLevel + 1)}
+						>({getTextFertigkeit(fertigkeit, $boughtLevel + 1, char)}
 						<KostenControl oneLine {char} {data} cost={buyCost} />)
 					</small></a
 				>
@@ -137,11 +137,11 @@
 			<div>
 				<a
 					href="#"
-					data-tooltip={getText(fertigkeit.Stufe[$boughtLevel - 2].Beschreibung)}
+					data-tooltip={getText(fertigkeit.Stufe[$boughtLevel - 2].Beschreibung, char)}
 					disabled={!$canBeSoled}
 					on:click={(e) => buy(-1, e)}
 					>Abwerten <small
-						>({getTextFertigkeit(fertigkeit, $boughtLevel - 1)}
+						>({getTextFertigkeit(fertigkeit, $boughtLevel - 1, char)}
 						<KostenControl oneLine {char} {data} cost={sellCost} />)</small
 					></a
 				>

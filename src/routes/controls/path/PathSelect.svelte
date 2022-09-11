@@ -21,7 +21,7 @@
 	{#each tree as t}
 		<details>
 			<summary>
-				{getText(t.Name)}
+				{getText(t.Name,char)}
 			</summary>
 			<div style="display: flex; flex-wrap: wrap; justify-content: space-between;">
 				{#if t.Levels?.Level}

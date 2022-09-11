@@ -8,6 +8,7 @@
 	import FertigeitenControl from './FertigeitenControl.svelte';
 	import PfadControl from './PfadControl.svelte';
 	import { get, writable, type Writable } from 'svelte/store';
+	import { getText } from '../misc';
 
 	export let data: Data | undefined;
 	export let char: Charakter | undefined;
@@ -32,14 +33,14 @@
 		<header>
 			{#each Object.keys(data.pfadCategoryMap) as key}
 				<input id={key + 'pfad'} type="radio" bind:group={selected} value={key} />
-				<label for={key + 'pfad'}>{key} </label>
+				<label for={key + 'pfad'}>{getText(data.pfadCategoryMap[key].Name)} </label>
 			{/each}
 		</header>
 
 		{#each Object.keys(data.pfadCategoryMap) as key}
 			{#if key === selected}
 				{#if !anyBought}
-					<p>Wählen Sie eni Parket</p>
+					<p>Wählen Sie ein Packet</p>
 					{#each Object.keys(data.pfadCategoryMap[key])
 						.filter((x) => defaultPfade.includes(x))
 						.sort() as t}
