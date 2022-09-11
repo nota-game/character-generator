@@ -1,22 +1,44 @@
-import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigkeit, Lokalisierungen_misc, Lokalisirung, TalentDefinition_talent } from "src/data/nota.g";
-import type { MissingRequirements } from "./models/Character";
+import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigkeit, Geschlecht_misc, Lokalisierungen_misc, Lokalisirung, TalentDefinition_talent } from "src/data/nota.g";
+import { type MissingRequirements, Charakter } from "./models/Character";
 import type { Data } from "./models/Data";
 
 export function filterNull<T>(x: (T | null | undefined)[]): T[] {
     return x.filter(y => y !== null && y !== undefined) as T[];
 }
 
-export function distinct<T>(t:T[]) {
-    return t.filter((v,i,a)=>a.indexOf(v)===i);
+export function distinct<T>(t: T[]) {
+    return t.filter((v, i, a) => a.indexOf(v) === i);
 }
 
-export function getText(p: Lokalisierungen_misc | undefined): string {
+export function join(array: string[], delimeter?: string): string {
+    if (!delimeter) {
+        delimeter = ', '
+    }
+    return array.reduce((p,c)=>p.length==0?c: p+delimeter+c,"");
+}
+
+export function getText(p: Lokalisierungen_misc | undefined, options?: { sex: Geschlecht_misc } | Charakter): string {
     const languege = 'de';
     if (!p) {
         return '';
     }
-    return (p.Lokalisirung.filter(x => x.meta.Sprache == languege)[0]
-        ?? p.Lokalisirung[0]).value;
+
+
+    const sex: Geschlecht_misc = (options instanceof Charakter) ?
+        options.organismus?.morph.Geschlecht ?? 'Unspezifiziert'
+        : options == undefined
+            ? 'Unspezifiziert'
+            : options.sex;
+
+
+    const lokalisation = p.Lokalisirung.filter(x => x.meta.Sprache == languege)
+        ?? p.Lokalisirung.filter(x => x.meta.Sprache == p.Lokalisirung[0].meta.Sprache);
+
+    return (lokalisation.filter(x => x.meta.Geschlecht == sex)[0]
+        ?? lokalisation.filter(x => x.meta.Geschlecht == "Unspezifiziert")[0]
+        ?? lokalisation.filter(x => x.meta.Geschlecht == "Neutral")[0]
+        ?? lokalisation[0]
+    ).value;
 }
 
 export function getTextTalent(p: TalentDefinition_talent | undefined, format: 'Name' | 'Probe' | 'NameProbe' = 'NameProbe'): string {

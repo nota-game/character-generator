@@ -2,7 +2,7 @@
 	import { afterUpdate, onMount } from 'svelte';
 	import { Data } from '../models/Data';
 	import { Charakter, EIGENRSCHAFTEN, type CharakterData } from '../models/Character';
-	import { getText, getTextBesonderheit, getTextFertigkeit, getTextTalent } from '../misc';
+	import { getText, getTextBesonderheit, getTextFertigkeit, getTextTalent, join } from '../misc';
 
 	import Hitman from '../controls/hitman.svelte';
 	import { local } from '../storage';
@@ -11,7 +11,7 @@
 	import { doPaged } from '../controls/paged';
 	import { noop } from 'svelte/internal';
 	import CloseCombatWeapon from '../controls/CloseCombatWeapon.svelte';
-	import { kldivergence } from 'mathjs';
+	import { filter, kldivergence } from 'mathjs';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -85,11 +85,15 @@
 			<tr><td>Name </td><td>{char.name}</td></tr>
 			<tr
 				><td>Gattung/Art</td><td>
-					{getText(char.organismus?.gattung.Name)}
-					{getText(char.organismus?.art.Art)}
-					({getText(char.organismus?.art.Name)})
-					{getText(char.organismus?.morph.Name)}
-					({getText(char.organismus?.lebensabschnitt.Name)})</td
+					{getText(char.organismus?.gattung.Name, char)}
+					{getText(char.organismus?.art.Art, char)}
+					({getText(char.organismus?.art.Name, char)})
+					{getText(char.organismus?.morph.Name, char)}
+					( {join(
+						char.organismus?.lebensabschnitt
+							.map((lebensabschnitt) => getText(lebensabschnitt.Name, char))
+							.filter((x) => x != '' && x != undefined) ?? []
+					)})</td
 				></tr
 			>
 			{#each Object.keys(data.pfadCategoryMap) as p}
