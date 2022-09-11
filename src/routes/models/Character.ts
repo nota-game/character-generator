@@ -246,7 +246,7 @@ class FertigkeitInfo {
             const array = [];
             for (let i = fixed[fertigkeitData.Id] ?? 0; i < (purchased[fertigkeitData.Id] ?? 0); i++) {
                 array.push(
-                    { Id: costId, Wert: -1 * fertigkeitData.Stufe[i].Kosten }
+                    { Id: costId, Wert: -1 * fertigkeitData.Stufe[i - 1].Kosten }
                 );
 
             }
@@ -380,7 +380,7 @@ class BesonderheitenInfo {
             const array = [];
             for (let i = fixed[besonderheitData.Id] ?? 0; i < (purchased[besonderheitData.Id] ?? 0); i++) {
                 array.push(
-                    besonderheitData.Stufe[i].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }))
+                    besonderheitData.Stufe[i - 1].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }))
                 );
 
             }
@@ -1015,27 +1015,26 @@ export class Charakter {
             [fertigkeitenStore, fertigkeitenInit] =
                 derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number | undefined>>
                     (([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
-                        return Object.fromEntries(Object.entries(fertigkeitenIgnored).map(y => {
-                            if (y[1] == undefined) {
-                                return [y[0], undefined];
+                        return Object.fromEntries(Object.entries(fertigkeitenIgnored).map(([key, value]) => {
+                            if (value == undefined) {
+                                return [key, undefined];
                             }
-                            const b = data.fertigkeitenMap[y[0]];
-                            for (let i = 0; i < y[1]; i++) {
-                                if (this.getMissingInternal(b.Stufe[i].Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags)) {
-                                    return [y[0], i === 0 ? undefined : i];
+                            const b = data.fertigkeitenMap[key];
+                            const maxValue = b.Stufe.length;
+                            const currentValue = Math.min(maxValue, value);
+                            if (currentValue != value) {
+                                console.warn(`Fertigkeitlevel for ${key} out of bounds. Was ${value} but a maximum of ${maxValue} is supported.`)
+                            }
+                            for (let i = 0; i < currentValue; i++) {
+                                const missing = this.getMissingInternal(b.Stufe[i].Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags);
+                                if (missing) {
+                                    return [key, i === 0 ? undefined : i];
                                 }
                             }
-                            return y;
+                            return [key, currentValue];
                         }).filter(([_, value]) => value !== undefined));
                     }, {});
         this.fertigkeitenStore = fertigkeitenStore;
-
-        this.fertigkeitenStore = this.storeManager.derived([this.fertigkeitenPurchasedStore, this.fertigkeitenFixDataStore], ([purchased, fixed]) => {
-            return Object.entries(fixed).reduce((p, c) => {
-                p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
-                return p;
-            }, { ...purchased });
-        });
 
         this.talentFixEP = this.storeManager.derived(this.pfadLevelDataStore, levels => {
             const costs = Object.keys(levels)
@@ -1239,18 +1238,24 @@ export class Charakter {
             [besonderheitenStore, besonderheitenInit] =
                 derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number | undefined>>
                     (([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
-                        return Object.fromEntries(Object.entries(besonderheitenIgnored).map(y => {
-                            if (y[1] == undefined) {
-                                return [y[0], undefined];
+                        return Object.fromEntries(Object.entries(besonderheitenIgnored).map(([key, value]) => {
+                            if (value == undefined) {
+                                return [key, undefined];
                             }
-                            const b = data.besonderheitenMap[y[0]];
-                            for (let i = 0; i < y[1]; i++) {
+                            const b = data.besonderheitenMap[key];
+                            const maxValue = b.Stufe.length;
+                            const currentValue = Math.min(value, maxValue);
+                            if (currentValue != value) {
+                                console.warn(`Besonderheitlevel for ${key} out of bounds. Was ${value} but a maximum of ${maxValue} is supported.`)
+                            }
+
+                            for (let i = 0; i < currentValue; i++) {
                                 if (this.getMissingInternal(b.Stufe[i].Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags)) {
-                                    return [y[0], i === 0 ? undefined : i];
+                                    return [key, i === 0 ? undefined : i];
                                 }
 
                             }
-                            return y;
+                            return [key, currentValue];
                         }).filter(([_, value]) => value !== undefined));
                     }, {});
         this.besonderheitenStore = besonderheitenStore;
