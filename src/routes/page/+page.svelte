@@ -227,16 +227,36 @@
 		</div>
 		<div class="extra">
 			{#each Object.keys(data.besonderheitenCategoryMap) as bKey}
-				{#if Object.keys(data.besonderheitenCategoryMap[bKey]).some((x) => (char?.besonderheiten[x] ?? 0) > 0)}
+				{#if Object.keys(data.besonderheitenCategoryMap[bKey]).some((x) => (char?.besonderheitenIgnoreRequirements[x] ?? 0) > 0)}
 					<div class="list">
 						<strong>{bKey}</strong>
 						<ul>
-							{#each Object.keys(data.besonderheitenCategoryMap[bKey]).filter((x) => (char?.besonderheiten[x] ?? 0) > 0) as b2Key}
+							{#each Object.keys(data.besonderheitenCategoryMap[bKey]).filter((x) => (char?.besonderheitenIgnoreRequirements[x] ?? 0) > 0) as b2Key}
 								<li>
-									{getTextBesonderheit(
-										data.besonderheitenMap[b2Key],
-										char?.besonderheiten[b2Key] ?? 0
-									)}
+									{#if (char?.besonderheiten[b2Key] ?? 0) == 0}
+										<span class="light">
+											{getTextBesonderheit(
+												data.besonderheitenMap[b2Key],
+												char?.besonderheitenIgnoreRequirements[b2Key] ?? 0
+											)}
+										</span>
+									{:else if (char?.besonderheiten[b2Key] ?? 0) < (char?.besonderheitenIgnoreRequirements[b2Key] ?? 0)}
+										{getTextBesonderheit(
+											data.besonderheitenMap[b2Key],
+											char?.besonderheiten[b2Key] ?? 0
+										)}
+										<span class="light">
+											({getTextBesonderheit(
+												data.besonderheitenMap[b2Key],
+												char?.besonderheitenIgnoreRequirements[b2Key] ?? 0
+											)})
+										</span>
+									{:else}
+										{getTextBesonderheit(
+											data.besonderheitenMap[b2Key],
+											char?.besonderheiten[b2Key] ?? 0
+										)}
+									{/if}
 								</li>
 							{/each}
 						</ul>
@@ -246,13 +266,30 @@
 			{/each}
 
 			{#each Object.keys(data.fertigkeitenCategoryMap) as bKey}
-				{#if Object.keys(data.fertigkeitenCategoryMap[bKey]).some((x) => (char?.fertigkeiten[x] ?? 0) > 0)}
+				{#if Object.keys(data.fertigkeitenCategoryMap[bKey]).some((x) => (char?.fertigkeitenIgnoreRequirements[x] ?? 0) > 0)}
 					<div class="list">
 						<strong>{bKey}</strong>
 						<ul>
-							{#each Object.keys(data.fertigkeitenCategoryMap[bKey]).filter((x) => (char?.fertigkeiten[x] ?? 0) > 0) as b2Key}
+							{#each Object.keys(data.fertigkeitenCategoryMap[bKey]).filter((x) => (char?.fertigkeitenIgnoreRequirements[x] ?? 0) > 0) as b2Key}
 								<li>
-									{getTextFertigkeit(data.fertigkeitenMap[b2Key], char?.fertigkeiten[b2Key] ?? 0)}
+									{#if (char?.fertigkeiten[b2Key] ?? 0) == 0}
+										<span class="light">
+											{getTextFertigkeit(
+												data.fertigkeitenMap[b2Key],
+												char?.fertigkeitenIgnoreRequirements[b2Key] ?? 0
+											)}
+										</span>
+									{:else if (char?.fertigkeiten[b2Key] ?? 0) < (char?.fertigkeitenIgnoreRequirements[b2Key] ?? 0)}
+										{getTextFertigkeit(data.fertigkeitenMap[b2Key], char?.fertigkeiten[b2Key] ?? 0)}
+										<span class="light">
+											({getTextFertigkeit(
+												data.fertigkeitenMap[b2Key],
+												char?.fertigkeitenIgnoreRequirements[b2Key] ?? 0
+											)})
+										</span>
+									{:else}
+										{getTextFertigkeit(data.fertigkeitenMap[b2Key], char?.fertigkeiten[b2Key] ?? 0)}
+									{/if}
 								</li>
 							{/each}
 						</ul>
