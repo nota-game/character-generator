@@ -1,5 +1,5 @@
 import { derivative, i, number, or } from "mathjs";
-import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe, _Besonderheit, EntwicklungDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen } from "src/data/nota.g";
+import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe, _Besonderheit, EntwicklungDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, ParameterDefinition_misc } from "src/data/nota.g";
 import StoreManager from "../../misc/StoreManager";
 import { dataset_dev } from "svelte/internal";
 import { type Readable, get, type Writable } from "svelte/store";
@@ -96,14 +96,14 @@ class EigenschaftenDataAccess {
         this.costStore = storemaneger.derived(startPropertysStore, (value) => value[base.eigenschaft].cost);
         this.acciredStore = storemaneger.derived(this.base.acciredStore, (value) => value);
         this.modifiedStore = storemaneger.derived([this.acciredStore, mods], ([a, { addMod, multiMod }]) => addMod + (a * multiMod - a));
-        this.increaseCostStore = storemaneger.derived([this.costStore, this.acciredStore], ([c, a]) =>
-            a <= -1
-                ? c[-1]?.map(x => ({ Id: x.Id, Wert: -x.Wert }))
-                : c[a + 1]);
-        this.decreaseCostStore = storemaneger.derived([this.costStore, this.acciredStore], ([c, a]) =>
-            a >= 1
-                ? c[1]?.map(x => ({ Id: x.Id, Wert: -x.Wert }))
-                : c[a - 1]);
+        // this.increaseCostStore = storemaneger.derived([this.costStore, this.acciredStore], ([c, a]) =>
+        //     a <= -1
+        //         ? c[-1]?.map(x => ({ Id: x.Id, Wert: -x.Wert }))
+        //         : c[a + 1]);
+        // this.decreaseCostStore = storemaneger.derived([this.costStore, this.acciredStore], ([c, a]) =>
+        //     a >= 1
+        //         ? c[1]?.map(x => ({ Id: x.Id, Wert: -x.Wert }))
+        //         : c[a - 1]);
         this.currentStore = storemaneger.derived([this.startStore, this.modifiedStore, this.acciredStore], ([s, m, a]) => s - Object.values(m).reduce((c, p) => c + p, 0) - a)
     }
 
@@ -113,8 +113,8 @@ class EigenschaftenDataAccess {
     public readonly modifiedStore: Readable<number>;
     public readonly acciredStore: Readable<number>;
     public readonly costStore: Readable<Record<number, KostenDefinition_misc[] | undefined>>;
-    public readonly increaseCostStore: Readable<KostenDefinition_misc[] | undefined>;
-    public readonly decreaseCostStore: Readable<KostenDefinition_misc[] | undefined>;
+    // public readonly increaseCostStore: Readable<KostenDefinition_misc[] | undefined>;
+    // public readonly decreaseCostStore: Readable<KostenDefinition_misc[] | undefined>;
 
 
     public get start() {
@@ -159,9 +159,9 @@ class FertigkeitInfo {
     public readonly canBeRemoved: Readable<boolean>
     public readonly boughtLevel: Writable<number>
     public readonly actualLevel: Readable<number>
-    public readonly buyCost: Readable<KostenDefinition_misc[]>
-    public readonly sellCost: Readable<KostenDefinition_misc[]>
-    public readonly removeCost: Readable<KostenDefinition_misc[]>
+    // public readonly buyCost: Readable<KostenDefinition_misc[]>
+    // public readonly sellCost: Readable<KostenDefinition_misc[]>
+    // public readonly removeCost: Readable<KostenDefinition_misc[]>
 
     /**
      *
@@ -219,40 +219,40 @@ class FertigkeitInfo {
             })
         };
 
-        this.buyCost = storemanager.derived([purchaseStore, fixStore, this.canBeBoght], ([purchased, fixed, can]) => {
-            if (!can) {
-                return [];
-            }
-            const target = Math.max(purchased[fertigkeitData.Id] ?? 0, fixed[fertigkeitData.Id] ?? 0) + 1;
-            return [{
-                Id: costId,
-                Wert: fertigkeitData.Stufe[target - 1].Kosten
-            }];
-        })
-        this.sellCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
-            if (!can) {
-                return [];
-            }
-            const target = Math.max(purchased[fertigkeitData.Id] ?? 0, fixed[fertigkeitData.Id] ?? 0);
-            return [{
-                Id: costId,
-                Wert: fertigkeitData.Stufe[target - 1].Kosten * -1
-            }];
-        })
-        this.removeCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
-            if (!can) {
-                return [];
-            }
-            const array = [];
-            for (let i = fixed[fertigkeitData.Id] ?? 0; i < (purchased[fertigkeitData.Id] ?? 0); i++) {
-                array.push(
-                    { Id: costId, Wert: -1 * fertigkeitData.Stufe[i].Kosten }
-                );
+        // this.buyCost = storemanager.derived([purchaseStore, fixStore, this.canBeBoght], ([purchased, fixed, can]) => {
+        //     if (!can) {
+        //         return [];
+        //     }
+        //     const target = Math.max(purchased[fertigkeitData.Id] ?? 0, fixed[fertigkeitData.Id] ?? 0) + 1;
+        //     return [{
+        //         Id: costId,
+        //         Wert: fertigkeitData.Stufe[target - 1].Kosten
+        //     }];
+        // })
+        // this.sellCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+        //     if (!can) {
+        //         return [];
+        //     }
+        //     const target = Math.max(purchased[fertigkeitData.Id] ?? 0, fixed[fertigkeitData.Id] ?? 0);
+        //     return [{
+        //         Id: costId,
+        //         Wert: fertigkeitData.Stufe[target - 1].Kosten * -1
+        //     }];
+        // })
+        // this.removeCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+        //     if (!can) {
+        //         return [];
+        //     }
+        //     const array = [];
+        //     for (let i = fixed[fertigkeitData.Id] ?? 0; i < (purchased[fertigkeitData.Id] ?? 0); i++) {
+        //         array.push(
+        //             { Id: costId, Wert: -1 * fertigkeitData.Stufe[i].Kosten }
+        //         );
 
-            }
+        //     }
 
-            return array;
-        })
+        //     return array;
+        // })
 
 
 
@@ -272,9 +272,9 @@ class BesonderheitenInfo {
     public readonly canBeRemovedReason: Readable<string>
     public readonly boughtLevel: Writable<number>
     public readonly actualLevel: Readable<number>
-    public readonly buyCost: Readable<KostenDefinition_misc[]>
-    public readonly sellCost: Readable<KostenDefinition_misc[]>
-    public readonly removeCost: Readable<KostenDefinition_misc[]>
+    // public readonly buyCost: Readable<KostenDefinition_misc[]>
+    // public readonly sellCost: Readable<KostenDefinition_misc[]>
+    // public readonly removeCost: Readable<KostenDefinition_misc[]>
 
     /**
      *
@@ -359,34 +359,34 @@ class BesonderheitenInfo {
             })
         };
 
-        this.buyCost = storemanager.derived([purchaseStore, fixStore, this.canBeBoght], ([purchased, fixed, can]) => {
-            if (!can) {
-                return [];
-            }
-            const target = Math.max(purchased?.[besonderheitData.Id] ?? 0, fixed?.[besonderheitData.Id] ?? 0) + 1;
-            return besonderheitData.Stufe[target - 1].Kosten;
-        })
-        this.sellCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
-            if (!can) {
-                return [];
-            }
-            const target = Math.max(purchased[besonderheitData.Id] ?? 0, fixed[besonderheitData.Id] ?? 0);
-            return besonderheitData.Stufe[target - 1].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }));
-        })
-        this.removeCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
-            if (!can) {
-                return [];
-            }
-            const array = [];
-            for (let i = fixed[besonderheitData.Id] ?? 0; i < (purchased[besonderheitData.Id] ?? 0); i++) {
-                array.push(
-                    besonderheitData.Stufe[i].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }))
-                );
+        // this.buyCost = storemanager.derived([purchaseStore, fixStore, this.canBeBoght], ([purchased, fixed, can]) => {
+        //     if (!can) {
+        //         return [];
+        //     }
+        //     const target = Math.max(purchased?.[besonderheitData.Id] ?? 0, fixed?.[besonderheitData.Id] ?? 0) + 1;
+        //     return besonderheitData.Stufe[target - 1].Kosten;
+        // })
+        // this.sellCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+        //     if (!can) {
+        //         return [];
+        //     }
+        //     const target = Math.max(purchased[besonderheitData.Id] ?? 0, fixed[besonderheitData.Id] ?? 0);
+        //     return besonderheitData.Stufe[target - 1].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }));
+        // })
+        // this.removeCost = storemanager.derived([purchaseStore, fixStore, this.canBeSoled], ([purchased, fixed, can]) => {
+        //     if (!can) {
+        //         return [];
+        //     }
+        //     const array = [];
+        //     for (let i = fixed[besonderheitData.Id] ?? 0; i < (purchased[besonderheitData.Id] ?? 0); i++) {
+        //         array.push(
+        //             besonderheitData.Stufe[i].Kosten.map(x => ({ Id: x.Id, Wert: -1 * x.Wert }))
+        //         );
 
-            }
+        //     }
 
-            return array.flatMap(x => x);
-        })
+        //     return array.flatMap(x => x);
+        // })
 
 
 
@@ -482,6 +482,40 @@ export type CharakterData = {
         nahkampf: string[],
         fernkampf: string[],
         rüstung: string[],
+    };
+};
+
+export type CharacterChange = {
+    changedPunkte: {
+        key: string;
+        new: number;
+        old: number;
+        differece: number;
+    }[];
+    changedTalents: {
+        key: string;
+        new: number;
+        old: number;
+        newEp: number;
+        oldEp: number;
+    }[];
+    changedFertigkeiten: {
+        key: string;
+        new: number;
+        old: number;
+        newIgnored: number;
+        oldIgnored: number;
+    }[];
+    changedBestonderheiten: {
+        key: string;
+        new: number;
+        old: number;
+        newIgnored: number;
+        oldIgnored: number;
+    }[];
+    requirements: {
+        added: MissingRequirements[];
+        removed: MissingRequirements[];
     };
 };
 
@@ -904,14 +938,14 @@ export class Charakter {
 
         this.organismusStore = this.storeManager.derived([this.ageStore, this.morphIdStore], ([age, morphId]) => {
             if (morphId == undefined) {
-                console.debug('no morph')
+                // console.debug('no morph')
                 return undefined;
             }
 
             const lookedup = this.stammdaten.morphLookup[morphId];
             const lebensabschnitt = Data.age2Lebensabschnitte(age, lookedup.morph, lookedup.art, lookedup.gattung);
             if (lebensabschnitt == undefined) {
-                console.debug('no age')
+                // console.debug('no age')
                 return undefined;
             }
             return {
@@ -1425,6 +1459,7 @@ export class Charakter {
 
             this.propertyScaleData,
             this.ageStore,
+            this.getPropertysScopeStore(),
 
         ], ([
             organismus,
@@ -1466,10 +1501,12 @@ export class Charakter {
             besonderheitenPurchaseu,
             propertyScale,
             age,
+            scope,
 
         ]) => {
 
             const r: Record<string, number> = {};
+            const applyCost = applyCostFunction.bind(this);
             for (const s of this.stammdaten.Instance.Daten.KostenDefinitionen.KostenDefinition) {
                 r[s.Id] = 0;
             }
@@ -1528,25 +1565,25 @@ export class Charakter {
                 amount: x.amount
 
             }))
-                .flatMap(x => x.level.Kosten.map(y => ({ Id: y.Id, Wert: y.Wert * x.amount }))));
+                .flatMap(x => x.level.Kosten.flatMap(y => Array.from({ length: x.amount }, _ => ({ Id: y.Id, Berechnung: y.Berechnung })))));
 
-            applyCost([{
-                Id: data.StandardKosten,
-                Wert: Object.values(talentEP).reduce<number>((p, c) => p + (c ?? 0), 0)
-            }]);
-            applyCost([{
-                Id: data.StandardKosten,
-                Wert: Object.keys(fertigkeitenPurchaseu).map(key => {
+
+            applyCost(
+                Object.values(talentEP).map(x => ({
+                    Id: data.StandardKosten,
+                    Berechnung: (x ?? 0).toString()
+                })));
+
+
+            applyCost(
+                Object.keys(fertigkeitenPurchaseu).flatMap(key => {
                     const up = fertigkeitenPurchaseu[key] ?? 0;
                     const low = fertigkeitenFix[key] ?? 0;
-                    let r = 0;
 
-                    for (let i = low; i < up; i++) {
-                        r += data.fertigkeitenMap[key].Stufe[i].Kosten
-                    }
-                    return r;
-                }).reduce((p, c) => p + c, 0)
-            }]);
+                    return data.fertigkeitenMap[key].Stufe.filter((_, i) => i >= low && i < up).map(x => ({ Id: data.StandardKosten, Berechnung: x.Kosten.toString() }));
+                }));
+
+
             applyCost(
                 Object.keys(besonderheitenPurchaseu).flatMap(key => {
                     const up = besonderheitenPurchaseu[key] ?? 0;
@@ -1582,12 +1619,39 @@ export class Charakter {
             ///////////
             function applyCredit(newLocal: KostenDefinition_misc[]) {
                 for (const s of newLocal) {
-                    r[s.Id] += s.Wert;
+                    const result = mathjs.evaluate(s.Berechnung, scope);
+                    r[s.Id] += Array.isArray(result) ? result[result.length - 1] : result;
                 }
             }
-            function applyCost(newLocal: KostenDefinition_misc[]) {
+            function applyCostFunction(this: Charakter, newLocal: KostenDefinition_misc[], input?: ParameterDefinition_misc & { value: any }) {
                 for (const s of newLocal) {
-                    r[s.Id] -= s.Wert;
+                    const newScope = { ...scope };
+                    if (input) {
+                        if (input["#"] == "Talent") {
+                            for (const i of input.Talent.Input) {
+                                const talentId: string = input.value;
+                                const talentDefinition = this.stammdaten.talentMap[talentId];
+
+                                newScope[i.identifier] = i.type == "Komplexität"
+                                    ? talentDefinition.Komplexität
+                                    : i.type == "TaA"
+                                        ? this.talentEffectiveIgnoreRequirements[talentId] - this.talentBase[talentId]
+                                        : i.type == "TaB"
+                                            ? this.talentBase[talentId]
+                                            : i.type == "TaW"
+                                                ? this.talentEffective[talentId]
+                                                : undefined;
+                            }
+                        } else if (input["#"] == "Auswahl") {
+                            newScope[input.Auswahl.Input.identifier] = input.value;
+                        } else if (input["#"] == "Text" && input.Text.Input) {
+                            newScope[input.Text.Input.identifier] = input.value;
+                        } else if (input["#"] == "Zahl" && input.Zahl.Input) {
+                            newScope[input.Zahl.Input.identifier] = input.value;
+                        }
+                    }
+                    const result = mathjs.evaluate(s.Berechnung, newScope);
+                    r[s.Id] -= Array.isArray(result) ? result[result.length - 1] : result;
                 }
             }
 
@@ -1692,7 +1756,8 @@ export class Charakter {
             return Object.fromEntries(Object.keys(scope).filter(x => typeof scope[x] == "function").map(x => {
                 try {
 
-                    const v = scope[x]();
+                    const ev = scope[x]();
+                    const v = Array.isArray(ev) ? ev[0] : ev;
                     if (mods[x] !== undefined) {
                         return ([x, (v * mods[x].multiMod) + mods[x].addMod]);
                     }
@@ -1753,7 +1818,14 @@ export class Charakter {
         })
     }
 
+    private propertysScopeStore: Readable<any> | undefined;
     private getPropertysScopeStore(): Readable<any> {
+        if (!this.propertysScopeStore) {
+            this.propertysScopeStore = this.getPropertysScopeStoreGenerator();
+        }
+        return this.propertysScopeStore;
+    }
+    private getPropertysScopeStoreGenerator(): Readable<any> {
 
         const store = this.storeManager.derived([this.organismusStore, this.propertyScaleData, ...EIGENRSCHAFTEN.map(x => this.eigenschaftenData[x].currentStore)], ([organismus, property, ...eigenrschaften]) => {
 
@@ -1771,28 +1843,47 @@ export class Charakter {
                     return;
                 }
                 for (const r of e.Reihe ?? []) {
-                    console.debug("Evaluet Reihe", r.id);
+                    // console.debug("Evaluet Reihe", r.id);
                     mathjs.evaluate(`${r.id}()= ${property[r.id] ?? 0}`, scope);
                 }
                 for (const p of e.Punkt ?? []) {
-                    console.debug("Evaluet Punkt", p.id);
+                    // console.debug("Evaluet Punkt", p.id);
                     mathjs.evaluate(`${p.id}()= ${property[p.id] ?? 0}`, scope);
                 }
                 for (const c of e.Berechnung ?? []) {
-                    console.debug("Evaluet calculate", c.id);
-                    mathjs.evaluate(`${c.id}()= ${c.Formel}`, scope);
+                    // console.debug("Evaluet calculate", c.id);
+                    const override = generateOveride(scope, c.id);
+                    if (override)
+
+                        mathjs.evaluate(`${c.id}()= base=${override}();${c.Formel}`, scope);
+                    else
+                        mathjs.evaluate(`${c.id}()= ${c.Formel}`, scope);
+                }
+
+                function generateOveride(scope: any, id: string) {
+
+                    let depth = 0;
+                    while (scope[id + (depth ? depth.toString() : "")]) {
+                        depth++;
+                    }
+
+                    if (depth > 0) {
+                        scope[id + depth.toString()] = scope[id];
+                        return id + depth.toString();
+                    }
+                    return undefined;
                 }
             }
-            console.debug("Evalueta Scope", organismus);
-            console.debug("Evalueta Organismen", this.stammdaten.Instance.Daten.Organismen.Entwiklung);
+            // console.debug("Evalueta Scope", organismus);
+            // console.debug("Evalueta Organismen", this.stammdaten.Instance.Daten.Organismen.Entwiklung);
             buildScope(this.stammdaten.Instance.Daten.Organismen.Entwiklung);
-            console.debug("Evalueta Gattung", organismus?.gattung.Entwiklung);
+            // console.debug("Evalueta Gattung", organismus?.gattung.Entwiklung);
             buildScope(organismus?.gattung.Entwiklung);
-            console.debug("Evalueta Art", organismus?.art.Entwiklung);
+            // console.debug("Evalueta Art", organismus?.art.Entwiklung);
             buildScope(organismus?.art.Entwiklung);
-            console.debug("Evalueta Morph", organismus?.morph.Entwiklung);
+            // console.debug("Evalueta Morph", organismus?.morph.Entwiklung);
             buildScope(organismus?.morph.Entwiklung);
-            console.debug("Generate Scope", scope);
+            // console.debug("Generate Scope", scope);
             return scope;
 
         });
@@ -1920,14 +2011,48 @@ export class Charakter {
         this.propertyScaleData.set(x);
     }
 
-    getSimulation(callback: (char: Charakter) => void, key?: string) {
-        let number = 0;
+    getSimulation(callback: (char: Charakter) => void, key?: string): Readable<CharacterChange> {
+
+        // const copyData = JSON.parse(JSON.stringify(this.Data));
+        // const copy = new Charakter(this.stammdaten, copyData);
+        // console.log("GetSimulation")
+        let lastData :string|undefined;
+        let lastResult :CharacterChange|undefined;
         return this.storeManager.derived(this.DataStore, data => {
-            number++;
-            const copyData = JSON.parse(JSON.stringify(data));
+            const copyString = JSON.stringify(data);
+            // console.log("GetSimulationCalculated")
+            // console.time("simulation-create")
+            
+            if(copyString==lastData){
+                // console.log(    "was same")
+                return lastResult!;
+            }
+            console.time("simulation-callback")
+            const copyData = JSON.parse(copyString);
+            
+            // console.info('{}!=={}',copyData,lastData)
+            
 
             const copy = new Charakter(this.stammdaten, copyData);
+            // console.timeEnd("simulation-create")
+
+
+            // const tmep= serialize(copy,{lossy:false});
+            // copy = deserialize(tmep);
+            
             callback(copy);
+            console.timeEnd("simulation-callback")
+// console.log("simulation-logedData",copyData)
+
+            const punkteKeys = distinct(Object.keys(copy.punkte).concat(Object.keys(this.punkte)));
+
+            const changedPunkte = punkteKeys.map(x => ({
+                key: x,
+                new: copy.punkte[x],
+                old: this.punkte[x],
+                differece: copy.punkte[x] - this.punkte[x]
+            }))
+
 
             const talentKeys = distinct(
                 Object.keys(copy.talentEffective).concat(Object.keys(this.talentEffective))
@@ -1998,7 +2123,10 @@ export class Charakter {
             }
             const newMissing = copyMissing.filter(x => !contains(currentMissing, x));
             const removedMissing = currentMissing.filter(x => !contains(copyMissing, x));
-            return { changedTalents, changedFertigkeiten, changedBestonderheiten, requirements: { added: newMissing, removed: removedMissing } };
+            const newResult = { changedPunkte, changedTalents, changedFertigkeiten, changedBestonderheiten, requirements: { added: newMissing, removed: removedMissing } };
+            lastData=copyString;
+            lastResult=newResult;
+            return newResult;
 
         });
     }

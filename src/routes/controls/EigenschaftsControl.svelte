@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Readable } from 'svelte/store';
+	import { readable, type Readable } from 'svelte/store';
 
-	import type { Charakter, Eigenschaft } from '../models/Character';
+	import type { CharacterChange, Charakter, Eigenschaft } from '../models/Character';
 	import type { Data } from '../models/Data';
 	import KostenControl from './KostenControl.svelte';
 
@@ -9,19 +9,51 @@
 	export let char: Charakter;
 	export let eigenschaft: Eigenschaft;
 
-	let chareigenschaftenDataMutincreaseCostStore =
-		char?.eigenschaftenData[eigenschaft].increaseCostStore;
-	let chareigenschaftenDataMutdecreaseCostStore =
-		char?.eigenschaftenData[eigenschaft].decreaseCostStore;
-	let charMutStore = char?.eigenschaftenData[eigenschaft].currentStore;
+	let chareigenschaftenDataMutincreaseCostStore: Readable<CharacterChange> = readable({
+		changedBestonderheiten: [],
+		changedFertigkeiten: [],
+		changedPunkte: [],
+		changedTalents: [],
+		requirements: { added: [], removed: [] }
+	});
 
-	$: {
-		chareigenschaftenDataMutincreaseCostStore =
-			char?.eigenschaftenData[eigenschaft].increaseCostStore;
-		chareigenschaftenDataMutdecreaseCostStore =
-			char?.eigenschaftenData[eigenschaft].decreaseCostStore;
-		charMutStore = char?.eigenschaftenData[eigenschaft].currentStore;
+	$: initChar(char);
+	let counter = 0;
+	let lastChar:Charakter |undefined = undefined;
+	function initChar(char: Charakter) {
+		counter++;
+		console.log('char ' + (eigenschaft ?? 'none'), counter);
+		
+		if(lastChar===char){
+			console.log('char returned ' + (eigenschaft ?? 'none'), counter);
+			return;
+		}
+		lastChar= char;
+		chareigenschaftenDataMutincreaseCostStore = char.getSimulation((c) =>
+			c.eigenschaftenData[eigenschaft].increase()
+		);
+		chareigenschaftenDataMutdecreaseCostStore = char.getSimulation((c) =>
+			c.eigenschaftenData[eigenschaft].decrease()
+		);
 	}
+	// char?.eigenschaftenData[eigenschaft].increaseCostStore;
+	let chareigenschaftenDataMutdecreaseCostStore: Readable<CharacterChange> = readable({
+		changedBestonderheiten: [],
+		changedFertigkeiten: [],
+		changedPunkte: [],
+		changedTalents: [],
+		requirements: { added: [], removed: [] }
+	});
+	// char?.eigenschaftenData[eigenschaft].decreaseCostStore;
+	$: charMutStore = char?.eigenschaftenData[eigenschaft].currentStore;
+
+	// $: {
+	// 	chareigenschaftenDataMutincreaseCostStore =
+	// 		char?.eigenschaftenData[eigenschaft].increaseCostStore;
+	// 	chareigenschaftenDataMutdecreaseCostStore =
+	// 		char?.eigenschaftenData[eigenschaft].decreaseCostStore;
+	// 	charMutStore = char?.eigenschaftenData[eigenschaft].currentStore;
+	// }
 
 	let isIncreaseToexpensiv: Readable<boolean>;
 	let isDecreaseToexpensiv: Readable<boolean>;

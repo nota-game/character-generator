@@ -1,9 +1,10 @@
 <script lang="ts">
 	import type { BesonderheitDefinition_besonderheit } from 'src/data/nota.g';
-	import type { Readable } from 'svelte/store';
+	import { check_outros } from 'svelte/internal';
+	import { readable, type Readable } from 'svelte/store';
 	import { getText, getTextBesonderheit } from '../misc';
 
-	import type { Charakter } from '../models/Character';
+	import { Charakter } from '../models/Character';
 	import type { Data } from '../models/Data';
 	import KostenControl from './KostenControl.svelte';
 	import RequirementsControl from './RequirementsControl.svelte';
@@ -13,33 +14,49 @@
 	export let besonderheit: BesonderheitDefinition_besonderheit | undefined;
 	export let showTaken: boolean | undefined = undefined;
 
-	let info = char?.getBesonderheitInfo(besonderheit?.Id ?? '');
-	let canBeBoght = info?.canBeBoght;
-	let canBeBoghtReason = info?.canBeBoghtReason;
-	let canBeRemoved = info?.canBeRemoved;
-	let canBeRemovedReason = info?.canBeRemovedReason;
-	let canBeSoled = info?.canBeSoled;
-	let canBeSoledReason = info?.canBeSoledReason;
-	let boughtLevel = info?.boughtLevel!;
-	let actualLevel = info?.actualLevel!;
-	let buyCost = info?.buyCost;
-	let sellCost = info?.sellCost;
-	let removeCost = info?.removeCost;
+	// let info = char?.getBesonderheitInfo(besonderheit?.Id ?? '');
+	// // let canBeBoght = info?.canBeBoght;
+	// let canBeBoghtReason = info?.canBeBoghtReason;
+	// let canBeRemoved = info?.canBeRemoved;
+	// let canBeRemovedReason = info?.canBeRemovedReason;
+	// let canBeSoled = info?.canBeSoled;
+	// let canBeSoledReason = info?.canBeSoledReason;
+	// let boughtLevel = info?.boughtLevel!;
+	// let actualLevel = info?.actualLevel!;
+	// let buyCost = info?.buyCost;
+	// let sellCost = info?.sellCost;
+	// let removeCost = info?.removeCost;
 
-	$: {
-		info = char?.getBesonderheitInfo(besonderheit?.Id ?? '');
-		canBeBoght = info?.canBeBoght;
-		canBeBoghtReason = info?.canBeBoghtReason;
-		canBeRemoved = info?.canBeRemoved;
-		canBeRemovedReason = info?.canBeRemovedReason;
-		canBeSoled = info?.canBeSoled;
-		canBeSoledReason = info?.canBeSoledReason;
-		boughtLevel = info?.boughtLevel!;
-		actualLevel = info?.actualLevel!;
-		buyCost = info?.buyCost;
-		sellCost = info?.sellCost;
-		removeCost = info?.removeCost;
-	}
+	$: info = char?.getBesonderheitInfo(besonderheit?.Id ?? '');
+	$: canBeBoght = info?.canBeBoght ?? readable(false);
+	$: canBeBoghtReason = info?.canBeBoghtReason;
+	$: canBeRemoved = info?.canBeRemoved;
+	$: canBeRemovedReason = info?.canBeRemovedReason;
+	$: canBeSoled = info?.canBeSoled;
+	$: canBeSoledReason = info?.canBeSoledReason;
+	$: boughtLevel = info?.boughtLevel!;
+	$: actualLevel = info?.actualLevel!;
+	// buyCost = info?.buyCost;
+	// sellCost = info?.sellCost;
+	// removeCost = info?.removeCost;
+
+	$: buyCost = $canBeBoght
+		? char?.getSimulation((c) =>
+				c.getBesonderheitInfo(besonderheit?.Id ?? '').boughtLevel.update((x) => x + 1)
+		  )
+		: readable(undefined);
+
+	$: sellCost = $canBeSoled
+		? char?.getSimulation((c) =>
+				c.getBesonderheitInfo(besonderheit?.Id ?? '').boughtLevel.update((x) => x - 1)
+		  )
+		: readable(undefined);
+
+	$: removeCost = $canBeRemoved
+		? char?.getSimulation((c) =>
+				c.getBesonderheitInfo(besonderheit?.Id ?? '').boughtLevel.update((x) => 0)
+		  )
+		: readable(undefined);
 
 	let requirementsBuy: boolean;
 	let isToexpensiv: Readable<boolean>;
@@ -72,7 +89,7 @@
 			<KostenControl {char} {data} cost={buyCost} bind:isToexpensiv />
 		</small>
 		<h3>
-			{getTextBesonderheit(besonderheit, 1,char)}
+			{getTextBesonderheit(besonderheit, 1, char)}
 		</h3>
 		<RequirementsControl
 			{char}
@@ -81,7 +98,7 @@
 			requirement={besonderheit?.Stufe[$boughtLevel]?.Voraussetzung}
 		/>
 		<p>
-			{getText(besonderheit.Stufe[$boughtLevel].Beschreibung,char)}
+			{getText(besonderheit.Stufe[$boughtLevel].Beschreibung, char)}
 		</p>
 	{:else if showTaken === true && $boughtLevel > 0}
 		<small class="right-handler"
@@ -97,16 +114,16 @@
 		<h3>
 			{#if $actualLevel == 0}
 				<span class="missing">
-					{getTextBesonderheit(besonderheit, $boughtLevel,char)}
+					{getTextBesonderheit(besonderheit, $boughtLevel, char)}
 					<small> (Voraussetzung nicht erfüllt)</small></span
 				>
 			{:else if $actualLevel !== $boughtLevel}
-				{getTextBesonderheit(besonderheit, $actualLevel,char)}
+				{getTextBesonderheit(besonderheit, $actualLevel, char)}
 				<small class="missing">
-					(Voraussetzung für {getTextBesonderheit(besonderheit, $boughtLevel,char)} nicht erfüllt)</small
+					(Voraussetzung für {getTextBesonderheit(besonderheit, $boughtLevel, char)} nicht erfüllt)</small
 				>
 			{:else}
-				{getTextBesonderheit(besonderheit, $boughtLevel,char)}
+				{getTextBesonderheit(besonderheit, $boughtLevel, char)}
 			{/if}
 		</h3>
 		<RequirementsControl
@@ -116,18 +133,18 @@
 			requirement={besonderheit?.Stufe[$boughtLevel - 1]?.Voraussetzung}
 		/>
 		<p>
-			{getText(besonderheit.Stufe[$boughtLevel - 1].Beschreibung,char)}
+			{getText(besonderheit.Stufe[$boughtLevel - 1].Beschreibung, char)}
 		</p>
 
 		{#if $canBeBoght}
 			<div>
 				<a
 					href="#"
-					data-tooltip={getText(besonderheit.Stufe[$boughtLevel].Beschreibung,char)}
+					data-tooltip={getText(besonderheit.Stufe[$boughtLevel].Beschreibung, char)}
 					disabled={$canBeBoght ? undefined : true}
 					on:click={(e) => buy(1, e)}
 					>Aufwerten <small
-						>({getTextBesonderheit(besonderheit, $boughtLevel + 1,char)}
+						>({getTextBesonderheit(besonderheit, $boughtLevel + 1, char)}
 						<KostenControl oneLine {char} {data} cost={buyCost} />)
 					</small></a
 				>
@@ -145,11 +162,11 @@
 					href="#"
 					data-tooltip={($canBeSoledReason?.length ?? 0) > 0
 						? $canBeSoledReason
-						: getText(besonderheit.Stufe[$boughtLevel - 2].Beschreibung,char)}
+						: getText(besonderheit.Stufe[$boughtLevel - 2].Beschreibung, char)}
 					disabled={$canBeSoled ? undefined : true}
 					on:click={(e) => buy(-1, e)}
 					>Abwerten <small
-						>({getTextBesonderheit(besonderheit, $boughtLevel - 1,char)}
+						>({getTextBesonderheit(besonderheit, $boughtLevel - 1, char)}
 						<KostenControl oneLine {char} {data} cost={sellCost} />)</small
 					></a
 				>

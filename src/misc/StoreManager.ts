@@ -82,6 +82,10 @@ export default class StoreManager {
         return { set, update, subscribe };
     }
     public derived<S extends Stores, T>(stores: S, fn: (values: StoresValues<S>, set?: (value: T) => void) => T, initial_value?: T): Readable<T> {
+
+
+        
+
         const single = !Array.isArray(stores);
         const stores_array = single
             ? [stores]

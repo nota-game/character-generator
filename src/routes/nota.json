@@ -340,7 +340,7 @@
         <misc:Lokalisirung Sparche="de"><![CDATA[Fechtwaffen]]></misc:Lokalisirung>
       </Name>
       <Beschreibung>
-        <misc:Lokalisirung Sparche="de"><![CDATA[Eine leichte und schnelle Waffe die vorallem auf präzision statt kraft setzt.]]></misc:Lokalisirung>
+        <misc:Lokalisirung Sparche="de"><![CDATA[Eine leichte und schnelle Waffe die vorallem auf Feinmotorik statt kraft setzt.]]></misc:Lokalisirung>
       </Beschreibung>
       <Verbreitung Wert="7"/>
       <Ableitungen>
@@ -543,7 +543,7 @@
     <Talent Id="Bogen" Komplexität="B" Kategorie="Kampf">
       <Probe>
         <Fokus/>
-        <Präzision/>
+        <Feinmotorik/>
         <Intuition/>
       </Probe>
       <Name>
@@ -559,7 +559,7 @@
     </Talent>
     <Talent Id="Faust Projektielwaffen" Komplexität="B" Kategorie="Kampf">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Fokus/>
         <Intuition/>
       </Probe>
@@ -576,7 +576,7 @@
     </Talent>
     <Talent Id="Zweihandprojektielwaffen" Komplexität="B" Kategorie="Kampf">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Fokus/>
         <Intuition/>
       </Probe>
@@ -644,7 +644,7 @@
     </Talent>
     <Talent Id="Peitche" Komplexität="B" Kategorie="Kampf">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Mut/>
         <Intuition/>
       </Probe>
@@ -731,7 +731,7 @@
     </Talent>
     <Talent Id="Wurfspeer" Komplexität="B" Kategorie="Kampf">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
         <Intuition/>
       </Probe>
@@ -748,7 +748,7 @@
     </Talent>
     <Talent Id="Wurfaxt" Komplexität="B" Kategorie="Kampf">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
         <Intuition/>
       </Probe>
@@ -765,7 +765,7 @@
     </Talent>
     <Talent Id="Wurfmesser" Komplexität="B" Kategorie="Kampf">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
         <Intuition/>
       </Probe>
@@ -816,7 +816,7 @@
     </Talent>
     <Talent Id="Schleuder" Komplexität="B" Kategorie="Kampf">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Fokus/>
         <Intuition/>
       </Probe>
@@ -833,7 +833,7 @@
     </Talent>
     <Talent Id="Speerschleuder" Komplexität="B" Kategorie="Kampf">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Fokus/>
         <Intuition/>
       </Probe>
@@ -1021,8 +1021,8 @@
     </Talent>
     <Talent Id="Fingerübungen" Komplexität="B" Kategorie="Körper">
       <Probe>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
         <Intuition/>
       </Probe>
       <Name>
@@ -1080,7 +1080,7 @@
       <Probe>
         <Mut/>
         <Sympathie/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Gaukelein]]></misc:Lokalisirung>
@@ -1170,7 +1170,7 @@
       <Probe>
         <Mut/>
         <Intuition/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Taschendiebstahl]]></misc:Lokalisirung>
@@ -1197,7 +1197,7 @@
     </Talent>
     <Talent Id="Entfesseln" Komplexität="B" Kategorie="Körper">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Gewandtheit/>
         <Stärke/>
       </Probe>
@@ -1329,7 +1329,7 @@
     <Talent Id="Fühlen" Komplexität="B" Kategorie="Geist">
       <Probe>
         <Intuition/>
-        <Präzision/>
+        <Feinmotorik/>
         <Klugheit/>
       </Probe>
       <Name>
@@ -1593,7 +1593,7 @@
       <Probe>
         <Intuition/>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Gesteinskunde]]></misc:Lokalisirung>
@@ -1621,7 +1621,7 @@
       <Probe>
         <Klugheit/>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Buchführung]]></misc:Lokalisirung>
@@ -1721,7 +1721,7 @@
       <Probe>
         <Mut/>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Anatomie]]></misc:Lokalisirung>
@@ -1736,7 +1736,7 @@
       <Probe>
         <Klugheit/>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Baukunst]]></misc:Lokalisirung>
@@ -1810,7 +1810,7 @@
       <Probe>
         <Klugheit/>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Heraldik]]></misc:Lokalisirung>
@@ -1885,7 +1885,7 @@
       <Probe>
         <Klugheit/>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Mechanik]]></misc:Lokalisirung>
@@ -2017,7 +2017,7 @@
     <!--Handwerk BEGINN-->
     <Talent Id="Alchemie" Komplexität="B" Kategorie="Handwerk">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Klugheit/>
         <Intuition/>
       </Probe>
@@ -2033,7 +2033,7 @@
       <Probe>
         <Intuition/>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Backen]]></misc:Lokalisirung>
@@ -2049,7 +2049,7 @@
     <Talent Id="Kochen" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Intuition/>
-        <Präzision/>
+        <Feinmotorik/>
         <Klugheit/>
       </Probe>
       <Name>
@@ -2087,7 +2087,7 @@
     <Talent Id="Ackerbau" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Intuition/>
-        <Präzision/>
+        <Feinmotorik/>
         <Konstitution/>
       </Probe>
       <Name>
@@ -2103,7 +2103,7 @@
       <Probe>
         <Mut/>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Alchimie]]></misc:Lokalisirung>
@@ -2117,7 +2117,7 @@
     <Talent Id="Bauer" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2148,7 +2148,7 @@
       <Probe>
         <Klugheit/>
         <Intuition/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Botenbau]]></misc:Lokalisirung>
@@ -2163,7 +2163,7 @@
       <Probe>
         <Klugheit/>
         <Intuition/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Pfeilmacher]]></misc:Lokalisirung>
@@ -2192,7 +2192,7 @@
     <Talent Id="Drucker" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2208,7 +2208,7 @@
       <Probe>
         <Intuition/>
         <Sympathie/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Fahrzeuge Lenken]]></misc:Lokalisirung>
@@ -2223,7 +2223,7 @@
       <Probe>
         <Mut/>
         <Sympathie/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Faöschspiel]]></misc:Lokalisirung>
@@ -2237,8 +2237,8 @@
     <Talent Id="Feinmechanik" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Feinmechanik]]></misc:Lokalisirung>
@@ -2252,8 +2252,8 @@
     <Talent Id="Feuersteinbearbeitung" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Feuersteinbearbeitung]]></misc:Lokalisirung>
@@ -2267,7 +2267,7 @@
     <Talent Id="Fleischer" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2282,7 +2282,7 @@
     <Talent Id="Gerber" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Konstitution/>
       </Probe>
       <Name>
@@ -2300,7 +2300,7 @@
     <Talent Id="Kürschner" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Konstitution/>
       </Probe>
       <Name>
@@ -2317,8 +2317,8 @@
 
     <Talent Id="Glaskunst" Komplexität="B" Kategorie="Handwerk">
       <Probe>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
         <Konstitution/>
       </Probe>
       <Name>
@@ -2332,7 +2332,7 @@
 
     <Talent Id="Schmieden" Komplexität="B" Kategorie="Handwerk">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Konstitution/>
         <Stärke/>
       </Probe>
@@ -2364,7 +2364,7 @@
       <Probe>
         <Intuition/>
         <Sympathie/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Hauswirtschaft]]></misc:Lokalisirung>
@@ -2381,7 +2381,7 @@
       <Probe>
         <Klugheit/>
         <Sympathie/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Wundversorgung]]></misc:Lokalisirung>
@@ -2395,7 +2395,7 @@
     <Talent Id="Holzbearbeitung" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2411,7 +2411,7 @@
       <Probe>
         <Klugheit/>
         <Intuition/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Instrumentenbauer]]></misc:Lokalisirung>
@@ -2426,7 +2426,7 @@
       <Probe>
         <Klugheit/>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Kartographie]]></misc:Lokalisirung>
@@ -2441,8 +2441,8 @@
     <Talent Id="Lederarbeiten" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Lederarbeiten]]></misc:Lokalisirung>
@@ -2457,7 +2457,7 @@
       <Probe>
         <Klugheit/>
         <Intuition/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Zeichnen]]></misc:Lokalisirung>
@@ -2471,7 +2471,7 @@
       <Probe>
         <Intuition/>
         <Intuition/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Malen]]></misc:Lokalisirung>
@@ -2484,7 +2484,7 @@
 
     <Talent Id="Maurer" Komplexität="B" Kategorie="Handwerk">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Gewandtheit/>
         <Stärke/>
       </Probe>
@@ -2500,7 +2500,7 @@
     <Talent Id="Metallguss" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2516,7 +2516,7 @@
       <Probe>
         <Intuition/>
         <Sympathie/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Musizieren]]></misc:Lokalisirung>
@@ -2530,8 +2530,8 @@
     <Talent Id="Schlösser Knacken" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Intuition/>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Schlösser Knacken]]></misc:Lokalisirung>
@@ -2546,7 +2546,7 @@
       <Probe>
         <Klugheit/>
         <Intuition/>
-        <Präzision/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Schnaps brennen]]></misc:Lokalisirung>
@@ -2560,8 +2560,8 @@
     <Talent Id="Schneidern" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Schneidern]]></misc:Lokalisirung>
@@ -2574,7 +2574,7 @@
 
     <Talent Id="Seefahrt" Komplexität="B" Kategorie="Handwerk">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Gewandtheit/>
         <Stärke/>
       </Probe>
@@ -2589,8 +2589,8 @@
 
     <Talent Id="Seiler" Komplexität="B" Kategorie="Handwerk">
       <Probe>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2604,8 +2604,8 @@
 
     <Talent Id="Steinmetz" Komplexität="B" Kategorie="Handwerk">
       <Probe>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2620,8 +2620,8 @@
     <Talent Id="Juwelier" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Intuition/>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Juwelier]]></misc:Lokalisirung>
@@ -2635,7 +2635,7 @@
     <Talent Id="Stellmacher" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2650,7 +2650,7 @@
     <Talent Id="Stoffe Färben" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2665,8 +2665,8 @@
     <Talent Id="Tätowieren" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Intuition/>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Tätowiren]]></misc:Lokalisirung>
@@ -2680,8 +2680,8 @@
     <Talent Id="Töpfern" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
       </Probe>
       <Name>
         <misc:Lokalisirung Sparche="de"><![CDATA[Töpfern]]></misc:Lokalisirung>
@@ -2709,8 +2709,8 @@
 
     <Talent Id="Webkunst" Komplexität="B" Kategorie="Handwerk">
       <Probe>
-        <Präzision/>
-        <Präzision/>
+        <Feinmotorik/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2725,7 +2725,7 @@
     <Talent Id="Winzer" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2740,7 +2740,7 @@
     <Talent Id="Zimmermann" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2754,7 +2754,7 @@
     <Talent Id="Fallenstellen" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Klugheit/>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>
@@ -2768,7 +2768,7 @@
 
     <Talent Id="Fesseln" Komplexität="B" Kategorie="Handwerk">
       <Probe>
-        <Präzision/>
+        <Feinmotorik/>
         <Gewandtheit/>
         <Stärke/>
       </Probe>
@@ -2783,7 +2783,7 @@
     <Talent Id="Fischen" Komplexität="B" Kategorie="Handwerk">
       <Probe>
         <Intuition/>
-        <Präzision/>
+        <Feinmotorik/>
         <Stärke/>
       </Probe>
       <Name>

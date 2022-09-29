@@ -359,7 +359,9 @@
 				<div
 					style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; "
 				>
-					{#each EIGENRSCHAFTEN as e}
+				{#each EIGENRSCHAFTEN as e}
+
+					<!-- {#each [EIGENRSCHAFTEN[0]] as e} -->
 						<EigenschaftsControl bind:char={$char} data={$data} eigenschaft={e} />
 					{/each}
 				</div>
