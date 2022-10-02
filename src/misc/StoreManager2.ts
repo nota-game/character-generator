@@ -102,11 +102,23 @@ export default class StoreManager {
                 fn: undefined,
                 subscribers: new Set<readonly [Subscriber<T>, ((value?: T) => void)]>()
             };
+
+            Object.values(this.data).forEach(other => {
+                const reg = new RegExp("^" + other.id.replace('*', '[^/]+'));
+                if (reg.test(current.id)) {
+                    current.alsoNotify.add(key.Key);
+                }
+            });
         }
         const current = this.data[key.Key];
 
         if (current.fn == undefined && current.id.includes('*')) {
             // wildcardIds are initilized here and must be readonly
+
+            const reg = new RegExp("^" + current.id.replace('*', '[^/]+'));
+            Object.values(this.data).filter(x => reg.test(x.id)).forEach(x => {
+                x.alsoNotify.add(key.Key);
+            });
 
         }
 
@@ -183,7 +195,7 @@ export default class StoreManager {
         });
 
 
-        
+
 
 
 
@@ -199,6 +211,7 @@ export default class StoreManager {
                 if (!notify.has(also)) {
                     notify.add(also);
                     const next = this.data[also];
+                    next.validValue = false;
                     collect.call(this, next);
                 }
             }
