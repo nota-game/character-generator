@@ -1,6 +1,6 @@
-import { derivative, i, number, or } from "mathjs";
+import { derivative, i, max, number, or, re, setUnion } from "mathjs";
 import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe, _Besonderheit, EntwicklungDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, ParameterDefinition_misc } from "src/data/nota.g";
-import StoreManager from "../../misc/StoreManager";
+import StoreManager from "../../misc/StoreManager2";
 import { dataset_dev } from "svelte/internal";
 import { type Readable, get, type Writable } from "svelte/store";
 import { derivedLazy } from "../lazyDerivied";
@@ -789,6 +789,15 @@ export class Charakter {
 
     private set Data(v: CharakterData) {
 
+
+
+
+
+
+
+
+
+
         EIGENRSCHAFTEN.forEach((key) => {
             this.eigenrschaften[key].accired = v.eigenschaften[key] ?? 0;
         });
@@ -924,6 +933,191 @@ export class Charakter {
      */
     constructor(data: Data, idOrOld: CharakterData | string) {
         this.stammdaten = data;
+
+
+
+        Object.entries(this.stammdaten.talentMap).forEach(([key, currentTalent]) => {
+            const keyEpPurchased = this.storeManager.key(`Talent/${currentTalent.Id}/EP/purchased`).of<number>();
+            const keyEpFixed = this.storeManager.key(`Talent/${currentTalent.Id}/EP/fixed`).of<number>();
+            const keyEpBase = this.storeManager.key(`Talent/${currentTalent.Id}/EP/base`).of<number>();
+            const keyTaB = this.storeManager.key(`Talent/${currentTalent.Id}/TaB`).of<number>();
+            const keyTaA = this.storeManager.key(`Talent/${currentTalent.Id}/TaA`).of<number>();
+            const keyTaW = this.storeManager.key(`Talent/${currentTalent.Id}/TaW`).of<number>();
+            const keyTaWUnbeschränkt = this.storeManager.key(`Talent/${currentTalent.Id}/TaWUnbeschränkt`).of<number>();
+            const keyMissing = this.storeManager.key(`Talent/${currentTalent.Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
+
+            this.storeManager.writable(keyEpPurchased, 0);
+            this.storeManager.derived(keyEpBase, [keyEpPurchased, keyEpFixed], ([epPurchased, epFixed]) => epPurchased + epFixed);
+            this.storeManager.derived(keyTaB, keyEpBase, (epBase) => {
+                const complexity = data.talentMap[key].Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
+                const levelCots = this.stammdaten.talentCostTabel[complexity]
+                for (let i = levelCots.length - 1; i >= 0; i--) {
+                    if (levelCots[i].Kosten.Wert <= epBase) {
+                        return i;
+                    }
+                }
+                return 0;
+            });
+            this.storeManager.derived(keyTaWUnbeschränkt, [keyTaB, keyTaA], ([taB, taA]) => taB + taA);
+
+            type AbleitungT = { Id: string };
+            type MaxT = { Ableitung: AbleitungT[] | undefined, Max: MaxT[] | undefined };
+            function idFromAbleitung(value: MaxT | undefined): string[] {
+                if (value == undefined)
+                    return [];
+                return (value?.Ableitung?.map(x => x.Id) ?? []).concat(value.Max?.flatMap(idFromAbleitung) ?? [])
+            }
+            const ableitungsIds = distinct(idFromAbleitung(currentTalent.Ableitungen));
+            this.storeManager.derived(keyTaA, ableitungsIds.flatMap(id => [this.storeManager.key(`Talent/${id}/TaB`).of<number>(), this.storeManager.key(`Talent/${id}/TaW`).of<number>()]), source => {
+                const m: Record<string, { tab: number, taw: number }> = {};
+                for (let i = 0; i < ableitungsIds.length; i++) {
+                    const element = ableitungsIds[i];
+                    m[element] = {
+                        tab: source[i * 2],
+                        taw: source[i * 2 + 1]
+                    }
+                }
+                const calc = (a: AbleitungsAuswahl_talent | undefined): number[] => {
+                    return a
+                        ? (a.Ableitung?.map(x => Math.floor(Math.min(m[x.Id].tab, m[x.Id].taw ?? 0) / x.Anzahl)) ?? [])
+                            .concat(
+                                (a.Max?.map(x => calc(x).sort((a, b) => b - a).slice(0, x.Anzahl).reduce((p, c) => p + c, 0)) ?? [])
+                            )
+                        : [];
+                }
+                return calc(currentTalent.Ableitungen).reduce((p, c) => p + c, 0);
+            });
+
+            {
+                type FromVoraussetzugen = (readonly ['Besonderheit' | 'Fertigkeit' | 'Tag', string]) | (readonly ['Talent', string, 'Basis' | 'Effektiv' | 'Unterstützung']);
+                const idFromVoraussetuzgen = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined) => {
+
+
+                    const singel = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit): FromVoraussetzugen[] => {
+
+                        if (requirements?.["#"] == 'Besonderheit') {
+                            return [['Besonderheit', requirements.Besonderheit.Id]]
+                        } else if (requirements?.["#"] == 'Fertigkeit') {
+                            return [['Fertigkeit', requirements.Fertigkeit.Id]]
+                        } else if (requirements?.["#"] == 'Talent') {
+                            return [['Talent', requirements.Talent.Id, requirements.Talent.LevelTyp]]
+                        } else if (requirements?.["#"] == 'Tag') {
+                            return [['Tag', requirements.Tag.Id]]
+                        } else if (requirements?.["#"] == 'Not') {
+                            return singel(requirements.Not);
+                        } else if (requirements?.["#"] == 'And') {
+                            return multy(requirements.And);
+                        } else if (requirements?.["#"] == 'Or') {
+                            return multy(requirements.Or);
+                        }
+                        return [];
+
+                    };
+
+                    const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit): FromVoraussetzugen[] => {
+                        return [
+                            ... (filterNull<FromVoraussetzugen>(requirements.And?.flatMap(x => singel({ "#": "And", And: x } as any)) ?? [])),
+                            ... (filterNull<FromVoraussetzugen>(requirements.Or?.flatMap(x => singel({ "#": "Or", Or: x } as any)) ?? [])),
+                            ... (filterNull<FromVoraussetzugen>(requirements.Besonderheit?.flatMap(x => singel({ "#": "Besonderheit", Besonderheit: x } as any)) ?? [])),
+                            ... (filterNull<FromVoraussetzugen>(requirements.Not?.flatMap(x => singel({ "#": "Not", Not: x } as any)) ?? [])),
+                            ... (filterNull<FromVoraussetzugen>(requirements.Tag?.flatMap(x => singel({ "#": "Tag", Tag: x } as any)) ?? [])),
+                            ... (filterNull<FromVoraussetzugen>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.flatMap(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any)) ?? [])),
+                            ... (filterNull<FromVoraussetzugen>((requirements as BedingungsAuswahlen_misc).Talent?.flatMap(x => singel({ "#": "Talent", Talent: x } as any)) ?? [])),
+                        ];
+                    }
+                    if (requirements == undefined)
+                        return [];
+                    return singel(requirements);
+                };
+                const idsVorausetuzungen = distinct(currentTalent.Level.flatMap(x => idFromVoraussetuzgen(x.Voraussetzung)));
+                const storeKeys = ([] as string[])
+                    .concat(idsVorausetuzungen.filter(x => x[0] === "Besonderheit").map(([_, id]) => `Besonderheit/${id}/Stufe`))
+                    .concat(idsVorausetuzungen.filter(x => x[0] === "Fertigkeit").map(([_, id]) => `Fertigkeit/${id}/Stufe`))
+                    .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Basis").map(([_, id]) => `Talent/${id}/TaB`))
+                    .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Effektiv").map(([_, id]) => `Talent/${id}/TaW`))
+                    .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Unterstützung").map(([_, id]) => `Talent/${id}/TaA`))
+                    .map(x => this.storeManager.key(x).of<number>());
+
+                const storeKeyboolean = idsVorausetuzungen.filter(x => x[0] === "Tag").map(([_, id]) => `Tag/${id}`)
+                    .map(x => this.storeManager.key(x).of<true | undefined>());
+
+                const keys = [...storeKeys, ...storeKeyboolean].map(x => x.Key);
+
+                this.storeManager.derived(keyTaW, [keyTaWUnbeschränkt, keyMissing], ([taw, missing]) => {
+                    return Math.min(taw ?? 0, ...missing.map(x => x.wert - 1))
+                });
+                this.storeManager.derived(keyMissing, [keyTaWUnbeschränkt, ...storeKeys, ...storeKeyboolean], values => {
+                    const taw = values[0];
+
+                    const talentEffective: Record<string, number> = {};
+                    const talentDerivation: Record<string, number> = {};
+                    const talentBase: Record<string, number> = {};
+                    const besonderheiten: Record<string, number> = {};
+                    const besonderheitenIgnored: Record<string, number> = {};
+                    const fertigkeiten: Record<string, number> = {};
+                    const fertigkeitenIgnored: Record<string, number> = {};
+                    const tags: Record<string, true | undefined> = {};
+
+                    for (let i = 1; i < values.length; i++) {
+                        const value = values[i];
+                        const usedKey = keys[i - 1].split('/');
+                        const id = usedKey[1];
+                        if (usedKey[0] === "Besonderheit") {
+                            besonderheiten[id] = value as number;
+                            besonderheitenIgnored[id] = value as number;
+                        } else if (usedKey[0] === "Fertigkeit") {
+                            fertigkeiten[id] = value as number;
+                            fertigkeitenIgnored[id] = value as number;
+                        } else if (usedKey[0] === "Tag") {
+                            tags[id] = value as true | undefined;
+
+                        } else if (usedKey[0] === "Talent") {
+                            if (usedKey[2] == 'TaB') {
+                                talentBase[id] = value as number;
+                            } else if (usedKey[2] == 'TaW') {
+                                talentEffective[id] = value as number;
+                            } else if (usedKey[2] == 'TaA') {
+                                talentDerivation[id] = value as number;
+                            }
+                        }
+                    }
+                    const req = data.talentMap[currentTalent.Id].Level.filter(x => x.Wert <= taw) ?? [];
+                    const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags) })).filter(x => x.missing !== null);
+                    return missing;
+                });
+            }
+            {
+                const levelsInterestedInTalent = Object.entries(this.stammdaten.pfadMap).flatMap(([key, value]) => {
+                    return value.Levels.Level.filter(level => level.Talent?.some(x => x.Id === currentTalent.Id)).map(level => `Pfad/${value.Kategorie}/${value.Id}/${level.Id}`);
+                }).map(x => this.storeManager.key(x).of<number>());
+                this.storeManager.derived(keyEpFixed, levelsInterestedInTalent, values => {
+                    const ep = values.flatMap((v, i) => {
+                        const [_, gruppe, pfad, level] = levelsInterestedInTalent[i].Key.split('/');
+                        const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+                            .Pfad.filter(x => x.Id == pfad)[0]
+                            .Levels.Level.filter(x => x.Id == level)[0];
+                        const count = v;
+                        return Array.from({ length: count }, () => l.Talent ?? []).flatMap(x => x);
+                    }).map(x => x.EP)
+                        .reduce((p, c) => p + c, 0);
+                    return ep;
+                });
+            }
+        });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         this.sizeStore = this.storeManager.derived([this.propertyScaleData], ([propertyScaleData]) => {
@@ -2016,22 +2210,22 @@ export class Charakter {
         // const copyData = JSON.parse(JSON.stringify(this.Data));
         // const copy = new Charakter(this.stammdaten, copyData);
         // console.log("GetSimulation")
-        let lastData :string|undefined;
-        let lastResult :CharacterChange|undefined;
+        let lastData: string | undefined;
+        let lastResult: CharacterChange | undefined;
         return this.storeManager.derived(this.DataStore, data => {
             const copyString = JSON.stringify(data);
             // console.log("GetSimulationCalculated")
             // console.time("simulation-create")
-            
-            if(copyString==lastData){
+
+            if (copyString == lastData) {
                 // console.log(    "was same")
                 return lastResult!;
             }
             console.time("simulation-callback")
             const copyData = JSON.parse(copyString);
-            
+
             // console.info('{}!=={}',copyData,lastData)
-            
+
 
             const copy = new Charakter(this.stammdaten, copyData);
             // console.timeEnd("simulation-create")
@@ -2039,10 +2233,10 @@ export class Charakter {
 
             // const tmep= serialize(copy,{lossy:false});
             // copy = deserialize(tmep);
-            
+
             callback(copy);
             console.timeEnd("simulation-callback")
-// console.log("simulation-logedData",copyData)
+            // console.log("simulation-logedData",copyData)
 
             const punkteKeys = distinct(Object.keys(copy.punkte).concat(Object.keys(this.punkte)));
 
@@ -2124,8 +2318,8 @@ export class Charakter {
             const newMissing = copyMissing.filter(x => !contains(currentMissing, x));
             const removedMissing = currentMissing.filter(x => !contains(copyMissing, x));
             const newResult = { changedPunkte, changedTalents, changedFertigkeiten, changedBestonderheiten, requirements: { added: newMissing, removed: removedMissing } };
-            lastData=copyString;
-            lastResult=newResult;
+            lastData = copyString;
+            lastResult = newResult;
             return newResult;
 
         });
