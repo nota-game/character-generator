@@ -1106,6 +1106,59 @@ export class Charakter {
         });
 
 
+        Object.entries(this.stammdaten.besonderheitenMap).forEach(([key, currentBesonderheit]) => {
+
+
+            const keyPurchased = this.storeManager.key(`Besonderheit/${currentBesonderheit.Id}/purchased`).of<number>();
+            const keyFixed = this.storeManager.key(`Besonderheit/${currentBesonderheit.Id}/fixed`).of<number>();
+            const keyUnbeschränkt = this.storeManager.key(`Besonderheit/${currentBesonderheit.Id}/StufeUnbeschränkt`).of<number>();
+            const keyMissing = this.storeManager.key(`Besonderheit/${currentBesonderheit.Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
+            const keyEffectiv = this.storeManager.key(`Besonderheit/${currentBesonderheit.Id}/Stufe`).of<number>();
+
+            this.storeManager.writable(keyPurchased, 0);
+
+            const levelsGranting = Object.entries(this.stammdaten.pfadMap).flatMap(([key, value]) => {
+                return value.Levels.Level.filter(level => level.Besonderheit?.some(x => x.Id === currentBesonderheit.Id)).map(level => `Pfad/${value.Kategorie}/${value.Id}/${level.Id}`);
+            }).map(x => this.storeManager.key(x).of<number>());
+
+
+            const besonderheitenGranting = Object.entries(this.stammdaten.besonderheitenMap).flatMap(([key, value]) => {
+                return value.Stufe.filter(level => level.Mods?.Besonderheiten?.Besonderheit?.some(x => x.Id === currentBesonderheit.Id)).flatMap(level => [`/Besonderheit/${value.Id}/Stufe`]);
+            }).map(x => this.storeManager.key(x).of<number>());
+
+
+            this.storeManager.derived(keyFixed, [...levelsGranting, ...besonderheitenGranting], values => {
+                const stufe = Math.max(0, ...(values.flatMap((v, i) => {
+                    const splitted = levelsGranting[i].Key.split('/');
+                    if (splitted[0] === "Pfad") {
+                        const [_, gruppe, pfad, level] = splitted;
+                        const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+                            .Pfad.filter(x => x.Id == pfad)[0]
+                            .Levels.Level.filter(x => x.Id == level)[0];
+                        const count = v;
+                        return Array.from({ length: count }, () => l.Besonderheit ?? []).flatMap(x => x).filter(x=>x.Id== currentBesonderheit.Id);
+                    } else if (splitted[0] === "Besonderheit") {
+                        const [_, bId] = splitted;
+                        const l = this.stammdaten.besonderheitenMap[bId];
+                      return  l.Stufe.filter((x,i2)=>{
+                            i2<v;
+                        })
+                        .flatMap(x=>x.Mods?.Besonderheiten?.Besonderheit??[])
+                        .filter(x=>x.Id== currentBesonderheit.Id)
+                    }else{
+                        throw "Not implemented";
+                    }
+                }).map(x => x.Stufe)));
+
+                return stufe;
+            });
+
+            this.storeManager.derived(keyUnbeschränkt,[keyPurchased,keyFixed], ([purchased,fixed])=>Math.max(purchased,fixed));
+
+
+
+        });
+
 
 
 
