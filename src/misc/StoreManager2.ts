@@ -13,9 +13,9 @@ function identity(p: any) {
 
 type SubscriberData<T> = {
     id: string;
-    value: T;
+    value: T | undefined;
     alsoNotify: Set<string>;
-    fn: ((...args: any) => T) | undefined;
+    fn: (() => T) | undefined;
     validValue: boolean;
     dependentOn: Set<string>;
     subscribers: Set<readonly [Subscriber<T>, Invalidator<T>]>;
@@ -93,7 +93,7 @@ export default class StoreManager {
 
     private prepareData<T>(key: Key<any, T>): SubscriberData<T> {
         if (!this.data[key.Key]) {
-            this.data[key.Key] = {
+            const current: SubscriberData<T> = {
                 id: key.Key,
                 value: undefined,
                 dependentOn: new Set(),
@@ -102,28 +102,95 @@ export default class StoreManager {
                 fn: undefined,
                 subscribers: new Set<readonly [Subscriber<T>, ((value?: T) => void)]>()
             };
-
             Object.values(this.data).forEach(other => {
-                const reg = new RegExp("^" + other.id.replace('*', '[^/]+'));
+                const reg = new RegExp("^" + other.id.replace('*', '[^/]+') + '($|(/.+))');
                 if (reg.test(current.id)) {
                     current.alsoNotify.add(key.Key);
+                    other.dependentOn.add(current.id);
                 }
             });
-        }
-        const current = this.data[key.Key];
+            this.data[key.Key] = current;
 
-        if (current.fn == undefined && current.id.includes('*')) {
+        }
+        const current = this.data[key.Key] as SubscriberData<T>;
+
+        if (current.fn == undefined) {
             // wildcardIds are initilized here and must be readonly
 
-            const reg = new RegExp("^" + current.id.replace('*', '[^/]+'));
+            const reg = new RegExp("^" + current.id.replace('*', '[^/]+') + '($|(/.+))');
             Object.values(this.data).filter(x => reg.test(x.id)).forEach(x => {
                 x.alsoNotify.add(key.Key);
+                current.dependentOn.add(x.id);
             });
+
+            current.fn = () => {
+                if (current.validValue)
+                    return current.value;
+
+                if ([...current.dependentOn.values()].map(x => this.data[x].validValue).every(x => x)) {
+                    current.validValue = true;
+
+                    // find the part that is fix
+                    const root = current.id.replace(/\/[^/]*\*.*/, "");
+                    return this.mergeDeep({},
+                        [...current.dependentOn.values()].map(x => {
+                            let tail = x.substring(root.length);
+                            if (!tail.startsWith('/')) {
+                                throw 'not implemented';
+                            }
+                            tail = tail.substring(1);
+
+                            const part = tail.split('/');
+                            const rootObjecs: any = {};
+                            let currentPart = rootObjecs;
+                            for (let i = 0; i < part.length; i++) {
+                                const element = part[i];
+                                if (i == part.length - 1) {
+                                    currentPart[element] = this.data[x].value;
+                                } else {
+                                    currentPart[element] = {};
+                                    currentPart = currentPart[element];
+                                }
+                            }
+                            return rootObjecs;
+                        }));
+
+                    // return [...current.dependentOn.values()].map(x => [this.data[x].id, this.data[x].value]) as T;
+                }
+                return undefined as any;
+            };
 
         }
 
         return current;
     }
+
+
+    private mergeDeep(target: any, ...sources: any[]): any {
+        function isObject(item: any) {
+            return (item && typeof item === 'object' && !Array.isArray(item));
+        }
+        if (!sources.length) return target;
+        const source = sources.shift();
+
+        if (isObject(target) && isObject(source)) {
+            for (const key in source) {
+                if (isObject(source[key])) {
+                    if (!target[key]) Object.assign(target, {
+                        [key]: {}
+                    });
+                    this.mergeDeep(target[key], source[key]);
+                } else {
+                    Object.assign(target, {
+                        [key]: source[key]
+                    });
+                }
+            }
+        }
+
+        return this.mergeDeep(target, ...sources);
+    }
+
 
     public writable<T>(key: Key<any, T>, value: T, compare: (a: T, b: T) => boolean = internal.safe_not_equal): Writable<T> {
         const current = this.prepareData(key);
@@ -131,7 +198,8 @@ export default class StoreManager {
         if (current.fn) {
             throw Error(`Store for ${key} already initilized`);
         }
-        current.fn = identity;
+        let setValue = value;
+        current.fn = () => { return setValue };
         current.value = value;
         current.validValue = true;
         this.Notify(current);
@@ -148,6 +216,8 @@ export default class StoreManager {
 
         const set = (new_value: T): void => {
             if (!current.validValue || !compare(current.value, new_value)) {
+                this.invalidate(current);
+                setValue = new_value;
                 current.value = new_value;
                 current.validValue = true;
                 this.Notify(current);
@@ -156,6 +226,8 @@ export default class StoreManager {
         const update = (updater: Updater<T>): void => {
             const new_value = updater(current.value);
             if (!current.validValue || !compare(current.value, new_value)) {
+                this.invalidate(current);
+                setValue = new_value;
                 current.value = new_value;
                 current.validValue = true;
                 this.Notify(current);
@@ -202,6 +274,28 @@ export default class StoreManager {
     }
 
 
+    private invalidate(current: SubscriberData<any>) {
+        const notify = new Set<string>().add(current.id);
+
+        function collect(this: StoreManager, current: SubscriberData<any>) {
+            for (const also of current.alsoNotify) {
+                if (!notify.has(also)) {
+                    notify.add(also);
+                    const next = this.data[also];
+                    next.validValue = false;
+                    collect.call(this, next);
+                }
+            }
+        }
+        collect.call(this, current);
+
+        for (const c of [...notify].flatMap(x => this.data[x])) {
+            c.validValue = false;
+        }
+        for (const [_, invalidator] of [...notify].flatMap(x => [...this.data[x].subscribers])) {
+            invalidator();
+        }
+    }
     private Notify(current: SubscriberData<any>) {
 
         const notify = new Set<string>().add(current.id);
