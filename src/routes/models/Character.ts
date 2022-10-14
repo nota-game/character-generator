@@ -1,6 +1,6 @@
-import { derivative, i, max, number, or, re, setUnion } from "mathjs";
+import { derivative, i, max, number, or, re, setUnion, sinhDependencies } from "mathjs";
 import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe, _Besonderheit, EntwicklungDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, ParameterDefinition_misc } from "src/data/nota.g";
-import StoreManager from "../../misc/StoreManager2";
+import StoreManager, { type Key } from "../../misc/StoreManager2";
 import { dataset_dev } from "svelte/internal";
 import { type Readable, get, type Writable } from "svelte/store";
 import { derivedLazy } from "../lazyDerivied";
@@ -537,7 +537,7 @@ export class Charakter {
     }
     public readonly punkteStore: Readable<Record<string, number>>;
 
-    public readonly ageStore = this.storeManager.writable<number>(0);
+    public readonly ageStore;
 
     public readonly glückMaxStore: Readable<number>;
     public readonly sizeStore: Readable<number>;
@@ -545,7 +545,6 @@ export class Charakter {
 
     public readonly allMissingRequirementsStore: Readable<MissingRequirements[]>;
 
-    public readonly morphStore: Readable<MorphDefinition_lebewesen | undefined>;
 
 
     private readonly closeConbatWeaponsStoreData = this.storeManager.writable<Record<string, true | undefined>>({});
@@ -926,6 +925,79 @@ export class Charakter {
 
 
 
+    private getTalentKeys<id extends string>(Id: id): { keyEpPurchased: Key<`/Talent/${id}/EP/purchased`, number>; keyEpBase: Key<`/Talent/${id}/EP/base`, number>; keyEpFixed: Key<`/Talent/${id}/EP/fixed`, number>; keyTaA: Key<`/Talent/${id}/TaA`, number>; keyTaB: Key<`/Talent/${id}/TaB`, number>; keyTaW: Key<`/Talent/${id}/TaW`, number>; keyTaWUnbeschränkt: Key<`Talent/${id}/TaWUnbeschränkt`, number>; keyMissing: Key<`Talent/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]>; } {
+        const keyEpPurchased = this.storeManager.key(`/Talent/${Id}/EP/purchased`).of<number>();
+        const keyEpFixed = this.storeManager.key(`/Talent/${Id}/EP/fixed`).of<number>();
+        const keyEpBase = this.storeManager.key(`/Talent/${Id}/EP/base`).of<number>();
+        const keyTaB = this.storeManager.key(`/Talent/${Id}/TaB`).of<number>();
+        const keyTaA = this.storeManager.key(`/Talent/${Id}/TaA`).of<number>();
+        const keyTaW = this.storeManager.key(`/Talent/${Id}/TaW`).of<number>();
+        const keyTaWUnbeschränkt = this.storeManager.key(`Talent/${Id}/TaWUnbeschränkt`).of<number>();
+        const keyMissing = this.storeManager.key(`Talent/${Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
+
+        return { keyEpPurchased, keyEpBase, keyEpFixed, keyTaA, keyTaB, keyTaW, keyTaWUnbeschränkt, keyMissing };
+    }
+    private getTagKey<id extends string>(Id: id) {
+        return this.storeManager.key(`/Tag/${Id}`).of<true | undefined>();
+
+    }
+
+    private getBesonterheitKeys<id extends string>(Id: id): { keyPurchased: Key<`/Besonderheit/${id}/purchased`, number>; keyFixed: Key<`/Besonderheit/${id}/fixed`, number>; keyUnbeschränkt: Key<`/Besonderheit/${id}/StufeUnbeschränkt`, number>; keyMissing: Key<`/Besonderheit/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]>; keyEffectiv: Key<`/Besonderheit/${id}/Stufe`, number>; } {
+        const keyPurchased = this.storeManager.key(`/Besonderheit/${Id}/purchased`).of<number>();
+        const keyFixed = this.storeManager.key(`/Besonderheit/${Id}/fixed`).of<number>();
+        const keyUnbeschränkt = this.storeManager.key(`/Besonderheit/${Id}/StufeUnbeschränkt`).of<number>();
+        const keyMissing = this.storeManager.key(`/Besonderheit/${Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
+        const keyEffectiv = this.storeManager.key(`/Besonderheit/${Id}/Stufe`).of<number>();
+
+        return {
+            keyPurchased,
+            keyFixed,
+            keyUnbeschränkt,
+            keyMissing,
+            keyEffectiv
+        }
+    }
+
+    private getFertigkeitenKeys<id extends string>(Id: id): { keyPurchased: Key<`/Fertigkeit/${id}/purchased`, number>; keyFixed: Key<`/Fertigkeit/${id}/fixed`, number>; keyUnbeschränkt: Key<`/Fertigkeit/${id}/StufeUnbeschränkt`, number>; keyMissing: Key<`/Fertigkeit/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]>; keyEffectiv: Key<`/Fertigkeit/${id}/Stufe`, number>; } {
+        const keyPurchased = this.storeManager.key(`/Fertigkeit/${Id}/purchased`).of<number>();
+        const keyFixed = this.storeManager.key(`/Fertigkeit/${Id}/fixed`).of<number>();
+        const keyUnbeschränkt = this.storeManager.key(`/Fertigkeit/${Id}/StufeUnbeschränkt`).of<number>();
+        const keyMissing = this.storeManager.key(`/Fertigkeit/${Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
+        const keyEffectiv = this.storeManager.key(`/Fertigkeit/${Id}/Stufe`).of<number>();
+
+        return { keyPurchased, keyFixed, keyUnbeschränkt, keyMissing, keyEffectiv };
+    }
+
+    private getOrganismKeys(): {
+        art: {
+            intance: Key<"/organism/art/intance", ArtDefinition_lebewesen | undefined>,
+            id: Key<"/organism/art/id", string | undefined>
+        },
+        gattung: {
+            intance: Key<"/organism/gattung/intance", GattungDefinition_lebewesen | undefined>,
+            id: Key<"/organism/gattung/id", string | undefined>
+        },
+        morph: {
+            intance: Key<"/organism/morph/intance", MorphDefinition_lebewesen | undefined>,
+            id: Key<"/organism/morph/id", string | undefined>
+        }
+    } {
+        return {
+            art: {
+                intance: this.storeManager.key("/organism/art/intance").of<ArtDefinition_lebewesen | undefined>(),
+                id: this.storeManager.key("/organism/art/id").of<string | undefined>()
+            },
+            gattung: {
+                intance: this.storeManager.key("/organism/gattung/intance").of<GattungDefinition_lebewesen | undefined>(),
+                id: this.storeManager.key("/organism/gattung/id").of<string | undefined>()
+            },
+            morph: {
+                intance: this.storeManager.key("/organism/morph/intance").of<MorphDefinition_lebewesen | undefined>(),
+                id: this.storeManager.key("/organism/morph/id").of<string | undefined>()
+            }
+        }
+
+    }
 
 
     /**
@@ -977,14 +1049,15 @@ export class Charakter {
         };
 
         Object.entries(this.stammdaten.talentMap).forEach(([key, currentTalent]) => {
-            const keyEpPurchased = this.storeManager.key(`Talent/${currentTalent.Id}/EP/purchased`).of<number>();
-            const keyEpFixed = this.storeManager.key(`Talent/${currentTalent.Id}/EP/fixed`).of<number>();
-            const keyEpBase = this.storeManager.key(`Talent/${currentTalent.Id}/EP/base`).of<number>();
-            const keyTaB = this.storeManager.key(`Talent/${currentTalent.Id}/TaB`).of<number>();
-            const keyTaA = this.storeManager.key(`Talent/${currentTalent.Id}/TaA`).of<number>();
-            const keyTaW = this.storeManager.key(`Talent/${currentTalent.Id}/TaW`).of<number>();
-            const keyTaWUnbeschränkt = this.storeManager.key(`Talent/${currentTalent.Id}/TaWUnbeschränkt`).of<number>();
-            const keyMissing = this.storeManager.key(`Talent/${currentTalent.Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
+            const talentKey = this.getTalentKeys(currentTalent.Id);
+            const keyEpPurchased = talentKey.keyEpPurchased;
+            const keyEpFixed = talentKey.keyEpFixed;
+            const keyEpBase = talentKey.keyEpBase;
+            const keyTaB = talentKey.keyTaB;
+            const keyTaA = talentKey.keyTaA;
+            const keyTaW = talentKey.keyTaW;
+            const keyTaWUnbeschränkt = talentKey.keyTaWUnbeschränkt;
+            const keyMissing = talentKey.keyMissing;
 
             this.storeManager.writable(keyEpPurchased, 0);
             this.storeManager.derived(keyEpBase, [keyEpPurchased, keyEpFixed], ([epPurchased, epFixed]) => epPurchased + epFixed);
@@ -1008,7 +1081,7 @@ export class Charakter {
                 return (value?.Ableitung?.map(x => x.Id) ?? []).concat(value.Max?.flatMap(idFromAbleitung) ?? [])
             }
             const ableitungsIds = distinct(idFromAbleitung(currentTalent.Ableitungen));
-            this.storeManager.derived(keyTaA, ableitungsIds.flatMap(id => [this.storeManager.key(`Talent/${id}/TaB`).of<number>(), this.storeManager.key(`Talent/${id}/TaW`).of<number>()]), source => {
+            this.storeManager.derived(keyTaA, ableitungsIds.flatMap(id => [this.getTalentKeys(id).keyTaB, this.getTalentKeys(id).keyTaW]), source => {
                 const m: Record<string, { tab: number, taw: number }> = {};
                 for (let i = 0; i < ableitungsIds.length; i++) {
                     const element = ableitungsIds[i];
@@ -1031,16 +1104,16 @@ export class Charakter {
             {
 
                 const idsVorausetuzungen = distinct(currentTalent.Level.flatMap(x => idFromVoraussetuzgen(x.Voraussetzung)));
-                const storeKeys = ([] as string[])
-                    .concat(idsVorausetuzungen.filter(x => x[0] === "Besonderheit").map(([_, id]) => `Besonderheit/${id}/Stufe`))
-                    .concat(idsVorausetuzungen.filter(x => x[0] === "Fertigkeit").map(([_, id]) => `Fertigkeit/${id}/Stufe`))
-                    .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Basis").map(([_, id]) => `Talent/${id}/TaB`))
-                    .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Effektiv").map(([_, id]) => `Talent/${id}/TaW`))
-                    .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Unterstützung").map(([_, id]) => `Talent/${id}/TaA`))
-                    .map(x => this.storeManager.key(x).of<number>());
+                const storeKeys = ([] as Key<string, number>[])
+                    .concat(idsVorausetuzungen.filter(x => x[0] === "Besonderheit").map(([_, id]) => this.getBesonterheitKeys(id).keyEffectiv))
+                    .concat(idsVorausetuzungen.filter(x => x[0] === "Fertigkeit").map(([_, id]) => this.getFertigkeitenKeys(id).keyEffectiv))
+                    .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Basis").map(([_, id]) => this.getTalentKeys(id).keyTaB))
+                    .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Effektiv").map(([_, id]) => this.getTalentKeys(id).keyTaW))
+                    .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Unterstützung").map(([_, id]) => this.getTalentKeys(id).keyTaA))
+                    ;
 
-                const storeKeyboolean = idsVorausetuzungen.filter(x => x[0] === "Tag").map(([_, id]) => `Tag/${id}`)
-                    .map(x => this.storeManager.key(x).of<true | undefined>());
+                const storeKeyboolean = idsVorausetuzungen.filter(x => x[0] === "Tag").map(([_, id]) => this.getTagKey(id))
+                    ;
 
                 const keys = [...storeKeys, ...storeKeyboolean].map(x => x.Key);
 
@@ -1061,7 +1134,7 @@ export class Charakter {
 
                     for (let i = 1; i < values.length; i++) {
                         const value = values[i];
-                        const usedKey = keys[i - 1].split('/');
+                        const usedKey = keys[i - 1].split('/').splice(0, 1);
                         const id = usedKey[1];
                         if (usedKey[0] === "Besonderheit") {
                             besonderheiten[id] = value as number;
@@ -1089,11 +1162,11 @@ export class Charakter {
             }
             {
                 const levelsInterestedInTalent = Object.entries(this.stammdaten.pfadMap).flatMap(([key, value]) => {
-                    return value.Levels.Level.filter(level => level.Talent?.some(x => x.Id === currentTalent.Id)).map(level => `Pfad/${value.Kategorie}/${value.Id}/${level.Id}`);
-                }).map(x => this.storeManager.key(x).of<number>());
+                    return value.Levels.Level.filter(level => level.Talent?.some(x => x.Id === currentTalent.Id)).map(level => this.getPfadKey(value.Kategorie, value.Id, level.Id));
+                });
                 this.storeManager.derived(keyEpFixed, levelsInterestedInTalent, values => {
                     const ep = values.flatMap((v, i) => {
-                        const [_, gruppe, pfad, level] = levelsInterestedInTalent[i].Key.split('/');
+                        const [_, gruppe, pfad, level] = levelsInterestedInTalent[i].Key.split('/').splice(0, 1);
                         const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
                             .Pfad.filter(x => x.Id == pfad)[0]
                             .Levels.Level.filter(x => x.Id == level)[0];
@@ -1110,27 +1183,29 @@ export class Charakter {
         Object.entries(this.stammdaten.besonderheitenMap).forEach(([key, currentBesonderheit]) => {
 
 
-            const keyPurchased = this.storeManager.key(`Besonderheit/${currentBesonderheit.Id}/purchased`).of<number>();
-            const keyFixed = this.storeManager.key(`Besonderheit/${currentBesonderheit.Id}/fixed`).of<number>();
-            const keyUnbeschränkt = this.storeManager.key(`Besonderheit/${currentBesonderheit.Id}/StufeUnbeschränkt`).of<number>();
-            const keyMissing = this.storeManager.key(`Besonderheit/${currentBesonderheit.Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
-            const keyEffectiv = this.storeManager.key(`Besonderheit/${currentBesonderheit.Id}/Stufe`).of<number>();
+            const keyBesonderheiten = this.getBesonterheitKeys(currentBesonderheit.Id);
+
+            const keyPurchased = keyBesonderheiten.keyPurchased;
+            const keyFixed = keyBesonderheiten.keyFixed;
+            const keyUnbeschränkt = keyBesonderheiten.keyUnbeschränkt;
+            const keyMissing = keyBesonderheiten.keyMissing;
+            const keyEffectiv = keyBesonderheiten.keyEffectiv;
 
             this.storeManager.writable(keyPurchased, 0);
 
             const levelsGranting = Object.entries(this.stammdaten.pfadMap).flatMap(([key, value]) => {
-                return value.Levels.Level.filter(level => level.Besonderheit?.some(x => x.Id === currentBesonderheit.Id)).map(level => `Pfad/${value.Kategorie}/${value.Id}/${level.Id}`);
-            }).map(x => this.storeManager.key(x).of<number>());
+                return value.Levels.Level.filter(level => level.Besonderheit?.some(x => x.Id === currentBesonderheit.Id)).map(level => this.getPfadKey(value.Kategorie, value.Id, level.Id));
+            });
 
 
             const besonderheitenGranting = Object.entries(this.stammdaten.besonderheitenMap).flatMap(([key, value]) => {
-                return value.Stufe.filter(level => level.Mods?.Besonderheiten?.Besonderheit?.some(x => x.Id === currentBesonderheit.Id)).flatMap(level => [`/Besonderheit/${value.Id}/Stufe`]);
-            }).map(x => this.storeManager.key(x).of<number>());
+                return value.Stufe.filter(level => level.Mods?.Besonderheiten?.Besonderheit?.some(x => x.Id === currentBesonderheit.Id)).flatMap(level => [this.getBesonterheitKeys(value.Id).keyEffectiv]);
+            });
 
 
             this.storeManager.derived(keyFixed, [...levelsGranting, ...besonderheitenGranting], values => {
                 const stufe = Math.max(0, ...(values.flatMap((v, i) => {
-                    const splitted = levelsGranting[i].Key.split('/');
+                    const splitted = levelsGranting[i].Key.split('/').splice(0, 1);
                     if (splitted[0] === "Pfad") {
                         const [_, gruppe, pfad, level] = splitted;
                         const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
@@ -1159,16 +1234,16 @@ export class Charakter {
 
 
             const idsVorausetuzungen = distinct(currentBesonderheit.Stufe.flatMap(x => idFromVoraussetuzgen(x.Voraussetzung)));
-            const storeKeys = ([] as string[])
-                .concat(idsVorausetuzungen.filter(x => x[0] === "Besonderheit").map(([_, id]) => `Besonderheit/${id}/Stufe`))
-                .concat(idsVorausetuzungen.filter(x => x[0] === "Fertigkeit").map(([_, id]) => `Fertigkeit/${id}/Stufe`))
-                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Basis").map(([_, id]) => `Talent/${id}/TaB`))
-                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Effektiv").map(([_, id]) => `Talent/${id}/TaW`))
-                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Unterstützung").map(([_, id]) => `Talent/${id}/TaA`))
-                .map(x => this.storeManager.key(x).of<number>());
+            const storeKeys = ([] as Key<string, number>[])
+                .concat(idsVorausetuzungen.filter(x => x[0] === "Besonderheit").map(([_, id]) => this.getBesonterheitKeys(id).keyEffectiv))
+                .concat(idsVorausetuzungen.filter(x => x[0] === "Fertigkeit").map(([_, id]) => this.getFertigkeitenKeys(id).keyEffectiv))
+                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Basis").map(([_, id]) => this.getTalentKeys(id).keyTaB))
+                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Effektiv").map(([_, id]) => this.getTalentKeys(id).keyTaW))
+                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Unterstützung").map(([_, id]) => this.getTalentKeys(id).keyTaA))
+                ;
 
-            const storeKeyboolean = idsVorausetuzungen.filter(x => x[0] === "Tag").map(([_, id]) => `Tag/${id}`)
-                .map(x => this.storeManager.key(x).of<true | undefined>());
+            const storeKeyboolean = idsVorausetuzungen.filter(x => x[0] === "Tag").map(([_, id]) => this.getTagKey(id))
+                ;
 
             const keys = [...storeKeys, ...storeKeyboolean].map(x => x.Key);
 
@@ -1187,7 +1262,7 @@ export class Charakter {
 
                 for (let i = 1; i < values.length; i++) {
                     const value = values[i];
-                    const usedKey = keys[i - 1].split('/');
+                    const usedKey = keys[i - 1].split('/').splice(0, 1);
                     const id = usedKey[1];
                     if (usedKey[0] === "Besonderheit") {
                         besonderheiten[id] = value as number;
@@ -1223,25 +1298,26 @@ export class Charakter {
 
         Object.entries(this.stammdaten.fertigkeitenMap).forEach(([key, currentFertigkeit]) => {
 
+            const keyFertigkeit = this.getFertigkeitenKeys(currentFertigkeit.Id);
 
-            const keyPurchased = this.storeManager.key(`/Fertigkeit/${currentFertigkeit.Id}/purchased`).of<number>();
-            const keyFixed = this.storeManager.key(`/Fertigkeit/${currentFertigkeit.Id}/fixed`).of<number>();
-            const keyUnbeschränkt = this.storeManager.key(`/Fertigkeit/${currentFertigkeit.Id}/StufeUnbeschränkt`).of<number>();
-            const keyMissing = this.storeManager.key(`/Fertigkeit/${currentFertigkeit.Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
-            const keyEffectiv = this.storeManager.key(`/Fertigkeit/${currentFertigkeit.Id}/Stufe`).of<number>();
+            const keyPurchased = keyFertigkeit.keyPurchased;
+            const keyFixed = keyFertigkeit.keyFixed;
+            const keyUnbeschränkt = keyFertigkeit.keyUnbeschränkt;
+            const keyMissing = keyFertigkeit.keyMissing;
+            const keyEffectiv = keyFertigkeit.keyEffectiv;
 
             this.storeManager.writable(keyPurchased, 0);
 
             const levelsGranting = Object.entries(this.stammdaten.pfadMap).flatMap(([key, value]) => {
-                return value.Levels.Level.filter(level => level.Fertigkeit?.some(x => x.Id === currentFertigkeit.Id)).map(level => `/Pfad/${value.Kategorie}/${value.Id}/${level.Id}`);
-            }).map(x => this.storeManager.key(x).of<number>());
+                return value.Levels.Level.filter(level => level.Fertigkeit?.some(x => x.Id === currentFertigkeit.Id)).map(level => this.getPfadKey(value.Kategorie, value.Id, level.Id));
+            });
 
 
 
 
             this.storeManager.derived(keyFixed, [...levelsGranting], values => {
                 const stufe = Math.max(0, ...(values.flatMap((v, i) => {
-                    const splitted = levelsGranting[i].Key.split('/');
+                    const splitted = levelsGranting[i].Key.split('/').splice(0, 1);
                     if (splitted[0] === "Pfad") {
                         const [_, gruppe, pfad, level] = splitted;
                         const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
@@ -1262,16 +1338,16 @@ export class Charakter {
 
 
             const idsVorausetuzungen = distinct(currentFertigkeit.Stufe.flatMap(x => idFromVoraussetuzgen(x.Voraussetzung)));
-            const storeKeys = ([] as string[])
-                .concat(idsVorausetuzungen.filter(x => x[0] === "Besonderheit").map(([_, id]) => `Besonderheit/${id}/Stufe`))
-                .concat(idsVorausetuzungen.filter(x => x[0] === "Fertigkeit").map(([_, id]) => `Fertigkeit/${id}/Stufe`))
-                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Basis").map(([_, id]) => `Talent/${id}/TaB`))
-                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Effektiv").map(([_, id]) => `Talent/${id}/TaW`))
-                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Unterstützung").map(([_, id]) => `Talent/${id}/TaA`))
-                .map(x => this.storeManager.key(x).of<number>());
+            const storeKeys = ([] as Key<string, number>[])
+                .concat(idsVorausetuzungen.filter(x => x[0] === "Besonderheit").map(([_, id]) => this.getBesonterheitKeys(id).keyEffectiv))
+                .concat(idsVorausetuzungen.filter(x => x[0] === "Fertigkeit").map(([_, id]) => this.getFertigkeitenKeys(id).keyEffectiv))
+                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Basis").map(([_, id]) => this.getTalentKeys(id).keyTaB))
+                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Effektiv").map(([_, id]) => this.getTalentKeys(id).keyTaW))
+                .concat(idsVorausetuzungen.filter(x => x[0] === "Talent" && x[2] === "Unterstützung").map(([_, id]) => this.getTalentKeys(id).keyTaA))
+                ;
 
-            const storeKeyboolean = idsVorausetuzungen.filter(x => x[0] === "Tag").map(([_, id]) => `Tag/${id}`)
-                .map(x => this.storeManager.key(x).of<true | undefined>());
+            const storeKeyboolean = idsVorausetuzungen.filter(x => x[0] === "Tag").map(([_, id]) => this.getTagKey(id))
+                ;
 
             const keys = [...storeKeys, ...storeKeyboolean].map(x => x.Key);
 
@@ -1290,7 +1366,7 @@ export class Charakter {
 
                 for (let i = 1; i < values.length; i++) {
                     const value = values[i];
-                    const usedKey = keys[i - 1].split('/');
+                    const usedKey = keys[i - 1].split('/').splice(0, 1);
                     const id = usedKey[1];
                     if (usedKey[0] === "Besonderheit") {
                         besonderheiten[id] = value as number;
@@ -1322,9 +1398,27 @@ export class Charakter {
         });
 
 
+        this.ageStore = this.storeManager.writable(this.getAgeKey(), 1);
+
+
+        const organismKey = this.getOrganismKeys();
+
+        this.morphIdStore = this.storeManager.writable(organismKey.morph.id, undefined);
+
+
+        this.storeManager.derived(organismKey.morph.intance, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].morph : undefined)
+        this.storeManager.derived(organismKey.gattung.intance, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].gattung : undefined)
+        this.storeManager.derived(organismKey.gattung.id, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].gattung.Id : undefined)
+        this.storeManager.derived(organismKey.art.intance, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].art : undefined)
+        this.storeManager.derived(organismKey.art.id, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].art.Id : undefined)
 
 
 
+
+
+
+
+        
 
 
 
@@ -2077,6 +2171,14 @@ export class Charakter {
         }
     }
 
+
+    private getAgeKey(): Key<any, number> {
+        return this.storeManager.key("/age").of<number>();
+    }
+
+    private getPfadKey<kategorie extends string, pfad extends string, level extends string>(kategorie: kategorie, pfad: pfad, level: level) {
+        return this.storeManager.key(`/Pfad/${kategorie}/${pfad}/${level}`).of<number>();
+    }
 
     public static applyAge(age: number, reihe: _Reihe, currentValue: number) {
         const a = age;
