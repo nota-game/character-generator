@@ -1,6 +1,6 @@
 import { derivative, i, max, number, or, re, setUnion, sinhDependencies } from "mathjs";
 import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe, _Besonderheit, EntwicklungDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, ParameterDefinition_misc } from "src/data/nota.g";
-import StoreManager, { type Key } from "../../misc/StoreManager2";
+import StoreManager, { UNINITILEZED, type Key } from "../../misc/StoreManager2";
 import { dataset_dev } from "svelte/internal";
 import { type Readable, get, type Writable } from "svelte/store";
 import { derivedLazy } from "../lazyDerivied";
@@ -1406,19 +1406,50 @@ export class Charakter {
         this.morphIdStore = this.storeManager.writable(organismKey.morph.id, undefined);
 
 
-        this.storeManager.derived(organismKey.morph.intance, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].morph : undefined)
-        this.storeManager.derived(organismKey.gattung.intance, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].gattung : undefined)
+        const morph = this.storeManager.derived(organismKey.morph.intance, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].morph : undefined)
         this.storeManager.derived(organismKey.gattung.id, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].gattung.Id : undefined)
-        this.storeManager.derived(organismKey.art.intance, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].art : undefined)
+        const gattung = this.storeManager.derived(organismKey.gattung.intance, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].gattung : undefined)
         this.storeManager.derived(organismKey.art.id, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].art.Id : undefined)
+        const art = this.storeManager.derived(organismKey.art.intance, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].art : undefined)
+
+
+        const propertyKeys = this.storeManager.derived(this.storeManager.key('/eigenschaften/ids').of<{ id: string, type: 'number' | 'boolean', readonly: boolean }[]>(), [organismKey.morph.intance, organismKey.gattung.intance, organismKey.art.intance], ([morph, gattung, art]) => {
+            const calculations = (this.stammdaten.Instance.Daten.Organismen.Entwiklung?.Berechnung ?? [])
+                .concat(morph?.Entwiklung?.Berechnung ?? [])
+                .concat(art?.Entwiklung?.Berechnung ?? [])
+                .concat(gattung?.Entwiklung?.Berechnung ?? [])
+                .map(x => ({ id: x.id, type: 'number', readonly: true }))
+
+            const rows = (this.stammdaten.Instance.Daten.Organismen.Entwiklung?.Reihe ?? [])
+                .concat(morph?.Entwiklung?.Reihe ?? [])
+                .concat(art?.Entwiklung?.Reihe ?? [])
+                .concat(gattung?.Entwiklung?.Reihe ?? [])
+                .map(x => ({ id: x.id, type: 'number', readonly: false }))
+
+            const points = (this.stammdaten.Instance.Daten.Organismen.Entwiklung?.Punkt ?? [])
+                .concat(morph?.Entwiklung?.Punkt ?? [])
+                .concat(art?.Entwiklung?.Punkt ?? [])
+                .concat(gattung?.Entwiklung?.Punkt ?? [])
+                .map(x => ({ id: x.id, type: 'boolean', readonly: false }))
+
+
+                calculations.concat(rows).concat(points).sort((a,b)=>{return a.id.localeCompare(b.id)});
+            return calculations.concat(rows).concat(points);
+        });
+
+
+
+
+        propertyKeys.subscribe(keys=>{
+            for (const key of keys) {
+                
+            }
+        })
 
 
 
 
 
-
-
-        
 
 
 
