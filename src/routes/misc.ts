@@ -6,8 +6,22 @@ export function filterNull<T>(x: (T | null | undefined)[]): T[] {
     return x.filter(y => y !== null && y !== undefined) as T[];
 }
 
-export function distinct<T>(t: T[]) {
-    return t.filter((v, i, a) => a.indexOf(v) === i);
+export function distinct<T>(t: T[], keyFunction?: (a: T) => string) {
+    if (keyFunction) {
+        const result = [];
+        const set = new Set();
+
+        for (const element of t) {
+            const key = keyFunction(element);
+            if (!set.has(key)) {
+                set.add(key);
+                result.push(element);
+            }
+        }
+        return result;
+    } else {
+        return t.filter((v, i, a) => a.indexOf(v) === i);
+    }
 }
 
 export function join(array: string[], delimeter?: string): string {

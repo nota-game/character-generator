@@ -7,6 +7,7 @@ import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
 import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, _Talent4 } from 'src/data/nota.g';
+import { distinct } from '../misc';
 
 // type lebensabschnittData =
 //     | {
@@ -15,6 +16,12 @@ import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefi
 //         a: ArtDefinition_lebewesen;
 //         g: GattungDefinition_lebewesen;
 //     }
+
+
+type OrganismEigenschaftChanges = {
+    Eigenschaft: string,
+    Typ: 'Alter' | 'Gattung' | 'Art' | 'Morph' | `eigenschaft-${string}`
+}
 
 export class Data {
 
@@ -49,6 +56,7 @@ export class Data {
         }
     };
 
+    public readonly organismEigenschaftChanges: OrganismEigenschaftChanges[];
 
     public readonly AusrüstungsEigenschaftMap: Record<string, Readonly<AusrüstungEigengchaftDefinition_kampf_ausstattung>>;
 
@@ -84,6 +92,101 @@ export class Data {
 
         // this.instance.Daten.Organismen.Gattung.flatMap(x => [{ mod: x.Mods?.Eigenschaften?.Mod.map(xx=>xx.), type: 'Gattung', id: x.Id }, ...x.Art.flatMap(y => [{ mod: y.Mods, type: 'Art', id: y.Id }, ...y.Morphe.Morph.flatMap(z => [{ mod: z.Mods, type: 'Morph', id: z.Id }, z.Lebensabschnitte.Lebensabschnitt.map(xx => ({ mod: xx.Mods, type: 'Morph-Lebensabschnitt', id: z.Id }))])])])
 
+        // this.instance.Daten.Organismen.Gattung.flatMap(x => [{ mod: x.Mods?.Eigenschaften?.Mod.map(xx=>xx.), type: 'Gattung', id: x.Id }, ...x.Art.flatMap(y => [{ mod: y.Mods, type: 'Art', id: y.Id }, ...y.Morphe.Morph.flatMap(z => [{ mod: z.Mods, type: 'Morph', id: z.Id }, z.Lebensabschnitte.Lebensabschnitt.map(xx => ({ mod: xx.Mods, type: 'Morph-Lebensabschnitt', id: z.Id }))])])])
+
+
+
+        this.organismEigenschaftChanges = distinct([
+            ...(this.instance.Daten.Organismen.Entwiklung?.Punkt ?? []).flatMap(punkt => [
+                ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
+                    { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
+                    { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` },
+                ])
+            ]),
+            ...(this.instance.Daten.Organismen.Entwiklung?.Reihe ?? []).flatMap(reihe => [
+                ...(reihe.Schwelle.flatMap(schwelle => ([
+                    ... (schwelle.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
+                        { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
+                        { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` },
+                    ])
+                ])))
+            ]),
+            ...this.instance.Daten.Organismen.Gattung.flatMap(gattung => [
+                ...(gattung.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Eigenschaft: y.Eigenschaft, Typ: 'Gattung' })),
+                ...(gattung.Entwiklung?.Berechnung ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Gattung' })),
+                ...(gattung.Entwiklung?.Punkt ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Gattung' })),
+                ...(gattung.Entwiklung?.Punkt ?? []).flatMap(punkt => [
+                    ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
+                        { Eigenschaft: x.Eigenschaft, Typ: 'Gattung' },
+                        { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
+                        { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` },
+                    ])
+                ]),
+                ...(gattung.Entwiklung?.Reihe ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Gattung' })),
+                ...(gattung.Entwiklung?.Reihe ?? []).flatMap(reihe => [
+                    ...(reihe.Schwelle.flatMap(schwelle => ([
+                        ... (schwelle.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
+                            { Eigenschaft: x.Eigenschaft, Typ: 'Gattung' },
+                            { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
+                            { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` },
+                        ])
+                    ])))
+                ]),
+                ...(gattung.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
+                    ...(lebensabschnitt.Mods?.Eigenschaften?.Mod ?? []).map(x => ({ Eigenschaft: x.Eigenschaft, Typ: 'Alter' }))
+                ]),
+                ...(gattung.Art.flatMap(art => [
+                    ...(art.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Eigenschaft: y.Eigenschaft, Typ: 'Art' })),
+                    ...(art.Entwiklung?.Berechnung ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Art' })),
+                    ...(art.Entwiklung?.Punkt ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Art' })),
+                    ...(art.Entwiklung?.Punkt ?? []).flatMap(punkt => [
+                        ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
+                            { Eigenschaft: x.Eigenschaft, Typ: 'Art' },
+                            { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
+                            { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` },
+                        ])
+                    ]),
+                    ...(art.Entwiklung?.Reihe ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Art' })),
+                    ...(art.Entwiklung?.Reihe ?? []).flatMap(reihe => [
+                        ...(reihe.Schwelle.flatMap(schwelle => ({
+                            ...(schwelle.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
+                                { Eigenschaft: x.Eigenschaft, Typ: 'Art' },
+                                { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
+                                { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` },
+                            ])
+                        })))
+                    ]),
+                    ...(art.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
+                        ...(lebensabschnitt.Mods?.Eigenschaften?.Mod ?? []).map(x => ({ Eigenschaft: x.Eigenschaft, Typ: 'Alter' }))
+                    ]),
+                    ...(art.Morphe.Morph.flatMap(morph => [
+                        ...(morph.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Eigenschaft: y.Eigenschaft, Typ: 'Morph' })),
+                        ...(morph.Entwiklung?.Berechnung ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Morph' })),
+                        ...(morph.Entwiklung?.Punkt ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Morph' })),
+                        ...(art.Entwiklung?.Punkt ?? []).flatMap(punkt => [
+                            ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
+                                { Eigenschaft: x.Eigenschaft, Typ: 'Morph' },
+                                { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
+                                { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` },
+                            ])
+                        ]),
+                        ...(morph.Entwiklung?.Reihe ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Morph' })),
+                        ...(morph.Entwiklung?.Reihe ?? []).flatMap(reihe => [
+                            ...(reihe.Schwelle.flatMap(schwelle => ([
+                                ...(schwelle.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
+                                    { Eigenschaft: x.Eigenschaft, Typ: 'Morph' },
+                                    { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
+                                    { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` },
+                                ])
+                            ])))
+                        ]),
+                        ...(morph.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
+                            ...(lebensabschnitt.Mods?.Eigenschaften?.Mod ?? []).map(x => ({ Eigenschaft: x.Eigenschaft, Typ: 'Alter' }))
+                        ]),
+                    ])),
+                ])),
+            ])
+        ], e => `${e.Eigenschaft}δ${e.Typ}`) as OrganismEigenschaftChanges[];
 
 
         this.AusrüstungsEigenschaftMap = data.Daten.Ausstattung.Eigenschaften.Eigenschaft.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, AusrüstungEigengchaftDefinition_kampf_ausstattung>)
