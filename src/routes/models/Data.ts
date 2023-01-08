@@ -20,7 +20,7 @@ import { distinct } from '../misc';
 
 type OrganismEigenschaftChanges = {
     Eigenschaft: string,
-    Typ: 'Alter' | 'Gattung' | 'Art' | 'Morph' | `eigenschaft-${string}`
+    Typ: 'Alter' | 'Gattung' | 'Art' | 'Morph' | `eigenschaft-${string}` | `besonderheit-${string}` | `fertigkeit-${string}`
 }
 
 export class Data {
@@ -56,7 +56,8 @@ export class Data {
         }
     };
 
-    public readonly organismEigenschaftChanges: OrganismEigenschaftChanges[];
+    public readonly eigenschaftenDependencys: OrganismEigenschaftChanges[];
+    public readonly allEigenschaftKeys: string[];
 
     public readonly AusrüstungsEigenschaftMap: Record<string, Readonly<AusrüstungEigengchaftDefinition_kampf_ausstattung>>;
 
@@ -95,8 +96,56 @@ export class Data {
         // this.instance.Daten.Organismen.Gattung.flatMap(x => [{ mod: x.Mods?.Eigenschaften?.Mod.map(xx=>xx.), type: 'Gattung', id: x.Id }, ...x.Art.flatMap(y => [{ mod: y.Mods, type: 'Art', id: y.Id }, ...y.Morphe.Morph.flatMap(z => [{ mod: z.Mods, type: 'Morph', id: z.Id }, z.Lebensabschnitte.Lebensabschnitt.map(xx => ({ mod: xx.Mods, type: 'Morph-Lebensabschnitt', id: z.Id }))])])])
 
 
+        this.allEigenschaftKeys = distinct([
+            ...(this.instance.Daten.Organismen.Entwiklung?.Berechnung ?? []).map(x => x.id),
+            ...(this.instance.Daten.Organismen.Entwiklung?.Punkt ?? []).map(x => x.id),
+            ...(this.instance.Daten.Organismen.Entwiklung?.Reihe ?? []).map(x => x.id),
+            ...(this.instance.Daten.Organismen.Gattung ?? []).flatMap(gattung => [
+                ...(gattung.Entwiklung?.Berechnung ?? []).map(x => x.id),
+                ...(gattung.Entwiklung?.Punkt ?? []).map(x => x.id),
+                ...(gattung.Entwiklung?.Reihe ?? []).map(x => x.id),
+                ...(gattung.Art ?? []).flatMap(art => [
+                    ...(art.Entwiklung?.Berechnung ?? []).map(x => x.id),
+                    ...(art.Entwiklung?.Punkt ?? []).map(x => x.id),
+                    ...(art.Entwiklung?.Reihe ?? []).map(x => x.id),
+                    ...(art.Morphe.Morph ?? []).flatMap(morph => [
+                        ...(morph.Entwiklung?.Berechnung ?? []).map(x => x.id),
+                        ...(morph.Entwiklung?.Punkt ?? []).map(x => x.id),
+                        ...(morph.Entwiklung?.Reihe ?? []).map(x => x.id),
+                    ]),
+                ]),
+            ]),
+        ]);
 
-        this.organismEigenschaftChanges = distinct([
+        function getKeysFrom(params: string) {
+            const reg = /eigenschaft:(?<id>[^(]+)/g;
+            const result = [];
+            for (const match of params.matchAll(reg)) {
+                const id = match.groups?.['id'];
+                result.push(id);
+            }
+
+            return distinct(result);
+
+
+        }
+
+
+        this.eigenschaftenDependencys = distinct([
+            ...(this.instance.Daten.Besonderheiten ?? []).flatMap(besonderheitGruppe =>
+                [
+                    ...(besonderheitGruppe.Besonderheit ?? []).flatMap(besonderheit => besonderheit.Stufe.flatMap(stufe => [
+                        ...(stufe.Mods?.Eigenschaften?.Mod ?? []).map(x => ({ Eigenschaft: x.Eigenschaft, Typ: `besonderheit-${besonderheit.Id}` }))
+                    ]))
+                ]),
+            ...(this.instance.Daten.Fertigkeiten ?? []).flatMap(fertigkeitenGruppe =>
+                [
+                    ...(fertigkeitenGruppe.Fertigkeit ?? []).flatMap(fertigkeit => fertigkeit.Stufe.flatMap(stufe => [
+                        ...(stufe.Mods?.Eigenschaften?.Mod ?? []).map(x => ({ Eigenschaft: x.Eigenschaft, Typ: `fertigkeit-${fertigkeit.Id}` }))
+                    ]))
+                ]),
+            ...(this.instance.Daten.Organismen.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }))),
+
             ...(this.instance.Daten.Organismen.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                 ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
                     { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
@@ -114,6 +163,7 @@ export class Data {
             ...this.instance.Daten.Organismen.Gattung.flatMap(gattung => [
                 ...(gattung.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Eigenschaft: y.Eigenschaft, Typ: 'Gattung' })),
                 ...(gattung.Entwiklung?.Berechnung ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Gattung' })),
+                ...(gattung.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }))),
                 ...(gattung.Entwiklung?.Punkt ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Gattung' })),
                 ...(gattung.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                     ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
@@ -138,6 +188,7 @@ export class Data {
                 ...(gattung.Art.flatMap(art => [
                     ...(art.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Eigenschaft: y.Eigenschaft, Typ: 'Art' })),
                     ...(art.Entwiklung?.Berechnung ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Art' })),
+                    ...(art.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }))),
                     ...(art.Entwiklung?.Punkt ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Art' })),
                     ...(art.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                         ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
@@ -162,6 +213,7 @@ export class Data {
                     ...(art.Morphe.Morph.flatMap(morph => [
                         ...(morph.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Eigenschaft: y.Eigenschaft, Typ: 'Morph' })),
                         ...(morph.Entwiklung?.Berechnung ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Morph' })),
+                        ...(morph.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }))),
                         ...(morph.Entwiklung?.Punkt ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Morph' })),
                         ...(art.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                             ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [

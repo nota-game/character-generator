@@ -45,6 +45,9 @@ declare type KeysArray = Key<any, any> | [Key<any, any>, ...Array<Key<any, any>>
 declare type KeysValues<T> = T extends Key<any, infer U> ? U : {
     [K in keyof T]: T[K] extends Key<any, infer U> ? U : never;
 };
+declare type KeysValuesArray<T> = {
+    [K in keyof T]: T[K] extends Key<any, infer U> ? U : never;
+};
 
 export interface Key<K extends string, T> {
     /**
@@ -86,7 +89,7 @@ export default class StoreManager {
      * @param value initial value
      * @param {StartStopNotifier}start start and stop notifications for subscriptions
      */
-    public readable<key2 extends Key<string, T>, T>(key: key2): Readable<T> {
+    public readable<KeyString extends string, T>(key: Key<KeyString, T>): Readable<T> & { key: Key<KeyString, T> } {
         const current = this.prepareData(key);
         const subscribe = (run: Subscriber<T>, invalidate: Invalidator<T> = internal.noop): Unsubscriber => {
             const subscriber = [run, invalidate] as const;
@@ -98,7 +101,8 @@ export default class StoreManager {
             };
         }
         return {
-            subscribe
+            subscribe,
+            key
         };
     }
 
@@ -106,7 +110,7 @@ export default class StoreManager {
 
 
 
-    private prepareData<T>(key: Key<any, T>, set?: () => T): SubscriberData<T> {
+    private prepareData<T>(key: Key<any, T>, set?: () => T | typeof UNINITILEZED): SubscriberData<T> {
         if (!this.data[key.Key]) {
 
             const setFactory = () => {
@@ -245,7 +249,7 @@ export default class StoreManager {
     }
 
 
-    public writable<T>(key: Key<any, T>, value: T, compare?: (a: T, b: T) => boolean): Writable<T> {
+    public writable<T, KeyString extends string>(key: Key<KeyString, T>, value: T, compare?: (a: T, b: T) => boolean): Writable<T> & { key: Key<KeyString, T> } {
         let setValue = value;
         const current = this.prepareData(key, () => setValue);
         current.compare = compare;
@@ -291,24 +295,28 @@ export default class StoreManager {
         //     return x;
         // })
         return {
-            subscribe, set, update
+            subscribe, set, update, key
         };
     }
 
     // , fn: (values: StoresValues<S>, set?: (value: T) => void) => T, initial_value?: T
     // public derived<K extends Keys, T>(values: KeysValues<K>, fn: (values: KeysValues<K>) => T): Readable<T> {
-    public derived<S extends KeysArray, T>(key: Key<any, T>, stores: S, fn: (values: KeysValues<S>, set?: (value: T) => void) => T, compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean): Readable<T> {
+    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: (values: KeysValues<S>, changes: boolean[], oldValue: T | typeof UNINITILEZED) => T, compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean): Readable<T> & { key: Key<KeyString, T> } {
         const single = !Array.isArray(stores);
         const stores_array: Array<Key<any, any>> = single
             ? [stores]
             : stores;
 
+        let oldValues: any[];
+
         stores_array.forEach(x => {
             const toAdd = this.prepareData(x);
         });
-        const current = this.prepareData(key, () => {
+        const current: SubscriberData<T> = this.prepareData(key, () => {
             if (stores_array.every(x => this.data[x.Key] !== undefined && this.data[x.Key].value !== UNINITILEZED)) {
-                return fn(single ? this.data[stores_array[0].Key].value : stores_array.map(x => this.data[x.Key].value) as any)
+                const changes = stores_array.map((x, i) => oldValues == undefined ? true : (this.data[x.Key].compare ?? deepEqual)(this.data[x.Key].value, oldValues[i]))
+                oldValues = stores_array.map(x => this.data[x.Key].value);
+                return fn(single ? this.data[stores_array[0].Key].value : stores_array.map(x => this.data[x.Key].value, changes) as any, changes, current.value)
             }
             return UNINITILEZED;
         });
