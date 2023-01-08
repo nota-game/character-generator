@@ -1,5 +1,5 @@
-import { derivative, i, max, number, or, re, setUnion, sinhDependencies } from "mathjs";
-import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe, _Besonderheit, EntwicklungDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, ParameterDefinition_misc } from "src/data/nota.g";
+import { derivative, i, max, number, or, re, setUnion, sinhDependencies, xgcd } from "mathjs";
+import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe, _Besonderheit, EntwicklungDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, ParameterDefinition_misc, _Lokalisirung } from "src/data/nota.g";
 import StoreManager, { UNINITILEZED, type Key } from "../../misc/StoreManager2";
 import { dataset_dev } from "svelte/internal";
 import { type Readable, get, type Writable } from "svelte/store";
@@ -519,6 +519,51 @@ export type CharacterChange = {
     };
 };
 
+type costType = Record<string, number>;
+
+
+type Schwelle = {
+    Wert: number;
+    Name: {
+        Lokalisirung: _Lokalisirung[];
+    } | undefined;
+    Beschreibung: {
+        Lokalisirung: _Lokalisirung[];
+    } | undefined;
+    Kosten: ({
+        Berechnung: string;
+    } & {
+        Id: string;
+    })[];
+    Mods: ({
+        Eigenschaften: {
+            Mod: ({
+                Eigenschaft: string;
+            } & {
+                Mod: number;
+            } & {
+                Type: "additiv" | "multiplikativ";
+            })[];
+        } | undefined;
+    } & {
+        Besonderheiten: {
+            Besonderheit: _Besonderheit[];
+        } | undefined;
+    } & {
+        Tags: {
+            Tag: {
+                Id: string;
+            }[];
+        } | undefined;
+    }) | undefined;
+};
+
+type Quantile = {
+    Wert: number;
+    Quantil: number;
+};
+
+
 export class Charakter {
     public readonly stammdaten: Data;
     private readonly id: string;
@@ -826,120 +871,125 @@ export class Charakter {
 
 
 
-    public getFertigkeitInfo(id: string) {
-        return new FertigkeitInfo(this.storeManager, this.stammdaten.StandardKosten, this.stammdaten.fertigkeitenMap[id], this.fertigkeitenStore, this.fertigkeitenPurchasedDataStore, this.fertigkeitenFixDataStore);
-    }
-    public getBesonderheitInfo(id: string) {
-        return new BesonderheitenInfo(this.storeManager, this.stammdaten.besonderheitenMap[id], this.besonderheitenStore, this.besonderheitenPurchasedDataStore, this.besonderheitenFixDataStore);
-    }
+    // public getFertigkeitInfo(id: string) {
+    //     return new FertigkeitInfo(this.storeManager, this.stammdaten.StandardKosten, this.stammdaten.fertigkeitenMap[id], this.fertigkeitenStore, this.fertigkeitenPurchasedDataStore, this.fertigkeitenFixDataStore);
+    // }
+    // public getBesonderheitInfo(id: string) {
+    //     return new BesonderheitenInfo(this.storeManager, this.stammdaten.besonderheitenMap[id], this.besonderheitenStore, this.besonderheitenPurchasedDataStore, this.besonderheitenFixDataStore);
+    // }
 
-    public getMissingRequirements(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): MissingRequirements | null {
-        return this.getMissingInternal(requirements, this.talentEffective, this.talentDerivation, this.talentBase, this.besonderheiten, this.besonderheitenIgnoreRequirements, this.fertigkeiten, this.fertigkeitenIgnoreRequirements, this.tags);
-    }
-    private getMissingInternal(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined, talentEffective: Record<string, number>, talentDerivation: Record<string, number>, talentBase: Record<string, number>, besonderheiten: Record<string, number | undefined>, besonderheitenIgnored: Record<string, number | undefined>, fertigkeiten: Record<string, number | undefined>, fertigkeitenIgnored: Record<string, number | undefined>, tags: Record<string, true | undefined>): MissingRequirements | null {
-        if (requirements == undefined)
-            return null;
-        const singel = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit, negate: boolean): MissingRequirements | null => {
-            if (requirements["#"] == 'Tag') {
-                return (tags?.[requirements.Tag.Id] === true) !== negate
-                    ? null
-                    : { type: 'tag', id: requirements.Tag.Id }
-            } else if (requirements["#"] === 'Fertigkeit') {
-                return (((fertigkeiten?.[requirements.Fertigkeit.Id] ?? 0) >= requirements.Fertigkeit.Stufe) === true) !== negate && (((fertigkeitenIgnored?.[requirements.Fertigkeit.Id] ?? 0) >= requirements.Fertigkeit.Stufe) === true) !== negate
-                    ? null
-                    : { type: 'Fertigkeit', id: requirements.Fertigkeit.Id, Stufe: requirements.Fertigkeit.Stufe }
-            } else if (requirements["#"] === 'Besonderheit') {
-                return (((besonderheiten?.[requirements.Besonderheit.Id] ?? 0) >= requirements.Besonderheit.Stufe) === true) !== negate && (((besonderheitenIgnored?.[requirements.Besonderheit.Id] ?? 0) >= requirements.Besonderheit.Stufe) === true) !== negate
-                    ? null
-                    : { type: 'Besonderheit', id: requirements.Besonderheit.Id, Stufe: requirements.Besonderheit.Stufe }
-            } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Basis") {
-                return (((talentBase?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
-                    ? null
-                    : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
-            } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Effektiv") {
-                return (((talentEffective?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
-                    ? null
-                    : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
-            } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Unterstützung") {
-                return (((talentDerivation?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
-                    ? null
-                    : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
-            } else if (requirements["#"] === 'Not') {
-                const temp = singel(requirements.Not, !negate);
-                if (temp === null) {
-                    return null;
-                }
-                else {
-                    return { type: 'Not', sub: temp }
-                }
-            } else if (requirements["#"] === 'And') {
-                const temp = multy(requirements.And, negate);
-                if (temp === null || temp.length == 0) {
-                    return null;
-                }
-                else if (temp.length == 1) {
-                    return temp[0];
-                }
-                else {
-                    return { type: 'And', sub: temp }
-                }
-            } else if (requirements["#"] === 'Or') {
-                const temp = multy(requirements.Or, negate);
-                if (temp === null || temp.length === 0) {
-                    return null;
-                }
-                else if (temp.length == 1) {
-                    return temp[0];
-                }
-                else {
-                    return { type: 'Or', sub: temp }
-                }
-            }
-            else {
-                throw Error('Not implemented: restriction');
-            }
-
-
-        }
-
-        const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit, negate: boolean): MissingRequirements[] => {
-            return [
-                ... (filterNull<MissingRequirements>(requirements.And?.map(x => singel({ "#": "And", And: x } as any, negate)) ?? [])),
-                ... (filterNull<MissingRequirements>(requirements.Or?.map(x => singel({ "#": "Or", Or: x } as any, negate)) ?? [])),
-                ... (filterNull<MissingRequirements>(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x } as any, negate)) ?? [])),
-                ... (filterNull<MissingRequirements>(requirements.Not?.map(x => singel({ "#": "Not", Not: x } as any, !negate)) ?? [])),
-                ... (filterNull<MissingRequirements>(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x } as any, negate)) ?? [])),
-                ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any, negate)) ?? [])),
-                ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Talent?.map(x => singel({ "#": "Talent", Talent: x } as any, negate)) ?? [])),
-            ];
-        }
-        return singel(requirements, false);
-    }
-    public getMissingRequirementsStore(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): Readable<MissingRequirements | null> {
-        if (requirements == undefined)
-            return this.storeManager.writable(null);
-        return this.storeManager.derived([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, this.besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, this.fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore], ([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
-            return this.getMissingInternal(requirements, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags);
-        });
-    }
+    // public getMissingRequirements(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): MissingRequirements | null {
+    //     return this.getMissingInternal(requirements, this.talentEffective, this.talentDerivation, this.talentBase, this.besonderheiten, this.besonderheitenIgnoreRequirements, this.fertigkeiten, this.fertigkeitenIgnoreRequirements, this.tags);
+    // }
+    // private getMissingInternal(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined, talentEffective: Record<string, number>, talentDerivation: Record<string, number>, talentBase: Record<string, number>, besonderheiten: Record<string, number | undefined>, besonderheitenIgnored: Record<string, number | undefined>, fertigkeiten: Record<string, number | undefined>, fertigkeitenIgnored: Record<string, number | undefined>, tags: Record<string, true | undefined>): MissingRequirements | null {
+    //     if (requirements == undefined)
+    //         return null;
+    //     const singel = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit, negate: boolean): MissingRequirements | null => {
+    //         if (requirements["#"] == 'Tag') {
+    //             return (tags?.[requirements.Tag.Id] === true) !== negate
+    //                 ? null
+    //                 : { type: 'tag', id: requirements.Tag.Id }
+    //         } else if (requirements["#"] === 'Fertigkeit') {
+    //             return (((fertigkeiten?.[requirements.Fertigkeit.Id] ?? 0) >= requirements.Fertigkeit.Stufe) === true) !== negate && (((fertigkeitenIgnored?.[requirements.Fertigkeit.Id] ?? 0) >= requirements.Fertigkeit.Stufe) === true) !== negate
+    //                 ? null
+    //                 : { type: 'Fertigkeit', id: requirements.Fertigkeit.Id, Stufe: requirements.Fertigkeit.Stufe }
+    //         } else if (requirements["#"] === 'Besonderheit') {
+    //             return (((besonderheiten?.[requirements.Besonderheit.Id] ?? 0) >= requirements.Besonderheit.Stufe) === true) !== negate && (((besonderheitenIgnored?.[requirements.Besonderheit.Id] ?? 0) >= requirements.Besonderheit.Stufe) === true) !== negate
+    //                 ? null
+    //                 : { type: 'Besonderheit', id: requirements.Besonderheit.Id, Stufe: requirements.Besonderheit.Stufe }
+    //         } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Basis") {
+    //             return (((talentBase?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
+    //                 ? null
+    //                 : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+    //         } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Effektiv") {
+    //             return (((talentEffective?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
+    //                 ? null
+    //                 : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+    //         } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Unterstützung") {
+    //             return (((talentDerivation?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
+    //                 ? null
+    //                 : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+    //         } else if (requirements["#"] === 'Not') {
+    //             const temp = singel(requirements.Not, !negate);
+    //             if (temp === null) {
+    //                 return null;
+    //             }
+    //             else {
+    //                 return { type: 'Not', sub: temp }
+    //             }
+    //         } else if (requirements["#"] === 'And') {
+    //             const temp = multy(requirements.And, negate);
+    //             if (temp === null || temp.length == 0) {
+    //                 return null;
+    //             }
+    //             else if (temp.length == 1) {
+    //                 return temp[0];
+    //             }
+    //             else {
+    //                 return { type: 'And', sub: temp }
+    //             }
+    //         } else if (requirements["#"] === 'Or') {
+    //             const temp = multy(requirements.Or, negate);
+    //             if (temp === null || temp.length === 0) {
+    //                 return null;
+    //             }
+    //             else if (temp.length == 1) {
+    //                 return temp[0];
+    //             }
+    //             else {
+    //                 return { type: 'Or', sub: temp }
+    //             }
+    //         }
+    //         else {
+    //             throw Error('Not implemented: restriction');
+    //         }
 
 
+    //     }
 
-    private getTalentKeys<id extends string>(Id: id): { keyEpPurchased: Key<`/Talent/${id}/EP/purchased`, number>; keyEpBase: Key<`/Talent/${id}/EP/base`, number>; keyEpFixed: Key<`/Talent/${id}/EP/fixed`, number>; keyTaA: Key<`/Talent/${id}/TaA`, number>; keyTaB: Key<`/Talent/${id}/TaB`, number>; keyTaW: Key<`/Talent/${id}/TaW`, number>; keyTaWUnbeschränkt: Key<`Talent/${id}/TaWUnbeschränkt`, number>; keyMissing: Key<`Talent/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]>; } {
+    //     const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit, negate: boolean): MissingRequirements[] => {
+    //         return [
+    //             ... (filterNull<MissingRequirements>(requirements.And?.map(x => singel({ "#": "And", And: x } as any, negate)) ?? [])),
+    //             ... (filterNull<MissingRequirements>(requirements.Or?.map(x => singel({ "#": "Or", Or: x } as any, negate)) ?? [])),
+    //             ... (filterNull<MissingRequirements>(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x } as any, negate)) ?? [])),
+    //             ... (filterNull<MissingRequirements>(requirements.Not?.map(x => singel({ "#": "Not", Not: x } as any, !negate)) ?? [])),
+    //             ... (filterNull<MissingRequirements>(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x } as any, negate)) ?? [])),
+    //             ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any, negate)) ?? [])),
+    //             ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Talent?.map(x => singel({ "#": "Talent", Talent: x } as any, negate)) ?? [])),
+    //         ];
+    //     }
+    //     return singel(requirements, false);
+    // }
+    // public getMissingRequirementsStore(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): Readable<MissingRequirements | null> {
+    //     if (requirements == undefined)
+    //         return this.storeManager.writable(null);
+    //     return this.storeManager.derived([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, this.besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, this.fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore], ([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+    //         return this.getMissingInternal(requirements, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags);
+    //     });
+    // }
+
+
+
+    private getTalentKeys<id extends string>(Id: id): { keyEpPurchased: Key<`/Talent/${id}/EP/purchased`, number>; keyEpBase: Key<`/Talent/${id}/EP/base`, number>; keyEpFixed: Key<`/Talent/${id}/EP/fixed`, number>; keyTaA: Key<`/Talent/${id}/TaA`, number>; keyTaB: Key<`/Talent/${id}/TaB`, number>; keyTaW: Key<`/Talent/${id}/TaW`, number>; keyTaWUnbeschränkt: Key<`/Talent/${id}/TaWUnbeschränkt`, number>; keyMissing: Key<`/Talent/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]>; } {
         const keyEpPurchased = this.storeManager.key(`/Talent/${Id}/EP/purchased`).of<number>();
         const keyEpFixed = this.storeManager.key(`/Talent/${Id}/EP/fixed`).of<number>();
         const keyEpBase = this.storeManager.key(`/Talent/${Id}/EP/base`).of<number>();
         const keyTaB = this.storeManager.key(`/Talent/${Id}/TaB`).of<number>();
         const keyTaA = this.storeManager.key(`/Talent/${Id}/TaA`).of<number>();
         const keyTaW = this.storeManager.key(`/Talent/${Id}/TaW`).of<number>();
-        const keyTaWUnbeschränkt = this.storeManager.key(`Talent/${Id}/TaWUnbeschränkt`).of<number>();
-        const keyMissing = this.storeManager.key(`Talent/${Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
+        const keyTaWUnbeschränkt = this.storeManager.key(`/Talent/${Id}/TaWUnbeschränkt`).of<number>();
+        const keyMissing = this.storeManager.key(`/Talent/${Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
 
         return { keyEpPurchased, keyEpBase, keyEpFixed, keyTaA, keyTaB, keyTaW, keyTaWUnbeschränkt, keyMissing };
     }
+
+    private getAllTalnetPurchasedKey() {
+        const key = this.storeManager.key('/Talent/*/EP/purchased').of<Record<string, { EP: { purchased: number } }>>();
+        return key;
+    }
+
     private getTagKey<id extends string>(Id: id) {
         return this.storeManager.key(`/Tag/${Id}`).of<true | undefined>();
-
     }
 
     private getBesonterheitKeys<id extends string>(Id: id): { keyPurchased: Key<`/Besonderheit/${id}/purchased`, number>; keyFixed: Key<`/Besonderheit/${id}/fixed`, number>; keyUnbeschränkt: Key<`/Besonderheit/${id}/StufeUnbeschränkt`, number>; keyMissing: Key<`/Besonderheit/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]>; keyEffectiv: Key<`/Besonderheit/${id}/Stufe`, number>; } {
@@ -958,12 +1008,30 @@ export class Charakter {
         }
     }
 
-    private getFertigkeitenKeys<id extends string>(Id: id): { keyPurchased: Key<`/Fertigkeit/${id}/purchased`, number>; keyFixed: Key<`/Fertigkeit/${id}/fixed`, number>; keyUnbeschränkt: Key<`/Fertigkeit/${id}/StufeUnbeschränkt`, number>; keyMissing: Key<`/Fertigkeit/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]>; keyEffectiv: Key<`/Fertigkeit/${id}/Stufe`, number>; } {
-        const keyPurchased = this.storeManager.key(`/Fertigkeit/${Id}/purchased`).of<number>();
-        const keyFixed = this.storeManager.key(`/Fertigkeit/${Id}/fixed`).of<number>();
-        const keyUnbeschränkt = this.storeManager.key(`/Fertigkeit/${Id}/StufeUnbeschränkt`).of<number>();
-        const keyMissing = this.storeManager.key(`/Fertigkeit/${Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
-        const keyEffectiv = this.storeManager.key(`/Fertigkeit/${Id}/Stufe`).of<number>();
+    private getKostKeys(): { total: Key<"/kosten/total", costType>; talent: Key<"/kosten/talent", costType>; fertigkeit: Key<"/kosten/fertigkeit", costType>; besoderheit: Key<"/kosten/besonderheit", costType>; eigenschaften: Key<"/kosten/eigenschaften", costType>; } {
+
+        const total = this.storeManager.key(`/kosten/total`).of<costType>();
+        const talent = this.storeManager.key(`/kosten/talent`).of<costType>();
+        const fertigkeit = this.storeManager.key(`/kosten/fertigkeit`).of<costType>();
+        const besoderheit = this.storeManager.key(`/kosten/besonderheit`).of<costType>();
+        const eigenschaften = this.storeManager.key(`/kosten/eigenschaften`).of<costType>();
+
+        return {
+            total,
+            talent,
+            fertigkeit,
+            besoderheit,
+            eigenschaften,
+        };
+    }
+
+
+    private getFertigkeitenKeys<id extends string>(Id: id): { keyPurchased: Key<`/fertigkeit/${id}/purchased`, number>; keyFixed: Key<`/fertigkeit/${id}/fixed`, number>; keyUnbeschränkt: Key<`/fertigkeit/${id}/StufeUnbeschränkt`, number>; keyMissing: Key<`/fertigkeit/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]>; keyEffectiv: Key<`/fertigkeit/${id}/Stufe`, number>; } {
+        const keyPurchased = this.storeManager.key(`/fertigkeit/${Id}/purchased`).of<number>();
+        const keyFixed = this.storeManager.key(`/fertigkeit/${Id}/fixed`).of<number>();
+        const keyUnbeschränkt = this.storeManager.key(`/fertigkeit/${Id}/StufeUnbeschränkt`).of<number>();
+        const keyMissing = this.storeManager.key(`/fertigkeit/${Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
+        const keyEffectiv = this.storeManager.key(`/fertigkeit/${Id}/Stufe`).of<number>();
 
         return { keyPurchased, keyFixed, keyUnbeschränkt, keyMissing, keyEffectiv };
     }
@@ -1413,293 +1481,212 @@ export class Charakter {
         const art = this.storeManager.derived(organismKey.art.intance, organismKey.morph.id, id => id ? this.stammdaten.morphLookup[id].art : undefined)
 
 
-        const propertyKeys = this.storeManager.derived(this.storeManager.key('/eigenschaften/ids').of<{ id: string, type: 'number' | 'boolean', readonly: boolean }[]>(), [organismKey.morph.intance, organismKey.gattung.intance, organismKey.art.intance], ([morph, gattung, art]) => {
-            const calculations = (this.stammdaten.Instance.Daten.Organismen.Entwiklung?.Berechnung ?? [])
-                .concat(morph?.Entwiklung?.Berechnung ?? [])
-                .concat(art?.Entwiklung?.Berechnung ?? [])
-                .concat(gattung?.Entwiklung?.Berechnung ?? [])
-                .map(x => ({ id: x.id, type: 'number', readonly: true }))
+        const propertyKeysKey = this.storeManager.key('/eigenschaften/ids').of<{ id: string; type: 'berechnung' | 'reihe' | 'punkt'; definition: 'gattung' | 'art' | 'morph' | 'organismus'; readonly: boolean; }[]>();
+        const propertyKeys = this.storeManager.derived(propertyKeysKey, [organismKey.morph.intance, organismKey.gattung.intance, organismKey.art.intance], ([morph, gattung, art]) => {
+            const calculations = ((this.stammdaten.Instance.Daten.Organismen.Entwiklung?.Berechnung ?? []).map(x => ({ id: x.id, definition: 'organismus' })))
+                .concat((morph?.Entwiklung?.Berechnung ?? []).map(x => ({ id: x.id, definition: 'morph' })))
+                .concat((art?.Entwiklung?.Berechnung ?? []).map(x => ({ id: x.id, definition: 'art' })))
+                .concat((gattung?.Entwiklung?.Berechnung ?? []).map(x => ({ id: x.id, definition: 'gattung' })))
+                .map(x => ({ ...x, type: 'berechnung', readonly: true }))
 
-            const rows = (this.stammdaten.Instance.Daten.Organismen.Entwiklung?.Reihe ?? [])
-                .concat(morph?.Entwiklung?.Reihe ?? [])
-                .concat(art?.Entwiklung?.Reihe ?? [])
-                .concat(gattung?.Entwiklung?.Reihe ?? [])
-                .map(x => ({ id: x.id, type: 'number', readonly: false }))
+            const rows = ((this.stammdaten.Instance.Daten.Organismen.Entwiklung?.Reihe ?? []).map(x => ({ id: x.id, definition: 'organismus' })))
+                .concat((morph?.Entwiklung?.Reihe ?? []).map(x => ({ id: x.id, definition: 'morph' })))
+                .concat((art?.Entwiklung?.Reihe ?? []).map(x => ({ id: x.id, definition: 'art' })))
+                .concat((gattung?.Entwiklung?.Reihe ?? []).map(x => ({ id: x.id, definition: 'gattung' })))
+                .map(x => ({ ...x, type: 'reihe', readonly: false }))
 
-            const points = (this.stammdaten.Instance.Daten.Organismen.Entwiklung?.Punkt ?? [])
-                .concat(morph?.Entwiklung?.Punkt ?? [])
-                .concat(art?.Entwiklung?.Punkt ?? [])
-                .concat(gattung?.Entwiklung?.Punkt ?? [])
-                .map(x => ({ id: x.id, type: 'boolean', readonly: false }))
+            const points = ((this.stammdaten.Instance.Daten.Organismen.Entwiklung?.Punkt ?? []).map(x => ({ id: x.id, definition: 'organismus' })))
+                .concat((morph?.Entwiklung?.Punkt ?? []).map(x => ({ id: x.id, definition: 'morph' })))
+                .concat((art?.Entwiklung?.Punkt ?? []).map(x => ({ id: x.id, definition: 'art' })))
+                .concat((gattung?.Entwiklung?.Punkt ?? []).map(x => ({ id: x.id, definition: 'gattung' })))
+                .map(x => ({ ...x, type: 'punkt', readonly: false }))
 
 
-                calculations.concat(rows).concat(points).sort((a,b)=>{return a.id.localeCompare(b.id)});
+            calculations.concat(rows).concat(points).sort((a, b) => { return a.id.localeCompare(b.id) });
             return calculations.concat(rows).concat(points);
         });
 
 
 
 
-        propertyKeys.subscribe(keys=>{
-            for (const key of keys) {
-                
-            }
-        })
+        for (const key of this.stammdaten.allEigenschaftKeys) {
+            const { raw, effective } = this.getPropertieKeys(key);
+            const writablStore = this.storeManager.writable(raw, undefined);
+            const dependentData = this.stammdaten.eigenschaftenDependencys.filter(x => x.Eigenschaft == key).map(x => x.Typ);
 
 
+            const dependentBesonderheiten: Key<string, number>[] = dependentData.filter(x => x.startsWith('besonderheit-'))
+                .map(x => x.substring('besonderheit-'.length))
+                .map(x => this.getBesonterheitKeys(x).keyEffectiv);
+            const dependentFertigkeiten: Key<string, number>[] = dependentData.filter(x => x.startsWith('fertigkeit-'))
+                .map(x => x.substring('fertigkeit-'.length))
+                .map(x => this.getFertigkeitenKeys(x).keyEffectiv);
+
+            const dependentEigenschaften: Key<string, number>[] = dependentData.filter(x => x.startsWith('eigenschaft-'))
+                .map(x => x.substring('eigenschaft-'.length))
+                .map(x => this.getPropertieKeys(x).effective);
+
+            this.storeManager.derived(effective, [this.getAgeKey(), morph.key, art.key, gattung.key, propertyKeysKey, raw, ...dependentBesonderheiten, ...dependentFertigkeiten, ...dependentEigenschaften], ([age, morph, art, gattung, propertyKeys, setValue, ...dependent], [age, morphChanged, artChanged, gattungChanged, keyChanges, setChanges, ...changes], oldValue) => {
+
+                let resultreturn: number;
+                // check if it is active
+                if (!propertyKeys.map(x => x.id).includes(key)) {
+                    return undefined;
+                }
+
+                // if only keys changed we can use the old value
+                if (!setChanges && !changes.some(x => x)) {
+                    return oldValue;
+                }
+
+                const propertyOrder = { 'organismus': 4, 'gattung': 3, 'art': 2, 'morph': 1 };
+                const currentProperty = propertyKeys.filter(x => x.id == key).sort((a, b) => propertyOrder[a.definition] - propertyOrder[b.definition])[0];
+
+                const currentEntwicklung = currentProperty.definition == 'morph'
+                    ? morph?.Entwiklung
+                    : currentProperty.definition == 'art'
+                        ? art?.Entwiklung
+                        : currentProperty.definition == 'gattung'
+                            ? gattung?.Entwiklung
+                            : currentProperty.definition == 'organismus'
+                                ? this.stammdaten.Instance.Daten.Organismen.Entwiklung
+                                : undefined;
 
 
+                if (currentEntwicklung == undefined) {
+                    return undefined;
+                }
 
+                if (currentProperty.type == 'berechnung') {
 
-
-
-
-
-
-
-
-
-
-        this.sizeStore = this.storeManager.derived([this.propertyScaleData], ([propertyScaleData]) => {
-            return propertyScaleData['größe'] ?? 0;
-        });
-
-        this.morphStore = this.storeManager.derived(this.morphIdStore, mid => {
-            if (mid)
-                return this.stammdaten.morphLookup[mid].morph;
-            return undefined;
-        });
-
-        this.organismusStore = this.storeManager.derived([this.ageStore, this.morphIdStore], ([age, morphId]) => {
-            if (morphId == undefined) {
-                // console.debug('no morph')
-                return undefined;
-            }
-
-            const lookedup = this.stammdaten.morphLookup[morphId];
-            const lebensabschnitt = Data.age2Lebensabschnitte(age, lookedup.morph, lookedup.art, lookedup.gattung);
-            if (lebensabschnitt == undefined) {
-                // console.debug('no age')
-                return undefined;
-            }
-            return {
-                lebensabschnitt,
-                ...lookedup
-            };
-        });
-
-        this.defaultPathStore = this.storeManager.derived(this.organismusStore, (organismus) => {
-
-            return (organismus?.morph.StandardPfade?.Pfad.map(x => x.Id) ?? [])
-                .concat(
-                    organismus?.art.StandardPfade?.Pfad.map(x => x.Id) ?? [])
-            // organismus?.gattung.StandardPfade?.Pfad.map(x=>x.Id)
-
-        });
-
-        this.startPropertysStore = this.storeManager.derived(this.organismusStore, v => {
-            return Object.fromEntries(EIGENRSCHAFTEN.map(att => {
-                if (v) {
-
-
-
-
-
-                    const start = v.morph.Eigenschaften?.[att].Start
-                        ?? v.art.Eigenschaften?.[att].Start
-                        ?? v.gattung.Eigenschaften?.[att].Start
-                        ?? NaN;
-                    if (isNaN(start)) {
-                        throw Error(`Stammdaten fehlerhft Eigenschaft nicht definiert ${att} ${v.morph.Id}`)
+                    const calculation = currentEntwicklung.Berechnung?.filter(x => x.id == currentProperty.id)[0];
+                    if (calculation == undefined) {
+                        return undefined;
                     }
 
-                    const definedCosts = (v.art.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0])
-                        .concat((v.gattung.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
-                        .concat((v.morph.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
-                        .concat((this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
-                        ;
-                    const maxCost = Math.max(...definedCosts);
-                    const minCost = Math.min(...definedCosts);
+                    const formalRaw = calculation.Formel;
+                    const reg = /:(?<path>[\w\d]+):/g;
 
-                    const cost: Record<number, KostenDefinition_misc[] | undefined> = {};
-                    for (let i = minCost; i <= maxCost; i++) {
-                        const c = v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.art.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.gattung.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.art.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? v.gattung.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
-                            ?? this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten;
-                        if (typeof c == 'object') {
-                            cost[i] = c;
-                        } else if (i == 0) {
-                            cost[i] = [];
+                    const matches = [...formalRaw.matchAll(reg)].map(x => x.groups?.['path'] as string).filter(x => !x);
+
+                    let counter = 0;
+                    const randomName = () => {
+                        counter++;
+                        return `foo${counter};`
+                    }
+
+                    const ids = distinct(matches).map(x => ({ path: x, name: randomName() }));
+
+                    const scope: any = {};
+
+
+                    for (const { path, name } of ids) {
+
+                        const foundEigenschaft = dependentEigenschaften.map((x, i) => [x, i] as const).filter(([x, i]) => x.Key == `${path}/effektiv`)[0]
+
+                        if (foundEigenschaft == undefined) {
+                            console.warn("Did not find eigeschft", path)
+                            continue;
                         }
+
+                        const index = dependentBesonderheiten.length + dependentFertigkeiten.length + foundEigenschaft[1];
+
+                        scope[name] = () => dependent[index];
+                    }
+                    const formal = ids.reduce((p, c) => p.replace(`:${c.path}:`, c.name), formalRaw);
+
+                    const result = mathjs.evaluate(formal, scope);
+                    resultreturn = Array.isArray(result) ? result[result.length - 1] : result;
+
+                } else if (currentProperty.type == 'punkt') {
+
+                    const start = currentEntwicklung.Punkt?.filter(x => x.id == currentProperty.id)[0].Zeitpunkt[0].alter ?? 0;
+                    const end = currentEntwicklung.Punkt?.filter(x => x.id == currentProperty.id)[0].Zeitpunkt[1]?.alter;
+                    if (age < start) {
+                        resultreturn = 0;
+                    } else if (end !== undefined && age < end) {
+                        resultreturn = setValue != 0 && setValue != undefined ? 1 : 0;
+                    } else {
+                        resultreturn = 1;
                     }
 
-                    return [att, { start, cost }] as const;
-                }
-                return [att, { start: 0, cost: {}, }] as const;
-            })) as Record<Eigenschaft, { start: number; cost: Record<number, KostenDefinition_misc[] | undefined> }>;
 
-        });
+                } else if (currentProperty.type == 'reihe') {
 
-
-        this.talentPurchasedEPData.set({} as Record<string, number>);
-
-        this.fertigkeitenPurchasedStore = this.storeManager.derived(this.fertigkeitenPurchasedDataStore, x => ({ ...x }));
-
-        this.fertigkeitenFixDataStore = this.storeManager.derived(this.pfadLevelDataStore, (levels) => {
-            const costs = Object.keys(levels)
-                .flatMap(gruppe => Object.keys(levels[gruppe])
-                    .flatMap(pfad => Object.keys(levels[gruppe][pfad])
-                        .flatMap(level => {
-                            if ((levels[gruppe][pfad][level] ?? 0) == 0)
-                                return [];
-                            const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
-                                .Pfad.filter(x => x.Id == pfad)[0]
-                                .Levels.Level.filter(x => x.Id == level)[0];
-                            return l.Fertigkeit ?? [];
-                        })));
-
-            return costs.reduce((p, c) => {
-                p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
-                return p;
-            }, {} as Record<string, number | undefined>);
-        });
-        this.fertigkeitenStoreIgnoreRequirements = this.storeManager.derived([this.fertigkeitenPurchasedStore, this.fertigkeitenFixDataStore], ([purchased, fixed]) => {
-            return Object.entries(fixed).reduce((p, c) => {
-                p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
-                return p;
-            }, { ...purchased });
-        });
-
-
-
-        const
-            [fertigkeitenStore, fertigkeitenInit] =
-                derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number | undefined>>
-                    (([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
-                        return Object.fromEntries(Object.entries(fertigkeitenIgnored).map(([key, value]) => {
-                            if (value == undefined) {
-                                return [key, undefined];
-                            }
-                            const b = data.fertigkeitenMap[key];
-                            const maxValue = b.Stufe.length;
-                            const currentValue = Math.min(maxValue, value);
-                            if (currentValue != value) {
-                                console.warn(`Fertigkeitlevel for ${key} out of bounds. Was ${value} but a maximum of ${maxValue} is supported.`)
-                            }
-                            for (let i = 0; i < currentValue; i++) {
-                                const missing = this.getMissingInternal(b.Stufe[i].Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags);
-                                if (missing) {
-                                    return [key, i === 0 ? undefined : i];
-                                }
-                            }
-                            return [key, currentValue];
-                        }).filter(([_, value]) => value !== undefined));
-                    }, {});
-        this.fertigkeitenStore = fertigkeitenStore;
-
-        this.talentFixEP = this.storeManager.derived(this.pfadLevelDataStore, levels => {
-            const costs = Object.keys(levels)
-                .flatMap(gruppe => Object.keys(levels[gruppe])
-                    .flatMap(pfad => Object.keys(levels[gruppe][pfad])
-                        .flatMap(level => {
-                            const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
-                                .Pfad.filter(x => x.Id == pfad)[0]
-                                .Levels.Level.filter(x => x.Id == level)[0];
-                            const count = levels[gruppe][pfad][level];
-                            return Array.from({ length: count }, () => l.Talent ?? []).flatMap(x => x);
-                        })));
-
-            return costs.reduce((p, c) => {
-                p[c.Id] = (p[c.Id] ?? 0) + c.EP;
-                return p;
-            }, {} as Record<string, number>);
-        });
-
-        this.talentPurchasedEP = this.storeManager.derived(this.talentPurchasedEPData, (b) => ({ ...Object.fromEntries(Object.keys(data.talentMap).map(k => [k, b[k] ?? 0])) }));
-        this.talentBaseEPStore = this.storeManager.derived([this.talentPurchasedEPData, this.talentFixEP], ([b, fix]) => {
-            const result = {} as Record<string, number>;
-            for (const key of Object.keys(data.talentMap)) {
-                const ep = (fix[key] ?? 0) + (b[key] ?? 0);
-
-                result[key] = ep;
-
-            }
-            return result;
-        });
-        this.talentBaseStore = this.storeManager.derived(this.talentBaseEPStore, (b) => {
-            const result = {} as Record<string, number>;
-            for (const key of Object.keys(data.talentMap)) {
-                const ep = b[key] ?? 0;
-                const complexity = data.talentMap[key].Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
-                const levelCots = this.stammdaten.talentCostTabel[complexity]
-
-
-                for (let i = levelCots.length - 1; i >= 0; i--) {
-                    if (levelCots[i].Kosten.Wert <= ep) {
-                        result[key] = i;
-                        break;
+                    const reihe = currentEntwicklung.Reihe?.filter(x => x.id == currentProperty.id)[0];
+                    if (reihe == undefined) {
+                        return undefined;
                     }
-                }
+                    const { quantile, schwellen } = Charakter.applyAge(age, reihe)
 
+                    const min = Math.min(...quantile.map(x => x.Quantil))
+                    const max = Math.max(...quantile.map(x => x.Quantil))
 
-            }
-            return result;
-        });
+                    if (setValue == undefined)
+                        resultreturn = min;
+                    else
+                        resultreturn = Math.min(max, Math.max(min, setValue));
 
-
-
-
-        const
-            [talentEffectiveStore, talentEffectiveInit] =
-                derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number>>
-                    (([p, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
-                        p = { ...p };
-                        Object.keys(data.talentMap).forEach((key) => {
-                            const req = data.talentMap[key].Level.filter(x => x.Wert <= p[key]) ?? [];
-                            const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags) })).filter(x => x.missing !== null);
-
-                            p[key] = Math.min(p[key] ?? 0, ...missing.map(x => x.wert - 1))
-                        });
-                        return p;
-                    }, {});
-        this.talentEffectiveStore = talentEffectiveStore;
-
-        this.talentDerivationStore = this.storeManager.derived([this.talentBaseStore, this.talentEffectiveStore], ([b, e]) => {
-            const calc = (a: AbleitungsAuswahl_talent | undefined): number[] => {
-                return a
-                    ? (a.Ableitung?.map(x => Math.floor(Math.min(b[x.Id], e[x.Id] ?? 0) / x.Anzahl)) ?? [])
-                        .concat(
-                            (a.Max?.map(x => calc(x).sort((a, b) => b - a).slice(0, x.Anzahl).reduce((p, c) => p + c, 0)) ?? [])
-                        )
-                    : [];
-            }
-
-            return Object.values(data.talentMap).map(t => ({
-
-                id: t.Id,
-                value: calc(t.Ableitungen).reduce((p, c) => p + c, 0)
-            })).reduce((p, c) => { p[c.id] = c.value; return p; }, {} as Record<string, number>);
-
-
-        });
-
-        this.talentEffectiveIgnoreRequirementsStore = this.storeManager.derived([this.talentBaseStore, this.talentDerivationStore], ([b, d]) => {
-            const result = { ...b };
-            return Object.entries(d).reduce((p, [key, value]) => {
-                if (p[key]) {
-                    p[key] += value;
                 } else {
-                    p[key] = value;
+                    throw new Error('Not implemented');
+                }
+
+                // TODO: chek mods… inkluding schwellen… ¬_¬
+
+
+
+                // check if only property keys changed
+
+                return resultreturn;
+            })
+        }
+
+
+        const costKey = this.getKostKeys();
+
+        this.storeManager.derived(costKey.total, [costKey.besoderheit, costKey.eigenschaften, costKey.fertigkeit, costKey.talent], (costst) => {
+            return costst.reduce((p, c) => {
+                for (const [key, value] of Object.entries(c)) {
+                    if (p[key] == undefined) {
+                        p[key] = value;
+                    } else {
+                        p[key] = p[key] + value;
+                    }
                 }
                 return p;
-            }, result);
+            }, {} as Record<string, number>)
+        })
+
+        this.storeManager.derived(costKey.talent, [this.getAllTalnetPurchasedKey()], ([talentPurchaset]) => {
+            const amount = (Object.values(talentPurchaset).map(x => x.EP.purchased).reduce((p, c) => p + c, 0));
+            const result = {} as Record<string, number>;
+            result[this.stammdaten.Instance.Daten.KostenDefinitionen.TalentKostenFunktion.meta.KostenArt] = amount;
+            return result;
+        });
+
+        const allFertigkeiten = this.storeManager.key('/fertigkeit/*').of<Record<string, { purchased: number, fixed: number }>>();
+        const allEigenschaftKeys = this.storeManager.key('/eigenschaften/*').of<Record<string, { raw: number; effective: number; }>>();
+
+        this.storeManager.derived(costKey.fertigkeit, [allFertigkeiten], ([allFertigkeiten]) => {
+            const amount = (Object.entries(allFertigkeiten).flatMap(([key, { fixed, purchased }]) => {
+                const current = this.stammdaten.fertigkeitenMap[key];
+                return Array.from({ length: purchased - fixed }).map((x, index) => index + fixed)
+                    .map(i => current.Stufe[i].Kosten);
+            }).reduce((p, c) => p + c, 0));
+            const result = {} as Record<string, number>;
+            result[this.stammdaten.Instance.Daten.KostenDefinitionen.TalentKostenFunktion.meta.KostenArt] = amount;
+            return result;
+        });
+
+        this.storeManager.derived(costKey.eigenschaften, [allEigenschaftKeys], ([allEigenschaften]) => {
+            const amount = (Object.entries(allEigenschaften).flatMap(([key, { raw, effective }]) => {
+                const current = this.stammdaten.fertigkeitenMap[key];
+                return Array.from({ length: purchased - fixed }).map((x, index) => index + fixed)
+                    .map(i => current.Stufe[i].Kosten);
+            }).reduce((p, c) => p + c, 0));
+            const result = {} as Record<string, number>;
+            result[this.stammdaten.Instance.Daten.KostenDefinitionen.TalentKostenFunktion.meta.KostenArt] = amount;
+            return result;
         });
 
 
@@ -1707,489 +1694,743 @@ export class Charakter {
 
 
 
-        const
-            [talentMissingRequirement, talentMissingRequirementInit] =
-                derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, { Wert: number, missing: MissingRequirements }[]>>
-                    (([v, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
-                        return Object.entries(v).reduce((p, [key, value]) => {
-                            const req = data.talentMap[key].Level.filter(x => x.Wert <= value) ?? [];
-                            const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags) })).filter(x => x.missing !== null);
-                            if (missing.length > 0) {
-                                p[key] = missing as any;
-                            }
-                            return p;
-                        }, {} as Record<string, { Wert: number, missing: MissingRequirements }[]>);
-                    }, {});
-        this.talentMissingRequirement = talentMissingRequirement;
-
-
-
-        this.pfadLevelStore = this.storeManager.derived(this.pfadLevelDataStore, x => JSON.parse(JSON.stringify(x ?? {})));
-        this.besonderheitenPurchasedStore = this.storeManager.derived(this.besonderheitenPurchasedDataStore, x => ({ ...x }));
-
-
-
-        this.besonderheitenFixDataStore = this.storeManager.derived([this.pfadLevelStore, this.organismusStore, this.propertyScaleData, this.ageStore, this.besonderheitenPurchasedStore], ([levels, o, propertyScale, age, purchasedBesonderheiten]) => {
-            const besonderheiten = (Object.keys(levels)
-                .flatMap(gruppe => Object.keys(levels[gruppe])
-                    .flatMap(pfad => Object.keys(levels[gruppe][pfad])
-                        .flatMap(level => {
-                            if ((levels[gruppe][pfad][level] ?? 0) == 0)
-                                return [];
-
-                            const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
-                                .Pfad.filter(x => x.Id == pfad)[0]
-                                .Levels.Level.filter(x => x.Id == level)[0];
-                            return l.Besonderheit ?? [];
-                        }))))
-                .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Besonderheiten?.Besonderheit ?? []) ?? [])
-                .concat(o?.morph.Entwiklung?.Reihe?.flatMap(reihe => {
-                    if (propertyScale[reihe.id]) {
-                        const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
-                        return currentSchwelle?.Mods?.Besonderheiten?.Besonderheit ?? [];
-                    }
-
-                    return [];
-                }) ?? [])
-                .concat(o?.art.Mods?.Besonderheiten?.Besonderheit ?? [])
-                .concat(o?.gattung.Mods?.Besonderheiten?.Besonderheit ?? [])
-                .concat(o?.morph.Mods?.Besonderheiten?.Besonderheit ?? [])
-                .reduce((p, c) => {
-                    p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
-                    return p;
-                }, {} as Record<string, number | undefined>);
-
-
-
-
-            for (const key of Object.keys(purchasedBesonderheiten)) {
-                const current = purchasedBesonderheiten[key];
-                const data = this.stammdaten.besonderheitenMap[key];
-                for (let i = 0; i < (current ?? 0); i++) {
-                    const element = data.Stufe[i];
-                    for (const toAdd of element.Mods?.Besonderheiten?.Besonderheit.filter(x => (besonderheiten[x.Id] ?? 0) < x.Stufe) ?? []) {
-                        besonderheiten[toAdd.Id] = toAdd.Stufe;
-                    }
-                }
-            }
-
-
-            const newAdded: _Besonderheit[] = [];
-            do {
-                newAdded.length = 0;
-                for (const key of Object.keys(besonderheiten)) {
-                    const current = besonderheiten[key];
-                    const data = this.stammdaten.besonderheitenMap[key];
-                    for (let i = 0; i < (current ?? 0); i++) {
-                        const element = data.Stufe[i];
-                        newAdded.push(...element.Mods?.Besonderheiten?.Besonderheit.filter(x => (besonderheiten[x.Id] ?? 0) < x.Stufe) ?? []);
-                    }
-                }
-                for (const n of newAdded) {
-                    // since we already checked that only newer are present we can just assign
-                    besonderheiten[n.Id] = n.Stufe;
-                }
-            } while (newAdded.length > 0);
-
-
-            return besonderheiten;
-
-        });
-        this.besonderheitenStoreIgnoreRequirements =
-            this.storeManager.derived([this.besonderheitenPurchasedStore, this.besonderheitenFixDataStore], ([purchased, fixed]) => {
-                return Object.entries(fixed).reduce((p, c) => {
-                    p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
-                    return p;
-                }, { ...purchased });
-            });
-        const
-            [besonderheitenStore, besonderheitenInit] =
-                derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number | undefined>>
-                    (([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
-                        return Object.fromEntries(Object.entries(besonderheitenIgnored).map(([key, value]) => {
-                            if (value == undefined) {
-                                return [key, undefined];
-                            }
-                            const b = data.besonderheitenMap[key];
-                            const maxValue = b.Stufe.length;
-                            const currentValue = Math.min(value, maxValue);
-                            if (currentValue != value) {
-                                console.warn(`Besonderheitlevel for ${key} out of bounds. Was ${value} but a maximum of ${maxValue} is supported.`)
-                            }
-
-                            for (let i = 0; i < currentValue; i++) {
-                                if (this.getMissingInternal(b.Stufe[i].Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags)) {
-                                    return [key, i === 0 ? undefined : i];
-                                }
-
-                            }
-                            return [key, currentValue];
-                        }).filter(([_, value]) => value !== undefined));
-                    }, {});
-        this.besonderheitenStore = besonderheitenStore;
-
-
-        this.tagsStore =
-            this.storeManager.derived([this.besonderheitenStore, this.pfadLevelStore, this.organismusStore, this.fertigkeitenStore, this.propertyScaleData, this.ageStore], ([besonderheiten, levels, o, fertigkeiten, propertyScale, age]) => {
-                return (Object.keys(levels)
-                    .flatMap(gruppe => Object.keys(levels[gruppe])
-                        .flatMap(pfad => Object.keys(levels[gruppe][pfad])
-                            .flatMap(level => {
-                                const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
-                                    .Pfad.filter(x => x.Id == pfad)[0]
-                                    .Levels.Level.filter(x => x.Id == level)[0];
-                                return l.Tag?.map(x => x.Id) ?? [];
-                            })))
-                    .concat(Object.entries(besonderheiten).filter(x => (x[1] ?? 0) > 0)
-                        .flatMap(([bid, stufe]) => {
-                            return this.stammdaten.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit).filter(x => x.Id == bid)[0]
-                                .Stufe[stufe! - 1].Mods
-                                ?.Tags?.Tag.map(x => x.Id) ?? [];
-                        })))
-                    .concat(o?.morph.Entwiklung?.Reihe?.flatMap(reihe => {
-                        if (propertyScale[reihe.id]) {
-                            const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
-                            return currentSchwelle?.Mods?.Tags?.Tag.map(x => x.Id) ?? [];
-                        }
-
-                        return [];
-                    }) ?? [])
-
-                    .concat(Object.entries(fertigkeiten).filter(x => (x[1] ?? 0) > 0)
-                        .flatMap(([bid, stufe]) => {
-                            return this.stammdaten.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit).filter(x => x.Id == bid)[0]
-                                ?.Stufe[stufe! - 1]?.Mods
-                                ?.Tags?.Tag.map(x => x.Id) ?? [];
-                        }))
-                    .reduce((p, c) => { p[c] = true; return p; }, {} as Record<string, true | undefined>)
-            });
-
-
-
-        besonderheitenInit.init([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
-        fertigkeitenInit.init([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
-        talentMissingRequirementInit.init([this.talentEffectiveIgnoreRequirementsStore, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
-        talentEffectiveInit.init([this.talentEffectiveIgnoreRequirementsStore, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
-
-
-
-
-        this.eigenrschaften = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenData(att, this.storeManager,)] as const)) as any;
-        this.eigenschaftenData = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenDataAccess(this.storeManager, this.eigenrschaften[att], this.startPropertysStore, this.getMod(att))] as const)) as any;
-
-        this.ausdauerStore = this.storeManager.derived([this.eigenschaftenData.Konstitution.currentStore, this.eigenschaftenData.Stärke.currentStore, this.getMod('Ausdauer')], ([ko, st, { addMod, multiMod }]) => {
-            const raw = 70 - (ko + ko + st);
-            const r = raw * multiMod + addMod;
-            return Math.ceil(r);
-        })
-        this.initiativeStore = this.storeManager.derived([this.eigenschaftenData.Mut.currentStore, this.eigenschaftenData.Intuition.currentStore, this.eigenschaftenData.Gewandtheit.currentStore, this.getMod('Initiative')], ([MU, IN, GE, { addMod, multiMod }]) => {
-            const raw = 100 - (MU + IN + GE + GE);
-            const r = raw * multiMod + addMod;
-            return Math.ceil(r);
-        })
-        this.geschwindigkeitStore = this.storeManager.derived([this.getMod('Geschwindigkeit')], ([{ addMod, multiMod }]) => {
-            const raw = 6;
-            const r = raw * multiMod + addMod;
-            return Math.ceil(r);
-        })
-        this.weightStore = this.storeManager.derived([this.propertyScaleData, this.getMod('Gewicht')], ([propertyScaleData, { addMod, multiMod }]) => {
-            const height = (propertyScaleData['größe'] ?? 0) / 100;
-            const bmi = propertyScaleData['bmi'] ?? 0;
-
-            const kgRaw = bmi * height * height;
-            const kg = kgRaw * multiMod + addMod;
-            return Math.floor(kg * 10) / 10;
-        });
-
-        this.kraftStore = this.storeManager.derived([this.eigenschaftenData.Stärke.currentStore, this.weightStore, this.getMod('Kraft')], ([x, w, { addMod, multiMod }]) => {
-            const f = 91 / 30 * (1 / (x * x)) + 1529 / 300 * (1 / x) + 3 / 50;
-            const raw = f * w;
-            const r = raw * multiMod + addMod;
-            return Math.ceil(r);
-        })
-        this.glückMaxStore = this.storeManager.derived([this.eigenschaftenData.Glück.currentStore, this.getMod('GlücksPunkte')], ([x, { addMod, multiMod }]) => {
-            const raw = 21 - x;
-            const r = raw * multiMod + addMod;
-            return Math.ceil(r);
-        })
-
-
-
-        this.allMissingRequirementsStore = this.storeManager.derived([this.talentEffectiveStore, this.talentEffectiveIgnoreRequirementsStore, this.talentDerivationStore, this.talentBaseStore, this.besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, this.fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore, this.pfadLevelStore], ([talentEffective, talentAll, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags, pfade]) => {
-
-            return filterNull<MissingRequirements>(Object.entries(talentAll)
-                .filter(([key, value]) => value > 0)
-                .flatMap(([key, value]) => this.stammdaten.talentMap[key].Level
-                    .filter(x => x.Wert <= value)
-                    .flatMap(x => this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags))
-                ).concat(
-                    Object.entries(fertigkeitenIgnored)
-                        .filter(([key, value]) => (value ?? 0) > 0)
-                        .flatMap(([key, value]) => this.stammdaten.fertigkeitenMap[key].Stufe
-                            .filter((_, i) => i < (value ?? 0))
-                            .flatMap(x => this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags))
-                        )).concat(
-                            Object.entries(besonderheitenTgnored)
-                                .filter(([key, value]) => (value ?? 0) > 0)
-                                .flatMap(([key, value]) => this.stammdaten.besonderheitenMap[key].Stufe
-                                    .filter((_, i) => i < (value ?? 0))
-                                    .flatMap(x => this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags))
-                                ))
-                .concat(
-                    Object.entries(pfade).flatMap(([gruppe, gv]) => Object.entries(gv).flatMap(([pfad, pv]) => Object.entries(pv)
-                        .filter(([level, value]) => (value ?? 0) > 0)
-                        .flatMap(([level, value]) => {
-
-                            const pi = this.stammdaten.pfadMap[pfad];
-                            const li = pi.Levels.Level.filter(x => x.Id == level);
-                            return [this.getMissingInternal(pi.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags)].concat(
-                                li.flatMap(x => this.getMissingInternal(x.Voraussetzung?.Zusätzlich, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags)))
-
-                        }
-                        )))))
-
-
-
-        });
-
-
-        this.punkteStore = this.storeManager.derived([
-            this.organismusStore,
-            this.eigenschaftenData.Mut.acciredStore,
-            this.eigenschaftenData.Glück.acciredStore,
-            this.eigenschaftenData.Klugheit.acciredStore,
-            this.eigenschaftenData.Intuition.acciredStore,
-            this.eigenschaftenData.Gewandtheit.acciredStore,
-            this.eigenschaftenData.Feinmotorik.acciredStore,
-            this.eigenschaftenData.Sympathie.acciredStore,
-            this.eigenschaftenData.Antipathie.acciredStore,
-            this.eigenschaftenData.Stärke.acciredStore,
-            this.eigenschaftenData.Konstitution.acciredStore,
-            this.eigenschaftenData.Einfluss.acciredStore,
-            this.eigenschaftenData.Fokus.acciredStore,
-
-            this.eigenschaftenData.Mut.costStore,
-            this.eigenschaftenData.Glück.costStore,
-            this.eigenschaftenData.Klugheit.costStore,
-            this.eigenschaftenData.Intuition.costStore,
-            this.eigenschaftenData.Gewandtheit.costStore,
-            this.eigenschaftenData.Feinmotorik.costStore,
-            this.eigenschaftenData.Sympathie.costStore,
-            this.eigenschaftenData.Antipathie.costStore,
-            this.eigenschaftenData.Stärke.costStore,
-            this.eigenschaftenData.Konstitution.costStore,
-            this.eigenschaftenData.Einfluss.costStore,
-            this.eigenschaftenData.Fokus.costStore,
-
-            this.pfadLevelDataStore,
-
-            this.talentPurchasedEP,
-
-            this.fertigkeitenFixDataStore,
-            this.fertigkeitenPurchasedStore,
-
-            this.besonderheitenFixDataStore,
-            this.besonderheitenPurchasedStore,
-
-            this.propertyScaleData,
-            this.ageStore,
-            this.getPropertysScopeStore(),
-
-        ], ([
-            organismus,
-
-            acciredMut,
-            acciredGlück,
-            acciredKlugheit,
-            acciredIntuition,
-            acciredGewandtheit,
-            acciredFeinmotorik,
-            acciredSympathie,
-            acciredAntipathie,
-            acciredStärke,
-            acciredKonstitution,
-            acciredEinfluss,
-            acciredFokus,
-
-            eCostMut,
-            eCostGlück,
-            eCostKlugheit,
-            eCostIntuition,
-            eCostGewandtheit,
-            eCostFeinmotorik,
-            eCostSympathie,
-            eCostAntipathie,
-            eCostStärke,
-            eCostKonstitution,
-            eCostEinfluss,
-            eCostFokus,
-
-            pfadLevelData,
-
-            talentEP,
-
-            fertigkeitenFix,
-            fertigkeitenPurchaseu,
-
-            besonderheitenFix,
-            besonderheitenPurchaseu,
-            propertyScale,
-            age,
-            scope,
-
-        ]) => {
-
-            const r: Record<string, number> = {};
-            const applyCost = applyCostFunction.bind(this);
-            for (const s of this.stammdaten.Instance.Daten.KostenDefinitionen.KostenDefinition) {
-                r[s.Id] = 0;
-            }
-            const earray = [
-                { cost: eCostMut, accired: acciredMut },
-                { cost: eCostGlück, accired: acciredGlück },
-                { cost: eCostKlugheit, accired: acciredKlugheit },
-                { cost: eCostIntuition, accired: acciredIntuition },
-                { cost: eCostGewandtheit, accired: acciredGewandtheit },
-                { cost: eCostFeinmotorik, accired: acciredFeinmotorik },
-                { cost: eCostSympathie, accired: acciredSympathie },
-                { cost: eCostAntipathie, accired: acciredAntipathie },
-                { cost: eCostStärke, accired: acciredStärke },
-                { cost: eCostKonstitution, accired: acciredKonstitution },
-                { cost: eCostFokus, accired: acciredFokus },
-                { cost: eCostEinfluss, accired: acciredEinfluss },
-            ]
-            applyCredit(this.stammdaten.Instance.Daten.GenerierungsDaten.Kosten)
-
-            for (const l of organismus?.lebensabschnitt ?? []) {
-                if (l.Spielbar?.Kosten) {
-                    applyCost(l.Spielbar.Kosten);
-                }
-            }
-
-
-            earray.forEach(att => {
-                for (let i = 1; i <= att.accired; i++) {
-                    const ec = att.cost[i];
-                    if (ec) {
-                        applyCost(ec);
-                    }
-                }
-                for (let i = -1; i >= att.accired; i--) {
-                    const ec = att.cost[i];
-                    if (ec) {
-                        applyCost(ec);
-                    }
-                }
-            });
-
-            applyCost(Object.keys(pfadLevelData).flatMap(gruppe =>
-                Object.keys(pfadLevelData[gruppe]).flatMap(pfad =>
-                    Object.keys(pfadLevelData[gruppe][pfad]).flatMap(level => ({
-                        gruppe,
-                        pfad,
-                        level,
-                        amount: pfadLevelData[gruppe][pfad][level],
-                    }))
-                )
-            ).map(x => ({
-                level: data.Instance.Daten.Pfade
-                    .filter(y => y.Id == x.gruppe)[0].Pfad
-                    .filter(y => y.Id == x.pfad)[0].Levels.Level
-                    .filter(y => y.Id == x.level)[0],
-                amount: x.amount
-
-            }))
-                .flatMap(x => x.level.Kosten.flatMap(y => Array.from({ length: x.amount }, _ => ({ Id: y.Id, Berechnung: y.Berechnung })))));
-
-
-            applyCost(
-                Object.values(talentEP).map(x => ({
-                    Id: data.StandardKosten,
-                    Berechnung: (x ?? 0).toString()
-                })));
-
-
-            applyCost(
-                Object.keys(fertigkeitenPurchaseu).flatMap(key => {
-                    const up = fertigkeitenPurchaseu[key] ?? 0;
-                    const low = fertigkeitenFix[key] ?? 0;
-
-                    return data.fertigkeitenMap[key].Stufe.filter((_, i) => i >= low && i < up).map(x => ({ Id: data.StandardKosten, Berechnung: x.Kosten.toString() }));
-                }));
-
-
-            applyCost(
-                Object.keys(besonderheitenPurchaseu).flatMap(key => {
-                    const up = besonderheitenPurchaseu[key] ?? 0;
-                    const low = besonderheitenFix[key] ?? 0;
-                    const r: KostenDefinition_misc[] = [];
-
-                    for (let i = low; i < up; i++) {
-                        r.push(...data.besonderheitenMap[key].Stufe[i].Kosten)
-                    }
-                    return r;
-                })
-            );
-
-
-            applyCost(
-                Object.entries(propertyScale).flatMap(([key, value]) => {
-                    const r: KostenDefinition_misc[] = [];
-
-                    const reihe = organismus?.morph.Entwiklung?.Reihe?.filter(x => x.id == key)?.[0];
-                    if (reihe == undefined) { return r; }
-
-                    const { currentSchwelle } = Charakter.applyAge(age, reihe, value);
-
-                    ;
-                    r.push(...(currentSchwelle?.Kosten ?? []));
-                    return r;
-                })
-            );
-
-
-            return r;
-
-            ///////////
-            function applyCredit(newLocal: KostenDefinition_misc[]) {
-                for (const s of newLocal) {
-                    const result = mathjs.evaluate(s.Berechnung, scope);
-                    r[s.Id] += Array.isArray(result) ? result[result.length - 1] : result;
-                }
-            }
-            function applyCostFunction(this: Charakter, newLocal: KostenDefinition_misc[], input?: ParameterDefinition_misc & { value: any }) {
-                for (const s of newLocal) {
-                    const newScope = { ...scope };
-                    if (input) {
-                        if (input["#"] == "Talent") {
-                            for (const i of input.Talent.Input) {
-                                const talentId: string = input.value;
-                                const talentDefinition = this.stammdaten.talentMap[talentId];
-
-                                newScope[i.identifier] = i.type == "Komplexität"
-                                    ? talentDefinition.Komplexität
-                                    : i.type == "TaA"
-                                        ? this.talentEffectiveIgnoreRequirements[talentId] - this.talentBase[talentId]
-                                        : i.type == "TaB"
-                                            ? this.talentBase[talentId]
-                                            : i.type == "TaW"
-                                                ? this.talentEffective[talentId]
-                                                : undefined;
-                            }
-                        } else if (input["#"] == "Auswahl") {
-                            newScope[input.Auswahl.Input.identifier] = input.value;
-                        } else if (input["#"] == "Text" && input.Text.Input) {
-                            newScope[input.Text.Input.identifier] = input.value;
-                        } else if (input["#"] == "Zahl" && input.Zahl.Input) {
-                            newScope[input.Zahl.Input.identifier] = input.value;
-                        }
-                    }
-                    const result = mathjs.evaluate(s.Berechnung, newScope);
-                    r[s.Id] -= Array.isArray(result) ? result[result.length - 1] : result;
-                }
-            }
-
-        });
+
+
+
+
+
+
+
+        // this.sizeStore = this.storeManager.derived([this.propertyScaleData], ([propertyScaleData]) => {
+        //     return propertyScaleData['größe'] ?? 0;
+        // });
+
+        // this.morphStore = this.storeManager.derived(this.morphIdStore, mid => {
+        //     if (mid)
+        //         return this.stammdaten.morphLookup[mid].morph;
+        //     return undefined;
+        // });
+
+        // this.organismusStore = this.storeManager.derived([this.ageStore, this.morphIdStore], ([age, morphId]) => {
+        //     if (morphId == undefined) {
+        //         // console.debug('no morph')
+        //         return undefined;
+        //     }
+
+        //     const lookedup = this.stammdaten.morphLookup[morphId];
+        //     const lebensabschnitt = Data.age2Lebensabschnitte(age, lookedup.morph, lookedup.art, lookedup.gattung);
+        //     if (lebensabschnitt == undefined) {
+        //         // console.debug('no age')
+        //         return undefined;
+        //     }
+        //     return {
+        //         lebensabschnitt,
+        //         ...lookedup
+        //     };
+        // });
+
+        // this.defaultPathStore = this.storeManager.derived(this.organismusStore, (organismus) => {
+
+        //     return (organismus?.morph.StandardPfade?.Pfad.map(x => x.Id) ?? [])
+        //         .concat(
+        //             organismus?.art.StandardPfade?.Pfad.map(x => x.Id) ?? [])
+        //     // organismus?.gattung.StandardPfade?.Pfad.map(x=>x.Id)
+
+        // });
+
+        // this.startPropertysStore = this.storeManager.derived(this.organismusStore, v => {
+        //     return Object.fromEntries(EIGENRSCHAFTEN.map(att => {
+        //         if (v) {
+
+
+
+
+
+        //             const start = v.morph.Eigenschaften?.[att].Start
+        //                 ?? v.art.Eigenschaften?.[att].Start
+        //                 ?? v.gattung.Eigenschaften?.[att].Start
+        //                 ?? NaN;
+        //             if (isNaN(start)) {
+        //                 throw Error(`Stammdaten fehlerhft Eigenschaft nicht definiert ${att} ${v.morph.Id}`)
+        //             }
+
+        //             const definedCosts = (v.art.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0])
+        //                 .concat((v.gattung.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
+        //                 .concat((v.morph.EigenschaftsKosten?.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
+        //                 .concat((this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.flatMap(x => [x.bis ?? 0, x.von ?? 0]) ?? [0]))
+        //                 ;
+        //             const maxCost = Math.max(...definedCosts);
+        //             const minCost = Math.min(...definedCosts);
+
+        //             const cost: Record<number, KostenDefinition_misc[] | undefined> = {};
+        //             for (let i = minCost; i <= maxCost; i++) {
+        //                 const c = v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+        //                     ?? v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+        //                     ?? v.art.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+        //                     ?? v.gattung.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+        //                     ?? this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == att && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+        //                     ?? v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+        //                     ?? v.morph.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+        //                     ?? v.art.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+        //                     ?? v.gattung.EigenschaftsKosten?.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten
+        //                     ?? this.stammdaten.Instance.Daten.Organismen.EigenschaftsKosten.Abschnitt.filter(x => x.attribut == undefined && Math.min(x.von, x.bis) <= i && i <= Math.max(x.von, x.bis))[0]?.Kosten;
+        //                 if (typeof c == 'object') {
+        //                     cost[i] = c;
+        //                 } else if (i == 0) {
+        //                     cost[i] = [];
+        //                 }
+        //             }
+
+        //             return [att, { start, cost }] as const;
+        //         }
+        //         return [att, { start: 0, cost: {}, }] as const;
+        //     })) as Record<Eigenschaft, { start: number; cost: Record<number, KostenDefinition_misc[] | undefined> }>;
+
+        // });
+
+
+        // this.talentPurchasedEPData.set({} as Record<string, number>);
+
+        // this.fertigkeitenPurchasedStore = this.storeManager.derived(this.fertigkeitenPurchasedDataStore, x => ({ ...x }));
+
+        // this.fertigkeitenFixDataStore = this.storeManager.derived(this.pfadLevelDataStore, (levels) => {
+        //     const costs = Object.keys(levels)
+        //         .flatMap(gruppe => Object.keys(levels[gruppe])
+        //             .flatMap(pfad => Object.keys(levels[gruppe][pfad])
+        //                 .flatMap(level => {
+        //                     if ((levels[gruppe][pfad][level] ?? 0) == 0)
+        //                         return [];
+        //                     const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+        //                         .Pfad.filter(x => x.Id == pfad)[0]
+        //                         .Levels.Level.filter(x => x.Id == level)[0];
+        //                     return l.Fertigkeit ?? [];
+        //                 })));
+
+        //     return costs.reduce((p, c) => {
+        //         p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
+        //         return p;
+        //     }, {} as Record<string, number | undefined>);
+        // });
+        // this.fertigkeitenStoreIgnoreRequirements = this.storeManager.derived([this.fertigkeitenPurchasedStore, this.fertigkeitenFixDataStore], ([purchased, fixed]) => {
+        //     return Object.entries(fixed).reduce((p, c) => {
+        //         p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
+        //         return p;
+        //     }, { ...purchased });
+        // });
+
+
+
+        // const
+        //     [fertigkeitenStore, fertigkeitenInit] =
+        //         derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number | undefined>>
+        //             (([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+        //                 return Object.fromEntries(Object.entries(fertigkeitenIgnored).map(([key, value]) => {
+        //                     if (value == undefined) {
+        //                         return [key, undefined];
+        //                     }
+        //                     const b = data.fertigkeitenMap[key];
+        //                     const maxValue = b.Stufe.length;
+        //                     const currentValue = Math.min(maxValue, value);
+        //                     if (currentValue != value) {
+        //                         console.warn(`Fertigkeitlevel for ${key} out of bounds. Was ${value} but a maximum of ${maxValue} is supported.`)
+        //                     }
+        //                     for (let i = 0; i < currentValue; i++) {
+        //                         const missing = this.getMissingInternal(b.Stufe[i].Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags);
+        //                         if (missing) {
+        //                             return [key, i === 0 ? undefined : i];
+        //                         }
+        //                     }
+        //                     return [key, currentValue];
+        //                 }).filter(([_, value]) => value !== undefined));
+        //             }, {});
+        // this.fertigkeitenStore = fertigkeitenStore;
+
+        // this.talentFixEP = this.storeManager.derived(this.pfadLevelDataStore, levels => {
+        //     const costs = Object.keys(levels)
+        //         .flatMap(gruppe => Object.keys(levels[gruppe])
+        //             .flatMap(pfad => Object.keys(levels[gruppe][pfad])
+        //                 .flatMap(level => {
+        //                     const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+        //                         .Pfad.filter(x => x.Id == pfad)[0]
+        //                         .Levels.Level.filter(x => x.Id == level)[0];
+        //                     const count = levels[gruppe][pfad][level];
+        //                     return Array.from({ length: count }, () => l.Talent ?? []).flatMap(x => x);
+        //                 })));
+
+        //     return costs.reduce((p, c) => {
+        //         p[c.Id] = (p[c.Id] ?? 0) + c.EP;
+        //         return p;
+        //     }, {} as Record<string, number>);
+        // });
+
+        // this.talentPurchasedEP = this.storeManager.derived(this.talentPurchasedEPData, (b) => ({ ...Object.fromEntries(Object.keys(data.talentMap).map(k => [k, b[k] ?? 0])) }));
+        // this.talentBaseEPStore = this.storeManager.derived([this.talentPurchasedEPData, this.talentFixEP], ([b, fix]) => {
+        //     const result = {} as Record<string, number>;
+        //     for (const key of Object.keys(data.talentMap)) {
+        //         const ep = (fix[key] ?? 0) + (b[key] ?? 0);
+
+        //         result[key] = ep;
+
+        //     }
+        //     return result;
+        // });
+        // this.talentBaseStore = this.storeManager.derived(this.talentBaseEPStore, (b) => {
+        //     const result = {} as Record<string, number>;
+        //     for (const key of Object.keys(data.talentMap)) {
+        //         const ep = b[key] ?? 0;
+        //         const complexity = data.talentMap[key].Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
+        //         const levelCots = this.stammdaten.talentCostTabel[complexity]
+
+
+        //         for (let i = levelCots.length - 1; i >= 0; i--) {
+        //             if (levelCots[i].Kosten.Wert <= ep) {
+        //                 result[key] = i;
+        //                 break;
+        //             }
+        //         }
+
+
+        //     }
+        //     return result;
+        // });
+
+
+
+
+        // const
+        //     [talentEffectiveStore, talentEffectiveInit] =
+        //         derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number>>
+        //             (([p, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+        //                 p = { ...p };
+        //                 Object.keys(data.talentMap).forEach((key) => {
+        //                     const req = data.talentMap[key].Level.filter(x => x.Wert <= p[key]) ?? [];
+        //                     const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags) })).filter(x => x.missing !== null);
+
+        //                     p[key] = Math.min(p[key] ?? 0, ...missing.map(x => x.wert - 1))
+        //                 });
+        //                 return p;
+        //             }, {});
+        // this.talentEffectiveStore = talentEffectiveStore;
+
+        // this.talentDerivationStore = this.storeManager.derived([this.talentBaseStore, this.talentEffectiveStore], ([b, e]) => {
+        //     const calc = (a: AbleitungsAuswahl_talent | undefined): number[] => {
+        //         return a
+        //             ? (a.Ableitung?.map(x => Math.floor(Math.min(b[x.Id], e[x.Id] ?? 0) / x.Anzahl)) ?? [])
+        //                 .concat(
+        //                     (a.Max?.map(x => calc(x).sort((a, b) => b - a).slice(0, x.Anzahl).reduce((p, c) => p + c, 0)) ?? [])
+        //                 )
+        //             : [];
+        //     }
+
+        //     return Object.values(data.talentMap).map(t => ({
+
+        //         id: t.Id,
+        //         value: calc(t.Ableitungen).reduce((p, c) => p + c, 0)
+        //     })).reduce((p, c) => { p[c.id] = c.value; return p; }, {} as Record<string, number>);
+
+
+        // });
+
+        // this.talentEffectiveIgnoreRequirementsStore = this.storeManager.derived([this.talentBaseStore, this.talentDerivationStore], ([b, d]) => {
+        //     const result = { ...b };
+        //     return Object.entries(d).reduce((p, [key, value]) => {
+        //         if (p[key]) {
+        //             p[key] += value;
+        //         } else {
+        //             p[key] = value;
+        //         }
+        //         return p;
+        //     }, result);
+        // });
+
+
+
+
+
+
+        // const
+        //     [talentMissingRequirement, talentMissingRequirementInit] =
+        //         derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, { Wert: number, missing: MissingRequirements }[]>>
+        //             (([v, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+        //                 return Object.entries(v).reduce((p, [key, value]) => {
+        //                     const req = data.talentMap[key].Level.filter(x => x.Wert <= value) ?? [];
+        //                     const missing = req.map(x => ({ wert: x.Wert, missing: this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags) })).filter(x => x.missing !== null);
+        //                     if (missing.length > 0) {
+        //                         p[key] = missing as any;
+        //                     }
+        //                     return p;
+        //                 }, {} as Record<string, { Wert: number, missing: MissingRequirements }[]>);
+        //             }, {});
+        // this.talentMissingRequirement = talentMissingRequirement;
+
+
+
+        // this.pfadLevelStore = this.storeManager.derived(this.pfadLevelDataStore, x => JSON.parse(JSON.stringify(x ?? {})));
+        // this.besonderheitenPurchasedStore = this.storeManager.derived(this.besonderheitenPurchasedDataStore, x => ({ ...x }));
+
+
+
+        // this.besonderheitenFixDataStore = this.storeManager.derived([this.pfadLevelStore, this.organismusStore, this.propertyScaleData, this.ageStore, this.besonderheitenPurchasedStore], ([levels, o, propertyScale, age, purchasedBesonderheiten]) => {
+        //     const besonderheiten = (Object.keys(levels)
+        //         .flatMap(gruppe => Object.keys(levels[gruppe])
+        //             .flatMap(pfad => Object.keys(levels[gruppe][pfad])
+        //                 .flatMap(level => {
+        //                     if ((levels[gruppe][pfad][level] ?? 0) == 0)
+        //                         return [];
+
+        //                     const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+        //                         .Pfad.filter(x => x.Id == pfad)[0]
+        //                         .Levels.Level.filter(x => x.Id == level)[0];
+        //                     return l.Besonderheit ?? [];
+        //                 }))))
+        //         .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Besonderheiten?.Besonderheit ?? []) ?? [])
+        //         .concat(o?.morph.Entwiklung?.Reihe?.flatMap(reihe => {
+        //             if (propertyScale[reihe.id]) {
+        //                 const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
+        //                 return currentSchwelle?.Mods?.Besonderheiten?.Besonderheit ?? [];
+        //             }
+
+        //             return [];
+        //         }) ?? [])
+        //         .concat(o?.art.Mods?.Besonderheiten?.Besonderheit ?? [])
+        //         .concat(o?.gattung.Mods?.Besonderheiten?.Besonderheit ?? [])
+        //         .concat(o?.morph.Mods?.Besonderheiten?.Besonderheit ?? [])
+        //         .reduce((p, c) => {
+        //             p[c.Id] = Math.max(p[c.Id] ?? 0, c.Stufe);
+        //             return p;
+        //         }, {} as Record<string, number | undefined>);
+
+
+
+
+        //     for (const key of Object.keys(purchasedBesonderheiten)) {
+        //         const current = purchasedBesonderheiten[key];
+        //         const data = this.stammdaten.besonderheitenMap[key];
+        //         for (let i = 0; i < (current ?? 0); i++) {
+        //             const element = data.Stufe[i];
+        //             for (const toAdd of element.Mods?.Besonderheiten?.Besonderheit.filter(x => (besonderheiten[x.Id] ?? 0) < x.Stufe) ?? []) {
+        //                 besonderheiten[toAdd.Id] = toAdd.Stufe;
+        //             }
+        //         }
+        //     }
+
+
+        //     const newAdded: _Besonderheit[] = [];
+        //     do {
+        //         newAdded.length = 0;
+        //         for (const key of Object.keys(besonderheiten)) {
+        //             const current = besonderheiten[key];
+        //             const data = this.stammdaten.besonderheitenMap[key];
+        //             for (let i = 0; i < (current ?? 0); i++) {
+        //                 const element = data.Stufe[i];
+        //                 newAdded.push(...element.Mods?.Besonderheiten?.Besonderheit.filter(x => (besonderheiten[x.Id] ?? 0) < x.Stufe) ?? []);
+        //             }
+        //         }
+        //         for (const n of newAdded) {
+        //             // since we already checked that only newer are present we can just assign
+        //             besonderheiten[n.Id] = n.Stufe;
+        //         }
+        //     } while (newAdded.length > 0);
+
+
+        //     return besonderheiten;
+
+        // });
+        // this.besonderheitenStoreIgnoreRequirements =
+        //     this.storeManager.derived([this.besonderheitenPurchasedStore, this.besonderheitenFixDataStore], ([purchased, fixed]) => {
+        //         return Object.entries(fixed).reduce((p, c) => {
+        //             p[c[0]] = Math.max(p[c[0]] ?? 0, c[1] ?? 0);
+        //             return p;
+        //         }, { ...purchased });
+        //     });
+        // const
+        //     [besonderheitenStore, besonderheitenInit] =
+        //         derivedLazy<[Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, number | undefined>>, Readable<Record<string, true | undefined>>], Record<string, number | undefined>>
+        //             (([talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags]) => {
+        //                 return Object.fromEntries(Object.entries(besonderheitenIgnored).map(([key, value]) => {
+        //                     if (value == undefined) {
+        //                         return [key, undefined];
+        //                     }
+        //                     const b = data.besonderheitenMap[key];
+        //                     const maxValue = b.Stufe.length;
+        //                     const currentValue = Math.min(value, maxValue);
+        //                     if (currentValue != value) {
+        //                         console.warn(`Besonderheitlevel for ${key} out of bounds. Was ${value} but a maximum of ${maxValue} is supported.`)
+        //                     }
+
+        //                     for (let i = 0; i < currentValue; i++) {
+        //                         if (this.getMissingInternal(b.Stufe[i].Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenIgnored, fertigkeiten, fertigkeitenIgnored, tags)) {
+        //                             return [key, i === 0 ? undefined : i];
+        //                         }
+
+        //                     }
+        //                     return [key, currentValue];
+        //                 }).filter(([_, value]) => value !== undefined));
+        //             }, {});
+        // this.besonderheitenStore = besonderheitenStore;
+
+
+        // this.tagsStore =
+        //     this.storeManager.derived([this.besonderheitenStore, this.pfadLevelStore, this.organismusStore, this.fertigkeitenStore, this.propertyScaleData, this.ageStore], ([besonderheiten, levels, o, fertigkeiten, propertyScale, age]) => {
+        //         return (Object.keys(levels)
+        //             .flatMap(gruppe => Object.keys(levels[gruppe])
+        //                 .flatMap(pfad => Object.keys(levels[gruppe][pfad])
+        //                     .flatMap(level => {
+        //                         const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+        //                             .Pfad.filter(x => x.Id == pfad)[0]
+        //                             .Levels.Level.filter(x => x.Id == level)[0];
+        //                         return l.Tag?.map(x => x.Id) ?? [];
+        //                     })))
+        //             .concat(Object.entries(besonderheiten).filter(x => (x[1] ?? 0) > 0)
+        //                 .flatMap(([bid, stufe]) => {
+        //                     return this.stammdaten.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit).filter(x => x.Id == bid)[0]
+        //                         .Stufe[stufe! - 1].Mods
+        //                         ?.Tags?.Tag.map(x => x.Id) ?? [];
+        //                 })))
+        //             .concat(o?.morph.Entwiklung?.Reihe?.flatMap(reihe => {
+        //                 if (propertyScale[reihe.id]) {
+        //                     const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
+        //                     return currentSchwelle?.Mods?.Tags?.Tag.map(x => x.Id) ?? [];
+        //                 }
+
+        //                 return [];
+        //             }) ?? [])
+
+        //             .concat(Object.entries(fertigkeiten).filter(x => (x[1] ?? 0) > 0)
+        //                 .flatMap(([bid, stufe]) => {
+        //                     return this.stammdaten.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit).filter(x => x.Id == bid)[0]
+        //                         ?.Stufe[stufe! - 1]?.Mods
+        //                         ?.Tags?.Tag.map(x => x.Id) ?? [];
+        //                 }))
+        //             .reduce((p, c) => { p[c] = true; return p; }, {} as Record<string, true | undefined>)
+        //     });
+
+
+
+        // besonderheitenInit.init([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
+        // fertigkeitenInit.init([this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
+        // talentMissingRequirementInit.init([this.talentEffectiveIgnoreRequirementsStore, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
+        // talentEffectiveInit.init([this.talentEffectiveIgnoreRequirementsStore, this.talentEffectiveStore, this.talentDerivationStore, this.talentBaseStore, besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore]);
+
+
+
+
+        // this.eigenrschaften = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenData(att, this.storeManager,)] as const)) as any;
+        // this.eigenschaftenData = Object.fromEntries(EIGENRSCHAFTEN.map(att => [att, new EigenschaftenDataAccess(this.storeManager, this.eigenrschaften[att], this.startPropertysStore, this.getMod(att))] as const)) as any;
+
+        // this.ausdauerStore = this.storeManager.derived([this.eigenschaftenData.Konstitution.currentStore, this.eigenschaftenData.Stärke.currentStore, this.getMod('Ausdauer')], ([ko, st, { addMod, multiMod }]) => {
+        //     const raw = 70 - (ko + ko + st);
+        //     const r = raw * multiMod + addMod;
+        //     return Math.ceil(r);
+        // })
+        // this.initiativeStore = this.storeManager.derived([this.eigenschaftenData.Mut.currentStore, this.eigenschaftenData.Intuition.currentStore, this.eigenschaftenData.Gewandtheit.currentStore, this.getMod('Initiative')], ([MU, IN, GE, { addMod, multiMod }]) => {
+        //     const raw = 100 - (MU + IN + GE + GE);
+        //     const r = raw * multiMod + addMod;
+        //     return Math.ceil(r);
+        // })
+        // this.geschwindigkeitStore = this.storeManager.derived([this.getMod('Geschwindigkeit')], ([{ addMod, multiMod }]) => {
+        //     const raw = 6;
+        //     const r = raw * multiMod + addMod;
+        //     return Math.ceil(r);
+        // })
+        // this.weightStore = this.storeManager.derived([this.propertyScaleData, this.getMod('Gewicht')], ([propertyScaleData, { addMod, multiMod }]) => {
+        //     const height = (propertyScaleData['größe'] ?? 0) / 100;
+        //     const bmi = propertyScaleData['bmi'] ?? 0;
+
+        //     const kgRaw = bmi * height * height;
+        //     const kg = kgRaw * multiMod + addMod;
+        //     return Math.floor(kg * 10) / 10;
+        // });
+
+        // this.kraftStore = this.storeManager.derived([this.eigenschaftenData.Stärke.currentStore, this.weightStore, this.getMod('Kraft')], ([x, w, { addMod, multiMod }]) => {
+        //     const f = 91 / 30 * (1 / (x * x)) + 1529 / 300 * (1 / x) + 3 / 50;
+        //     const raw = f * w;
+        //     const r = raw * multiMod + addMod;
+        //     return Math.ceil(r);
+        // })
+        // this.glückMaxStore = this.storeManager.derived([this.eigenschaftenData.Glück.currentStore, this.getMod('GlücksPunkte')], ([x, { addMod, multiMod }]) => {
+        //     const raw = 21 - x;
+        //     const r = raw * multiMod + addMod;
+        //     return Math.ceil(r);
+        // })
+
+
+
+        // this.allMissingRequirementsStore = this.storeManager.derived([this.talentEffectiveStore, this.talentEffectiveIgnoreRequirementsStore, this.talentDerivationStore, this.talentBaseStore, this.besonderheitenStore, this.besonderheitenStoreIgnoreRequirements, this.fertigkeitenStore, this.fertigkeitenStoreIgnoreRequirements, this.tagsStore, this.pfadLevelStore], ([talentEffective, talentAll, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags, pfade]) => {
+
+        //     return filterNull<MissingRequirements>(Object.entries(talentAll)
+        //         .filter(([key, value]) => value > 0)
+        //         .flatMap(([key, value]) => this.stammdaten.talentMap[key].Level
+        //             .filter(x => x.Wert <= value)
+        //             .flatMap(x => this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags))
+        //         ).concat(
+        //             Object.entries(fertigkeitenIgnored)
+        //                 .filter(([key, value]) => (value ?? 0) > 0)
+        //                 .flatMap(([key, value]) => this.stammdaten.fertigkeitenMap[key].Stufe
+        //                     .filter((_, i) => i < (value ?? 0))
+        //                     .flatMap(x => this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags))
+        //                 )).concat(
+        //                     Object.entries(besonderheitenTgnored)
+        //                         .filter(([key, value]) => (value ?? 0) > 0)
+        //                         .flatMap(([key, value]) => this.stammdaten.besonderheitenMap[key].Stufe
+        //                             .filter((_, i) => i < (value ?? 0))
+        //                             .flatMap(x => this.getMissingInternal(x.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags))
+        //                         ))
+        //         .concat(
+        //             Object.entries(pfade).flatMap(([gruppe, gv]) => Object.entries(gv).flatMap(([pfad, pv]) => Object.entries(pv)
+        //                 .filter(([level, value]) => (value ?? 0) > 0)
+        //                 .flatMap(([level, value]) => {
+
+        //                     const pi = this.stammdaten.pfadMap[pfad];
+        //                     const li = pi.Levels.Level.filter(x => x.Id == level);
+        //                     return [this.getMissingInternal(pi.Voraussetzung, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags)].concat(
+        //                         li.flatMap(x => this.getMissingInternal(x.Voraussetzung?.Zusätzlich, talentEffective, talentDerivation, talentBase, besonderheiten, besonderheitenTgnored, fertigkeiten, fertigkeitenIgnored, tags)))
+
+        //                 }
+        //                 )))))
+
+
+
+        // });
+
+
+        // this.punkteStore = this.storeManager.derived([
+        //     this.organismusStore,
+        //     this.eigenschaftenData.Mut.acciredStore,
+        //     this.eigenschaftenData.Glück.acciredStore,
+        //     this.eigenschaftenData.Klugheit.acciredStore,
+        //     this.eigenschaftenData.Intuition.acciredStore,
+        //     this.eigenschaftenData.Gewandtheit.acciredStore,
+        //     this.eigenschaftenData.Feinmotorik.acciredStore,
+        //     this.eigenschaftenData.Sympathie.acciredStore,
+        //     this.eigenschaftenData.Antipathie.acciredStore,
+        //     this.eigenschaftenData.Stärke.acciredStore,
+        //     this.eigenschaftenData.Konstitution.acciredStore,
+        //     this.eigenschaftenData.Einfluss.acciredStore,
+        //     this.eigenschaftenData.Fokus.acciredStore,
+
+        //     this.eigenschaftenData.Mut.costStore,
+        //     this.eigenschaftenData.Glück.costStore,
+        //     this.eigenschaftenData.Klugheit.costStore,
+        //     this.eigenschaftenData.Intuition.costStore,
+        //     this.eigenschaftenData.Gewandtheit.costStore,
+        //     this.eigenschaftenData.Feinmotorik.costStore,
+        //     this.eigenschaftenData.Sympathie.costStore,
+        //     this.eigenschaftenData.Antipathie.costStore,
+        //     this.eigenschaftenData.Stärke.costStore,
+        //     this.eigenschaftenData.Konstitution.costStore,
+        //     this.eigenschaftenData.Einfluss.costStore,
+        //     this.eigenschaftenData.Fokus.costStore,
+
+        //     this.pfadLevelDataStore,
+
+        //     this.talentPurchasedEP,
+
+        //     this.fertigkeitenFixDataStore,
+        //     this.fertigkeitenPurchasedStore,
+
+        //     this.besonderheitenFixDataStore,
+        //     this.besonderheitenPurchasedStore,
+
+        //     this.propertyScaleData,
+        //     this.ageStore,
+        //     this.getPropertysScopeStore(),
+
+        // ], ([
+        //     organismus,
+
+        //     acciredMut,
+        //     acciredGlück,
+        //     acciredKlugheit,
+        //     acciredIntuition,
+        //     acciredGewandtheit,
+        //     acciredFeinmotorik,
+        //     acciredSympathie,
+        //     acciredAntipathie,
+        //     acciredStärke,
+        //     acciredKonstitution,
+        //     acciredEinfluss,
+        //     acciredFokus,
+
+        //     eCostMut,
+        //     eCostGlück,
+        //     eCostKlugheit,
+        //     eCostIntuition,
+        //     eCostGewandtheit,
+        //     eCostFeinmotorik,
+        //     eCostSympathie,
+        //     eCostAntipathie,
+        //     eCostStärke,
+        //     eCostKonstitution,
+        //     eCostEinfluss,
+        //     eCostFokus,
+
+        //     pfadLevelData,
+
+        //     talentEP,
+
+        //     fertigkeitenFix,
+        //     fertigkeitenPurchaseu,
+
+        //     besonderheitenFix,
+        //     besonderheitenPurchaseu,
+        //     propertyScale,
+        //     age,
+        //     scope,
+
+        // ]) => {
+
+        //     const r: Record<string, number> = {};
+        //     const applyCost = applyCostFunction.bind(this);
+        //     for (const s of this.stammdaten.Instance.Daten.KostenDefinitionen.KostenDefinition) {
+        //         r[s.Id] = 0;
+        //     }
+        //     const earray = [
+        //         { cost: eCostMut, accired: acciredMut },
+        //         { cost: eCostGlück, accired: acciredGlück },
+        //         { cost: eCostKlugheit, accired: acciredKlugheit },
+        //         { cost: eCostIntuition, accired: acciredIntuition },
+        //         { cost: eCostGewandtheit, accired: acciredGewandtheit },
+        //         { cost: eCostFeinmotorik, accired: acciredFeinmotorik },
+        //         { cost: eCostSympathie, accired: acciredSympathie },
+        //         { cost: eCostAntipathie, accired: acciredAntipathie },
+        //         { cost: eCostStärke, accired: acciredStärke },
+        //         { cost: eCostKonstitution, accired: acciredKonstitution },
+        //         { cost: eCostFokus, accired: acciredFokus },
+        //         { cost: eCostEinfluss, accired: acciredEinfluss },
+        //     ]
+        //     applyCredit(this.stammdaten.Instance.Daten.GenerierungsDaten.Kosten)
+
+        //     for (const l of organismus?.lebensabschnitt ?? []) {
+        //         if (l.Spielbar?.Kosten) {
+        //             applyCost(l.Spielbar.Kosten);
+        //         }
+        //     }
+
+
+        //     earray.forEach(att => {
+        //         for (let i = 1; i <= att.accired; i++) {
+        //             const ec = att.cost[i];
+        //             if (ec) {
+        //                 applyCost(ec);
+        //             }
+        //         }
+        //         for (let i = -1; i >= att.accired; i--) {
+        //             const ec = att.cost[i];
+        //             if (ec) {
+        //                 applyCost(ec);
+        //             }
+        //         }
+        //     });
+
+        //     applyCost(Object.keys(pfadLevelData).flatMap(gruppe =>
+        //         Object.keys(pfadLevelData[gruppe]).flatMap(pfad =>
+        //             Object.keys(pfadLevelData[gruppe][pfad]).flatMap(level => ({
+        //                 gruppe,
+        //                 pfad,
+        //                 level,
+        //                 amount: pfadLevelData[gruppe][pfad][level],
+        //             }))
+        //         )
+        //     ).map(x => ({
+        //         level: data.Instance.Daten.Pfade
+        //             .filter(y => y.Id == x.gruppe)[0].Pfad
+        //             .filter(y => y.Id == x.pfad)[0].Levels.Level
+        //             .filter(y => y.Id == x.level)[0],
+        //         amount: x.amount
+
+        //     }))
+        //         .flatMap(x => x.level.Kosten.flatMap(y => Array.from({ length: x.amount }, _ => ({ Id: y.Id, Berechnung: y.Berechnung })))));
+
+
+        //     applyCost(
+        //         Object.values(talentEP).map(x => ({
+        //             Id: data.StandardKosten,
+        //             Berechnung: (x ?? 0).toString()
+        //         })));
+
+
+        //     applyCost(
+        //         Object.keys(fertigkeitenPurchaseu).flatMap(key => {
+        //             const up = fertigkeitenPurchaseu[key] ?? 0;
+        //             const low = fertigkeitenFix[key] ?? 0;
+
+        //             return data.fertigkeitenMap[key].Stufe.filter((_, i) => i >= low && i < up).map(x => ({ Id: data.StandardKosten, Berechnung: x.Kosten.toString() }));
+        //         }));
+
+
+        //     applyCost(
+        //         Object.keys(besonderheitenPurchaseu).flatMap(key => {
+        //             const up = besonderheitenPurchaseu[key] ?? 0;
+        //             const low = besonderheitenFix[key] ?? 0;
+        //             const r: KostenDefinition_misc[] = [];
+
+        //             for (let i = low; i < up; i++) {
+        //                 r.push(...data.besonderheitenMap[key].Stufe[i].Kosten)
+        //             }
+        //             return r;
+        //         })
+        //     );
+
+
+        //     applyCost(
+        //         Object.entries(propertyScale).flatMap(([key, value]) => {
+        //             const r: KostenDefinition_misc[] = [];
+
+        //             const reihe = organismus?.morph.Entwiklung?.Reihe?.filter(x => x.id == key)?.[0];
+        //             if (reihe == undefined) { return r; }
+
+        //             const { currentSchwelle } = Charakter.applyAge(age, reihe, value);
+
+        //             ;
+        //             r.push(...(currentSchwelle?.Kosten ?? []));
+        //             return r;
+        //         })
+        //     );
+
+
+        //     return r;
+
+        //     ///////////
+        //     function applyCredit(newLocal: KostenDefinition_misc[]) {
+        //         for (const s of newLocal) {
+        //             const result = mathjs.evaluate(s.Berechnung, scope);
+        //             r[s.Id] += Array.isArray(result) ? result[result.length - 1] : result;
+        //         }
+        //     }
+        //     function applyCostFunction(this: Charakter, newLocal: KostenDefinition_misc[], input?: ParameterDefinition_misc & { value: any }) {
+        //         for (const s of newLocal) {
+        //             const newScope = { ...scope };
+        //             if (input) {
+        //                 if (input["#"] == "Talent") {
+        //                     for (const i of input.Talent.Input) {
+        //                         const talentId: string = input.value;
+        //                         const talentDefinition = this.stammdaten.talentMap[talentId];
+
+        //                         newScope[i.identifier] = i.type == "Komplexität"
+        //                             ? talentDefinition.Komplexität
+        //                             : i.type == "TaA"
+        //                                 ? this.talentEffectiveIgnoreRequirements[talentId] - this.talentBase[talentId]
+        //                                 : i.type == "TaB"
+        //                                     ? this.talentBase[talentId]
+        //                                     : i.type == "TaW"
+        //                                         ? this.talentEffective[talentId]
+        //                                         : undefined;
+        //                     }
+        //                 } else if (input["#"] == "Auswahl") {
+        //                     newScope[input.Auswahl.Input.identifier] = input.value;
+        //                 } else if (input["#"] == "Text" && input.Text.Input) {
+        //                     newScope[input.Text.Input.identifier] = input.value;
+        //                 } else if (input["#"] == "Zahl" && input.Zahl.Input) {
+        //                     newScope[input.Zahl.Input.identifier] = input.value;
+        //                 }
+        //             }
+        //             const result = mathjs.evaluate(s.Berechnung, newScope);
+        //             r[s.Id] -= Array.isArray(result) ? result[result.length - 1] : result;
+        //         }
+        //     }
+
+        // });
 
 
 
@@ -2207,11 +2448,20 @@ export class Charakter {
         return this.storeManager.key("/age").of<number>();
     }
 
+    private getPropertieKeys(prop: string): { raw: Key<`/eigenschaften/${string}/raw`, number | undefined>; effective: Key<`/eigenschaften/${string}/effektiv`, number | undefined>; } {
+        return {
+            raw: this.storeManager.key(`/eigenschaften/${prop}/raw`).of<number | undefined>(),
+            effective: this.storeManager.key(`/eigenschaften/${prop}/effektiv`).of<number | undefined>()
+        }
+    }
+
     private getPfadKey<kategorie extends string, pfad extends string, level extends string>(kategorie: kategorie, pfad: pfad, level: level) {
         return this.storeManager.key(`/Pfad/${kategorie}/${pfad}/${level}`).of<number>();
     }
 
-    public static applyAge(age: number, reihe: _Reihe, currentValue: number) {
+    public static applyAge(age: number, reihe: _Reihe): { schwellen: Schwelle[]; quantile: Quantile[]; };
+    public static applyAge(age: number, reihe: _Reihe, currentValue: number): { schwellen: Schwelle[]; quantile: Quantile[]; currentSchwelle: Schwelle; };
+    public static applyAge(age: number, reihe: _Reihe, currentValue?: number): { schwellen: Schwelle[]; quantile: Quantile[]; currentSchwelle?: Schwelle; } {
         const a = age;
         const tempIndex = Math.round(
             (a - (reihe?.startAlter ?? 0)) / (reihe?.step ?? 1) + (reihe?.startAlter ?? 0)
@@ -2250,10 +2500,16 @@ export class Charakter {
         //         .sort((a, b) => a.Wert - b.Wert)
         //         .filter((x) => x.Wert !== undefined) ?? [];
 
-        const filtert = schwellen.filter(x => x.Wert <= currentValue);
-        const currentSchwelle = filtert.length > 0 ? filtert.reverse()[0] : undefined;
+        if (currentValue !== undefined) {
 
-        return { schwellen, quantile, currentSchwelle };
+            const filtert = schwellen.filter(x => x.Wert <= currentValue);
+            const currentSchwelle = filtert.length > 0 ? filtert.reverse()[0] : undefined;
+
+            return { schwellen, quantile, currentSchwelle };
+        } else {
+
+            return { schwellen, quantile };
+        }
 
     }
 
@@ -2293,629 +2549,629 @@ export class Charakter {
     }
 
 
-    public getPropertyStore(): Readable<{ [key: string]: number }> {
-        return this.storeManager.derived([this.getPropertysScopeStore(), this.getMods()], ([scope, mods]) => {
-            return Object.fromEntries(Object.keys(scope).filter(x => typeof scope[x] == "function").map(x => {
-                try {
-
-                    const ev = scope[x]();
-                    const v = Array.isArray(ev) ? ev[0] : ev;
-                    if (mods[x] !== undefined) {
-                        return ([x, (v * mods[x].multiMod) + mods[x].addMod]);
-                    }
-                    return ([x, v])
-                } catch (error) {
-                    console.debug(`faild to get ${x}`, error);
-                    return [x, 0];
-                }
-            }))
-        })
-    }
-
-    public getPropertyTypeStore() {
-        return this.storeManager.derived(this.organismusStore, organismus => {
-
-            if (organismus == undefined) {
-                return {};
-            }
-
-            const keys: Record<string, (ReiheDefinition_lebewesen & { type: 'reihe' }) |
-                (PunktDefintion_lebewesen & { type: 'punkt' })
-                | (FormelDefintion_lebewesen & { type: 'calc' })> = {};
-            const add = (input: EntwicklungDefinition_lebewesen) => {
-
-                for (const r of input.Reihe ?? []) {
-                    if (keys[r.id] === undefined) {
-                        keys[r.id] = { ...r, type: 'reihe' };
-                    }
-                }
-                for (const r of input.Punkt ?? []) {
-                    if (keys[r.id] === undefined) {
-                        keys[r.id] = { ...r, type: 'punkt' };
-                    }
-                }
-                for (const r of input.Berechnung ?? []) {
-                    if (keys[r.id] === undefined) {
-                        keys[r.id] = { ...r, type: 'calc' };
-                    }
-                }
-
-            }
-
-            if (organismus.morph.Entwiklung) {
-                add(organismus.morph.Entwiklung);
-            }
-            if (organismus.art.Entwiklung) {
-                add(organismus.art.Entwiklung);
-            }
-            if (organismus.gattung.Entwiklung) {
-                add(organismus.gattung.Entwiklung);
-            }
-            if (this.stammdaten.Instance.Daten.Organismen.Entwiklung) {
-                add(this.stammdaten.Instance.Daten.Organismen.Entwiklung);
-            }
-            return keys;
-
-
-        })
-    }
-
-    private propertysScopeStore: Readable<any> | undefined;
-    private getPropertysScopeStore(): Readable<any> {
-        if (!this.propertysScopeStore) {
-            this.propertysScopeStore = this.getPropertysScopeStoreGenerator();
-        }
-        return this.propertysScopeStore;
-    }
-    private getPropertysScopeStoreGenerator(): Readable<any> {
-
-        const store = this.storeManager.derived([this.organismusStore, this.propertyScaleData, ...EIGENRSCHAFTEN.map(x => this.eigenschaftenData[x].currentStore)], ([organismus, property, ...eigenrschaften]) => {
-
-
-            const scope: any = {
-            };
-
-            for (let i = 0; i < EIGENRSCHAFTEN.length; i++) {
-                const key = EIGENRSCHAFTEN_SHORT[i];
-                scope[key] = eigenrschaften[i];
-            }
-
-            const buildScope = (e: EntwicklungDefinition_lebewesen | undefined) => {
-                if (!e) {
-                    return;
-                }
-                for (const r of e.Reihe ?? []) {
-                    // console.debug("Evaluet Reihe", r.id);
-                    mathjs.evaluate(`${r.id}()= ${property[r.id] ?? 0}`, scope);
-                }
-                for (const p of e.Punkt ?? []) {
-                    // console.debug("Evaluet Punkt", p.id);
-                    mathjs.evaluate(`${p.id}()= ${property[p.id] ?? 0}`, scope);
-                }
-                for (const c of e.Berechnung ?? []) {
-                    // console.debug("Evaluet calculate", c.id);
-                    const override = generateOveride(scope, c.id);
-                    if (override)
-
-                        mathjs.evaluate(`${c.id}()= base=${override}();${c.Formel}`, scope);
-                    else
-                        mathjs.evaluate(`${c.id}()= ${c.Formel}`, scope);
-                }
-
-                function generateOveride(scope: any, id: string) {
-
-                    let depth = 0;
-                    while (scope[id + (depth ? depth.toString() : "")]) {
-                        depth++;
-                    }
-
-                    if (depth > 0) {
-                        scope[id + depth.toString()] = scope[id];
-                        return id + depth.toString();
-                    }
-                    return undefined;
-                }
-            }
-            // console.debug("Evalueta Scope", organismus);
-            // console.debug("Evalueta Organismen", this.stammdaten.Instance.Daten.Organismen.Entwiklung);
-            buildScope(this.stammdaten.Instance.Daten.Organismen.Entwiklung);
-            // console.debug("Evalueta Gattung", organismus?.gattung.Entwiklung);
-            buildScope(organismus?.gattung.Entwiklung);
-            // console.debug("Evalueta Art", organismus?.art.Entwiklung);
-            buildScope(organismus?.art.Entwiklung);
-            // console.debug("Evalueta Morph", organismus?.morph.Entwiklung);
-            buildScope(organismus?.morph.Entwiklung);
-            // console.debug("Generate Scope", scope);
-            return scope;
-
-        });
-        return store;
-
-    }
-
-    private getMods() {
-        return this.storeManager.derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore, this.ageStore, this.propertyScaleData], ([o, b, f, t, age, propertyScale]) => {
-            return Object.fromEntries((this.getPropertyKeys()).map((keyt) => {
-                const mods = Object.entries(b/* if null it was used to early */).flatMap(([key, value]) => {
-                    return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-                })
-                    .concat(Object.entries(f).flatMap(([key, value]) => {
-                        return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.fertigkeitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-                    }))
-                    .concat(Object.entries(t).flatMap(([key, value]) => {
-                        return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-                    }))
-                    .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? []) ?? [])
-                    .concat(o?.morph.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-                    .concat(o?.morph.Entwiklung?.Reihe?.flatMap(reihe => {
-                        if (propertyScale[reihe.id]) {
-                            const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
-                            return currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [];
-                        }
-
-                        return [];
-                    }) ?? [])
-
-                    .concat(o?.art.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-                    .concat(o?.gattung.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-                    .flatMap(x => x);
-                const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
-                const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
-
-
-                return [keyt, { addMod, multiMod }];
-            }));
-        });
-    }
-    private getMod(keyt: string) {
-        return this.storeManager.derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore, this.ageStore, this.propertyScaleData], ([o, b, f, t, age, propertyScale]) => {
-            const mods = Object.entries(b/* if null it was used to early */).flatMap(([key, value]) => {
-                return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-            })
-                .concat(Object.entries(f).flatMap(([key, value]) => {
-                    return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.fertigkeitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-                }))
-                .concat(Object.entries(t).flatMap(([key, value]) => {
-                    return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-                }))
-                .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? []) ?? [])
-                .concat(o?.morph.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-                .concat(o?.morph.Entwiklung?.Reihe?.flatMap(reihe => {
-                    if (propertyScale[reihe.id]) {
-                        const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
-                        return currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [];
-                    }
-
-                    return [];
-                }) ?? [])
-
-                .concat(o?.art.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-                .concat(o?.gattung.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
-                .flatMap(x => x);
-            const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
-            const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
-
-
-            return { addMod, multiMod };
-        });
-    }
-
-
-    getTalentPurchasedEPStore(id: string): Writable<number> {
-        const d = this.storeManager.derived(this.talentPurchasedEP, x => x[id] ?? 0);
-        return {
-            ...d,
-            set: (v) => {
-                const x = get(this.talentPurchasedEP);
-                x[id] = v;
-                this.talentPurchasedEPData.set(x as any);
-            },
-            update: (u) => {
-                const x = get(this.talentPurchasedEP);
-                x[id] = u(x[id] ?? 0);
-                this.talentPurchasedEPData.set(x as any);
-            }
-        }
-    }
-    getTalentBaseStore(id: string): Readable<number> {
-        return this.storeManager.derived(this.talentBaseStore, x => x[id]);
-    }
-    getTalentEPStore(id: string): Readable<number> {
-        return this.storeManager.derived(this.talentBaseEPStore, x => x[id]);
-    }
-    getTalentDerivedStore(id: string): Readable<number> {
-        return this.storeManager.derived(this.talentDerivationStore, x => x[id]);
-    }
-    getTalentEffectiveStore(id: string): Readable<number> {
-        return this.storeManager.derived(this.talentEffectiveStore, x => x[id]);
-    }
-    gettalentEffectiveIgnoreRequirements(id: string) {
-        return this.storeManager.derived(this.talentEffectiveIgnoreRequirementsStore, x => x[id]);
-    }
-    gettalentMissingRequirement(id: string) {
-        return this.storeManager.derived(this.talentMissingRequirement, x => x[id]);
-    }
-
-    getTalentPurchasedEP(id: string): number {
-        return get(this.talentPurchasedEPData)[id] ?? 0;
-    }
-    setTalentPurchasedEP(id: string, value: number): void {
-        const x = get(this.talentPurchasedEPData);
-        x[id] = value;
-        this.talentPurchasedEPData.set(x);
-    }
-    getPropertyScale(id: string): number {
-        return get(this.propertyScaleData)[id] ?? 0;
-    }
-    setPropertyScale(id: string, value: number): void {
-        const x = get(this.propertyScaleData);
-        x[id] = value;
-        this.propertyScaleData.set(x);
-    }
-
-    getSimulation(callback: (char: Charakter) => void, key?: string): Readable<CharacterChange> {
-
-        // const copyData = JSON.parse(JSON.stringify(this.Data));
-        // const copy = new Charakter(this.stammdaten, copyData);
-        // console.log("GetSimulation")
-        let lastData: string | undefined;
-        let lastResult: CharacterChange | undefined;
-        return this.storeManager.derived(this.DataStore, data => {
-            const copyString = JSON.stringify(data);
-            // console.log("GetSimulationCalculated")
-            // console.time("simulation-create")
-
-            if (copyString == lastData) {
-                // console.log(    "was same")
-                return lastResult!;
-            }
-            console.time("simulation-callback")
-            const copyData = JSON.parse(copyString);
-
-            // console.info('{}!=={}',copyData,lastData)
-
-
-            const copy = new Charakter(this.stammdaten, copyData);
-            // console.timeEnd("simulation-create")
-
-
-            // const tmep= serialize(copy,{lossy:false});
-            // copy = deserialize(tmep);
-
-            callback(copy);
-            console.timeEnd("simulation-callback")
-            // console.log("simulation-logedData",copyData)
-
-            const punkteKeys = distinct(Object.keys(copy.punkte).concat(Object.keys(this.punkte)));
-
-            const changedPunkte = punkteKeys.map(x => ({
-                key: x,
-                new: copy.punkte[x],
-                old: this.punkte[x],
-                differece: copy.punkte[x] - this.punkte[x]
-            }))
-
-
-            const talentKeys = distinct(
-                Object.keys(copy.talentEffective).concat(Object.keys(this.talentEffective))
-            );
-            const changedTalents = talentKeys
-                .map((key) => {
-                    return {
-                        key: key,
-                        new: copy.talentEffective[key],
-                        old: this.talentEffective[key],
-                        newEp: copy.talentBaseEP[key] + copy.getTalentPurchasedEP(key),
-                        oldEp: this.talentBaseEP[key] + this.getTalentPurchasedEP(key)
-                    };
-                })
-                .filter((x) => x.old != x.new || x.oldEp != x.newEp);
-
-            const fertigkeitenKeys = distinct(
-                Object.keys(copy.fertigkeiten)
-                    .concat(Object.keys(this.fertigkeiten))
-                    .concat(Object.keys(copy.fertigkeitenIgnoreRequirements))
-                    .concat(Object.keys(this.fertigkeitenIgnoreRequirements))
-            );
-
-            const changedFertigkeiten = fertigkeitenKeys
-                .map((key) => {
-                    return {
-                        key: key,
-                        new: copy.fertigkeiten[key] ?? 0,
-                        old: this.fertigkeiten[key] ?? 0,
-                        newIgnored: copy.fertigkeitenIgnoreRequirements[key] ?? 0,
-                        oldIgnored: this.fertigkeitenIgnoreRequirements[key] ?? 0
-                    };
-                })
-                .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
-            const besonderheitenKeys = distinct(
-                Object.keys(copy.besonderheiten)
-                    .concat(Object.keys(this.besonderheiten))
-                    .concat(Object.keys(copy.besonderheitenIgnoreRequirements))
-                    .concat(Object.keys(this.besonderheitenIgnoreRequirements))
-            );
-
-            const changedBestonderheiten = besonderheitenKeys
-                .map((key) => {
-                    return {
-                        key: key,
-                        new: copy.besonderheiten[key] ?? 0,
-                        old: this.besonderheiten[key] ?? 0,
-                        newIgnored: copy.besonderheitenIgnoreRequirements[key] ?? 0,
-                        oldIgnored: this.besonderheitenIgnoreRequirements[key] ?? 0
-                    };
-                })
-                .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
-
-            const currentMissing = this.allMissingRequirements.sort(compareRequirement);
-            const copyMissing = copy.allMissingRequirements.sort(compareRequirement);
-
-            function contains(list: MissingRequirements[], element: MissingRequirements) {
-                for (const c of list) {
-                    const comp = compareRequirement(c, element);
-                    if (comp == 0) {
-                        return true;
-                    } else if (comp < 0) {
-                        // we can stop here since the lists are sorted
-                        return false;
-                    }
-                }
-                return false;
-            }
-            const newMissing = copyMissing.filter(x => !contains(currentMissing, x));
-            const removedMissing = currentMissing.filter(x => !contains(copyMissing, x));
-            const newResult = { changedPunkte, changedTalents, changedFertigkeiten, changedBestonderheiten, requirements: { added: newMissing, removed: removedMissing } };
-            lastData = copyString;
-            lastResult = newResult;
-            return newResult;
-
-        });
-    }
-
-    pathChoosenTimes(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
-        instance ??= this.pfadLevel;
-        if (instance[gruppe] == undefined) {
-            return 0;
-        }
-        if (instance[gruppe][pfad] == undefined) {
-            return 0;
-        }
-        if (instance[gruppe][pfad][level] == undefined) {
-            return 0;
-        }
-
-
-
-        return instance[gruppe][pfad][level];
-    }
-    pathChoosenTimesStore(gruppe: string, pfad: string, level: string) {
-        return this.storeManager.derived(this.pfadLevelDataStore, old => {
-            return this.pathChoosenTimes(gruppe, pfad, level, old);
-        });
-    }
-
-    canPathUnChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
-        instance ??= this.pfadLevel;
-        if (instance[gruppe] == undefined) {
-            return false;
-        }
-        if (instance[gruppe][pfad] == undefined) {
-            return false;
-        }
-        if (instance[gruppe][pfad][level] == undefined) {
-            return false;
-        }
-
-        if (!Object.keys(instance[gruppe][pfad])
-            .filter(x => x != level)
-            .filter(x => instance![gruppe][pfad][x] > 0)
-            .every(key => this.levelPrerequire(gruppe, pfad, key, { withoutLevel: level }))) {
-            return false;
-        }
-
-
-        return instance[gruppe][pfad][level] > 0;
-    }
-    canPathUnChoosenStore(gruppe: string, pfad: string, level: string) {
-        return this.storeManager.derived(this.pfadLevelDataStore, old => {
-            return this.canPathUnChoosen(gruppe, pfad, level, old);
-        });
-    }
-    canPathChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
-        instance ??= this.pfadLevel;
-
-        if (!this.levelPrerequire(gruppe, pfad, level)) {
-            return false;
-        }
-
-        if (instance[gruppe] &&
-            instance[gruppe][pfad] &&
-            !Object.keys(instance[gruppe][pfad])
-                .filter(x => x != level)
-                .filter(x => instance![gruppe][pfad][x] > 0)
-                .every(key => this.levelPrerequire(gruppe, pfad, key, { withLevel: level }))) {
-            return false;
-        }
-
-        if (instance[gruppe] == undefined) {
-            return true;
-        }
-        if (instance[gruppe][pfad] == undefined) {
-            return true;
-        }
-        if (instance[gruppe][pfad][level] == undefined) {
-            return true;
-        }
-        const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
-            .Pfad.filter(x => x.Id == pfad)[0]
-            .Levels.Level.filter(x => x.Id == level)[0]
-
-        return instance[gruppe][pfad][level] < (l.WiederhoteNutzung ?? 1);
-    }
-
-    canPathChoosenStore(gruppe: string, pfad: string, level: string) {
-        return this.storeManager.derived(this.pfadLevelDataStore, old => {
-            return this.canPathChoosen(gruppe, pfad, level, old);
-        });
-    }
-
-    hasPathChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
-        instance ??= this.pfadLevel;
-        if (instance[gruppe] == undefined) {
-            return false;
-        }
-        if (instance[gruppe][pfad] == undefined) {
-            return false;
-        }
-        if (instance[gruppe][pfad][level] == undefined) {
-            return false;
-        }
-
-        return instance[gruppe][pfad][level] > 0;
-    }
-
-    hasPathChoosenStore(gruppe: string, pfad: string, level: string) {
-        return this.storeManager.derived(this.pfadLevelDataStore, old => {
-            return this.hasPathChoosen(gruppe, pfad, level, old);
-        });
-    }
-
-    addPath(gruppe: string, pfad: string, level: string) {
-        this.pfadLevelDataStore.update(old => {
-            if (old[gruppe] == undefined) {
-                old[gruppe] = {};
-            }
-            if (old[gruppe][pfad] == undefined) {
-                old[gruppe][pfad] = {};
-            }
-            if (old[gruppe][pfad][level] == undefined) {
-                old[gruppe][pfad][level] = 0;
-            }
-
-            const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
-                .Pfad.filter(x => x.Id == pfad)[0]
-                .Levels.Level.filter(x => x.Id == level)[0]
-
-            if (old[gruppe][pfad][level] < (l.WiederhoteNutzung ?? 1)) {
-                old[gruppe][pfad][level]++;
-            }
-            return old;
-        });
-    }
-
-    removePath(gruppe: string, pfad: string, level: string) {
-        this.pfadLevelDataStore.update(old => {
-            if (old[gruppe] == undefined) {
-                old[gruppe] = {};
-            }
-            if (old[gruppe][pfad] == undefined) {
-                old[gruppe][pfad] = {};
-            }
-            if (old[gruppe][pfad][level] == undefined) {
-                old[gruppe][pfad][level] = 0;
-            }
-
-            if (old[gruppe][pfad][level] > 0) {
-                old[gruppe][pfad][level]--;
-            }
-            if (old[gruppe][pfad][level] == 0) {
-                delete old[gruppe][pfad][level];
-                if (Object.keys(old[gruppe][pfad]).length == 0) {
-                    delete old[gruppe][pfad];
-                    if (Object.keys(old[gruppe]).length == 0) {
-                        delete old[gruppe];
-
-                    }
-                }
-            }
-            return old;
-        });
-
-    }
-
-    private levelPrerequire(gruppe: string, pfad: string, level: string, options?: { withoutLevel?: string } | { withLevel?: string }) {
-        const { withoutLevel, withLevel } = options as any ?? {};
-        const evalLevel = (lvl: _Level1): boolean => {
-            if (lvl.mindestVorkommen == 1 && lvl.Id == withLevel) {
-                return true;
-            }
-            if (this.pfadLevel[gruppe] == undefined) {
-                return false;
-            }
-            if (this.pfadLevel[gruppe][pfad] == undefined) {
-                return false;
-            }
-            if (this.pfadLevel[gruppe][pfad][lvl.Id] == undefined) {
-                return false;
-            }
-            return withoutLevel == lvl.Id
-                ? (this.pfadLevel[gruppe][pfad][lvl.Id] - 1) >= (lvl.mindestVorkommen ?? 1)
-                : withLevel == lvl.Id
-                    ? (this.pfadLevel[gruppe][pfad][lvl.Id] + 1) >= (lvl.mindestVorkommen ?? 1)
-                    : this.pfadLevel[gruppe][pfad][lvl.Id] >= (lvl.mindestVorkommen ?? 1);
-        };
-
-        const single = (e: _LevelAuswahl): boolean => {
-            if (e["#"] === "Not") {
-                return !single(e.Not);
-            } else if (e["#"] === "And") {
-                return evalAnd(e.And);
-            } else if (e["#"] === "Or") {
-                return evalOr(e.Or);
-            } else if (e["#"] === "Level") {
-                return evalLevel(e.Level);
-            } else {
-                throw Error('Not supported')
-            }
-
-        }
-        const evalAnd = (e: _LevelAuswahlen): boolean => {
-            return (e.And?.every(x => evalAnd(x))
-                ?? true)
-                &&
-                (e.Or?.every(x => evalOr(x))
-                    ?? true)
-                &&
-                (e.Level?.every(x => evalLevel(x))
-                    ?? true) &&
-                (e.Not?.every(x => !single(x))
-                    ?? true)
-        }
-        const evalOr = (e: _LevelAuswahlen): boolean => {
-            return (e.And?.some(x => evalAnd(x))
-                ?? true)
-                &&
-                (e.Or?.some(x => evalOr(x))
-                    ?? true)
-                &&
-                (e.Level?.some(x => evalLevel(x))
-                    ?? true) &&
-                (e.Not?.some(x => !single(x))
-                    ?? true)
-        }
-        const l = this.stammdaten.Instance.Daten.Pfade.filter((x) => x.Id == gruppe)[0]
-            ?.Pfad.filter((x) => x.Id == pfad)[0]
-            ?.Levels.Level.filter((x) => x.Id == level)[0];
-
-
-        const succes = l.Voraussetzung?.LevelVoraussetzung
-            ? single(l.Voraussetzung?.LevelVoraussetzung)
-            : true;
-
-        return succes;
-    }
-
-    public get pfadLevel(): Readonly<Record<string, Record<string, Record<string, number>>>> {
-        return get(this.pfadLevelDataStore);
-    };
-    private get pfadLevelData(): Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, number>>>>>> {
-        return get(this.pfadLevelDataStore);
-    };
-
-
-    private readonly eigenrschaften: Readonly<EigenschaftsMap<EigenschaftenData>>;
-    public readonly eigenschaftenData: Readonly<EigenschaftsMap<EigenschaftenDataAccess>>;
+    // public getPropertyStore(): Readable<{ [key: string]: number }> {
+    //     return this.storeManager.derived([this.getPropertysScopeStore(), this.getMods()], ([scope, mods]) => {
+    //         return Object.fromEntries(Object.keys(scope).filter(x => typeof scope[x] == "function").map(x => {
+    //             try {
+
+    //                 const ev = scope[x]();
+    //                 const v = Array.isArray(ev) ? ev[0] : ev;
+    //                 if (mods[x] !== undefined) {
+    //                     return ([x, (v * mods[x].multiMod) + mods[x].addMod]);
+    //                 }
+    //                 return ([x, v])
+    //             } catch (error) {
+    //                 console.debug(`faild to get ${x}`, error);
+    //                 return [x, 0];
+    //             }
+    //         }))
+    //     })
+    // }
+
+    // public getPropertyTypeStore() {
+    //     return this.storeManager.derived(this.organismusStore, organismus => {
+
+    //         if (organismus == undefined) {
+    //             return {};
+    //         }
+
+    //         const keys: Record<string, (ReiheDefinition_lebewesen & { type: 'reihe' }) |
+    //             (PunktDefintion_lebewesen & { type: 'punkt' })
+    //             | (FormelDefintion_lebewesen & { type: 'calc' })> = {};
+    //         const add = (input: EntwicklungDefinition_lebewesen) => {
+
+    //             for (const r of input.Reihe ?? []) {
+    //                 if (keys[r.id] === undefined) {
+    //                     keys[r.id] = { ...r, type: 'reihe' };
+    //                 }
+    //             }
+    //             for (const r of input.Punkt ?? []) {
+    //                 if (keys[r.id] === undefined) {
+    //                     keys[r.id] = { ...r, type: 'punkt' };
+    //                 }
+    //             }
+    //             for (const r of input.Berechnung ?? []) {
+    //                 if (keys[r.id] === undefined) {
+    //                     keys[r.id] = { ...r, type: 'calc' };
+    //                 }
+    //             }
+
+    //         }
+
+    //         if (organismus.morph.Entwiklung) {
+    //             add(organismus.morph.Entwiklung);
+    //         }
+    //         if (organismus.art.Entwiklung) {
+    //             add(organismus.art.Entwiklung);
+    //         }
+    //         if (organismus.gattung.Entwiklung) {
+    //             add(organismus.gattung.Entwiklung);
+    //         }
+    //         if (this.stammdaten.Instance.Daten.Organismen.Entwiklung) {
+    //             add(this.stammdaten.Instance.Daten.Organismen.Entwiklung);
+    //         }
+    //         return keys;
+
+
+    //     })
+    // }
+
+    // private propertysScopeStore: Readable<any> | undefined;
+    // private getPropertysScopeStore(): Readable<any> {
+    //     if (!this.propertysScopeStore) {
+    //         this.propertysScopeStore = this.getPropertysScopeStoreGenerator();
+    //     }
+    //     return this.propertysScopeStore;
+    // }
+    // private getPropertysScopeStoreGenerator(): Readable<any> {
+
+    //     const store = this.storeManager.derived([this.organismusStore, this.propertyScaleData, ...EIGENRSCHAFTEN.map(x => this.eigenschaftenData[x].currentStore)], ([organismus, property, ...eigenrschaften]) => {
+
+
+    //         const scope: any = {
+    //         };
+
+    //         for (let i = 0; i < EIGENRSCHAFTEN.length; i++) {
+    //             const key = EIGENRSCHAFTEN_SHORT[i];
+    //             scope[key] = eigenrschaften[i];
+    //         }
+
+    //         const buildScope = (e: EntwicklungDefinition_lebewesen | undefined) => {
+    //             if (!e) {
+    //                 return;
+    //             }
+    //             for (const r of e.Reihe ?? []) {
+    //                 // console.debug("Evaluet Reihe", r.id);
+    //                 mathjs.evaluate(`${r.id}()= ${property[r.id] ?? 0}`, scope);
+    //             }
+    //             for (const p of e.Punkt ?? []) {
+    //                 // console.debug("Evaluet Punkt", p.id);
+    //                 mathjs.evaluate(`${p.id}()= ${property[p.id] ?? 0}`, scope);
+    //             }
+    //             for (const c of e.Berechnung ?? []) {
+    //                 // console.debug("Evaluet calculate", c.id);
+    //                 const override = generateOveride(scope, c.id);
+    //                 if (override)
+
+    //                     mathjs.evaluate(`${c.id}()= base=${override}();${c.Formel}`, scope);
+    //                 else
+    //                     mathjs.evaluate(`${c.id}()= ${c.Formel}`, scope);
+    //             }
+
+    //             function generateOveride(scope: any, id: string) {
+
+    //                 let depth = 0;
+    //                 while (scope[id + (depth ? depth.toString() : "")]) {
+    //                     depth++;
+    //                 }
+
+    //                 if (depth > 0) {
+    //                     scope[id + depth.toString()] = scope[id];
+    //                     return id + depth.toString();
+    //                 }
+    //                 return undefined;
+    //             }
+    //         }
+    //         // console.debug("Evalueta Scope", organismus);
+    //         // console.debug("Evalueta Organismen", this.stammdaten.Instance.Daten.Organismen.Entwiklung);
+    //         buildScope(this.stammdaten.Instance.Daten.Organismen.Entwiklung);
+    //         // console.debug("Evalueta Gattung", organismus?.gattung.Entwiklung);
+    //         buildScope(organismus?.gattung.Entwiklung);
+    //         // console.debug("Evalueta Art", organismus?.art.Entwiklung);
+    //         buildScope(organismus?.art.Entwiklung);
+    //         // console.debug("Evalueta Morph", organismus?.morph.Entwiklung);
+    //         buildScope(organismus?.morph.Entwiklung);
+    //         // console.debug("Generate Scope", scope);
+    //         return scope;
+
+    //     });
+    //     return store;
+
+    // }
+
+    // private getMods() {
+    //     return this.storeManager.derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore, this.ageStore, this.propertyScaleData], ([o, b, f, t, age, propertyScale]) => {
+    //         return Object.fromEntries((this.getPropertyKeys()).map((keyt) => {
+    //             const mods = Object.entries(b/* if null it was used to early */).flatMap(([key, value]) => {
+    //                 return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //             })
+    //                 .concat(Object.entries(f).flatMap(([key, value]) => {
+    //                     return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.fertigkeitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //                 }))
+    //                 .concat(Object.entries(t).flatMap(([key, value]) => {
+    //                     return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //                 }))
+    //                 .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? []) ?? [])
+    //                 .concat(o?.morph.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //                 .concat(o?.morph.Entwiklung?.Reihe?.flatMap(reihe => {
+    //                     if (propertyScale[reihe.id]) {
+    //                         const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
+    //                         return currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [];
+    //                     }
+
+    //                     return [];
+    //                 }) ?? [])
+
+    //                 .concat(o?.art.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //                 .concat(o?.gattung.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //                 .flatMap(x => x);
+    //             const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
+    //             const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
+
+
+    //             return [keyt, { addMod, multiMod }];
+    //         }));
+    //     });
+    // }
+    // private getMod(keyt: string) {
+    //     return this.storeManager.derived([this.organismusStore, this.besonderheitenStore, this.fertigkeitenStore, this.talentEffectiveStore, this.ageStore, this.propertyScaleData], ([o, b, f, t, age, propertyScale]) => {
+    //         const mods = Object.entries(b/* if null it was used to early */).flatMap(([key, value]) => {
+    //             return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.besonderheitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //         })
+    //             .concat(Object.entries(f).flatMap(([key, value]) => {
+    //                 return Array.from({ length: value ?? 0 }, (_, i) => this.stammdaten.fertigkeitenMap[key].Stufe[i].Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //             }))
+    //             .concat(Object.entries(t).flatMap(([key, value]) => {
+    //                 return this.stammdaten.talentMap[key].Level.filter(x => x.Wert <= value).map(x => x.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //             }))
+    //             .concat(o?.lebensabschnitt.flatMap(l => l.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? []) ?? [])
+    //             .concat(o?.morph.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //             .concat(o?.morph.Entwiklung?.Reihe?.flatMap(reihe => {
+    //                 if (propertyScale[reihe.id]) {
+    //                     const { currentSchwelle } = Charakter.applyAge(age, reihe, propertyScale[reihe.id]);
+    //                     return currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [];
+    //                 }
+
+    //                 return [];
+    //             }) ?? [])
+
+    //             .concat(o?.art.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //             .concat(o?.gattung.Mods?.Eigenschaften?.Mod.filter(m => m.Eigenschaft == keyt) ?? [])
+    //             .flatMap(x => x);
+    //         const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
+    //         const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
+
+
+    //         return { addMod, multiMod };
+    //     });
+    // }
+
+
+    // getTalentPurchasedEPStore(id: string): Writable<number> {
+    //     const d = this.storeManager.derived(this.talentPurchasedEP, x => x[id] ?? 0);
+    //     return {
+    //         ...d,
+    //         set: (v) => {
+    //             const x = get(this.talentPurchasedEP);
+    //             x[id] = v;
+    //             this.talentPurchasedEPData.set(x as any);
+    //         },
+    //         update: (u) => {
+    //             const x = get(this.talentPurchasedEP);
+    //             x[id] = u(x[id] ?? 0);
+    //             this.talentPurchasedEPData.set(x as any);
+    //         }
+    //     }
+    // }
+    // getTalentBaseStore(id: string): Readable<number> {
+    //     return this.storeManager.derived(this.talentBaseStore, x => x[id]);
+    // }
+    // getTalentEPStore(id: string): Readable<number> {
+    //     return this.storeManager.derived(this.talentBaseEPStore, x => x[id]);
+    // }
+    // getTalentDerivedStore(id: string): Readable<number> {
+    //     return this.storeManager.derived(this.talentDerivationStore, x => x[id]);
+    // }
+    // getTalentEffectiveStore(id: string): Readable<number> {
+    //     return this.storeManager.derived(this.talentEffectiveStore, x => x[id]);
+    // }
+    // gettalentEffectiveIgnoreRequirements(id: string) {
+    //     return this.storeManager.derived(this.talentEffectiveIgnoreRequirementsStore, x => x[id]);
+    // }
+    // gettalentMissingRequirement(id: string) {
+    //     return this.storeManager.derived(this.talentMissingRequirement, x => x[id]);
+    // }
+
+    // getTalentPurchasedEP(id: string): number {
+    //     return get(this.talentPurchasedEPData)[id] ?? 0;
+    // }
+    // setTalentPurchasedEP(id: string, value: number): void {
+    //     const x = get(this.talentPurchasedEPData);
+    //     x[id] = value;
+    //     this.talentPurchasedEPData.set(x);
+    // }
+    // getPropertyScale(id: string): number {
+    //     return get(this.propertyScaleData)[id] ?? 0;
+    // }
+    // setPropertyScale(id: string, value: number): void {
+    //     const x = get(this.propertyScaleData);
+    //     x[id] = value;
+    //     this.propertyScaleData.set(x);
+    // }
+
+    // getSimulation(callback: (char: Charakter) => void, key?: string): Readable<CharacterChange> {
+
+    //     // const copyData = JSON.parse(JSON.stringify(this.Data));
+    //     // const copy = new Charakter(this.stammdaten, copyData);
+    //     // console.log("GetSimulation")
+    //     let lastData: string | undefined;
+    //     let lastResult: CharacterChange | undefined;
+    //     return this.storeManager.derived(this.DataStore, data => {
+    //         const copyString = JSON.stringify(data);
+    //         // console.log("GetSimulationCalculated")
+    //         // console.time("simulation-create")
+
+    //         if (copyString == lastData) {
+    //             // console.log(    "was same")
+    //             return lastResult!;
+    //         }
+    //         console.time("simulation-callback")
+    //         const copyData = JSON.parse(copyString);
+
+    //         // console.info('{}!=={}',copyData,lastData)
+
+
+    //         const copy = new Charakter(this.stammdaten, copyData);
+    //         // console.timeEnd("simulation-create")
+
+
+    //         // const tmep= serialize(copy,{lossy:false});
+    //         // copy = deserialize(tmep);
+
+    //         callback(copy);
+    //         console.timeEnd("simulation-callback")
+    //         // console.log("simulation-logedData",copyData)
+
+    //         const punkteKeys = distinct(Object.keys(copy.punkte).concat(Object.keys(this.punkte)));
+
+    //         const changedPunkte = punkteKeys.map(x => ({
+    //             key: x,
+    //             new: copy.punkte[x],
+    //             old: this.punkte[x],
+    //             differece: copy.punkte[x] - this.punkte[x]
+    //         }))
+
+
+    //         const talentKeys = distinct(
+    //             Object.keys(copy.talentEffective).concat(Object.keys(this.talentEffective))
+    //         );
+    //         const changedTalents = talentKeys
+    //             .map((key) => {
+    //                 return {
+    //                     key: key,
+    //                     new: copy.talentEffective[key],
+    //                     old: this.talentEffective[key],
+    //                     newEp: copy.talentBaseEP[key] + copy.getTalentPurchasedEP(key),
+    //                     oldEp: this.talentBaseEP[key] + this.getTalentPurchasedEP(key)
+    //                 };
+    //             })
+    //             .filter((x) => x.old != x.new || x.oldEp != x.newEp);
+
+    //         const fertigkeitenKeys = distinct(
+    //             Object.keys(copy.fertigkeiten)
+    //                 .concat(Object.keys(this.fertigkeiten))
+    //                 .concat(Object.keys(copy.fertigkeitenIgnoreRequirements))
+    //                 .concat(Object.keys(this.fertigkeitenIgnoreRequirements))
+    //         );
+
+    //         const changedFertigkeiten = fertigkeitenKeys
+    //             .map((key) => {
+    //                 return {
+    //                     key: key,
+    //                     new: copy.fertigkeiten[key] ?? 0,
+    //                     old: this.fertigkeiten[key] ?? 0,
+    //                     newIgnored: copy.fertigkeitenIgnoreRequirements[key] ?? 0,
+    //                     oldIgnored: this.fertigkeitenIgnoreRequirements[key] ?? 0
+    //                 };
+    //             })
+    //             .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
+    //         const besonderheitenKeys = distinct(
+    //             Object.keys(copy.besonderheiten)
+    //                 .concat(Object.keys(this.besonderheiten))
+    //                 .concat(Object.keys(copy.besonderheitenIgnoreRequirements))
+    //                 .concat(Object.keys(this.besonderheitenIgnoreRequirements))
+    //         );
+
+    //         const changedBestonderheiten = besonderheitenKeys
+    //             .map((key) => {
+    //                 return {
+    //                     key: key,
+    //                     new: copy.besonderheiten[key] ?? 0,
+    //                     old: this.besonderheiten[key] ?? 0,
+    //                     newIgnored: copy.besonderheitenIgnoreRequirements[key] ?? 0,
+    //                     oldIgnored: this.besonderheitenIgnoreRequirements[key] ?? 0
+    //                 };
+    //             })
+    //             .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
+
+    //         const currentMissing = this.allMissingRequirements.sort(compareRequirement);
+    //         const copyMissing = copy.allMissingRequirements.sort(compareRequirement);
+
+    //         function contains(list: MissingRequirements[], element: MissingRequirements) {
+    //             for (const c of list) {
+    //                 const comp = compareRequirement(c, element);
+    //                 if (comp == 0) {
+    //                     return true;
+    //                 } else if (comp < 0) {
+    //                     // we can stop here since the lists are sorted
+    //                     return false;
+    //                 }
+    //             }
+    //             return false;
+    //         }
+    //         const newMissing = copyMissing.filter(x => !contains(currentMissing, x));
+    //         const removedMissing = currentMissing.filter(x => !contains(copyMissing, x));
+    //         const newResult = { changedPunkte, changedTalents, changedFertigkeiten, changedBestonderheiten, requirements: { added: newMissing, removed: removedMissing } };
+    //         lastData = copyString;
+    //         lastResult = newResult;
+    //         return newResult;
+
+    //     });
+    // }
+
+    // pathChoosenTimes(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
+    //     instance ??= this.pfadLevel;
+    //     if (instance[gruppe] == undefined) {
+    //         return 0;
+    //     }
+    //     if (instance[gruppe][pfad] == undefined) {
+    //         return 0;
+    //     }
+    //     if (instance[gruppe][pfad][level] == undefined) {
+    //         return 0;
+    //     }
+
+
+
+    //     return instance[gruppe][pfad][level];
+    // }
+    // pathChoosenTimesStore(gruppe: string, pfad: string, level: string) {
+    //     return this.storeManager.derived(this.pfadLevelDataStore, old => {
+    //         return this.pathChoosenTimes(gruppe, pfad, level, old);
+    //     });
+    // }
+
+    // canPathUnChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
+    //     instance ??= this.pfadLevel;
+    //     if (instance[gruppe] == undefined) {
+    //         return false;
+    //     }
+    //     if (instance[gruppe][pfad] == undefined) {
+    //         return false;
+    //     }
+    //     if (instance[gruppe][pfad][level] == undefined) {
+    //         return false;
+    //     }
+
+    //     if (!Object.keys(instance[gruppe][pfad])
+    //         .filter(x => x != level)
+    //         .filter(x => instance![gruppe][pfad][x] > 0)
+    //         .every(key => this.levelPrerequire(gruppe, pfad, key, { withoutLevel: level }))) {
+    //         return false;
+    //     }
+
+
+    //     return instance[gruppe][pfad][level] > 0;
+    // }
+    // canPathUnChoosenStore(gruppe: string, pfad: string, level: string) {
+    //     return this.storeManager.derived(this.pfadLevelDataStore, old => {
+    //         return this.canPathUnChoosen(gruppe, pfad, level, old);
+    //     });
+    // }
+    // canPathChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
+    //     instance ??= this.pfadLevel;
+
+    //     if (!this.levelPrerequire(gruppe, pfad, level)) {
+    //         return false;
+    //     }
+
+    //     if (instance[gruppe] &&
+    //         instance[gruppe][pfad] &&
+    //         !Object.keys(instance[gruppe][pfad])
+    //             .filter(x => x != level)
+    //             .filter(x => instance![gruppe][pfad][x] > 0)
+    //             .every(key => this.levelPrerequire(gruppe, pfad, key, { withLevel: level }))) {
+    //         return false;
+    //     }
+
+    //     if (instance[gruppe] == undefined) {
+    //         return true;
+    //     }
+    //     if (instance[gruppe][pfad] == undefined) {
+    //         return true;
+    //     }
+    //     if (instance[gruppe][pfad][level] == undefined) {
+    //         return true;
+    //     }
+    //     const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+    //         .Pfad.filter(x => x.Id == pfad)[0]
+    //         .Levels.Level.filter(x => x.Id == level)[0]
+
+    //     return instance[gruppe][pfad][level] < (l.WiederhoteNutzung ?? 1);
+    // }
+
+    // canPathChoosenStore(gruppe: string, pfad: string, level: string) {
+    //     return this.storeManager.derived(this.pfadLevelDataStore, old => {
+    //         return this.canPathChoosen(gruppe, pfad, level, old);
+    //     });
+    // }
+
+    // hasPathChoosen(gruppe: string, pfad: string, level: string, instance?: Readonly<Record<string, Record<string, Record<string, number>>>>) {
+    //     instance ??= this.pfadLevel;
+    //     if (instance[gruppe] == undefined) {
+    //         return false;
+    //     }
+    //     if (instance[gruppe][pfad] == undefined) {
+    //         return false;
+    //     }
+    //     if (instance[gruppe][pfad][level] == undefined) {
+    //         return false;
+    //     }
+
+    //     return instance[gruppe][pfad][level] > 0;
+    // }
+
+    // hasPathChoosenStore(gruppe: string, pfad: string, level: string) {
+    //     return this.storeManager.derived(this.pfadLevelDataStore, old => {
+    //         return this.hasPathChoosen(gruppe, pfad, level, old);
+    //     });
+    // }
+
+    // addPath(gruppe: string, pfad: string, level: string) {
+    //     this.pfadLevelDataStore.update(old => {
+    //         if (old[gruppe] == undefined) {
+    //             old[gruppe] = {};
+    //         }
+    //         if (old[gruppe][pfad] == undefined) {
+    //             old[gruppe][pfad] = {};
+    //         }
+    //         if (old[gruppe][pfad][level] == undefined) {
+    //             old[gruppe][pfad][level] = 0;
+    //         }
+
+    //         const l = this.stammdaten.Instance.Daten.Pfade.filter(x => x.Id == gruppe)[0]
+    //             .Pfad.filter(x => x.Id == pfad)[0]
+    //             .Levels.Level.filter(x => x.Id == level)[0]
+
+    //         if (old[gruppe][pfad][level] < (l.WiederhoteNutzung ?? 1)) {
+    //             old[gruppe][pfad][level]++;
+    //         }
+    //         return old;
+    //     });
+    // }
+
+    // removePath(gruppe: string, pfad: string, level: string) {
+    //     this.pfadLevelDataStore.update(old => {
+    //         if (old[gruppe] == undefined) {
+    //             old[gruppe] = {};
+    //         }
+    //         if (old[gruppe][pfad] == undefined) {
+    //             old[gruppe][pfad] = {};
+    //         }
+    //         if (old[gruppe][pfad][level] == undefined) {
+    //             old[gruppe][pfad][level] = 0;
+    //         }
+
+    //         if (old[gruppe][pfad][level] > 0) {
+    //             old[gruppe][pfad][level]--;
+    //         }
+    //         if (old[gruppe][pfad][level] == 0) {
+    //             delete old[gruppe][pfad][level];
+    //             if (Object.keys(old[gruppe][pfad]).length == 0) {
+    //                 delete old[gruppe][pfad];
+    //                 if (Object.keys(old[gruppe]).length == 0) {
+    //                     delete old[gruppe];
+
+    //                 }
+    //             }
+    //         }
+    //         return old;
+    //     });
+
+    // }
+
+    // private levelPrerequire(gruppe: string, pfad: string, level: string, options?: { withoutLevel?: string } | { withLevel?: string }) {
+    //     const { withoutLevel, withLevel } = options as any ?? {};
+    //     const evalLevel = (lvl: _Level1): boolean => {
+    //         if (lvl.mindestVorkommen == 1 && lvl.Id == withLevel) {
+    //             return true;
+    //         }
+    //         if (this.pfadLevel[gruppe] == undefined) {
+    //             return false;
+    //         }
+    //         if (this.pfadLevel[gruppe][pfad] == undefined) {
+    //             return false;
+    //         }
+    //         if (this.pfadLevel[gruppe][pfad][lvl.Id] == undefined) {
+    //             return false;
+    //         }
+    //         return withoutLevel == lvl.Id
+    //             ? (this.pfadLevel[gruppe][pfad][lvl.Id] - 1) >= (lvl.mindestVorkommen ?? 1)
+    //             : withLevel == lvl.Id
+    //                 ? (this.pfadLevel[gruppe][pfad][lvl.Id] + 1) >= (lvl.mindestVorkommen ?? 1)
+    //                 : this.pfadLevel[gruppe][pfad][lvl.Id] >= (lvl.mindestVorkommen ?? 1);
+    //     };
+
+    //     const single = (e: _LevelAuswahl): boolean => {
+    //         if (e["#"] === "Not") {
+    //             return !single(e.Not);
+    //         } else if (e["#"] === "And") {
+    //             return evalAnd(e.And);
+    //         } else if (e["#"] === "Or") {
+    //             return evalOr(e.Or);
+    //         } else if (e["#"] === "Level") {
+    //             return evalLevel(e.Level);
+    //         } else {
+    //             throw Error('Not supported')
+    //         }
+
+    //     }
+    //     const evalAnd = (e: _LevelAuswahlen): boolean => {
+    //         return (e.And?.every(x => evalAnd(x))
+    //             ?? true)
+    //             &&
+    //             (e.Or?.every(x => evalOr(x))
+    //                 ?? true)
+    //             &&
+    //             (e.Level?.every(x => evalLevel(x))
+    //                 ?? true) &&
+    //             (e.Not?.every(x => !single(x))
+    //                 ?? true)
+    //     }
+    //     const evalOr = (e: _LevelAuswahlen): boolean => {
+    //         return (e.And?.some(x => evalAnd(x))
+    //             ?? true)
+    //             &&
+    //             (e.Or?.some(x => evalOr(x))
+    //                 ?? true)
+    //             &&
+    //             (e.Level?.some(x => evalLevel(x))
+    //                 ?? true) &&
+    //             (e.Not?.some(x => !single(x))
+    //                 ?? true)
+    //     }
+    //     const l = this.stammdaten.Instance.Daten.Pfade.filter((x) => x.Id == gruppe)[0]
+    //         ?.Pfad.filter((x) => x.Id == pfad)[0]
+    //         ?.Levels.Level.filter((x) => x.Id == level)[0];
+
+
+    //     const succes = l.Voraussetzung?.LevelVoraussetzung
+    //         ? single(l.Voraussetzung?.LevelVoraussetzung)
+    //         : true;
+
+    //     return succes;
+    // }
+
+    // public get pfadLevel(): Readonly<Record<string, Record<string, Record<string, number>>>> {
+    //     return get(this.pfadLevelDataStore);
+    // };
+    // private get pfadLevelData(): Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, number>>>>>> {
+    //     return get(this.pfadLevelDataStore);
+    // };
+
+
+    // private readonly eigenrschaften: Readonly<EigenschaftsMap<EigenschaftenData>>;
+    // public readonly eigenschaftenData: Readonly<EigenschaftsMap<EigenschaftenDataAccess>>;
 
 
 
