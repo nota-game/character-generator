@@ -1,121 +1,82 @@
 <script lang="ts">
-	import { beforeUpdate, onMount } from 'svelte';
-	import { v4 as uuidv4 } from 'uuid';
-	import pako from 'pako';
-	import * as base64 from 'base64-uint8';
+	import { Charakter } from '../models/Character';
+	import { Data } from '../models/Data';
+	import { onMount } from 'svelte';
+	import PropertiesSetter from '../view/root/propertiesSetter.svelte';
 
-	import Char from './char.svelte';
-	import Armor from './controls/armor.svelte';
-	import type { CharakterData } from './models/Character';
+	let char: Charakter | undefined;
 
-	let list: string[] = [];
-	let conflift = false;
-	onMount(() => {
-		foo = true;
-		list = Array.from(window.localStorage, (v, i) => window.localStorage.key(i) ?? '')
-			.filter((x) => x.length > 0 && x[0] == 'c')
-			.map((x) => x.slice(1));
-
-		const data = window.location.hash.slice(2);
-		const type = window.location.hash[1];
-		console.log('found import');
-		console.log(type);
-		if (type == 'i') {
-			selection = data;
-		} else if (type == 'd') {
-			console.log('found import');
-
-			const unpacked = data[0] != '{' ? pako.inflate(base64.decode(data), { to: 'string' }) : data;
-
-			const j = JSON.parse(unpacked) as CharakterData;
-			console.log('Charackter was', j);
-
-			if (unpacked) {
-				const ds = window.localStorage.getItem('c' + j.id);
-				if (ds == null) {
-					window.localStorage.setItem('c' + j.id, unpacked);
-					selection = j.id;
-				} else {
-					conflift = true;
-				}
-			}
+	onMount(async () => {
+		const data = await Data.init(false);
+		if (data) {
+			char = new Charakter(data, '2');
 		}
 	});
 
-	function reset() {
-		window.location.hash = '';
-		conflift = false;
-	}
-	function override() {
-		if (!conflift) return;
-		const data = window.location.hash.slice(2);
-		const type = window.location.hash[1];
-		if (type == 'i') {
-			selection = data;
-		} else if (type == 'd') {
-			const unpacked = data[0] != '{' ? pako.inflate(base64.decode(data), { to: 'string' }) : data;
-			const j = JSON.parse(unpacked) as CharakterData;
+	$: gattungsStore = char?.gattungsIdStore;
+	$: artStore = char?.artIdStore;
+	$: morphStore = char?.morphIdStore;
 
-			if (unpacked) {
-				window.localStorage.setItem('c' + j.id, unpacked);
-				selection = j.id;
-				conflift = false;
-			}
-		}
-	}
-	function getName(key: string) {
-		const ds = window.localStorage.getItem('c' + key);
-		if (ds) {
-			const d = JSON.parse(ds) as CharakterData;
-			return d.name;
-		}
-	}
+	$: possibleGattungStore = char?.possibleGattungStore;
+	$: possibleArtStore = char?.possibleArtStore;
+	$: possibleMorphStore = char?.possibleMorphStore;
 
-	let selection: string | undefined;
-	let foo = false;
-	$: {
-		if (foo && window && window?.location && selection) {
-			window.location.hash = 'i' + selection;
-		}
-	}
-
-	function add() {
-		selection = uuidv4();
-		// hack to update
-		window.localStorage.setItem(`c${selection}`, '');
-		list = Array.from(window.localStorage, (v, i) => window.localStorage.key(i) ?? '')
-			.filter((x) => x.length > 0 && x[0] == 'c')
-			.map((x) => x.slice(1));
-	}
+	$: ageStore = char?.ageStore;
+	$: lebensabschnitteStore = char?.lebensAbschnitteStore;
 </script>
 
-{#if conflift}
-	<p>Ein Charckter mit der selben Id existiert bereits.</p>
-	<button on:click={() => override()}>overrde?</button>
-	<button on:click={() => reset()}>NO</button>
-{:else}
-	<div class="head">
-		<select id="charSelector" bind:value={selection}>
-			{#each list as e}
-				<option value={e}>{getName(e)}</option>
+<h1>Welcome to SvelteKit</h1>
+<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+
+<hr />
+
+{#if char}
+	{#if $ageStore}
+		<label>
+			Alter
+			<input type="number" bind:value={$ageStore} />
+		</label>
+	{/if}
+
+	{#if $possibleGattungStore}
+		<select bind:value={$gattungsStore}>
+			{#each $possibleGattungStore as pg}
+				<option value={pg}>{pg}</option>
 			{/each}
 		</select>
-		<button id="newCharButton" on:click={() => add()}>Neuer Charackter</button>
+	{/if}
+	{#if $possibleArtStore}
+		<select bind:value={$artStore}>
+			{#each $possibleArtStore as pg}
+				<option value={pg}>{pg}</option>
+			{/each}
+		</select>
+	{/if}
+	{#if $possibleMorphStore}
+		<select bind:value={$morphStore}>
+			{#each $possibleMorphStore as pg}
+				<option value={pg}>{pg}</option>
+			{/each}
+		</select>
+	{/if}
+
+	<hr />
+
+	{#each Object.entries(char.eigenschaften) as [key, { raw, effective, type , meta}]}
+		<PropertiesSetter {key} {effective} {raw} {type} {meta} />
+	{/each}
+
+	<hr />
+	<ul>
+		<li>{$gattungsStore}</li>
+		<li>{$artStore}</li>
+		<li>{$morphStore}</li>
+	</ul>
+	<div>
+		<pre>
+        {JSON.stringify($lebensabschnitteStore, undefined, 1)}
+    </pre>
 	</div>
-
-	<Char charId={selection} />
+{:else}
+	loding
 {/if}
-
-<style lang="scss">
-	.head {
-		margin: 1rem;
-
-		display: grid;
-		grid-template-columns: 1fr auto;
-		gap: 1rem;
-		button {
-			grid-column: 2;
-			grid-row: 1;
-		}
-	}
-</style>

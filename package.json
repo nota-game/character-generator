@@ -1,73 +1,45 @@
 {
-  "name": "my-app",
-  "version": "0.0.1",
-  "scripts": {
-    "generate": "node --loader ts-node/esm script/updateData.ts -P script/tsconfig.json",
-    "dev": "better-npm-run dev",
-    "build": "better-npm-run build",
-    "preview": "better-npm-run preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "lint": "prettier --check . && eslint .",
-    "format": "prettier --write ."
-  },
-  "betterScripts": {
-    "dev": {
-      "command": "vite dev",
-      "env": {
-        "NODE_ENV": "development"
-      }
-    },
-    "build": {
-      "command": "vite build",
-      "env": {
-        "NODE_ENV": "production"
-      }
-    },
-    "preview": {
-      "command": "vite preview",
-      "env": {
-        "NODE_ENV": "production"
-      }
-    }
-  },
-  "devDependencies": {
-    "@picocss/pico": "^1.5.0",
-    "@sveltejs/adapter-auto": "1.0.0",
-    "@sveltejs/adapter-static": "1.0.1",
-    "@sveltejs/kit": "1.0.7",
-    "@types/node-fetch": "^2.6.1",
-    "@types/pako": "^2.0.0",
-    "@types/ungap__structured-clone": "^0.3.0",
-    "@types/uuid": "^8.3.4",
-    "@typescript-eslint/eslint-plugin": "^5.10.1",
-    "@typescript-eslint/parser": "^5.10.1",
-    "@ungap/structured-clone": "^1.0.0",
-    "base64-uint8": "^0.0.1",
-    "better-npm-run": "^0.1.1",
-    "d3-scale": "^4.0.2",
-    "eslint": "^8.12.0",
-    "eslint-config-prettier": "8.5.0",
-    "eslint-plugin-svelte3": "4.0.0",
-    "mathjs": "^10.5.3",
-    "node-fetch": "^2.6.7",
-    "node-sass": "7.0.1",
-    "pagedjs": "^0.3.1",
-    "pako": "^2.0.4",
-    "prettier": "^2.5.1",
-    "prettier-plugin-svelte": "^2.5.0",
-    "svelte": "3.55.0",
-    "svelte-check": "3.0.1",
-    "svelte-preprocess": "5.0.0",
-    "ts-deep-equal": "^1.1.5",
-    "ts-node": "^10.9.1",
-    "tslib": "^2.3.1",
-    "typescript": "~4.6.2",
-    "uuid": "^8.3.2",
-    "xsd-ts": "^0.0.29"
-  },
-  "type": "module",
-  "dependencies": {
-    "svelte-range-slider-pips": "^2.0.3"
-  }
+	"name": "character-generator",
+	"version": "0.0.1",
+	"private": true,
+	"scripts": {
+		"generate": "node --loader ts-node/esm script/updateData.ts -P script/tsconfig.json",
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "prettier --plugin-search-dir . --check . && eslint .",
+		"format": "prettier --plugin-search-dir . --write ."
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-static": "^1.0.0",
+		"@sveltejs/kit": "^1.0.0",
+		"@typescript-eslint/eslint-plugin": "^5.45.0",
+		"@typescript-eslint/parser": "^5.45.0",
+		"eslint": "^8.28.0",
+		"eslint-config-prettier": "^8.5.0",
+		"eslint-plugin-svelte3": "^4.0.0",
+		"prettier": "^2.8.0",
+		"prettier-plugin-svelte": "^2.8.1",
+		"svelte": "^3.54.0",
+		"svelte-check": "^2.9.2",
+		"tslib": "^2.4.1",
+		"typescript": "^4.9.3",
+		"vite": "^4.0.0",
+
+		"@types/node-fetch": "^2.6.1",
+		"@types/uuid": "^9.0.0",
+		"@types/ungap__structured-clone": "^0.3.0",
+		"@ungap/structured-clone": "^1.0.1",
+		"base64-uint8": "^0.0.1",
+		"mathjs": "^10.5.3",
+		"node-fetch": "^3.3.0",
+		"node-sass": "^8.0.0",
+		"ts-deep-equal": "^1.1.5",
+		"ts-node": "^10.9.1",
+		"uuid": "^8.3.2",
+		"xsd-ts": "^0.0.29"
+	},
+	"type": "module"
 }

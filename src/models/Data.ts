@@ -1,13 +1,13 @@
 import * as base64 from 'base64-uint8';
 import * as mathjs from 'mathjs'
 import { Parser } from 'xsd-ts';
-import nota from './../../data/nota.g.xml?raw';
-import notaStructure from './../../data/nota-structure.g.json';
+import nota from './../data/nota.g.xml?raw';
+import notaStructure from './../data/nota-structure.g.json';
 import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
 import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, _Talent4 } from 'src/data/nota.g';
-import { distinct } from '../misc';
+import { distinct } from '../misc/misc';
 
 // type lebensabschnittData =
 //     | {
@@ -97,18 +97,22 @@ export class Data {
 
 
         this.allEigenschaftKeys = distinct([
+            ...(this.instance.Daten.Organismen.Entwiklung?.Bereich ?? []).map(x => x.id),
             ...(this.instance.Daten.Organismen.Entwiklung?.Berechnung ?? []).map(x => x.id),
             ...(this.instance.Daten.Organismen.Entwiklung?.Punkt ?? []).map(x => x.id),
             ...(this.instance.Daten.Organismen.Entwiklung?.Reihe ?? []).map(x => x.id),
             ...(this.instance.Daten.Organismen.Gattung ?? []).flatMap(gattung => [
+                ...(gattung.Entwiklung?.Bereich ?? []).map(x => x.id),
                 ...(gattung.Entwiklung?.Berechnung ?? []).map(x => x.id),
                 ...(gattung.Entwiklung?.Punkt ?? []).map(x => x.id),
                 ...(gattung.Entwiklung?.Reihe ?? []).map(x => x.id),
                 ...(gattung.Art ?? []).flatMap(art => [
+                    ...(art.Entwiklung?.Bereich ?? []).map(x => x.id),
                     ...(art.Entwiklung?.Berechnung ?? []).map(x => x.id),
                     ...(art.Entwiklung?.Punkt ?? []).map(x => x.id),
                     ...(art.Entwiklung?.Reihe ?? []).map(x => x.id),
                     ...(art.Morphe.Morph ?? []).flatMap(morph => [
+                        ...(morph.Entwiklung?.Bereich ?? []).map(x => x.id),
                         ...(morph.Entwiklung?.Berechnung ?? []).map(x => x.id),
                         ...(morph.Entwiklung?.Punkt ?? []).map(x => x.id),
                         ...(morph.Entwiklung?.Reihe ?? []).map(x => x.id),
@@ -351,7 +355,6 @@ export class Data {
 
             // the result will be a replica of the original object
             const deserialized = deserialize(notaStructure as SerializedRecord) as Array<element>;
-            console.info(deserialized);
             const dat = deserialized.filter((x) => x.name.local === 'Daten')[0];
             const parser = new Parser<Daten>(dat);
             const notaData = parser.parse(data);

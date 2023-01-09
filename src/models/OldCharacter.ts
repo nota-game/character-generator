@@ -1,10 +1,10 @@
 import { derivative, i, max, number, or, re, setUnion, sinhDependencies, xgcd } from "mathjs";
 import type { _LevelAuswahlen, _LevelAuswahl, AbleitungsAuswahl_talent, FertigkeitDefinition_fertigkeit, BesonderheitDefinition_besonderheit, Kosten_misc, KostenDefinition_misc, Besonderheiten_besonderheit, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_besonderheit, BedingungsAuswahl_misc, BedingungsAuswahlen_misc, LebensabschnittDefinition_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, EigenschaftsMods_lebewesen, _Level1, _Reihe, _Besonderheit, EntwicklungDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, ParameterDefinition_misc, _Lokalisirung } from "src/data/nota.g";
-import StoreManager, { UNINITILEZED, type Key } from "../../misc/StoreManager2";
+import StoreManager, { UNINITILEZED, type Key } from "../misc/StoreManager2";
 import { dataset_dev } from "svelte/internal";
 import { type Readable, get, type Writable } from "svelte/store";
 import { derivedLazy } from "../lazyDerivied";
-import { distinct, filterNull } from "../misc";
+import { distinct, filterNull } from "../routes/misc";
 import * as mathjs from 'mathjs'
 
 import { Data } from "./Data";

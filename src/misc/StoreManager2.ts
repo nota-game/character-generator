@@ -5,6 +5,8 @@ import * as internal from "svelte/internal";
 
 import type structuredClone from "@ungap/structured-clone";
 import { deepEqual } from "ts-deep-equal";
+import type { Data } from "src/models/Data";
+import { filterNull } from "./misc";
 
 export declare type Invalidator<T> = (value?: T) => void;
 
@@ -17,11 +19,12 @@ function identity(p: any) {
 export const UNINITILEZED: unique symbol = Symbol.for("UNINITILEZED");
 
 
-type SubscriberData<T> = {
+type SubscriberData<T, Param> = {
     id: string;
     value: T | typeof UNINITILEZED;
     alsoNotify: Set<string>;
-    fn: (() => T | typeof UNINITILEZED);
+    fn: ((this: SubscriberData<T, Param>, data: Param) => T | typeof UNINITILEZED);
+    manager: StoreManager<Param>,
     compare: ((a: T, b: T) => boolean) | undefined;
     dependentOn: Set<string>;
     leaf: boolean;
@@ -62,7 +65,7 @@ interface KeyOf<key extends string> {
     of<T>(): Key<key, T>;
 }
 
-export default class StoreManager {
+export default class StoreManager<Param> {
 
     public key<key extends string>(key: key): KeyOf<key> {
         return {
@@ -72,14 +75,15 @@ export default class StoreManager {
         }
     }
 
-    private readonly data: Record<string, SubscriberData<any>> = {};
+    private readonly data: Record<string, SubscriberData<any, Param>> = {};
+    private readonly staticData: Param;
 
 
     /**
      *
      */
-    constructor() {
-
+    constructor(staticData: Param) {
+        this.staticData = staticData;
         this.subscriber_queue = [];
     }
 
@@ -110,7 +114,7 @@ export default class StoreManager {
 
 
 
-    private prepareData<T>(key: Key<any, T>, set?: () => T | typeof UNINITILEZED): SubscriberData<T> {
+    private prepareData<T>(key: Key<any, T>, set?: (this: SubscriberData<T, Param>, data: Param) => (T | typeof UNINITILEZED)): SubscriberData<T, Param> {
         if (!this.data[key.Key]) {
 
             const setFactory = () => {
@@ -160,16 +164,20 @@ export default class StoreManager {
                 };
             };
 
-            const current: SubscriberData<T> = {
+            const current: SubscriberData<T, Param> = {
                 id: key.Key,
                 value: UNINITILEZED,
                 dependentOn: new Set(),
                 alsoNotify: new Set(),
+                manager: this,
                 fn: set ?? setFactory(),
                 compare: undefined,
                 leaf: set !== undefined,
                 subscribers: new Set<readonly [Subscriber<T>, ((value?: T) => void)]>()
             };
+            if (set) {
+                current.fn = (data) => set.call(current, data);
+            }
             this.data[key.Key] = current;
 
             if (set == undefined) {
@@ -183,7 +191,7 @@ export default class StoreManager {
                 });
 
             }
-            current.value = current.fn();
+            current.value = current.fn(this.staticData);
             if (current.leaf) {
 
                 Object.values(this.data).forEach(other => {
@@ -194,7 +202,7 @@ export default class StoreManager {
                         // }
                         current.alsoNotify.add(other.id);
                         other.dependentOn.add(current.id);
-                        const newValue = other.fn();
+                        const newValue = other.fn(this.staticData);
                         if (!(other.compare ?? deepEqual)(newValue, other.value)) {
                             other.value = newValue;
                             this.Notify(other);
@@ -206,16 +214,16 @@ export default class StoreManager {
             return current;
         }
         else if (set !== undefined) {
-            const current = (this.data[key.Key] as SubscriberData<T>);
+            const current = (this.data[key.Key] as SubscriberData<T, Param>);
             if (current.leaf) {
                 throw new Error(`Called Writable or derevide multiple Times for key ${key.Key}`);
             }
             current.fn = set;
-            current.value = current.fn();
+            current.value = current.fn(this.staticData);
             current.leaf = true;
             return current;
         }
-        const current = this.data[key.Key] as SubscriberData<T>;
+        const current = this.data[key.Key] as SubscriberData<T, Param>;
 
 
 
@@ -301,7 +309,7 @@ export default class StoreManager {
 
     // , fn: (values: StoresValues<S>, set?: (value: T) => void) => T, initial_value?: T
     // public derived<K extends Keys, T>(values: KeysValues<K>, fn: (values: KeysValues<K>) => T): Readable<T> {
-    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: (values: KeysValues<S>, changes: boolean[], oldValue: T | typeof UNINITILEZED) => T, compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean): Readable<T> & { key: Key<KeyString, T> } {
+    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: (this: SubscriberData<T, Param>, data: Param, values: KeysValues<S>, changes: boolean[], oldValue: T | typeof UNINITILEZED) => T, compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean): Readable<T> & { key: Key<KeyString, T> } {
         const single = !Array.isArray(stores);
         const stores_array: Array<Key<any, any>> = single
             ? [stores]
@@ -312,11 +320,11 @@ export default class StoreManager {
         stores_array.forEach(x => {
             const toAdd = this.prepareData(x);
         });
-        const current: SubscriberData<T> = this.prepareData(key, () => {
-            if (stores_array.every(x => this.data[x.Key] !== undefined && this.data[x.Key].value !== UNINITILEZED)) {
-                const changes = stores_array.map((x, i) => oldValues == undefined ? true : (this.data[x.Key].compare ?? deepEqual)(this.data[x.Key].value, oldValues[i]))
-                oldValues = stores_array.map(x => this.data[x.Key].value);
-                return fn(single ? this.data[stores_array[0].Key].value : stores_array.map(x => this.data[x.Key].value, changes) as any, changes, current.value)
+        const current: SubscriberData<T, Param> = this.prepareData(key, function (data) {
+            if (stores_array.every(x => this.manager.data[x.Key] !== undefined && this.manager.data[x.Key].value !== UNINITILEZED)) {
+                const changes = stores_array.map((x, i) => oldValues == undefined ? true : (this.manager.data[x.Key].compare ?? deepEqual)(this.manager.data[x.Key].value, oldValues[i]))
+                oldValues = stores_array.map(x => this.manager.data[x.Key].value);
+                return fn.call(this, data, single ? this.manager.data[stores_array[0].Key].value : stores_array.map(x => this.manager.data[x.Key].value, changes) as any, changes, this.value)
             }
             return UNINITILEZED;
         });
@@ -343,11 +351,11 @@ export default class StoreManager {
 
 
 
-    private Notify(current: SubscriberData<any>) {
+    private Notify(current: SubscriberData<any, Param>) {
 
         const notify = new Set<string>();
 
-        function collect(this: StoreManager, current: SubscriberData<any>) {
+        function collect(this: StoreManager<Param>, current: SubscriberData<any, Param>) {
             for (const also of current.alsoNotify) {
                 if (!notify.has(also)) {
                     notify.add(also);
@@ -369,10 +377,10 @@ export default class StoreManager {
 
 
         for (const n of [...notify].map(x => this.data[x])) {
-            if (n.fn == UNINITILEZED) {
-                continue;
-            }
-            const newValue = n.fn();
+            // if (n.fn == UNINITILEZED) {
+            //     continue;
+            // }
+            const newValue = n.fn(this.staticData);
             if (!(current.compare ?? deepEqual)(n.value, newValue)) {
                 n.value = newValue;
                 this.Notify(n);
