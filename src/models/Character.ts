@@ -1,11 +1,12 @@
 import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit } from "../data/nota.g";
-import StoreManager, { UNINITILEZED, type Key } from "../misc/StoreManager2";
+import StoreManager, { UNINITILEZED, type Key, type KeyData } from "../misc/StoreManager2";
 import type { Readable, Writable } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
+import * as mathjs from 'mathjs'
 
 import { Data } from "./Data";
-import { getLast } from "../misc/misc";
-import { end_hydrating } from "svelte/internal";
+import { distinct, getLast, notUndefined } from "../misc/misc";
+import { index, isResultSet } from "mathjs";
 
 export type EigenschaftTypes = 'bereich' | 'reihe' | 'punkt' | 'berechnung';
 export type EigenschaftTypesLevel = 'morph' | 'art' | 'gattung' | 'organismus';
@@ -43,6 +44,15 @@ export class Charakter {
         meta: Readable<StaticheDefinition_lebewesen | ReiheDefinition_lebewesen | FormelDefintion_lebewesen | PunktDefintion_lebewesen | undefined>,
     }> = {};
 
+    public readonly besonderheiten: Record<string, {
+        effective: Readable<number>,
+        unconditionally: Readable<number>,
+        purchased: Writable<number>,
+        fixed: Readable<number>,
+        missing: Readable<{ wert: number; missing: MissingRequirements; }[]>,
+
+    }> = {};
+
 
     public readonly lebensAbschnitteStore: Readable<{
         gattung: LebensabschnittDefinition_lebewesen | undefined;
@@ -72,6 +82,16 @@ export class Charakter {
         }
     }
 
+
+    private getIdFromBesonterheitkeitKey(key: Key<string, any>): string | undefined
+    private getIdFromBesonterheitkeitKey<id extends string>(key: Key<`/besonderheit/${id}/purchased`, number> | Key<`besonderheitid}/fixed`, number> | Key<`besonderheitid}/StufeUnbeschränkt`, number> | Key<`besonderheitid}/Missing`, { wert: number; missing: MissingRequirements; }[]> | Key<`besonderheitid}/Stufe`, number>) {
+        const reg = /\/besonderheit\/(?<name>[^/]+)\/.*/
+        const match = key.Key.match(reg);
+        const erg = match?.groups?.['name'] as id | undefined;
+        return erg;
+    }
+
+
     private getFertigkeitenKeys<id extends string>(Id: id): { keyPurchased: Key<`/fertigkeit/${id}/purchased`, number>; keyFixed: Key<`/fertigkeit/${id}/fixed`, number>; keyUnbeschränkt: Key<`/fertigkeit/${id}/StufeUnbeschränkt`, number>; keyMissing: Key<`/fertigkeit/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]>; keyEffectiv: Key<`/fertigkeit/${id}/Stufe`, number>; } {
         const keyPurchased = this.storeManager.key(`/fertigkeit/${Id}/purchased`).of<number>();
         const keyFixed = this.storeManager.key(`/fertigkeit/${Id}/fixed`).of<number>();
@@ -82,6 +102,14 @@ export class Charakter {
         return { keyPurchased, keyFixed, keyUnbeschränkt, keyMissing, keyEffectiv };
     }
 
+    private getIdFromFertigkeitKey(key: Key<string, any>): string | undefined
+    private getIdFromFertigkeitKey<id extends string>(key: Key<`/fertigkeit/${id}/purchased`, number> | Key<`/fertigkeit/${id}/fixed`, number> | Key<`/fertigkeit/${id}/StufeUnbeschränkt`, number> | Key<`/fertigkeit/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]> | Key<`/fertigkeit/${id}/Stufe`, number>) {
+        const reg = /\/fertigkeit\/(?<name>[^/]+)\/.*/
+        const match = key.Key.match(reg);
+        const erg = match?.groups?.['name'] as id | undefined;
+        return erg;
+    }
+
     private getPropertieKeys(prop: string) {
 
 
@@ -89,9 +117,10 @@ export class Charakter {
             raw: this.storeManager.key(`/eigenschaften/${prop}/raw`).of<number | undefined>(),
             effective: this.storeManager.key(`/eigenschaften/${prop}/effektiv`).of<number | undefined>(),
             type: this.storeManager.key(`/eigenschaften/${prop}/type`).of<EigenschaftTypes | undefined>(),
-            meta: this.storeManager.key(`/eigenschaften/${prop}/meta`).of<StaticheDefinition_lebewesen | ReiheDefinition_lebewesen | FormelDefintion_lebewesen | PunktDefintion_lebewesen | undefined>()
+            meta: this.storeManager.key(`/eigenschaften/${prop}/meta`).of<StaticheDefinition_lebewesen | (ReiheDefinition_lebewesen & { quantile: Quantile[], schwellen: Schwelle[], currentSchwelle?: Schwelle }) | FormelDefintion_lebewesen | PunktDefintion_lebewesen | undefined>()
         }
     }
+
 
 
     /**
@@ -101,6 +130,21 @@ export class Charakter {
         this.stammdaten = stammdaten;
         this.id = id;
         this.storeManager = new StoreManager(stammdaten);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         const gattungsIdKey = this.storeManager.key('/organism/gattung/selected').of<string | undefined>();
         const artIdKey = this.storeManager.key('/organism/art/selected').of<string | undefined>();
@@ -129,7 +173,7 @@ export class Charakter {
             if (gattungsId === undefined) {
                 return undefined;
             }
-            const selectedGattung = data.Instance.Daten.Organismen.Gattung.filter(x => x.Id == gattungsId)[0];
+            const selectedGattung = data.Instance.Daten.Organismen.Gattung.filter(x => x.Id == gattungsId.newValue)[0];
             return selectedGattung;
         });
 
@@ -138,13 +182,13 @@ export class Charakter {
             if (selectedGattung === undefined) {
                 return [];
             }
-            return selectedGattung?.Art.map(x => x.Id) ?? [];
+            return selectedGattung.newValue?.Art.map(x => x.Id) ?? [];
         });
         this.artStore = this.storeManager.derived(artInstanceKey, [artIdKey, gattungsInstanceKey], function (data, [artId, gattung]) {
-            if (gattung === undefined || artId === undefined) {
+            if (gattung.newValue === undefined || artId.newValue === undefined) {
                 return undefined;
             }
-            const selectedGattung = gattung.Art.filter(x => x.Id == artId)[0];
+            const selectedGattung = gattung.newValue.Art.filter(x => x.Id == artId.newValue)[0];
             return selectedGattung;
         });
 
@@ -153,13 +197,13 @@ export class Charakter {
             if (selectedArt === undefined) {
                 return [];
             }
-            return selectedArt?.Morphe.Morph.map(x => x.Id) ?? [];
+            return selectedArt.newValue?.Morphe.Morph.map(x => x.Id) ?? [];
         });
         this.morphStore = this.storeManager.derived(morphInstanceKey, [morphIdKey, artInstanceKey], function (data, [artId, art]) {
-            if (art === undefined || artId === undefined) {
+            if (art.newValue === undefined || artId.newValue === undefined) {
                 return undefined;
             }
-            const selectedGattung = art.Morphe.Morph.filter(x => x.Id == artId)[0];
+            const selectedGattung = art.newValue.Morphe.Morph.filter(x => x.Id == artId.newValue)[0];
             return selectedGattung;
         });
 
@@ -171,13 +215,13 @@ export class Charakter {
         this.lebensAbschnitteStore = this.storeManager.readable(lebensabschnittKey);
 
         this.storeManager.derived(lebensabschnittGattungKey, [ageKey, gattungsInstanceKey], (data, [age, gattung]) => {
-            return getLast(gattung?.Lebensabschnitte?.Lebensabschnitt.filter(m => age >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age)));
+            return getLast(gattung.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
         })
         this.storeManager.derived(lebensabschnittArtKey, [ageKey, artInstanceKey], (data, [age, art]) => {
-            return getLast(art?.Lebensabschnitte?.Lebensabschnitt.filter(m => age >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age)));
+            return getLast(art.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
         })
         this.storeManager.derived(lebensabschnittMorphKey, [ageKey, morphInstanceKey], (data, [age, morph],) => {
-            return getLast(morph?.Lebensabschnitte?.Lebensabschnitt.filter(m => age >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age)));
+            return getLast(morph.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
         })
 
 
@@ -208,11 +252,26 @@ export class Charakter {
                 .map(x => x.substring('fertigkeit-'.length))
                 .map(x => this.getFertigkeitenKeys(x).keyEffectiv);
 
-            const dependentEigenschaften: Key<string, number>[] = dependentData.filter(x => x.startsWith('eigenschaft-'))
+            const dependentEigenschaften = dependentData.filter(x => x.startsWith('eigenschaft-'))
                 .map(x => x.substring('eigenschaft-'.length))
-                .map(x => this.getPropertieKeys(x).effective);
+                .flatMap(x => [this.getPropertieKeys(x).effective, this.getPropertieKeys(x).meta]);
 
-            this.storeManager.derived(tmpKey, [morphInstanceKey, artInstanceKey, gattungsInstanceKey], (data, [morph, art, gattung]) => {
+            const dependentAge: Key<string, number>[] = dependentData.filter(x => x.startsWith('Alter'))
+                .map(x => ageKey);
+
+            const dependentGattung: Key<string, number>[] = dependentData.filter(x => x.startsWith('Gattung'))
+                .map(x => gattungsInstanceKey);
+            const dependentArt: Key<string, number>[] = dependentData.filter(x => x.startsWith('Art'))
+                .map(x => artInstanceKey);
+            const dependentMorph: Key<string, number>[] = dependentData.filter(x => x.startsWith('Morph'))
+                .map(x => morphInstanceKey);
+
+            const dependentLebensabschnittGattung: Key<string, LebensabschnittDefinition_lebewesen>[] = dependentData.filter(x => x.startsWith('Lebensabschnitt-Gattung')).map(x => lebensabschnittGattungKey);
+            const dependentLebensabschnittArt: Key<string, LebensabschnittDefinition_lebewesen>[] = dependentData.filter(x => x.startsWith('Lebensabschnitt-Art')).map(x => lebensabschnittArtKey);
+            const dependentLebensabschnittMorph: Key<string, LebensabschnittDefinition_lebewesen>[] = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(x => lebensabschnittMorphKey);
+
+
+            this.storeManager.derived(tmpKey, [morphInstanceKey, artInstanceKey, gattungsInstanceKey], (data, [{ newValue: morph }, { newValue: art }, { newValue: gattung }]) => {
                 const base = morph?.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'morph' as const }))[0]
                     ?? morph?.Entwiklung?.Bereich?.filter(x => x.id == key).map(x => ({ entry: x, type: 'bereich' as const, level: 'morph' as const }))[0]
                     ?? morph?.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'morph' as const }))[0]
@@ -230,37 +289,46 @@ export class Charakter {
                     ?? data.Instance.Daten.Organismen.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'organismus' as const }))[0]
                     ?? data.Instance.Daten.Organismen.Entwiklung?.Reihe?.filter(x => x.id == key).map(x => ({ entry: x, type: 'reihe' as const, level: 'organismus' as const }))[0]
                     ;
+
                 return base;
             }, (a, b) => {
                 if (a === UNINITILEZED) {
                     return b === UNINITILEZED;
                 } else if (b === UNINITILEZED) {
                     return false;
-                } else
+                } else if (a === undefined) {
+                    return b === undefined;
+                } else if (b === undefined) {
+                    return false;
+                } else {
                     return a?.entry.id === b?.entry.id && a?.type === b?.type && b?.level === a?.level;
+                }
             });
 
 
-            this.storeManager.derived(effectiveKey, [ageKey, tmpKey, rawKey, ...[...dependentBesonderheiten, ...dependentFertigkeiten, ...dependentEigenschaften]], (data, [age, base, setValue, ...dependent], [ageChanged, tmpChanged, setChanges, ...changes], oldValue) => {
+            if (key == 'GL') {
+                console.log('nom');
+            }
 
+            this.storeManager.derived(effectiveKey, [ageKey, tmpKey, rawKey, metaKey, ...dependentBesonderheiten, ...dependentFertigkeiten, ...dependentEigenschaften, ...dependentAge, ...dependentGattung, ...dependentArt, ...dependentMorph, ...dependentLebensabschnittGattung, ...dependentLebensabschnittArt, ...dependentLebensabschnittMorph], (data, [{ newValue: age }, { newValue: base }, { newValue: setValue }, { newValue: meta }, ...dependent], oldValue) => {
                 let resultreturn: number;
-
-
-
                 if (base === undefined) {
                     return undefined;
                 }
 
+
                 if (base.type === 'bereich') {
                     const entry = base.entry as StaticheDefinition_lebewesen;
+
+
                     if (setValue === undefined) {
-                        return entry.default;
+                        resultreturn = entry.default;
                     } else if (setValue > entry.maxInklusiv) {
-                        return entry.maxInklusiv;
+                        resultreturn = entry.maxInklusiv;
                     } else if (setValue < entry.minInklusiv) {
-                        return entry.minInklusiv;
+                        resultreturn = entry.minInklusiv;
                     } else {
-                        return setValue;
+                        resultreturn = setValue;
                     }
                 } else if (base.type == 'punkt') {
                     const punkt = base.entry as PunktDefintion_lebewesen;
@@ -276,155 +344,148 @@ export class Charakter {
 
 
                 } else if (base.type == 'reihe') {
-                    const reihe = base.entry as ReiheDefinition_lebewesen;
-
+                    const reihe = meta as ReiheDefinition_lebewesen & { quantile: Quantile[], schwellen: Schwelle[], currentSchwelle?: Schwelle };
                     // const reihe = currentEntwicklung.Reihe?.filter(x => x.id == currentProperty.id)[0];
                     if (reihe == undefined) {
                         return undefined;
                     }
-                    const { quantile, schwellen } = Charakter.applyAge(age, reihe)
+                    const quantile = reihe.quantile;
 
-                    const min = Math.min(...quantile.map(x => x.Quantil))
-                    const max = Math.max(...quantile.map(x => x.Quantil))
+
+                    const min = Math.min(...quantile.map(x => x.Wert))
+                    const max = Math.max(...quantile.map(x => x.Wert))
+
 
                     if (setValue == undefined)
                         resultreturn = min;
                     else
                         resultreturn = Math.min(max, Math.max(min, setValue));
 
-                } else {
-                    return undefined;
-                }
+                } else if (base.type == 'berechnung') {
 
-                return undefined;
+                    const lookup: { type: 'eigenschaft' | 'fertigkeit' | 'besonderheit', key: string, name: string, index: number }[] = [];
 
-
-
-                // check if it is active
-                if (!propertyKeys.map(x => x.id).includes(key)) {
-                    return undefined;
-                }
-
-                // if only keys changed we can use the old value
-                if (!setChanges && !changes.some(x => x)) {
-                    return oldValue;
-                }
-
-                const propertyOrder = { 'organismus': 4, 'gattung': 3, 'art': 2, 'morph': 1 };
-                const currentProperty = propertyKeys.filter(x => x.id == key).sort((a, b) => propertyOrder[a.definition] - propertyOrder[b.definition])[0];
-
-                const currentEntwicklung = currentProperty.definition == 'morph'
-                    ? morph?.Entwiklung
-                    : currentProperty.definition == 'art'
-                        ? art?.Entwiklung
-                        : currentProperty.definition == 'gattung'
-                            ? gattung?.Entwiklung
-                            : currentProperty.definition == 'organismus'
-                                ? this.stammdaten.Instance.Daten.Organismen.Entwiklung
-                                : undefined;
+                    for (let i = 0; i < dependentBesonderheiten.length; i++) {
+                        const element = dependentBesonderheiten[i];
+                        lookup.push({ type: 'besonderheit', key: element.Key, name: '', index: i });
+                    }
+                    for (let i = 0; i < dependentFertigkeiten.length; i++) {
+                        const element = dependentFertigkeiten[i];
+                        lookup.push({ type: 'fertigkeit', key: element.Key, name: '', index: i + dependentBesonderheiten.length });
+                    }
+                    for (let i = 0; i < dependentEigenschaften.length; i++) {
+                        const element = dependentEigenschaften[i];
+                        const reg = /\/eigenschaften\/(?<name>[^/]+)\/effektiv/;
+                        const match = element.Key.match(reg);
+                        const name = match?.groups?.['name'] as string;
+                        if (name)
+                            lookup.push({ type: 'eigenschaft' as const, key: element.Key, name: name, index: i + dependentFertigkeiten.length + dependentBesonderheiten.length });
+                    }
 
 
-                if (currentEntwicklung == undefined) {
-                    return undefined;
-                }
-
-                if (currentProperty.type == 'berechnung') {
-
-                    const calculation = currentEntwicklung.Berechnung?.filter(x => x.id == currentProperty.id)[0];
+                    const calculation = meta as FormelDefintion_lebewesen;
                     if (calculation == undefined) {
                         return undefined;
                     }
 
-                    const formalRaw = calculation.Formel;
-                    const reg = /:(?<path>[\w\d]+):/g;
-
-                    const matches = [...formalRaw.matchAll(reg)].map(x => x.groups?.['path'] as string).filter(x => !x);
-
-                    let counter = 0;
-                    const randomName = () => {
-                        counter++;
-                        return `foo${counter};`
-                    }
-
-                    const ids = distinct(matches).map(x => ({ path: x, name: randomName() }));
 
                     const scope: any = {};
 
 
-                    for (const { path, name } of ids) {
-
-                        const foundEigenschaft = dependentEigenschaften.map((x, i) => [x, i] as const).filter(([x, i]) => x.Key == `${path}/effektiv`)[0]
-
-                        if (foundEigenschaft == undefined) {
-                            console.warn("Did not find eigeschft", path)
-                            continue;
+                    for (const { type, key, name, index } of lookup) {
+                        scope[name] = dependent[index].newValue;
+                        if (scope[name] === undefined) {
+                            return undefined;
                         }
-
-                        const index = dependentBesonderheiten.length + dependentFertigkeiten.length + foundEigenschaft[1];
-
-                        scope[name] = () => dependent[index];
-                    }
-                    const formal = ids.reduce((p, c) => p.replace(`:${c.path}:`, c.name), formalRaw);
-
-                    const result = mathjs.evaluate(formal, scope);
-                    resultreturn = Array.isArray(result) ? result[result.length - 1] : result;
-
-                } else if (currentProperty.type == 'punkt') {
-
-                    const start = currentEntwicklung.Punkt?.filter(x => x.id == currentProperty.id)[0].Zeitpunkt[0].alter ?? 0;
-                    const end = currentEntwicklung.Punkt?.filter(x => x.id == currentProperty.id)[0].Zeitpunkt[1]?.alter;
-                    if (age < start) {
-                        resultreturn = 0;
-                    } else if (end !== undefined && age < end) {
-                        resultreturn = setValue != 0 && setValue != undefined ? 1 : 0;
-                    } else {
-                        resultreturn = 1;
                     }
 
-
-                } else if (currentProperty.type == 'reihe') {
-
-                    const reihe = currentEntwicklung.Reihe?.filter(x => x.id == currentProperty.id)[0];
-                    if (reihe == undefined) {
+                    try {
+                        const result = mathjs.evaluate(calculation.Formel, scope);
+                        if (isResultSet(result)) {
+                            const entries = (result as { entries: any }).entries;
+                            resultreturn = Array.isArray(entries) ? entries[entries.length - 1] : entries;
+                        }
+                        else {
+                            resultreturn = Array.isArray(result) ? result[result.length - 1] : result;
+                        }
+                    } catch (error) {
+                        console.error(`Faild formle ${calculation.Formel} of ${calculation.id}`, error);
                         return undefined;
                     }
-                    const { quantile, schwellen } = Charakter.applyAge(age, reihe)
-
-                    const min = Math.min(...quantile.map(x => x.Quantil))
-                    const max = Math.max(...quantile.map(x => x.Quantil))
-
-                    if (setValue == undefined)
-                        resultreturn = min;
-                    else
-                        resultreturn = Math.min(max, Math.max(min, setValue));
 
                 } else {
-                    throw new Error('Not implemented');
-                }
-
-                // TODO: chek mods… inkluding schwellen… ¬_¬
-
-
-
-                // check if only property keys changed
-
-                return resultreturn;
-            })
-            this.storeManager.derived(typeKey, tmpKey, (data, base) => {
-
-
-                return base?.type;
-
-            })
-            this.storeManager.derived(metaKey, [ageKey, tmpKey, rawKey], (data, [age, base, raw]) => {
-
-
-
-
-                if (base === undefined) {
                     return undefined;
                 }
 
+
+
+                // check besonderheiten
+                const newAge = dependent.filter(x => x.key == ageKey).map(x => x.newValue)[0] as number | undefined;
+
+                const regEigenschaftMeta = /\/eigenschaften\/(?<name>[^/]+)\/meta/;
+
+
+                const mods = dependent.filter((x): x is KeyData<Key<string, number>> => true).map(x => ({ id: this.getIdFromFertigkeitKey(x.key), entry: x }))
+                    .filter((x) => x.id !== undefined)
+                    .flatMap(x => {
+                        const instance = data.fertigkeitenMap[x.id!];
+                        return instance.Stufe.filter((y, i) => x.entry.newValue > i).flatMap(y =>
+                            notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
+                        )
+                    }).concat(
+                        dependent.filter((x): x is KeyData<Key<string, number>> => true).map(x => ({ id: this.getIdFromBesonterheitkeitKey(x.key), entry: x }))
+                            .filter((x) => x.id !== undefined)
+                            .flatMap(x => {
+                                const instance = data.besonderheitenMap[x.id!];
+                                return instance.Stufe.filter((y, i) => x.entry.newValue > i)
+                                    .flatMap(y =>
+                                        notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
+                                    )
+                            })
+                    ).concat(
+                        dependent
+                            .filter((x): x is KeyData<Key<string, LebensabschnittDefinition_lebewesen>> => x.key.Key.endsWith('/lebensabschnitt'))
+                            .flatMap(x =>
+                                notUndefined(x.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? []))
+                    ).concat(
+                        dependent
+                            .filter((x): x is any => true)
+                            .filter((x): x is KeyData<Key<string, ReiheDefinition_lebewesen & { quantile: Quantile[], schwellen: Schwelle[], currentSchwelle?: Schwelle }>> => regEigenschaftMeta.test(x.key.Key))
+                            .filter(x => x.newValue.currentSchwelle)
+                            .flatMap(x => notUndefined(x.newValue?.currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? []))
+
+
+
+                    )
+                    ;
+
+
+
+
+                const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
+                const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
+
+
+
+
+
+                return resultreturn * multiMod + addMod;
+
+            })
+            this.storeManager.derived(typeKey, tmpKey, (data, base) => {
+                return base.newValue?.type;
+            })
+
+
+
+
+
+
+
+            this.storeManager.derived(metaKey, [ageKey, tmpKey, rawKey], (data, [{ newValue: age }, { newValue: base }, { newValue: raw }]) => {
+                if (base === undefined) {
+                    return undefined;
+                }
                 if (base.type === 'bereich') {
                     const entry = base.entry as StaticheDefinition_lebewesen;
                     return entry;
@@ -432,6 +493,9 @@ export class Charakter {
                     const punkt = base.entry as PunktDefintion_lebewesen;
                     return punkt;
 
+                } else if (base.type == 'berechnung') {
+                    const formel = base.entry as FormelDefintion_lebewesen;
+                    return formel;
 
                 } else if (base.type == 'reihe') {
                     const reihe = base.entry as ReiheDefinition_lebewesen;
@@ -440,33 +504,92 @@ export class Charakter {
                     if (reihe == undefined) {
                         return undefined;
                     }
-                    if (raw) {
-                        const { quantile, schwellen, currentSchwelle } = Charakter.applyAge(age, reihe, raw);
-                    }else{
-                        const { quantile, schwellen, currentSchwelle } = Charakter.applyAge(age, reihe, raw);
-                        
-                    }
-
-                    const min = Math.min(...quantile.map(x => x.Quantil))
-                    const max = Math.max(...quantile.map(x => x.Quantil))
-
-
-                    // if (raw == undefined)
-                    //     resultreturn = min;
-                    // else
-                    //     resultreturn = Math.min(max, Math.max(min, raw));
+                    const result = raw
+                        ? { ...reihe, ...Charakter.applyAge(age, reihe, raw) }
+                        : { ...reihe, ...Charakter.applyAge(age, reihe) };
+                    // if (raw) {
+                    //     const { quantile, schwellen, currentSchwelle } = Charakter.applyAge(age, reihe, raw);
+                    //     return { ...reihe, quantile, schwellen, currentSchwelle };
+                    // } else {
+                    //     const { quantile, schwellen } = Charakter.applyAge(age, reihe);
+                    //     return { ...reihe, quantile, schwellen };
+                    // }
+                    return result;
 
                 } else {
                     return undefined;
                 }
-                return base?.entry;
-
             })
+        }
+
+
+        for (const besonderheit of this.stammdaten.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit)) {
+
+
+            const keys = this.getBesonterheitKeys(besonderheit.Id);
+
+            this.besonderheiten[besonderheit.Id] = {
+                effective: this.storeManager.readable(keys.keyEffectiv),
+                unconditionally: this.storeManager.readable(keys.keyUnbeschränkt),
+                purchased: this.storeManager.writable(keys.keyPurchased, 0),
+                fixed: this.storeManager.readable(keys.keyFixed),
+                missing: this.storeManager.readable(keys.keyMissing),
+            };
+
+
+            this.storeManager.derived(keys.keyEffectiv, [keys.keyUnbeschränkt, keys.keyMissing], (data, [unconditionally, missing]) => {
+                return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
+            });
+            this.storeManager.derived(keys.keyUnbeschränkt, [keys.keyPurchased, keys.keyFixed], (data, [purchased, fixed]) => {
+                return Math.max(purchased.newValue, fixed.newValue);
+            });
+
+            const dependentData = this.stammdaten.eigenschaftenDependencys.filter(x => x.Eigenschaft == besonderheit.Id).map(x => x.Typ);
+
+
+            const dependentBesonderheiten: Key<string, number>[] = dependentData.filter(x => x.startsWith('besonderheit-'))
+                .map(x => x.substring('besonderheit-'.length))
+                .map(x => this.getBesonterheitKeys(x).keyEffectiv);
+            const dependentFertigkeiten: Key<string, number>[] = dependentData.filter(x => x.startsWith('fertigkeit-'))
+                .map(x => x.substring('fertigkeit-'.length))
+                .map(x => this.getFertigkeitenKeys(x).keyEffectiv);
+
+            const dependentEigenschaften: Key<string, number>[] = dependentData.filter(x => x.startsWith('eigenschaft-'))
+                .map(x => x.substring('eigenschaft-'.length))
+                .map(x => this.getPropertieKeys(x).effective);
+
+            const dependentAge: Key<string, number>[] = dependentData.filter(x => x.startsWith('Alter'))
+                .map(x => ageKey);
+
+            const dependentGattung: Key<string, number>[] = dependentData.filter(x => x.startsWith('Gattung'))
+                .map(x => ageKey);
+
+            const dependentArt: Key<string, number>[] = dependentData.filter(x => x.startsWith('Art'))
+                .map(x => ageKey);
+            const dependentMorph: Key<string, number>[] = dependentData.filter(x => x.startsWith('Morph'))
+                .map(x => ageKey);
+
+
+            this.storeManager.derived(keys.keyFixed, [...dependentBesonderheiten, ...dependentFertigkeiten, ...dependentEigenschaften, ...dependentAge, ...dependentGattung, ...dependentArt, ...dependentMorph], (data, dependencys) => {
+                // todo get fixed besonderheiten
+                return 0;
+            });
+
+            this.storeManager.derived(keys.keyMissing, [...dependentBesonderheiten, ...dependentFertigkeiten, ...dependentEigenschaften, ...dependentAge, ...dependentGattung, ...dependentArt, ...dependentMorph], (data, dependencys) => {
+                // todo get Missing stuff
+                return [];
+            });
+
 
 
 
 
         }
+
+
+
+
+
     }
 
 

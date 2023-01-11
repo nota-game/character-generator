@@ -21,13 +21,14 @@
 	>;
 
 	let bereichMeta: Readable<StaticheDefinition_lebewesen | undefined>;
+	let reiheMeta: Readable<ReiheDefinition_lebewesen | undefined>;
 
 	$: {
 		if (key == 'mut') {
 			console.log('first');
-			effective.subscribe((v) => {
-				console.log('set value', v);
-			});
+			// effective.subscribe((v) => {
+			// 	// console.log('set value', v);
+			// });
 		}
 
 		if ($type == 'bereich') {
@@ -45,11 +46,25 @@
 			{key}
 			{$effective}
 			<input
-				type="number"
-				bind:value={$raw}
-				min={$bereichMeta?.minInklusiv}
-				max={$bereichMeta?.maxInklusiv}
+			type="number"
+			bind:value={$raw}
+			min={$bereichMeta?.minInklusiv}
+			max={$bereichMeta?.maxInklusiv}
 			/>
-		{/if}
+			{/if}
+			{:else if $type == 'reihe'}
+			<label>
+				{key}
+				{$effective}
+				<br/>
+			<input
+				type="range"
+				bind:value={$raw}
+				max="50"
+			/>
+		</label>
+	{:else if $type == 'berechnung'}
+		{key}
+		{$effective}
 	{/if}
 </div>

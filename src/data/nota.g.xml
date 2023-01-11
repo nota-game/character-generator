@@ -1,35 +1,35 @@
 <?xml version='1.0'?>
 <!-- This file represents a fragment of a book store inventory database -->
-<Daten Version='1' xmlns='https://nota-game.github.io/schema/vNext/nota.xsd'
-  xmlns:nota='https://nota-game.github.io/schema/vNext/nota.xsd' xmlns:misc='https://nota-game.github.io/schema/vNext/misc.xsd'
-  xmlns:lebewesen="https://nota-game.github.io/schema/vNext/lebewesen.xsd"
-  xmlns:pfad="https://nota-game.github.io/schema/vNext/pfad.xsd" xmlns:talent="https://nota-game.github.io/schema/vNext/talent.xsd"
-  xmlns:fertigkeit="https://nota-game.github.io/schema/vNext/fertigkeit.xsd"
-  xmlns:besonderheit="https://nota-game.github.io/schema/vNext/besonderheit.xsd"
-  xmlns:Belastung="https://nota-game.github.io/schema/vNext/kampf/aktionen.xsd"
-  xmlns:ausstattung="https://nota-game.github.io/schema/vNext/kampf/ausstattung.xsd"
+<Daten Version='1' xmlns='http://nota.org/schema/nota.xsd'
+  xmlns:nota='http://nota.org/schema/nota.xsd' xmlns:misc='http://nota.org/schema/misc.xsd'
+  xmlns:lebewesen="http://nota.org/schema/lebewesen.xsd"
+  xmlns:pfad="http://nota.org/schema/pfad.xsd" xmlns:talent="http://nota.org/schema/talent.xsd"
+  xmlns:fertigkeit="http://nota.org/schema/fertigkeit.xsd"
+  xmlns:besonderheit="http://nota.org/schema/besonderheit.xsd"
+  xmlns:Belastung="http://nota.org/schema/kampf/aktionen.xsd"
+  xmlns:ausstattung="http://nota.org/schema/kampf/ausstattung.xsd"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="https://nota-game.github.io/schema/vNext/nota.xsd ../../nota-schema/nota.xsd
-                      https://nota-game.github.io/schema/vNext/lebewesen.xsd ../../nota-schema/Lebewesen.xsd
-                      https://nota-game.github.io/schema/vNext/pfad.xsd ../../nota-schema/pfad.xsd
-                      https://nota-game.github.io/schema/vNext/talent.xsd ../../nota-schema/talent.xsd
-                      https://nota-game.github.io/schema/vNext/fertigkeit.xsd ../../nota-schema/fertigkeit.xsd
-                      https://nota-game.github.io/schema/vNext/besonderheit.xsd ../../nota-schema/besonderheit.xsd
-                      https://nota-game.github.io/schema/vNext/kampf/aktionen.xsd ../../nota-schema/kampf/aktionen.xsd
-                      https://nota-game.github.io/schema/vNext/kampf/ausstattung.xsd ../../nota-schema/kampf/ausstattung.xsd
-                      https://nota-game.github.io/schema/vNext/misc.xsd ../../nota-schema/misc.xsd">
+  xsi:schemaLocation="http://nota.org/schema/nota.xsd ../../nota-schema/nota.xsd
+                      http://nota.org/schema/lebewesen.xsd ../../nota-schema/Lebewesen.xsd
+                      http://nota.org/schema/pfad.xsd ../../nota-schema/pfad.xsd
+                      http://nota.org/schema/talent.xsd ../../nota-schema/talent.xsd
+                      http://nota.org/schema/fertigkeit.xsd ../../nota-schema/fertigkeit.xsd
+                      http://nota.org/schema/besonderheit.xsd ../../nota-schema/besonderheit.xsd
+                      http://nota.org/schema/kampf/aktionen.xsd ../../nota-schema/kampf/aktionen.xsd
+                      http://nota.org/schema/kampf/ausstattung.xsd ../../nota-schema/kampf/ausstattung.xsd
+                      http://nota.org/schema/misc.xsd ../../nota-schema/misc.xsd">
   <!-- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="https://nota-game.github.io/schema/vNext/nota.xsd https://nota-game.github.io/schema/vNext/nota.xsd
-  https://nota-game.github.io/schema/vNext/misc.xsd https://nota-game.github.io/schema/vNext/misc.xsd https://nota-game.github.io/schema/vNext/wesen.xsd
-  https://nota-game.github.io/schema/vNext/wesen.xsd https://nota-game.github.io/schema/vNext/pfad.xsd https://nota-game.github.io/schema/vNext/pfad.xsd
-  https://nota-game.github.io/schema/vNext/profession.xsd https://nota-game.github.io/schema/vNext/profession.xsd
-  https://nota-game.github.io/schema/vNext/talent.xsd https://nota-game.github.io/schema/vNext/talent.xsd
-  https://nota-game.github.io/schema/vNext/fertigkeit.xsd https://nota-game.github.io/schema/vNext/fertigkeit.xsd
-  https://nota-game.github.io/schema/vNext/besonderheit.xsd https://nota-game.github.io/schema/vNext/besonderheit.xsd
-  https://nota-game.github.io/schema/vNext/kampf/aktionen.xsd https://nota-game.github.io/schema/vNext/kampf/aktionen.xsd
-  https://nota-game.github.io/schema/vNext/kampf/ausstattung.xsd https://nota-game.github.io/schema/vNext/kampf/ausstattung.xsd" -->
+  xsi:schemaLocation="http://nota.org/schema/nota.xsd http://nota.org/schema/nota.xsd
+  http://nota.org/schema/misc.xsd http://nota.org/schema/misc.xsd http://nota.org/schema/wesen.xsd
+  http://nota.org/schema/wesen.xsd http://nota.org/schema/pfad.xsd http://nota.org/schema/pfad.xsd
+  http://nota.org/schema/profession.xsd http://nota.org/schema/profession.xsd
+  http://nota.org/schema/talent.xsd http://nota.org/schema/talent.xsd
+  http://nota.org/schema/fertigkeit.xsd http://nota.org/schema/fertigkeit.xsd
+  http://nota.org/schema/besonderheit.xsd http://nota.org/schema/besonderheit.xsd
+  http://nota.org/schema/kampf/aktionen.xsd http://nota.org/schema/kampf/aktionen.xsd
+  http://nota.org/schema/kampf/ausstattung.xsd http://nota.org/schema/kampf/ausstattung.xsd" -->
 
-  <KostenDefinitionen xmlns="https://nota-game.github.io/schema/vNext/misc.xsd">
+  <KostenDefinitionen xmlns="http://nota.org/schema/misc.xsd">
     <KostenDefinition Id="GP">
       <misc:Name>
         <Lokalisirung Sprache="de">
@@ -144,7 +144,7 @@
     <misc:Kosten Id="Eigenschaften" Berechnung="54" />
     <misc:Kosten Id="Göttlicher Einfluss" Berechnung="-1" />
   </GenerierungsDaten>
-  <Organismen xmlns="https://nota-game.github.io/schema/vNext/lebewesen.xsd">
+  <Organismen xmlns="http://nota.org/schema/lebewesen.xsd">
 
     <lebewesen:EigenschaftenGruppen>
       <lebewesen:Gruppe id="primär">
@@ -195,7 +195,7 @@
         <misc:Name>
           <misc:Lokalisirung Sprache="de">Gewicht</misc:Lokalisirung>
         </misc:Name>
-        <lebewesen:Formel>bmi()*(größe()/100)*(größe()/100)</lebewesen:Formel>
+        <lebewesen:Formel>bmi*(größe/100)*(größe/100)</lebewesen:Formel>
       </lebewesen:Berechnung>
       <lebewesen:Berechnung id="ausdauer" Reihenfolge="10">
         <misc:Name>
@@ -213,7 +213,7 @@
         <misc:Name>
           <misc:Lokalisirung Sprache="de">Kraft</misc:Lokalisirung>
         </misc:Name>
-        <lebewesen:Formel>_over = max(0,gewicht()-kraftGewichtCap());_under = min(kraftGewichtCap(),gewicht());ceil((91/30 * (1/ ST )*(1/ ST )+1529/300*1/ST+3/50)*_under)</lebewesen:Formel>
+        <lebewesen:Formel>_over = max(0,gewicht-kraftGewichtCap);_under = min(kraftGewichtCap,gewicht);ceil((91/30 * (1/ ST )*(1/ ST )+1529/300*1/ST+3/50)*_under)</lebewesen:Formel>
       </lebewesen:Berechnung>
       <lebewesen:Berechnung id="GlP" Reihenfolge="10">
         <misc:Name>
@@ -222,7 +222,7 @@
         <lebewesen:Formel>21 - GL</lebewesen:Formel>
       </lebewesen:Berechnung>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="mut" gruppe="primär" default="13">
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="MU" gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
             <![CDATA[Mut]]>
@@ -247,7 +247,7 @@
         </lebewesen:Verteilung>
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="glück" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="GL" Reihenfolge="-12"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -273,7 +273,7 @@
         </lebewesen:Verteilung>
 
       </lebewesen:Bereich>
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="klugheit" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="KL" Reihenfolge="-12"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -299,7 +299,7 @@
         </lebewesen:Verteilung>
 
       </lebewesen:Bereich>
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="intuition" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="IN" Reihenfolge="-12"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -326,7 +326,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="gewandtheit" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="GE" Reihenfolge="-12"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -353,7 +353,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="feinmotorik" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="FM" Reihenfolge="-12"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -380,7 +380,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="sympathie" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="SY" Reihenfolge="-12"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -407,7 +407,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="Antipathie" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="AN" Reihenfolge="-12"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -435,7 +435,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="stärke" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="ST" Reihenfolge="-12"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -463,7 +463,7 @@
       </lebewesen:Bereich>
 
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="konstitution" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="KO" Reihenfolge="-12" 
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -492,7 +492,7 @@
       </lebewesen:Bereich>
 
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="fokus" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="FO" Reihenfolge="-12"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -519,7 +519,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="einfluss" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="EI" Reihenfolge="-12"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -5058,6 +5058,7 @@ Wassermenschen beisitzen eine Natürliche Magie welche Ihren Unterkörper in ein
                   <lebewesen:Mods>
                     <misc:Eigenschaften>
                       <lebewesen:Mod Eigenschaft="kraft" Mod="0.8" Type="multiplikativ" />
+                      <lebewesen:Mod Eigenschaft="GL" Mod="3" />
                     </misc:Eigenschaften>
                   </lebewesen:Mods>
                   <lebewesen:Wert>18.80</lebewesen:Wert>
@@ -5233,6 +5234,7 @@ Wassermenschen beisitzen eine Natürliche Magie welche Ihren Unterkörper in ein
                   <lebewesen:Mods>
                     <misc:Eigenschaften>
                       <lebewesen:Mod Eigenschaft="kraft" Mod="0.7" Type="multiplikativ" />
+                      <lebewesen:Mod Eigenschaft="GL" Mod="3" />
                     </misc:Eigenschaften>
                   </lebewesen:Mods>
                   <lebewesen:Wert>19.80</lebewesen:Wert>
@@ -22998,7 +23000,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
     </Gattung>
   </Organismen>
 
-  <Pfade Id="Kultur" xmlns="https://nota-game.github.io/schema/vNext/pfad.xsd">
+  <Pfade Id="Kultur" xmlns="http://nota.org/schema/pfad.xsd">
     <misc:Name>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Kultur]]>
@@ -23359,7 +23361,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
     </pfad:Pfad>
   </pfad:Pfade>
 
-  <Pfade Id="Götter" xmlns="https://nota-game.github.io/schema/vNext/pfad.xsd">
+  <Pfade Id="Götter" xmlns="http://nota.org/schema/pfad.xsd">
     <misc:Name>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Götter]]>
@@ -23517,7 +23519,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
   </Pfade>
 
 
-  <Talente xmlns="https://nota-game.github.io/schema/vNext/talent.xsd" KategorieId="Kampf">
+  <Talente xmlns="http://nota.org/schema/talent.xsd" KategorieId="Kampf">
     <talent:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Kampf]]>
@@ -24320,7 +24322,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       </Ableitungen>
     </Talent>
   </Talente>
-  <Talente xmlns="https://nota-game.github.io/schema/vNext/talent.xsd" KategorieId="Körper">
+  <Talente xmlns="http://nota.org/schema/talent.xsd" KategorieId="Körper">
     <talent:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Körper]]>
@@ -24768,7 +24770,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
 
     </Talent>
   </Talente>
-  <Talente xmlns="https://nota-game.github.io/schema/vNext/talent.xsd" KategorieId="Geist">
+  <Talente xmlns="http://nota.org/schema/talent.xsd" KategorieId="Geist">
     <talent:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Geistig]]>
@@ -24946,7 +24948,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       </Ableitungen>
     </Talent>
   </Talente>
-  <Talente xmlns="https://nota-game.github.io/schema/vNext/talent.xsd" KategorieId="Gesellschaft">
+  <Talente xmlns="http://nota.org/schema/talent.xsd" KategorieId="Gesellschaft">
     <talent:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Gesellschft]]>
@@ -25232,7 +25234,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
     </Talent>
     <!--Wissen BEGINN-->
   </Talente>
-  <Talente xmlns="https://nota-game.github.io/schema/vNext/talent.xsd" KategorieId="Wissen">
+  <Talente xmlns="http://nota.org/schema/talent.xsd" KategorieId="Wissen">
     <talent:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Wissen]]>
@@ -25985,7 +25987,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       <Verbreitung Wert="7" />
     </Talent>
   </Talente>
-  <Talente xmlns="https://nota-game.github.io/schema/vNext/talent.xsd" KategorieId="Handwerk">
+  <Talente xmlns="http://nota.org/schema/talent.xsd" KategorieId="Handwerk">
     <talent:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Handwerk]]>
@@ -27051,7 +27053,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
 
 
   <!-- Ⅰ Ⅱ Ⅲ Ⅳ Ⅴ Ⅵ Ⅶ Ⅷ Ⅸ Ⅹ Ⅺ Ⅻ -->
-  <Fertigkeiten xmlns="https://nota-game.github.io/schema/vNext/fertigkeit.xsd" KategorieId="Kulturele">
+  <Fertigkeiten xmlns="http://nota.org/schema/fertigkeit.xsd" KategorieId="Kulturele">
     <fertigkeit:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Kulturelle]]>
@@ -27254,7 +27256,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       </fertigkeit:Stufe>
     </Fertigkeit>
   </Fertigkeiten>
-  <Fertigkeiten xmlns="https://nota-game.github.io/schema/vNext/fertigkeit.xsd" KategorieId="Schriften">
+  <Fertigkeiten xmlns="http://nota.org/schema/fertigkeit.xsd" KategorieId="Schriften">
     <fertigkeit:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Schriften]]>
@@ -27304,7 +27306,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       </fertigkeit:Stufe>
     </Fertigkeit>
   </Fertigkeiten>
-  <Fertigkeiten xmlns="https://nota-game.github.io/schema/vNext/fertigkeit.xsd" KategorieId="Sprachen">
+  <Fertigkeiten xmlns="http://nota.org/schema/fertigkeit.xsd" KategorieId="Sprachen">
     <fertigkeit:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Sprachen]]>
@@ -27423,7 +27425,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       </fertigkeit:Stufe>
     </Fertigkeit>
   </Fertigkeiten>
-  <Fertigkeiten xmlns="https://nota-game.github.io/schema/vNext/fertigkeit.xsd" KategorieId="Handwerk">
+  <Fertigkeiten xmlns="http://nota.org/schema/fertigkeit.xsd" KategorieId="Handwerk">
     <fertigkeit:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Handwerk]]>
@@ -27445,7 +27447,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       </fertigkeit:Stufe>
     </fertigkeit:Fertigkeit>
   </Fertigkeiten>
-  <Fertigkeiten xmlns="https://nota-game.github.io/schema/vNext/fertigkeit.xsd" KategorieId="Wissen">
+  <Fertigkeiten xmlns="http://nota.org/schema/fertigkeit.xsd" KategorieId="Wissen">
     <fertigkeit:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Wissen]]>
@@ -27511,7 +27513,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       </fertigkeit:Stufe>
     </fertigkeit:Fertigkeit>
   </Fertigkeiten>
-  <Fertigkeiten xmlns="https://nota-game.github.io/schema/vNext/fertigkeit.xsd" KategorieId="Kampfstiele">
+  <Fertigkeiten xmlns="http://nota.org/schema/fertigkeit.xsd" KategorieId="Kampfstiele">
     <fertigkeit:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Kampfstiele]]>
@@ -27539,7 +27541,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       </fertigkeit:Stufe>
     </fertigkeit:Fertigkeit>
   </Fertigkeiten>
-  <Fertigkeiten xmlns="https://nota-game.github.io/schema/vNext/fertigkeit.xsd" KategorieId="Kampf">
+  <Fertigkeiten xmlns="http://nota.org/schema/fertigkeit.xsd" KategorieId="Kampf">
     <fertigkeit:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Handwerk]]>
@@ -27596,7 +27598,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       </fertigkeit:Stufe>
     </fertigkeit:Fertigkeit>
   </Fertigkeiten>
-  <Besonderheiten xmlns="https://nota-game.github.io/schema/vNext/besonderheit.xsd" KategorieId="Gaben">
+  <Besonderheiten xmlns="http://nota.org/schema/besonderheit.xsd" KategorieId="Gaben">
     <besonderheit:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Gaben]]>
@@ -27830,7 +27832,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       </besonderheit:Stufe>
     </Besonderheit>
   </Besonderheiten>
-  <Besonderheiten xmlns="https://nota-game.github.io/schema/vNext/besonderheit.xsd" KategorieId="Nachteile">
+  <Besonderheiten xmlns="http://nota.org/schema/besonderheit.xsd" KategorieId="Nachteile">
     <besonderheit:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Nachteile]]>
@@ -27864,7 +27866,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
     </besonderheit:Besonderheit>
 
   </Besonderheiten>
-  <Besonderheiten xmlns="https://nota-game.github.io/schema/vNext/besonderheit.xsd" KategorieId="Vorteile">
+  <Besonderheiten xmlns="http://nota.org/schema/besonderheit.xsd" KategorieId="Vorteile">
     <besonderheit:Kategorie>
       <misc:Lokalisirung Sprache="de">
         <![CDATA[Vorteil]]>
@@ -28045,7 +28047,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
     </Besonderheit>
   </Besonderheiten>
 
-  <Taktiken xmlns="https://nota-game.github.io/schema/vNext/kampf/aktionen.xsd">
+  <Taktiken xmlns="http://nota.org/schema/kampf/aktionen.xsd">
     <Taktik Id="Angriff" Kosten="2" Belastung="1" Typ="Offensiv">
       <Beschreibung>
         <![CDATA[Ein standard angriff.]]>
@@ -28461,7 +28463,7 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
 
   </Taktiken>
 
-  <Ausstattung xmlns="https://nota-game.github.io/schema/vNext/kampf/ausstattung.xsd">
+  <Ausstattung xmlns="http://nota.org/schema/kampf/ausstattung.xsd">
     <Waffen>
       <Nahkampfwaffe Id="Floret" Distanzklasse="2">
         <misc:Name>
@@ -28902,7 +28904,7 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
       </Eigenschaft>
     </Eigenschaften>
   </Ausstattung>
-  <Tags xmlns="https://nota-game.github.io/schema/vNext/misc.xsd">
+  <Tags xmlns="http://nota.org/schema/misc.xsd">
     <Tag Id="Lesen/Schreiben">
       <misc:Name>
         <misc:Lokalisirung Sprache="de">

@@ -3,13 +3,18 @@
 	import { Data } from '../models/Data';
 	import { onMount } from 'svelte';
 	import PropertiesSetter from '../view/root/propertiesSetter.svelte';
+	import Besonderheit from '../view/root/besonderheit.svelte';
+	import { writable } from 'svelte/store';
 
 	let char: Charakter | undefined;
 
+	const data = writable<undefined | Data>(undefined);
+
 	onMount(async () => {
-		const data = await Data.init(false);
-		if (data) {
-			char = new Charakter(data, '2');
+		const dataInstance = await Data.init(false);
+		data.set(dataInstance);
+		if (dataInstance) {
+			char = new Charakter(dataInstance, '2');
 		}
 	});
 
@@ -62,7 +67,7 @@
 
 	<hr />
 
-	{#each Object.entries(char.eigenschaften) as [key, { raw, effective, type , meta}]}
+	{#each Object.entries(char.eigenschaften) as [key, { raw, effective, type, meta }]}
 		<PropertiesSetter {key} {effective} {raw} {type} {meta} />
 	{/each}
 
@@ -72,6 +77,15 @@
 		<li>{$artStore}</li>
 		<li>{$morphStore}</li>
 	</ul>
+
+	<hr />
+
+	{#if $data}
+		{#each Object.entries(char.besonderheiten) as [key, entry]}
+			<Besonderheit data={$data} {key} {...entry} />
+		{/each}
+	{/if}
+
 	<div>
 		<pre>
         {JSON.stringify($lebensabschnitteStore, undefined, 1)}
