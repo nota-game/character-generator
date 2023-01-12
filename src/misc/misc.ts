@@ -17,6 +17,23 @@ export function notUndefined<T>(array: (T | undefined)[]): T[] {
 }
 
 
+export function groupBy<T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T[]> {
+    return list.reduce((previous, currentItem) => {
+        const group = getKey(currentItem);
+        if (!previous[group]) previous[group] = [];
+        previous[group].push(currentItem);
+        return previous;
+    }, {} as Record<K, T[]>)
+}
+
+export function toObjectKey<T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T> {
+    return list.reduce((previous, currentItem) => {
+        const group = getKey(currentItem);
+        
+        previous[group] = currentItem;
+        return previous;
+    }, {} as Record<K, T>)
+}
 
 export function distinct<T>(t: T[], keyFunction?: (a: T) => string) {
     if (keyFunction) {

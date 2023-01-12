@@ -1,12 +1,12 @@
-import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit } from "../data/nota.g";
+import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung } from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData } from "../misc/StoreManager2";
 import type { Readable, Writable } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
 import * as mathjs from 'mathjs'
 
 import { Data } from "./Data";
-import { distinct, getLast, notUndefined } from "../misc/misc";
-import { index, isResultSet } from "mathjs";
+import { distinct, getLast, groupBy, notUndefined, toObjectKey } from "../misc/misc";
+import { index, isResultSet, xgcd } from "mathjs";
 
 export type EigenschaftTypes = 'bereich' | 'reihe' | 'punkt' | 'berechnung';
 export type EigenschaftTypesLevel = 'morph' | 'art' | 'gattung' | 'organismus';
@@ -18,6 +18,72 @@ export type MissingRequirements = { type: 'tag', id: string }
     | { type: 'Not', sub: MissingRequirements }
     | { type: 'And', sub: MissingRequirements[] }
     | { type: 'Or', sub: MissingRequirements[] }
+
+
+    ;
+
+type MapKeyPropertys<T> = {
+    [e in keyof T]: T[e] extends Key<any, any> ? TypeOfKey<T[e]> : never;
+}
+
+type FertigkeitKeys<id extends string = string> = {
+    Effective: FertigkeitEffectiveKey<id>,
+    Unbeschränkt: FertigkeitUnbeschränktKey<id>,
+    Fixed: FertigkeitFixedKey<id>,
+    Purchased: FertigkeitPurchasedKey<id>,
+    Missing: FertigkeitMissingKey<id>,
+}
+
+type FertigkeitEffectiveKey<id extends string = string> = Key<`/fertigkeit/${id}/Stufe`, number>;
+type FertigkeitUnbeschränktKey<id extends string = string> = Key<`/fertigkeit/${id}/StufeUnbeschränkt`, number>;
+type FertigkeitFixedKey<id extends string = string> = Key<`/fertigkeit/${id}/fixed`, number>;
+type FertigkeitPurchasedKey<id extends string = string> = Key<`/fertigkeit/${id}/purchased`, number>;
+type FertigkeitMissingKey<id extends string = string> = Key<`/fertigkeit/${id}/Missing`, {
+    wert: number;
+    missing: MissingRequirements;
+}[]>;
+
+
+
+type BesonderheitKeys<id extends string = string> = {
+    Effective: BesonderheitEffectiveKey<id>,
+    Unbeschränkt: BesonderheitUnbeschränktKey<id>,
+    Fixed: BesonderheitFixedKey<id>,
+    Purchased: BesonderheitPurchasedKey<id>,
+    Missing: BesonderheitMissingKey<id>,
+}
+
+type BesonderheitPurchasedKey<id extends string = string> = Key<`/besonderheit/${id}/purchased`, number>;
+type BesonderheitFixedKey<id extends string = string> = Key<`/besonderheit/${id}/fixed`, number>;
+type BesonderheitUnbeschränktKey<id extends string = string> = Key<`/besonderheit/${id}/StufeUnbeschränkt`, number>;
+type BesonderheitEffectiveKey<id extends string = string> = Key<`/besonderheit/${id}/Stufe`, number>;
+type BesonderheitMissingKey<id extends string = string> = Key<`/besonderheit/${id}/Missing`, {
+    wert: number;
+    missing: MissingRequirements;
+}[]>;
+
+
+
+export type EigenschaftKeys<id extends string = string> = {
+    Effective: EigenschaftEffective<id>,
+    Raw: EigenschaftRawKey<id>,
+    Type: EigenschaftTypeKey<id>,
+    Meta: EigenschaftMetaKey<id>,
+}
+
+export type EigenschaftMetaKey<id extends string = string> = Key<`/eigenschaften/${id}/meta`, StaticheDefinition_lebewesen & { type: 'bereich' } | (ReiheDefinition_lebewesen & {
+    quantileForAge: Quantile[];
+    schwellenForAge: Schwelle[];
+    currentSchwelle?: Schwelle;
+    type: 'reihe'
+}) | FormelDefintion_lebewesen & { type: 'berechnung' } | PunktDefintion_lebewesen & { type: 'punkt' } | undefined>;
+export type EigenschaftTypeKey<id extends string = string> = Key<`/eigenschaften/${id}/type`, EigenschaftTypes | undefined>;
+export type EigenschaftEffective<id extends string = string> = Key<`/eigenschaften/${id}/effektiv`, number | undefined>;
+export type EigenschaftRawKey<id extends string = string> = Key<`/eigenschaften/${id}/raw`, number | undefined>;
+
+export type TypeOfKey<T extends Key<string, any>> = T extends Key<string, infer U>
+    ? U
+    : never;
 
 
 export class Charakter {
@@ -41,7 +107,7 @@ export class Charakter {
         effective: Readable<number | undefined>,
         type: Readable<EigenschaftTypes | undefined>,
         raw: Writable<number | undefined>,
-        meta: Readable<StaticheDefinition_lebewesen | ReiheDefinition_lebewesen | FormelDefintion_lebewesen | PunktDefintion_lebewesen | undefined>,
+        meta: Readable<TypeOfKey<EigenschaftMetaKey>>,
     }> = {};
 
     public readonly besonderheiten: Record<string, {
@@ -66,12 +132,12 @@ export class Charakter {
 
     private readonly storeManager;
 
-    private getBesonterheitKeys<id extends string>(Id: id): { keyPurchased: Key<`/besonderheit/${id}/purchased`, number>; keyFixed: Key<`/besonderheit/${id}/fixed`, number>; keyUnbeschränkt: Key<`/besonderheit/${id}/StufeUnbeschränkt`, number>; keyMissing: Key<`/besonderheit/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]>; keyEffectiv: Key<`/besonderheit/${id}/Stufe`, number>; } {
-        const keyPurchased = this.storeManager.key(`/besonderheit/${Id}/purchased`).of<number>();
-        const keyFixed = this.storeManager.key(`/besonderheit/${Id}/fixed`).of<number>();
-        const keyUnbeschränkt = this.storeManager.key(`/besonderheit/${Id}/StufeUnbeschränkt`).of<number>();
-        const keyMissing = this.storeManager.key(`/besonderheit/${Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
-        const keyEffectiv = this.storeManager.key(`/besonderheit/${Id}/Stufe`).of<number>();
+    private getBesonterheitKeys<id extends string>(Id: id) {//: { keyPurchased: BesonderheitPurchasedKey<id>; keyFixed: BesonderheitFixedKey<id>; keyUnbeschränkt: BesonderheitUnbeschränktKey<id>; keyMissing: BesonderheitMissingKey<id>; keyEffectiv: BesonderheitEffectiveKey<id>; } {
+        const keyPurchased = this.storeManager.key(`/besonderheit/${Id}/purchased`).of<TypeOfKey<BesonderheitPurchasedKey<id>>>();
+        const keyFixed = this.storeManager.key(`/besonderheit/${Id}/fixed`).of<TypeOfKey<BesonderheitFixedKey<id>>>();
+        const keyUnbeschränkt = this.storeManager.key(`/besonderheit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<BesonderheitUnbeschränktKey<id>>>();
+        const keyMissing = this.storeManager.key(`/besonderheit/${Id}/Missing`).of<TypeOfKey<BesonderheitMissingKey<id>>>();
+        const keyEffectiv = this.storeManager.key(`/besonderheit/${Id}/Stufe`).of<TypeOfKey<BesonderheitEffectiveKey<id>>>();
 
         return {
             keyPurchased,
@@ -83,44 +149,64 @@ export class Charakter {
     }
 
 
-    private getIdFromBesonterheitkeitKey(key: Key<string, any>): string | undefined
-    private getIdFromBesonterheitkeitKey<id extends string>(key: Key<`/besonderheit/${id}/purchased`, number> | Key<`besonderheitid}/fixed`, number> | Key<`besonderheitid}/StufeUnbeschränkt`, number> | Key<`besonderheitid}/Missing`, { wert: number; missing: MissingRequirements; }[]> | Key<`besonderheitid}/Stufe`, number>) {
-        const reg = /\/besonderheit\/(?<name>[^/]+)\/.*/
+    private getIdFromBesonterheitkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' } | undefined
+    private getIdFromBesonterheitkeitKey<id extends string>(key: BesonderheitPurchasedKey<id> | BesonderheitFixedKey<id> | BesonderheitUnbeschränktKey<id> | BesonderheitMissingKey<id> | BesonderheitEffectiveKey<id>) {
+        const reg = /\/besonderheit\/(?<name>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
         const erg = match?.groups?.['name'] as id | undefined;
-        return erg;
+        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' | undefined;
+        return (erg == undefined || type == undefined)
+            ? undefined
+            : { id: erg, type: type };
     }
 
 
-    private getFertigkeitenKeys<id extends string>(Id: id): { keyPurchased: Key<`/fertigkeit/${id}/purchased`, number>; keyFixed: Key<`/fertigkeit/${id}/fixed`, number>; keyUnbeschränkt: Key<`/fertigkeit/${id}/StufeUnbeschränkt`, number>; keyMissing: Key<`/fertigkeit/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]>; keyEffectiv: Key<`/fertigkeit/${id}/Stufe`, number>; } {
-        const keyPurchased = this.storeManager.key(`/fertigkeit/${Id}/purchased`).of<number>();
-        const keyFixed = this.storeManager.key(`/fertigkeit/${Id}/fixed`).of<number>();
-        const keyUnbeschränkt = this.storeManager.key(`/fertigkeit/${Id}/StufeUnbeschränkt`).of<number>();
-        const keyMissing = this.storeManager.key(`/fertigkeit/${Id}/Missing`).of<{ wert: number, missing: MissingRequirements }[]>();
-        const keyEffectiv = this.storeManager.key(`/fertigkeit/${Id}/Stufe`).of<number>();
+    private getFertigkeitenKeys<id extends string>(Id: id) {
+        const keyPurchased = this.storeManager.key(`/fertigkeit/${Id}/purchased`).of<TypeOfKey<FertigkeitPurchasedKey<id>>>();
+        const keyFixed = this.storeManager.key(`/fertigkeit/${Id}/fixed`).of<TypeOfKey<FertigkeitFixedKey<id>>>();
+        const keyUnbeschränkt = this.storeManager.key(`/fertigkeit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<FertigkeitUnbeschränktKey<id>>>();
+        const keyMissing = this.storeManager.key(`/fertigkeit/${Id}/Missing`).of<TypeOfKey<FertigkeitMissingKey>>();
+        const keyEffectiv = this.storeManager.key(`/fertigkeit/${Id}/Stufe`).of<TypeOfKey<FertigkeitEffectiveKey<id>>>();
 
         return { keyPurchased, keyFixed, keyUnbeschränkt, keyMissing, keyEffectiv };
     }
 
-    private getIdFromFertigkeitKey(key: Key<string, any>): string | undefined
-    private getIdFromFertigkeitKey<id extends string>(key: Key<`/fertigkeit/${id}/purchased`, number> | Key<`/fertigkeit/${id}/fixed`, number> | Key<`/fertigkeit/${id}/StufeUnbeschränkt`, number> | Key<`/fertigkeit/${id}/Missing`, { wert: number; missing: MissingRequirements; }[]> | Key<`/fertigkeit/${id}/Stufe`, number>) {
-        const reg = /\/fertigkeit\/(?<name>[^/]+)\/.*/
+
+
+    private getIdFromFertigkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' } | undefined
+    private getIdFromFertigkeitKey<id extends string>(key: FertigkeitPurchasedKey<id> | FertigkeitFixedKey<id> | FertigkeitUnbeschränktKey<id> | FertigkeitMissingKey<id> | FertigkeitEffectiveKey<id>) {
+        const reg = /\/fertigkeit\/(?<name>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
         const erg = match?.groups?.['name'] as id | undefined;
-        return erg;
+        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' | undefined;
+        return (erg == undefined || type == undefined)
+            ? undefined
+            : { id: erg, type: type };
     }
 
-    private getPropertieKeys(prop: string) {
-
-
+    private getPropertieKeys<id extends string>(prop: id) {
         return {
-            raw: this.storeManager.key(`/eigenschaften/${prop}/raw`).of<number | undefined>(),
-            effective: this.storeManager.key(`/eigenschaften/${prop}/effektiv`).of<number | undefined>(),
-            type: this.storeManager.key(`/eigenschaften/${prop}/type`).of<EigenschaftTypes | undefined>(),
-            meta: this.storeManager.key(`/eigenschaften/${prop}/meta`).of<StaticheDefinition_lebewesen | (ReiheDefinition_lebewesen & { quantile: Quantile[], schwellen: Schwelle[], currentSchwelle?: Schwelle }) | FormelDefintion_lebewesen | PunktDefintion_lebewesen | undefined>()
+            raw: this.storeManager.key(`/eigenschaften/${prop}/raw`).of<TypeOfKey<EigenschaftRawKey<id>>>(),
+            effective: this.storeManager.key(`/eigenschaften/${prop}/effektiv`).of<TypeOfKey<EigenschaftEffective<id>>>(),
+            type: this.storeManager.key(`/eigenschaften/${prop}/type`).of<TypeOfKey<EigenschaftTypeKey<id>>>(),
+            meta: this.storeManager.key(`/eigenschaften/${prop}/meta`).of<TypeOfKey<EigenschaftMetaKey<id>>>()
         }
     }
 
+    private getIdFromPropertieKeys(key: Key<string, any>): { id: string, type: 'raw' | 'effektiv' | 'type' | 'meta' } | undefined
+    private getIdFromPropertieKeys<id extends string>(key: EigenschaftRawKey<id>
+        | EigenschaftEffective<id>
+        | EigenschaftTypeKey<id>
+        | EigenschaftMetaKey<id>
+    ) {
+        const reg = /\/eigenschaften\/(?<name>[^/]+)\/(?<type>[^/]+)/
+        const match = key.Key.match(reg);
+        const erg = match?.groups?.['name'] as id | undefined;
+        const type = match?.groups?.['type'] as 'raw' | 'effektiv' | 'type' | 'meta' | undefined;
+        return (erg == undefined || type == undefined)
+            ? undefined
+            : { id: erg, type: type };
+    }
 
 
     /**
@@ -232,7 +318,7 @@ export class Charakter {
 
             const { raw: rawKey, effective: effectiveKey, type: typeKey, meta: metaKey } = this.getPropertieKeys(key);
 
-            const tmpKey = this.storeManager.key(`/tmp/eigenschaft/${key}`).of<{ entry: StaticheDefinition_lebewesen | ReiheDefinition_lebewesen | FormelDefintion_lebewesen | PunktDefintion_lebewesen, type: EigenschaftTypes, level: EigenschaftTypesLevel } | undefined>();
+            const tmpKey = this.storeManager.key(`/tmp/eigenschaft/${key}`).of<{ entry: StaticheDefinition_lebewesen | ReiheDefinition_lebewesen | FormelDefintion_lebewesen | PunktDefintion_lebewesen, type: EigenschaftTypes, level: EigenschaftTypesLevel, morphId?: string, artId?: string, gattungId?: string, } | undefined>();
             // const effectiveKey = this.storeManager.key(`/eigenschaft/${key}/effektiv`).of<number | undefined>();
             // const writablStore = this.storeManager.writable(rawKey, undefined);
 
@@ -245,16 +331,17 @@ export class Charakter {
             const dependentData = this.stammdaten.eigenschaftenDependencys.filter(x => x.Eigenschaft == key).map(x => x.Typ);
 
 
-            const dependentBesonderheiten: Key<string, number>[] = dependentData.filter(x => x.startsWith('besonderheit-'))
+
+            const dependentBesonderheiten = dependentData.filter(x => x.startsWith('besonderheit-'))
                 .map(x => x.substring('besonderheit-'.length))
-                .map(x => this.getBesonterheitKeys(x).keyEffectiv);
-            const dependentFertigkeiten: Key<string, number>[] = dependentData.filter(x => x.startsWith('fertigkeit-'))
+                .flatMap(x => Object.values(this.getBesonterheitKeys(x)));
+            const dependentFertigkeiten = dependentData.filter(x => x.startsWith('fertigkeit-'))
                 .map(x => x.substring('fertigkeit-'.length))
-                .map(x => this.getFertigkeitenKeys(x).keyEffectiv);
+                .flatMap(x => Object.values(this.getFertigkeitenKeys(x)));
 
             const dependentEigenschaften = dependentData.filter(x => x.startsWith('eigenschaft-'))
                 .map(x => x.substring('eigenschaft-'.length))
-                .flatMap(x => [this.getPropertieKeys(x).effective, this.getPropertieKeys(x).meta]);
+                .flatMap(x => Object.values(this.getPropertieKeys(x)));
 
             const dependentAge: Key<string, number>[] = dependentData.filter(x => x.startsWith('Alter'))
                 .map(x => ageKey);
@@ -289,8 +376,8 @@ export class Charakter {
                     ?? data.Instance.Daten.Organismen.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'organismus' as const }))[0]
                     ?? data.Instance.Daten.Organismen.Entwiklung?.Reihe?.filter(x => x.id == key).map(x => ({ entry: x, type: 'reihe' as const, level: 'organismus' as const }))[0]
                     ;
-
-                return base;
+                // console.log('morph', morph?.Id);
+                return base == undefined ? undefined : { ...base, morphId: morph?.Id, gattungId: gattung?.Id, artId: art?.Id };
             }, (a, b) => {
                 if (a === UNINITILEZED) {
                     return b === UNINITILEZED;
@@ -301,7 +388,7 @@ export class Charakter {
                 } else if (b === undefined) {
                     return false;
                 } else {
-                    return a?.entry.id === b?.entry.id && a?.type === b?.type && b?.level === a?.level;
+                    return a?.entry.id === b?.entry.id && a?.type === b?.type && b?.level === a?.level && a.gattungId == b.gattungId && a.artId == b.artId && a.morphId == b.morphId;
                 }
             });
 
@@ -344,12 +431,12 @@ export class Charakter {
 
 
                 } else if (base.type == 'reihe') {
-                    const reihe = meta as ReiheDefinition_lebewesen & { quantile: Quantile[], schwellen: Schwelle[], currentSchwelle?: Schwelle };
+                    const reihe = meta as ReiheDefinition_lebewesen & { quantileForAge: Quantile[], schwellenForAge: Schwelle[], currentSchwelle?: Schwelle };
                     // const reihe = currentEntwicklung.Reihe?.filter(x => x.id == currentProperty.id)[0];
                     if (reihe == undefined) {
                         return undefined;
                     }
-                    const quantile = reihe.quantile;
+                    const quantile = reihe.quantileForAge;
 
 
                     const min = Math.min(...quantile.map(x => x.Wert))
@@ -420,43 +507,272 @@ export class Charakter {
 
 
                 // check besonderheiten
-                const newAge = dependent.filter(x => x.key == ageKey).map(x => x.newValue)[0] as number | undefined;
-
-                const regEigenschaftMeta = /\/eigenschaften\/(?<name>[^/]+)\/meta/;
+                // const newAge = dependent.filter(x => x.key == ageKey).map(x => x.newValue)[0] as number | undefined;
 
 
-                const mods = dependent.filter((x): x is KeyData<Key<string, number>> => true).map(x => ({ id: this.getIdFromFertigkeitKey(x.key), entry: x }))
-                    .filter((x) => x.id !== undefined)
-                    .flatMap(x => {
-                        const instance = data.fertigkeitenMap[x.id!];
-                        return instance.Stufe.filter((y, i) => x.entry.newValue > i).flatMap(y =>
+                const enrich = Object.entries(groupBy(dependent.map(e => {
+                    const prop = this.getIdFromPropertieKeys(e.key);
+                    if (prop) {
+
+                        if (prop.type == 'effektiv') {
+                            return {
+                                kind: 'property' as const,
+                                entry: e as KeyData<EigenschaftEffective>,
+                                id: prop.id,
+                                type: prop.type,
+                            }
+                        } else if (prop.type == 'meta') {
+                            return {
+                                kind: 'property' as const,
+                                entry: e as KeyData<EigenschaftMetaKey>,
+                                id: prop.id,
+                                type: prop.type,
+                            }
+                        } else if (prop.type == 'raw') {
+                            return {
+                                kind: 'property' as const,
+                                entry: e as KeyData<EigenschaftRawKey>,
+                                id: prop.id,
+                                type: prop.type,
+                            }
+                        } else if (prop.type == 'type') {
+                            return {
+                                kind: 'property' as const,
+                                entry: e as KeyData<EigenschaftTypeKey>,
+                                id: prop.id,
+                                type: prop.type,
+                            }
+                        }
+                    }
+
+                    const fertigkeit = this.getIdFromFertigkeitKey(e.key);
+                    if (fertigkeit) {
+                        if (fertigkeit.type == 'Stufe') {
+                            return {
+                                kind: 'fertigkeit' as const,
+
+                                entry: e as KeyData<FertigkeitEffectiveKey>,
+                                id: fertigkeit.id,
+                                type: fertigkeit.type
+                            }
+                        } else if (fertigkeit.type == 'Missing') {
+                            return {
+                                kind: 'fertigkeit' as const,
+                                entry: e as KeyData<FertigkeitMissingKey>,
+                                id: fertigkeit.id,
+                                type: fertigkeit.type
+                            }
+                        } else if (fertigkeit.type == 'StufeUnbeschränkt') {
+                            return {
+                                kind: 'fertigkeit' as const,
+                                entry: e as KeyData<FertigkeitUnbeschränktKey>,
+                                id: fertigkeit.id,
+                                type: fertigkeit.type
+                            }
+                        } else if (fertigkeit.type == 'fixed') {
+                            return {
+                                kind: 'fertigkeit' as const,
+                                entry: e as KeyData<FertigkeitFixedKey>,
+                                id: fertigkeit.id,
+                                type: fertigkeit.type
+                            }
+                        } else if (fertigkeit.type == 'purchased') {
+                            return {
+                                kind: 'fertigkeit' as const,
+                                entry: e as KeyData<FertigkeitPurchasedKey>,
+                                id: fertigkeit.id,
+                                type: fertigkeit.type
+                            }
+                        }
+                    }
+                    const besonderheit = this.getIdFromBesonterheitkeitKey(e.key);
+                    if (besonderheit) {
+                        if (besonderheit.type == 'Stufe') {
+                            return {
+                                kind: 'besonderheit' as const,
+                                entry: e as KeyData<BesonderheitEffectiveKey>,
+                                id: besonderheit.id,
+                                type: besonderheit.type,
+                            }
+                        } else if (besonderheit.type == 'Missing') {
+                            return {
+                                kind: 'besonderheit' as const,
+                                entry: e as KeyData<BesonderheitMissingKey>,
+                                id: besonderheit.id,
+                                type: besonderheit.type,
+                            }
+                        } else if (besonderheit.type == 'StufeUnbeschränkt') {
+                            return {
+                                kind: 'besonderheit' as const,
+                                entry: e as KeyData<BesonderheitUnbeschränktKey>,
+                                id: besonderheit.id,
+                                type: besonderheit.type,
+                            }
+                        } else if (besonderheit.type == 'fixed') {
+                            return {
+                                kind: 'besonderheit' as const,
+                                entry: e as KeyData<BesonderheitFixedKey>,
+                                id: besonderheit.id,
+                                type: besonderheit.type,
+                            }
+                        } else if (besonderheit.type == 'purchased') {
+                            return {
+                                kind: 'besonderheit' as const,
+                                entry: e as KeyData<BesonderheitPurchasedKey>,
+                                id: besonderheit.id,
+                                type: besonderheit.type,
+
+
+                            }
+                        }
+                    }
+
+                    return {
+                        kind: 'other' as const,
+                        entry: e as KeyData<Key<string, unknown>>,
+                        id: 'other',
+                        type: 'other' as const,
+                    }
+                        ;
+                }), e => e.id));
+
+
+
+                type MapKeyData<K> = {
+                    [e in keyof K]: KeyData<K[e]>;
+                }
+
+                const fertigkeitDependency = notUndefined(enrich
+                    .map(([key, value]) => {
+                        const erg = {
+                            kind: 'fertigkeit',
+                            id: key,
+                        } as Partial<MapKeyData<FertigkeitKeys>> & { kind: 'fertigkeit', id: string };
+                        if (value[0]?.kind != erg.kind) {
+                            return undefined;
+                        }
+                        for (const v of value) {
+                            if (v.kind === erg.kind) {
+                                if (v.type == 'Stufe') {
+                                    erg.Effective = v.entry;
+                                } else if (v.type == 'Missing') {
+                                    erg.Missing = v.entry;
+                                } else if (v.type == 'StufeUnbeschränkt') {
+                                    erg.Unbeschränkt = v.entry;
+                                } else if (v.type == 'fixed') {
+                                    erg.Fixed = v.entry;
+                                } else if (v.type == 'purchased') {
+                                    erg.Purchased = v.entry;
+                                }
+                            }
+                        }
+                        return erg as MapKeyData<FertigkeitKeys> & { kind: 'fertigkeit', id: string };
+                    }));
+
+
+                const besonderheitDependency = notUndefined(enrich
+                    .map(([key, value]) => {
+                        const erg = {
+                            kind: 'besonderheit',
+                            id: key,
+                        } as Partial<MapKeyData<BesonderheitKeys>> & { kind: 'besonderheit', id: string };
+                        if (value[0]?.kind != erg.kind) {
+                            return undefined;
+                        }
+                        for (const v of value) {
+                            if (v.kind === erg.kind) {
+                                if (v.type == 'Stufe') {
+                                    erg.Effective = v.entry;
+                                } else if (v.type == 'Missing') {
+                                    erg.Missing = v.entry;
+                                } else if (v.type == 'StufeUnbeschränkt') {
+                                    erg.Unbeschränkt = v.entry;
+                                } else if (v.type == 'fixed') {
+                                    erg.Fixed = v.entry;
+                                } else if (v.type == 'purchased') {
+                                    erg.Purchased = v.entry;
+                                }
+                            }
+                        }
+                        return erg as MapKeyData<BesonderheitKeys> & { kind: 'besonderheit', id: string };
+                    }));
+                const eigenschaftDependency = notUndefined(enrich
+                    .map(([key, value]) => {
+                        const erg = {
+                            kind: 'property',
+                            id: key,
+                        } as Partial<MapKeyData<EigenschaftKeys>> & { kind: 'property', id: string };
+                        if (value[0]?.kind != erg.kind) {
+                            return undefined;
+                        }
+                        for (const v of value) {
+                            if (v.kind === erg.kind) {
+                                if (v.type == 'effektiv') {
+                                    erg.Effective = v.entry;
+                                } else if (v.type == 'meta') {
+                                    erg.Meta = v.entry;
+                                } else if (v.type == 'raw') {
+                                    erg.Raw = v.entry;
+                                } else if (v.type == 'type') {
+                                    erg.Type = v.entry;
+                                }
+                            }
+                        }
+                        return erg as MapKeyData<EigenschaftKeys> & { kind: 'property', id: string };
+                    }));
+
+
+
+                const otherDependency = notUndefined(enrich
+                    .flatMap(([key, value]) => {
+                        if (value[0]?.kind === 'other') {
+                            return notUndefined(value.map(x => {
+                                if (x.kind === 'other') {
+                                    return { type: x.type, ...x.entry };
+                                }
+                                return undefined;
+                            }))
+                        } else {
+                            return undefined;
+                        }
+                    }));
+
+
+
+
+
+
+
+                const mods =
+                    fertigkeitDependency.flatMap(x => {
+                        const instance = data.fertigkeitenMap[x.id];
+                        return instance.Stufe.filter((y, i) => x.Effective.newValue > i).flatMap(y =>
                             notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
                         )
                     }).concat(
-                        dependent.filter((x): x is KeyData<Key<string, number>> => true).map(x => ({ id: this.getIdFromBesonterheitkeitKey(x.key), entry: x }))
-                            .filter((x) => x.id !== undefined)
-                            .flatMap(x => {
-                                const instance = data.besonderheitenMap[x.id!];
-                                return instance.Stufe.filter((y, i) => x.entry.newValue > i)
-                                    .flatMap(y =>
-                                        notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
-                                    )
-                            })
-                    ).concat(
-                        dependent
-                            .filter((x): x is KeyData<Key<string, LebensabschnittDefinition_lebewesen>> => x.key.Key.endsWith('/lebensabschnitt'))
-                            .flatMap(x =>
-                                notUndefined(x.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? []))
-                    ).concat(
-                        dependent
-                            .filter((x): x is any => true)
-                            .filter((x): x is KeyData<Key<string, ReiheDefinition_lebewesen & { quantile: Quantile[], schwellen: Schwelle[], currentSchwelle?: Schwelle }>> => regEigenschaftMeta.test(x.key.Key))
-                            .filter(x => x.newValue.currentSchwelle)
-                            .flatMap(x => notUndefined(x.newValue?.currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? []))
-
-
-
-                    )
+                        besonderheitDependency.flatMap(x => {
+                            const instance = data.besonderheitenMap[x.id];
+                            return instance.Stufe.filter((y, i) => x.Effective.newValue > i).flatMap(y =>
+                                notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
+                            )
+                        }))
+                        .concat(
+                            dependent
+                                .filter((x): x is KeyData<Key<string, LebensabschnittDefinition_lebewesen>> => x.key.Key.endsWith('/lebensabschnitt'))
+                                .flatMap(x =>
+                                    notUndefined(x.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? []))
+                        ).concat(
+                            eigenschaftDependency
+                                .flatMap((x) => {
+                                    if (x.Meta.newValue?.type == 'punkt' && x.Effective.newValue == 1) {
+                                        return (x.Meta.newValue.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
+                                    }
+                                    else if (x.Meta.newValue?.type == 'reihe') {
+                                        return x.Meta.newValue.currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [];
+                                    }
+                                    return [];
+                                })
+                        )
                     ;
 
 
@@ -488,14 +804,14 @@ export class Charakter {
                 }
                 if (base.type === 'bereich') {
                     const entry = base.entry as StaticheDefinition_lebewesen;
-                    return entry;
+                    return { type: base.type, ...entry };
                 } else if (base.type == 'punkt') {
                     const punkt = base.entry as PunktDefintion_lebewesen;
-                    return punkt;
+                    return { type: base.type, ...punkt };
 
                 } else if (base.type == 'berechnung') {
                     const formel = base.entry as FormelDefintion_lebewesen;
-                    return formel;
+                    return { type: base.type, ...formel };
 
                 } else if (base.type == 'reihe') {
                     const reihe = base.entry as ReiheDefinition_lebewesen;
@@ -514,7 +830,7 @@ export class Charakter {
                     //     const { quantile, schwellen } = Charakter.applyAge(age, reihe);
                     //     return { ...reihe, quantile, schwellen };
                     // }
-                    return result;
+                    return { type: base.type, ...result };
 
                 } else {
                     return undefined;
@@ -608,9 +924,9 @@ export class Charakter {
 
 
 
-    public static applyAge(age: number, reihe: _Reihe): { schwellen: Schwelle[]; quantile: Quantile[]; };
-    public static applyAge(age: number, reihe: _Reihe, currentValue: number): { schwellen: Schwelle[]; quantile: Quantile[]; currentSchwelle: Schwelle; };
-    public static applyAge(age: number, reihe: _Reihe, currentValue?: number): { schwellen: Schwelle[]; quantile: Quantile[]; currentSchwelle?: Schwelle; } {
+    public static applyAge(age: number, reihe: _Reihe): { schwellenForAge: Schwelle[]; quantileForAge: Quantile[]; };
+    public static applyAge(age: number, reihe: _Reihe, currentValue: number): { schwellenForAge: Schwelle[]; quantileForAge: Quantile[]; currentSchwelle: Schwelle; };
+    public static applyAge(age: number, reihe: _Reihe, currentValue?: number): { schwellenForAge: Schwelle[]; quantileForAge: Quantile[]; currentSchwelle?: Schwelle; } {
         const a = age;
         const tempIndex = Math.round(
             (a - (reihe?.startAlter ?? 0)) / (reihe?.step ?? 1) + (reihe?.startAlter ?? 0)
@@ -624,7 +940,7 @@ export class Charakter {
 
 
 
-        const schwellen =
+        const schwellenForAge =
             reihe?.Schwelle?.map((x) => ({
                 ...x,
                 Wert: x.Wert[index]
@@ -633,7 +949,7 @@ export class Charakter {
                 .filter((x) => x.Wert !== undefined) ?? [];
 
 
-        const quantile =
+        const quantileForAge =
             reihe?.Verteilung[indexVerteilung]?.Wert
                 ?.sort((a, b) => a.meta.Quantil - b.meta.Quantil)
                 .map(x => ({ Wert: x.value, Quantil: x.meta.Quantil }))
@@ -651,13 +967,13 @@ export class Charakter {
 
         if (currentValue !== undefined) {
 
-            const filtert = schwellen.filter(x => x.Wert <= currentValue);
+            const filtert = schwellenForAge.filter(x => x.Wert <= currentValue);
             const currentSchwelle = filtert.length > 0 ? filtert.reverse()[0] : undefined;
 
-            return { schwellen, quantile, currentSchwelle };
+            return { schwellenForAge, quantileForAge, currentSchwelle };
         } else {
 
-            return { schwellen, quantile };
+            return { schwellenForAge, quantileForAge };
         }
 
     }

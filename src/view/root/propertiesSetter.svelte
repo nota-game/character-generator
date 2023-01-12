@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { EigenschaftTypes } from '../../models/Character';
+	import type { EigenschaftMetaKey, EigenschaftTypes, TypeOfKey } from '../../models/Character';
 	import type { Readable, Writable } from 'svelte/store';
 	import type {
 		FormelDefintion_lebewesen,
@@ -12,16 +12,10 @@
 	export let raw: Writable<number | undefined>;
 	export let type: Readable<EigenschaftTypes | undefined>;
 	export let effective: Readable<number | undefined>;
-	export let meta: Readable<
-		| StaticheDefinition_lebewesen
-		| ReiheDefinition_lebewesen
-		| FormelDefintion_lebewesen
-		| PunktDefintion_lebewesen
-		| undefined
-	>;
+	export let meta: Readable<TypeOfKey<EigenschaftMetaKey>>;
 
-	let bereichMeta: Readable<StaticheDefinition_lebewesen | undefined>;
-	let reiheMeta: Readable<ReiheDefinition_lebewesen | undefined>;
+	// let bereichMeta: Readable<StaticheDefinition_lebewesen | undefined>;
+	// let reiheMeta: Readable<ReiheDefinition_lebewesen | undefined>;
 
 	$: {
 		if (key == 'mut') {
@@ -35,32 +29,33 @@
 			if ($raw == $effective) {
 				// $raw = $effective;
 			}
-			bereichMeta = meta as Readable<StaticheDefinition_lebewesen>;
 		}
 	}
 </script>
 
 <div>
-	{#if $type == 'bereich'}
+	{#if $type == 'bereich' && $meta?.type == 'bereich'}
 		{#if $effective}
 			{key}
 			{$effective}
-			<input
-			type="number"
-			bind:value={$raw}
-			min={$bereichMeta?.minInklusiv}
-			max={$bereichMeta?.maxInklusiv}
-			/>
-			{/if}
-			{:else if $type == 'reihe'}
-			<label>
-				{key}
-				{$effective}
-				<br/>
+			<input type="number" bind:value={$raw} min={$meta?.minInklusiv} max={$meta?.maxInklusiv} />
+		{/if}
+	{:else if $type == 'reihe' && $meta?.type == 'reihe'}
+		<label>
+			{key}
+			{$effective}
+			<br />
 			<input
 				type="range"
 				bind:value={$raw}
-				max="50"
+				max={Math.max(
+					...$meta.schwellenForAge.map((x) => x.Wert),
+					...$meta.quantileForAge.map((x) => x.Wert)
+				)}
+				min={Math.min(
+					...$meta.schwellenForAge.map((x) => x.Wert),
+					...$meta.quantileForAge.map((x) => x.Wert)
+				)}
 			/>
 		</label>
 	{:else if $type == 'berechnung'}
