@@ -20,8 +20,9 @@ import { distinct } from '../misc/misc';
 
 type OrganismEigenschaftChanges = {
     Eigenschaft: string,
+    Effecting: 'value' | 'cost' | 'requirements'
     Typ: 'Alter' | 'Gattung' | 'Art' | 'Morph' | `eigenschaft-${string}` | `besonderheit-${string}` | `fertigkeit-${string}`
-    | 'Lebensabschnitt-Gattung'| 'Lebensabschnitt-Art'| 'Lebensabschnitt-Morph'
+    | 'Lebensabschnitt-Gattung' | 'Lebensabschnitt-Art' | 'Lebensabschnitt-Morph'
 }
 
 export class Data {
@@ -153,216 +154,286 @@ export class Data {
             ...(this.instance.Daten.Besonderheiten ?? []).flatMap(besonderheitGruppe =>
                 [
                     ...(besonderheitGruppe.Besonderheit ?? []).flatMap(besonderheit => besonderheit.Stufe.flatMap(stufe => [
-                        ...(stufe.Mods?.Eigenschaften?.Mod ?? []).map(x => ({ Eigenschaft: x.Eigenschaft, Typ: `besonderheit-${besonderheit.Id}` }))
+                        ...(stufe.Mods?.Eigenschaften?.Mod ?? []).map(x => ({ Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: `besonderheit-${besonderheit.Id}` }  satisfies OrganismEigenschaftChanges))
                     ]))
                 ]),
             ...(this.instance.Daten.Fertigkeiten ?? []).flatMap(fertigkeitenGruppe =>
                 [
                     ...(fertigkeitenGruppe.Fertigkeit ?? []).flatMap(fertigkeit => fertigkeit.Stufe.flatMap(stufe => [
-                        ...(stufe.Mods?.Eigenschaften?.Mod ?? []).map(x => ({ Eigenschaft: x.Eigenschaft, Typ: `fertigkeit-${fertigkeit.Id}` }))
+                        ...(stufe.Mods?.Eigenschaften?.Mod ?? []).map(x => ({ Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: `fertigkeit-${fertigkeit.Id}` }  satisfies OrganismEigenschaftChanges))
                     ]))
                 ]),
-            ...(this.instance.Daten.Organismen.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }))),
+            ...(this.instance.Daten.Organismen.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Effecting: 'value', Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges))),
 
             ...(this.instance.Daten.Organismen.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                 ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
-                    { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
-                    { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` },
-                ])
+                    { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                    { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` }  satisfies OrganismEigenschaftChanges,
+                ]),
+                ...(punkt.Kosten ?? []).flatMap(x => [
+                    ...getKeysFrom(x.Berechnung).flatMap(id => [
+                        { Effecting: 'cost', Eigenschaft: punkt.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges,
+                    ])
+
+                ]),
             ]),
             ...(this.instance.Daten.Organismen.Entwiklung?.Reihe ?? []).flatMap(reihe => [
                 ...(reihe.Schwelle.flatMap(schwelle => ([
                     ... (schwelle.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
-                        { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
-                        { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` },
-                    ])
+                        { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                        { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` }  satisfies OrganismEigenschaftChanges,
+                    ]),
+                    ...(reihe.Schwelle.flatMap(schwelle => ([
+                        ...(schwelle.Kosten ?? []).flatMap(x => [
+                            ...getKeysFrom(x.Berechnung).flatMap(id => [
+                                { Effecting: 'cost', Eigenschaft: reihe.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges,
+                                { Effecting: 'cost', Eigenschaft: reihe.id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                            ])
+                        ])
+                    ])))
                 ])))
             ]),
+            ...(this.instance.Daten.Organismen.Entwiklung?.Bereich ?? []).flatMap(bereich => (bereich.Kosten ?? []).flatMap(x => [
+                ...getKeysFrom(x.Berechnung).flatMap(id => [
+                    { Effecting: 'cost', Eigenschaft: bereich.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges,
+                ])
+            ])),
             ...this.instance.Daten.Organismen.Gattung.flatMap(gattung => [
-                ...(gattung.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Eigenschaft: y.Eigenschaft, Typ: 'Gattung' })),
-                ...(gattung.Entwiklung?.Berechnung ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Gattung' })),
-                ...(gattung.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }))),
-                ...(gattung.Entwiklung?.Punkt ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Gattung' })),
+                ...(gattung.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.Eigenschaft, Typ: 'Gattung' }  satisfies OrganismEigenschaftChanges)),
+                ...(gattung.Entwiklung?.Berechnung ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.id, Typ: 'Gattung' }  satisfies OrganismEigenschaftChanges)),
+                ...(gattung.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Effecting: 'value', Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges))),
+                ...(gattung.Entwiklung?.Bereich ?? []).flatMap(bereich => (bereich.Kosten ?? []).flatMap(x => [
+                    ...getKeysFrom(x.Berechnung).flatMap(id => [
+                        { Effecting: 'cost', Eigenschaft: bereich.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges,
+                    ])
+                ])),
+                ...(gattung.Entwiklung?.Punkt ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.id, Typ: 'Gattung' }  satisfies OrganismEigenschaftChanges)),
                 ...(gattung.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                     ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
-                        { Eigenschaft: x.Eigenschaft, Typ: 'Gattung' },
-                        { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
-                        { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` },
-                    ])
+                        { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Gattung' }  satisfies OrganismEigenschaftChanges,
+                        { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                        { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` }  satisfies OrganismEigenschaftChanges,
+                    ]),
+                    ...(punkt.Kosten ?? []).flatMap(x => [
+                        ...getKeysFrom(x.Berechnung).flatMap(id => [
+                            { Effecting: 'cost', Eigenschaft: punkt.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges,
+                        ])
+                    ]),
                 ]),
-                ...(gattung.Entwiklung?.Reihe ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Gattung' })),
+                ...(gattung.Entwiklung?.Reihe ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.id, Typ: 'Gattung' }  satisfies OrganismEigenschaftChanges)),
                 ...(gattung.Entwiklung?.Reihe ?? []).flatMap(reihe => [
                     ...(reihe.Schwelle.flatMap(schwelle => ([
                         ... (schwelle.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
-                            { Eigenschaft: x.Eigenschaft, Typ: 'Gattung' },
-                            { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
-                            { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` },
-                        ])
+                            { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Gattung' }  satisfies OrganismEigenschaftChanges,
+                            { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                            { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` }  satisfies OrganismEigenschaftChanges,
+                        ]),
+                        ...(reihe.Schwelle.flatMap(schwelle => ([
+                            ...(schwelle.Kosten ?? []).flatMap(x => [
+                                ...getKeysFrom(x.Berechnung).flatMap(id => [
+                                    { Effecting: 'cost', Eigenschaft: reihe.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges,
+                                    { Effecting: 'cost', Eigenschaft: reihe.id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                                ])
+                            ])
+                        ])))
+
                     ])))
                 ]),
                 ...(gattung.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
                     ...(lebensabschnitt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => ([
-                        { Eigenschaft: x.Eigenschaft, Typ: 'Lebensabschnitt-Gattung' }]))
+                        { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Lebensabschnitt-Gattung' }  satisfies OrganismEigenschaftChanges]))
                 ]),
                 ...(gattung.Art.flatMap(art => [
-                    ...(art.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Eigenschaft: y.Eigenschaft, Typ: 'Art' })),
-                    ...(art.Entwiklung?.Berechnung ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Art' })),
-                    ...(art.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }))),
-                    ...(art.Entwiklung?.Punkt ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Art' })),
+                    ...(art.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.Eigenschaft, Typ: 'Art' }  satisfies OrganismEigenschaftChanges)),
+                    ...(art.Entwiklung?.Berechnung ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.id, Typ: 'Art' }  satisfies OrganismEigenschaftChanges)),
+                    ...(art.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Effecting: 'value', Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges))),
+                    ...(art.Entwiklung?.Bereich ?? []).flatMap(bereich => (bereich.Kosten ?? []).flatMap(x => [
+                        ...getKeysFrom(x.Berechnung).map(id => ({ Effecting: 'cost', Eigenschaft: bereich.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges))
+                    ])),
+                    ...(art.Entwiklung?.Punkt ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.id, Typ: 'Art' }  satisfies OrganismEigenschaftChanges)),
                     ...(art.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                         ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
-                            { Eigenschaft: x.Eigenschaft, Typ: 'Art' },
-                            { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
-                            { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` },
-                        ])
+                            { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Art' }  satisfies OrganismEigenschaftChanges,
+                            { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                            { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` }  satisfies OrganismEigenschaftChanges,
+                        ]),
+                        ...(punkt.Kosten ?? []).flatMap(x => [
+                            ...getKeysFrom(x.Berechnung).flatMap(id => [
+                                { Effecting: 'cost', Eigenschaft: punkt.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges,
+                            ])
+                        ]),
                     ]),
-                    ...(art.Entwiklung?.Reihe ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Art' })),
+                    ...(art.Entwiklung?.Reihe ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.id, Typ: 'Art' }  satisfies OrganismEigenschaftChanges)),
                     ...(art.Entwiklung?.Reihe ?? []).flatMap(reihe => [
                         ...(reihe.Schwelle.flatMap(schwelle => ({
                             ...(schwelle.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
-                                { Eigenschaft: x.Eigenschaft, Typ: 'Art' },
-                                { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
-                                { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` },
+                                { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Art' }  satisfies OrganismEigenschaftChanges,
+                                { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                                { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` }  satisfies OrganismEigenschaftChanges,
                             ])
-                        })))
+                        }))),
+                        ...(reihe.Schwelle.flatMap(schwelle => ([
+                            ...(schwelle.Kosten ?? []).flatMap(x => [
+                                ...getKeysFrom(x.Berechnung).flatMap(id => [
+                                    { Effecting: 'cost', Eigenschaft: reihe.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges,
+                                    { Effecting: 'cost', Eigenschaft: reihe.id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                                ])
+                            ])
+                        ])))
                     ]),
                     ...(art.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
                         ...(lebensabschnitt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => ([
-                            { Eigenschaft: x.Eigenschaft, Typ: 'Lebensabschnitt-Art' }]))
+                            { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Lebensabschnitt-Art' }  satisfies OrganismEigenschaftChanges]))
                     ]),
                     ...(art.Morphe.Morph.flatMap(morph => [
-                        ...(morph.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Eigenschaft: y.Eigenschaft, Typ: 'Morph' })),
-                        ...(morph.Entwiklung?.Berechnung ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Morph' })),
-                        ...(morph.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }))),
-                        ...(morph.Entwiklung?.Punkt ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Morph' })),
-                        ...(art.Entwiklung?.Punkt ?? []).flatMap(punkt => [
+                        ...(morph.Mods?.Eigenschaften?.Mod ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.Eigenschaft, Typ: 'Morph' }  satisfies OrganismEigenschaftChanges)),
+                        ...(morph.Entwiklung?.Berechnung ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.id, Typ: 'Morph' }  satisfies OrganismEigenschaftChanges)),
+                        ...(morph.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Effecting: 'value', Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges))),
+                        ...(morph.Entwiklung?.Bereich ?? []).flatMap(bereich => (bereich.Kosten ?? []).flatMap(x => [
+                            ...getKeysFrom(x.Berechnung).map(id => ({ Effecting: 'cost', Eigenschaft: bereich.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges))
+                        ])),
+                        ...(morph.Entwiklung?.Punkt ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.id, Typ: 'Morph' }  satisfies OrganismEigenschaftChanges)),
+                        ...(morph.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                             ...(punkt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
-                                { Eigenschaft: x.Eigenschaft, Typ: 'Morph' },
-                                { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
-                                { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` },
-                            ])
+                                { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Morph' }  satisfies OrganismEigenschaftChanges,
+                                { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                                { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${punkt.id}` }  satisfies OrganismEigenschaftChanges,
+                            ]),
+                            ...(punkt.Kosten ?? []).flatMap(x => [
+                                ...getKeysFrom(x.Berechnung).flatMap(id => [
+                                    { Effecting: 'cost', Eigenschaft: punkt.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges,
+                                ])
+                            ]),
                         ]),
-                        ...(morph.Entwiklung?.Reihe ?? []).map(y => ({ Eigenschaft: y.id, Typ: 'Morph' })),
+                        ...(morph.Entwiklung?.Reihe ?? []).map(y => ({ Effecting: 'value', Eigenschaft: y.id, Typ: 'Morph' }  satisfies OrganismEigenschaftChanges)),
                         ...(morph.Entwiklung?.Reihe ?? []).flatMap(reihe => [
                             ...(reihe.Schwelle.flatMap(schwelle => ([
                                 ...(schwelle.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => [
-                                    { Eigenschaft: x.Eigenschaft, Typ: 'Morph' },
-                                    { Eigenschaft: x.Eigenschaft, Typ: 'Alter' },
-                                    { Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` },
+                                    { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Morph' }  satisfies OrganismEigenschaftChanges,
+                                    { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                                    { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: `eigenschaft-${reihe.id}` }  satisfies OrganismEigenschaftChanges,
+                                ])
+                            ]))),
+                            ...(reihe.Schwelle.flatMap(schwelle => ([
+                                ...(schwelle.Kosten ?? []).flatMap(x => [
+                                    ...getKeysFrom(x.Berechnung).flatMap(id => [
+                                        { Effecting: 'cost', Eigenschaft: reihe.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges,
+                                        { Effecting: 'cost', Eigenschaft: reihe.id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                                    ])
                                 ])
                             ])))
                         ]),
                         ...(morph.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
                             ...(lebensabschnitt.Mods?.Eigenschaften?.Mod ?? []).flatMap(x => ([
-                                { Eigenschaft: x.Eigenschaft, Typ: 'Lebensabschnitt-Morph' }]))
+                                { Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: 'Lebensabschnitt-Morph' }  satisfies OrganismEigenschaftChanges]))
                         ]),
                     ])),
                 ])),
             ]),
-        ], e => `${e.Eigenschaft}δ${e.Typ}`) as OrganismEigenschaftChanges[];
+        ], e => `${e.Eigenschaft}δ${e.Typ}δ${e.Effecting}`);
 
         this.besonderheitDependencys = distinct([
             ...(this.instance.Daten.Besonderheiten ?? []).flatMap(besonderheitGruppe =>
                 [
                     ...(besonderheitGruppe.Besonderheit ?? []).flatMap(besonderheit => besonderheit.Stufe.flatMap(stufe => [
-                        ...(stufe.Mods?.Besonderheiten?.Besonderheit ?? []).map(x => ({ Eigenschaft: x.Id, Typ: `besonderheit-${besonderheit.Id}` }))
+                        ...(stufe.Mods?.Besonderheiten?.Besonderheit ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `besonderheit-${besonderheit.Id}` }  satisfies OrganismEigenschaftChanges))
                     ]))
                 ]),
             ...(this.instance.Daten.Fertigkeiten ?? []).flatMap(fertigkeitenGruppe =>
                 [
                     ...(fertigkeitenGruppe.Fertigkeit ?? []).flatMap(fertigkeit => fertigkeit.Stufe.flatMap(stufe => [
-                        ...(stufe.Mods?.Besonderheiten?.Besonderheit ?? []).map(x => ({ Eigenschaft: x.Id, Typ: `fertigkeit-${fertigkeit.Id}` }))
+                        ...(stufe.Mods?.Besonderheiten?.Besonderheit ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `fertigkeit-${fertigkeit.Id}` }  satisfies OrganismEigenschaftChanges))
                     ]))
                 ]),
-            ...(this.instance.Daten.Organismen.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }))),
+            ...(this.instance.Daten.Organismen.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(id => ({ Effecting: 'value' as const, Eigenschaft: berechnung.id, Typ: `eigenschaft-${id}` }  satisfies OrganismEigenschaftChanges))),
 
             ...(this.instance.Daten.Organismen.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                 ...(punkt.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => [
-                    { Eigenschaft: x.Id, Typ: 'Alter' },
-                    { Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` },
+                    { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Alter' } satisfies OrganismEigenschaftChanges,
+                    { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` } satisfies OrganismEigenschaftChanges,
                 ])
             ]),
             ...(this.instance.Daten.Organismen.Entwiklung?.Reihe ?? []).flatMap(reihe => [
                 ...(reihe.Schwelle.flatMap(schwelle => ([
                     ... (schwelle.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => [
-                        { Eigenschaft: x.Id, Typ: 'Alter' },
-                        { Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` },
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` }  satisfies OrganismEigenschaftChanges,
                     ])
                 ])))
             ]),
             ...this.instance.Daten.Organismen.Gattung.flatMap(gattung => [
-                ...(gattung.Mods?.Besonderheiten?.Besonderheit ?? []).map(y => ({ Eigenschaft: y.Id, Typ: 'Gattung' })),
+                ...(gattung.Mods?.Besonderheiten?.Besonderheit ?? []).map(y => ({ Effecting: 'value' as const, Eigenschaft: y.Id, Typ: 'Gattung' }  satisfies OrganismEigenschaftChanges)),
                 ...(gattung.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                     ...(punkt.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => [
-                        { Eigenschaft: x.Id, Typ: 'Gattung' },
-                        { Eigenschaft: x.Id, Typ: 'Alter' },
-                        { Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` },
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Gattung' }  satisfies OrganismEigenschaftChanges,
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` }  satisfies OrganismEigenschaftChanges,
                     ])
                 ]),
                 ...(gattung.Entwiklung?.Reihe ?? []).flatMap(reihe => [
                     ...(reihe.Schwelle.flatMap(schwelle => ([
                         ... (schwelle.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => [
-                            { Eigenschaft: x.Id, Typ: 'Gattung' },
-                            { Eigenschaft: x.Id, Typ: 'Alter' },
-                            { Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` },
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Gattung' }  satisfies OrganismEigenschaftChanges,
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` }  satisfies OrganismEigenschaftChanges,
                         ])
                     ])))
                 ]),
                 ...(gattung.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
                     ...(lebensabschnitt.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => ([
-                        { Eigenschaft: x.Id, Typ: 'Gattung' },
-                        { Eigenschaft: x.Id, Typ: 'Alter' }]))
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Gattung' }  satisfies OrganismEigenschaftChanges,
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges]))
                 ]),
                 ...(gattung.Art.flatMap(art => [
-                    ...(art.Mods?.Besonderheiten?.Besonderheit ?? []).map(y => ({ Eigenschaft: y.Id, Typ: 'Art' })),
+                    ...(art.Mods?.Besonderheiten?.Besonderheit ?? []).map(y => ({ Effecting: 'value' as const, Eigenschaft: y.Id, Typ: 'Art' }  satisfies OrganismEigenschaftChanges)),
                     ...(art.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                         ...(punkt.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => [
-                            { Eigenschaft: x.Id, Typ: 'Art' },
-                            { Eigenschaft: x.Id, Typ: 'Alter' },
-                            { Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` },
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Art' }  satisfies OrganismEigenschaftChanges,
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` }  satisfies OrganismEigenschaftChanges,
                         ])
                     ]),
                     ...(art.Entwiklung?.Reihe ?? []).flatMap(reihe => [
                         ...(reihe.Schwelle.flatMap(schwelle => ({
                             ...(schwelle.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => [
-                                { Eigenschaft: x.Id, Typ: 'Art' },
-                                { Eigenschaft: x.Id, Typ: 'Alter' },
-                                { Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` },
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Art' }  satisfies OrganismEigenschaftChanges,
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` }  satisfies OrganismEigenschaftChanges,
                             ])
                         })))
                     ]),
                     ...(art.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
                         ...(lebensabschnitt.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => ([
-                            { Eigenschaft: x.Id, Typ: 'Art' },
-                            { Eigenschaft: x.Id, Typ: 'Alter' }]))
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Art' }  satisfies OrganismEigenschaftChanges,
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges]))
                     ]),
                     ...(art.Morphe.Morph.flatMap(morph => [
-                        ...(morph.Mods?.Besonderheiten?.Besonderheit ?? []).map(y => ({ Eigenschaft: y.Id, Typ: 'Morph' })),
+                        ...(morph.Mods?.Besonderheiten?.Besonderheit ?? []).map(y => ({ Effecting: 'value' as const, Eigenschaft: y.Id, Typ: 'Morph' }  satisfies OrganismEigenschaftChanges)),
                         ...(art.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                             ...(punkt.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => [
-                                { Eigenschaft: x.Id, Typ: 'Morph' },
-                                { Eigenschaft: x.Id, Typ: 'Alter' },
-                                { Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` },
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Morph' }  satisfies OrganismEigenschaftChanges,
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` }  satisfies OrganismEigenschaftChanges,
                             ])
                         ]),
                         ...(morph.Entwiklung?.Reihe ?? []).flatMap(reihe => [
                             ...(reihe.Schwelle.flatMap(schwelle => ([
                                 ...(schwelle.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => [
-                                    { Eigenschaft: x.Id, Typ: 'Morph' },
-                                    { Eigenschaft: x.Id, Typ: 'Alter' },
-                                    { Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` },
+                                    { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Morph' }  satisfies OrganismEigenschaftChanges,
+                                    { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges,
+                                    { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` }  satisfies OrganismEigenschaftChanges,
                                 ])
                             ])))
                         ]),
                         ...(morph.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
                             ...(lebensabschnitt.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => ([
-                                { Eigenschaft: x.Id, Typ: 'Morph' },
-                                { Eigenschaft: x.Id, Typ: 'Alter' }]))
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Morph' }  satisfies OrganismEigenschaftChanges,
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Alter' }  satisfies OrganismEigenschaftChanges]))
                         ]),
                     ])),
                 ])),
             ]),
-        ], e => `${e.Eigenschaft}δ${e.Typ}`) as OrganismEigenschaftChanges[];
+        ], e => `${e.Eigenschaft}δ${e.Typ}`);
 
 
 

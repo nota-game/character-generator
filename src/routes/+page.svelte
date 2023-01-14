@@ -28,14 +28,19 @@
 
 	$: ageStore = char?.ageStore;
 	$: lebensabschnitteStore = char?.lebensAbschnitteStore;
+	$: cost = char?.costStore;
 </script>
 
 <h1>Welcome to Nota Char-gen</h1>
 <p>Alles gelöscht und neu angefange😱</p>
 
 <hr />
-
 {#if char}
+	<!-- {#if $cost} -->
+		{JSON.stringify($cost)}
+	<!-- {/if} -->
+	<hr />
+
 	{#if $ageStore}
 		<label>
 			Alter
@@ -67,8 +72,8 @@
 
 	<hr />
 
-	{#each Object.entries(char.eigenschaften) as [key, { raw, effective, type, meta }]}
-		<PropertiesSetter {key} {effective} {raw} {type} {meta} />
+	{#each Object.entries(char.eigenschaften) as [key, entry]}
+		<PropertiesSetter {key} {...entry} />
 	{/each}
 
 	<hr />

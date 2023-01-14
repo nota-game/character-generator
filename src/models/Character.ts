@@ -1,4 +1,4 @@
-import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung } from "../data/nota.g";
+import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType } from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData } from "../misc/StoreManager2";
 import type { Readable, Writable } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
@@ -6,7 +6,7 @@ import * as mathjs from 'mathjs'
 
 import { Data } from "./Data";
 import { distinct, getLast, groupBy, notUndefined, toObjectKey } from "../misc/misc";
-import { index, isResultSet, xgcd } from "mathjs";
+import { index, isResultSet, meanTransformDependencies, xgcd } from "mathjs";
 
 export type EigenschaftTypes = 'bereich' | 'reihe' | 'punkt' | 'berechnung';
 export type EigenschaftTypesLevel = 'morph' | 'art' | 'gattung' | 'organismus';
@@ -26,12 +26,53 @@ type MapKeyPropertys<T> = {
     [e in keyof T]: T[e] extends Key<any, any> ? TypeOfKey<T[e]> : never;
 }
 
+type PropValues<T> = T[keyof T]
+    ;
+
+
+type Cost = Record<string, number>;
+export type CostKey<kind extends 'eigenschaft' | 'fertigkeit' | 'besonderheit' | 'talent', id extends string = string> =
+    kind extends 'eigenschaft'
+    ? Key<`/eigenschaften/${id}/cost`, Cost>
+    : kind extends 'fertigkeit'
+    ? Key<`/fertigkeit/${id}/cost`, Cost>
+    : kind extends 'besonderheit'
+    ? Key<`/besonderheit/${id}/cost`, Cost>
+    : kind extends 'talent'
+    ? Key<`/talent/${id}/cost`, Cost>
+    : never
+    ;
+
+export type EigenschaftKeys<id extends string = string> = {
+    Effective: EigenschaftEffective<id>,
+    Raw: EigenschaftRawKey<id>,
+    Type: EigenschaftTypeKey<id>,
+    Meta: EigenschaftMetaKey<id>,
+    Cost: CostKey<'eigenschaft', id>,
+}
+
+export type EigenschaftMetaKey<id extends string = string> = Key<`/eigenschaften/${id}/meta`, StaticheDefinition_lebewesen & { type: 'bereich' } | (ReiheDefinition_lebewesen & {
+    quantileForAge: Quantile[];
+    schwellenForAge: Schwelle[];
+    currentSchwelle?: Schwelle;
+    type: 'reihe'
+}) | FormelDefintion_lebewesen & { type: 'berechnung' } | PunktDefintion_lebewesen & { type: 'punkt' } | undefined>;
+export type EigenschaftTypeKey<id extends string = string> = Key<`/eigenschaften/${id}/type`, EigenschaftTypes | undefined>;
+export type EigenschaftEffective<id extends string = string> = Key<`/eigenschaften/${id}/effektiv`, number | undefined>;
+export type EigenschaftRawKey<id extends string = string> = Key<`/eigenschaften/${id}/raw`, number | undefined>;
+
+export type TypeOfKey<T extends Key<string, any>> = T extends Key<string, infer U>
+    ? U
+    : never;
+
+
 type FertigkeitKeys<id extends string = string> = {
     Effective: FertigkeitEffectiveKey<id>,
     Unbeschränkt: FertigkeitUnbeschränktKey<id>,
     Fixed: FertigkeitFixedKey<id>,
     Purchased: FertigkeitPurchasedKey<id>,
     Missing: FertigkeitMissingKey<id>,
+    Cost: CostKey<'fertigkeit', id>,
 }
 
 type FertigkeitEffectiveKey<id extends string = string> = Key<`/fertigkeit/${id}/Stufe`, number>;
@@ -51,6 +92,7 @@ type BesonderheitKeys<id extends string = string> = {
     Fixed: BesonderheitFixedKey<id>,
     Purchased: BesonderheitPurchasedKey<id>,
     Missing: BesonderheitMissingKey<id>,
+    Cost: CostKey<'besonderheit', id>,
 }
 
 type BesonderheitPurchasedKey<id extends string = string> = Key<`/besonderheit/${id}/purchased`, number>;
@@ -62,28 +104,42 @@ type BesonderheitMissingKey<id extends string = string> = Key<`/besonderheit/${i
     missing: MissingRequirements;
 }[]>;
 
-
-
-export type EigenschaftKeys<id extends string = string> = {
-    Effective: EigenschaftEffective<id>,
-    Raw: EigenschaftRawKey<id>,
-    Type: EigenschaftTypeKey<id>,
-    Meta: EigenschaftMetaKey<id>,
+type LebensabschittKeys = {
+    Gattung: LebensabschittGattungKey,
+    Art: LebensabschittArtKey,
+    Morph: LebensabschittMorphKey,
 }
 
-export type EigenschaftMetaKey<id extends string = string> = Key<`/eigenschaften/${id}/meta`, StaticheDefinition_lebewesen & { type: 'bereich' } | (ReiheDefinition_lebewesen & {
-    quantileForAge: Quantile[];
-    schwellenForAge: Schwelle[];
-    currentSchwelle?: Schwelle;
-    type: 'reihe'
-}) | FormelDefintion_lebewesen & { type: 'berechnung' } | PunktDefintion_lebewesen & { type: 'punkt' } | undefined>;
-export type EigenschaftTypeKey<id extends string = string> = Key<`/eigenschaften/${id}/type`, EigenschaftTypes | undefined>;
-export type EigenschaftEffective<id extends string = string> = Key<`/eigenschaften/${id}/effektiv`, number | undefined>;
-export type EigenschaftRawKey<id extends string = string> = Key<`/eigenschaften/${id}/raw`, number | undefined>;
 
-export type TypeOfKey<T extends Key<string, any>> = T extends Key<string, infer U>
-    ? U
-    : never;
+type LebensabschittGattungKey = Key<'/organism/gattung/lebensabschnitt', LebensabschnittDefinition_lebewesen | undefined>;
+type LebensabschittArtKey = Key<'/organism/art/lebensabschnitt', LebensabschnittDefinition_lebewesen | undefined>;
+type LebensabschittMorphKey = Key<'/organism/morph/lebensabschnitt', LebensabschnittDefinition_lebewesen | undefined>;
+
+function toCost<T>(entries: T[], fn: ((value: T) => ((readonly [string, number]) | undefined))): Cost {
+    return entriesToCost(notUndefined(entries.map(fn)));
+
+}
+function entriesToCost(entries?: (readonly [string, number])[]): Cost {
+    const erg = {} as Cost;
+    if (entries == undefined) {
+        return erg;
+    }
+
+    entries.reduce((p, [key, value]) => {
+
+        if (erg[key] == undefined) {
+            erg[key] = value
+        } else {
+            erg[key] += value
+        }
+
+        return erg;
+    }, erg)
+
+    return erg;
+}
+
+
 
 
 export class Charakter {
@@ -101,6 +157,7 @@ export class Charakter {
     public readonly morphIdStore: Writable<string | undefined>;
     public readonly morphStore: Readable<MorphDefinition_lebewesen | undefined>;
     public readonly possibleMorphStore: Readable<string[]>;
+    public readonly costStore: Readable<Cost>;
 
 
     public readonly eigenschaften: Record<string, {
@@ -108,6 +165,7 @@ export class Charakter {
         type: Readable<EigenschaftTypes | undefined>,
         raw: Writable<number | undefined>,
         meta: Readable<TypeOfKey<EigenschaftMetaKey>>,
+        cost: Readable<TypeOfKey<CostKey<'eigenschaft'>>>,
     }> = {};
 
     public readonly besonderheiten: Record<string, {
@@ -116,7 +174,7 @@ export class Charakter {
         purchased: Writable<number>,
         fixed: Readable<number>,
         missing: Readable<{ wert: number; missing: MissingRequirements; }[]>,
-
+        cost: Readable<TypeOfKey<CostKey<'besonderheit'>>>,
     }> = {};
 
 
@@ -132,24 +190,253 @@ export class Charakter {
 
     private readonly storeManager;
 
-    private getBesonterheitKeys<id extends string>(Id: id) {//: { keyPurchased: BesonderheitPurchasedKey<id>; keyFixed: BesonderheitFixedKey<id>; keyUnbeschränkt: BesonderheitUnbeschränktKey<id>; keyMissing: BesonderheitMissingKey<id>; keyEffectiv: BesonderheitEffectiveKey<id>; } {
-        const keyPurchased = this.storeManager.key(`/besonderheit/${Id}/purchased`).of<TypeOfKey<BesonderheitPurchasedKey<id>>>();
-        const keyFixed = this.storeManager.key(`/besonderheit/${Id}/fixed`).of<TypeOfKey<BesonderheitFixedKey<id>>>();
-        const keyUnbeschränkt = this.storeManager.key(`/besonderheit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<BesonderheitUnbeschränktKey<id>>>();
-        const keyMissing = this.storeManager.key(`/besonderheit/${Id}/Missing`).of<TypeOfKey<BesonderheitMissingKey<id>>>();
-        const keyEffectiv = this.storeManager.key(`/besonderheit/${Id}/Stufe`).of<TypeOfKey<BesonderheitEffectiveKey<id>>>();
 
+
+
+
+    private groupDependencyData(dependent: KeyData<Key<any, any>>[]) {
+        const enrich = Object.entries(groupBy(dependent.map(e => {
+            const prop = this.getIdFromPropertieKeys(e.key);
+            if (prop) {
+
+                if (prop.type == 'effektiv') {
+                    return {
+                        kind: 'property' as const,
+                        entry: e as KeyData<EigenschaftEffective>,
+                        id: prop.id,
+                        type: prop.type,
+                    }
+                } else if (prop.type == 'meta') {
+                    return {
+                        kind: 'property' as const,
+                        entry: e as KeyData<EigenschaftMetaKey>,
+                        id: prop.id,
+                        type: prop.type,
+                    }
+                } else if (prop.type == 'raw') {
+                    return {
+                        kind: 'property' as const,
+                        entry: e as KeyData<EigenschaftRawKey>,
+                        id: prop.id,
+                        type: prop.type,
+                    }
+                } else if (prop.type == 'type') {
+                    return {
+                        kind: 'property' as const,
+                        entry: e as KeyData<EigenschaftTypeKey>,
+                        id: prop.id,
+                        type: prop.type,
+                    }
+                }
+            }
+
+            const fertigkeit = this.getIdFromFertigkeitKey(e.key);
+            if (fertigkeit) {
+                if (fertigkeit.type == 'Stufe') {
+                    return {
+                        kind: 'fertigkeit' as const,
+
+                        entry: e as KeyData<FertigkeitEffectiveKey>,
+                        id: fertigkeit.id,
+                        type: fertigkeit.type
+                    }
+                } else if (fertigkeit.type == 'Missing') {
+                    return {
+                        kind: 'fertigkeit' as const,
+                        entry: e as KeyData<FertigkeitMissingKey>,
+                        id: fertigkeit.id,
+                        type: fertigkeit.type
+                    }
+                } else if (fertigkeit.type == 'StufeUnbeschränkt') {
+                    return {
+                        kind: 'fertigkeit' as const,
+                        entry: e as KeyData<FertigkeitUnbeschränktKey>,
+                        id: fertigkeit.id,
+                        type: fertigkeit.type
+                    }
+                } else if (fertigkeit.type == 'fixed') {
+                    return {
+                        kind: 'fertigkeit' as const,
+                        entry: e as KeyData<FertigkeitFixedKey>,
+                        id: fertigkeit.id,
+                        type: fertigkeit.type
+                    }
+                } else if (fertigkeit.type == 'purchased') {
+                    return {
+                        kind: 'fertigkeit' as const,
+                        entry: e as KeyData<FertigkeitPurchasedKey>,
+                        id: fertigkeit.id,
+                        type: fertigkeit.type
+                    }
+                }
+            }
+            const besonderheit = this.getIdFromBesonterheitkeitKey(e.key);
+            if (besonderheit) {
+                if (besonderheit.type == 'Stufe') {
+                    return {
+                        kind: 'besonderheit' as const,
+                        entry: e as KeyData<BesonderheitEffectiveKey>,
+                        id: besonderheit.id,
+                        type: besonderheit.type,
+                    }
+                } else if (besonderheit.type == 'Missing') {
+                    return {
+                        kind: 'besonderheit' as const,
+                        entry: e as KeyData<BesonderheitMissingKey>,
+                        id: besonderheit.id,
+                        type: besonderheit.type,
+                    }
+                } else if (besonderheit.type == 'StufeUnbeschränkt') {
+                    return {
+                        kind: 'besonderheit' as const,
+                        entry: e as KeyData<BesonderheitUnbeschränktKey>,
+                        id: besonderheit.id,
+                        type: besonderheit.type,
+                    }
+                } else if (besonderheit.type == 'fixed') {
+                    return {
+                        kind: 'besonderheit' as const,
+                        entry: e as KeyData<BesonderheitFixedKey>,
+                        id: besonderheit.id,
+                        type: besonderheit.type,
+                    }
+                } else if (besonderheit.type == 'purchased') {
+                    return {
+                        kind: 'besonderheit' as const,
+                        entry: e as KeyData<BesonderheitPurchasedKey>,
+                        id: besonderheit.id,
+                        type: besonderheit.type,
+
+
+                    }
+                }
+            }
+
+            return {
+                kind: 'other' as const,
+                entry: e as KeyData<Key<string, unknown>>,
+                id: 'other',
+                type: 'other' as const,
+            }
+                ;
+        }), e => e.id));
+
+
+
+        type MapKeyData<K> = {
+            [e in keyof K]: KeyData<K[e]>;
+        }
+
+        const fertigkeitDependency = notUndefined(enrich
+            .map(([key, value]) => {
+                const erg = {
+                    kind: 'fertigkeit',
+                    id: key,
+                } as Partial<MapKeyData<FertigkeitKeys>> & { kind: 'fertigkeit', id: string };
+                if (value[0]?.kind != erg.kind) {
+                    return undefined;
+                }
+                for (const v of value) {
+                    if (v.kind === erg.kind) {
+                        if (v.type == 'Stufe') {
+                            erg.Effective = v.entry;
+                        } else if (v.type == 'Missing') {
+                            erg.Missing = v.entry;
+                        } else if (v.type == 'StufeUnbeschränkt') {
+                            erg.Unbeschränkt = v.entry;
+                        } else if (v.type == 'fixed') {
+                            erg.Fixed = v.entry;
+                        } else if (v.type == 'purchased') {
+                            erg.Purchased = v.entry;
+                        }
+                    }
+                }
+                return erg as MapKeyData<FertigkeitKeys> & { kind: 'fertigkeit', id: string };
+            }));
+
+
+        const besonderheitDependency = notUndefined(enrich
+            .map(([key, value]) => {
+                const erg = {
+                    kind: 'besonderheit',
+                    id: key,
+                } as Partial<MapKeyData<BesonderheitKeys>> & { kind: 'besonderheit', id: string };
+                if (value[0]?.kind != erg.kind) {
+                    return undefined;
+                }
+                for (const v of value) {
+                    if (v.kind === erg.kind) {
+                        if (v.type == 'Stufe') {
+                            erg.Effective = v.entry;
+                        } else if (v.type == 'Missing') {
+                            erg.Missing = v.entry;
+                        } else if (v.type == 'StufeUnbeschränkt') {
+                            erg.Unbeschränkt = v.entry;
+                        } else if (v.type == 'fixed') {
+                            erg.Fixed = v.entry;
+                        } else if (v.type == 'purchased') {
+                            erg.Purchased = v.entry;
+                        }
+                    }
+                }
+                return erg as MapKeyData<BesonderheitKeys> & { kind: 'besonderheit', id: string };
+            }));
+        const eigenschaftDependency = notUndefined(enrich
+            .map(([key, value]) => {
+                const erg = {
+                    kind: 'property',
+                    id: key,
+                } as Partial<MapKeyData<EigenschaftKeys>> & { kind: 'property', id: string };
+                if (value[0]?.kind != erg.kind) {
+                    return undefined;
+                }
+                for (const v of value) {
+                    if (v.kind === erg.kind) {
+                        if (v.type == 'effektiv') {
+                            erg.Effective = v.entry;
+                        } else if (v.type == 'meta') {
+                            erg.Meta = v.entry;
+                        } else if (v.type == 'raw') {
+                            erg.Raw = v.entry;
+                        } else if (v.type == 'type') {
+                            erg.Type = v.entry;
+                        }
+                    }
+                }
+                return erg as MapKeyData<EigenschaftKeys> & { kind: 'property', id: string };
+            }));
+        const otherDependency = notUndefined(enrich
+            .flatMap(([key, value]) => {
+                if (value[0]?.kind === 'other') {
+                    return notUndefined(value.map(x => {
+                        if (x.kind === 'other') {
+                            return { type: x.type, ...x.entry };
+                        }
+                        return undefined;
+                    }))
+                } else {
+                    return undefined;
+                }
+            }));
+        return { fertigkeitDependency, besonderheitDependency, eigenschaftDependency, otherDependency };
+    }
+
+
+
+
+    private getBesonterheitKeys<id extends string>(Id: id): BesonderheitKeys {
         return {
-            keyPurchased,
-            keyFixed,
-            keyUnbeschränkt,
-            keyMissing,
-            keyEffectiv
+            Purchased: this.storeManager.key(`/besonderheit/${Id}/purchased`).of<TypeOfKey<BesonderheitPurchasedKey<id>>>(),
+            Effective: this.storeManager.key(`/besonderheit/${Id}/Stufe`).of<TypeOfKey<BesonderheitEffectiveKey<id>>>(),
+            Fixed: this.storeManager.key(`/besonderheit/${Id}/fixed`).of<TypeOfKey<BesonderheitFixedKey<id>>>(),
+            Missing: this.storeManager.key(`/besonderheit/${Id}/Missing`).of<TypeOfKey<BesonderheitMissingKey<id>>>(),
+            Unbeschränkt: this.storeManager.key(`/besonderheit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<BesonderheitUnbeschränktKey<id>>>(),
+            Cost: this.storeManager.key(`/besonderheit/${Id}/cost`).of<TypeOfKey<CostKey<'besonderheit', id>>>(),
         }
     }
 
 
-    private getIdFromBesonterheitkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' } | undefined
+    private getIdFromBesonterheitkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' | 'cost' } | undefined
     private getIdFromBesonterheitkeitKey<id extends string>(key: BesonderheitPurchasedKey<id> | BesonderheitFixedKey<id> | BesonderheitUnbeschränktKey<id> | BesonderheitMissingKey<id> | BesonderheitEffectiveKey<id>) {
         const reg = /\/besonderheit\/(?<name>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
@@ -161,19 +448,20 @@ export class Charakter {
     }
 
 
-    private getFertigkeitenKeys<id extends string>(Id: id) {
-        const keyPurchased = this.storeManager.key(`/fertigkeit/${Id}/purchased`).of<TypeOfKey<FertigkeitPurchasedKey<id>>>();
-        const keyFixed = this.storeManager.key(`/fertigkeit/${Id}/fixed`).of<TypeOfKey<FertigkeitFixedKey<id>>>();
-        const keyUnbeschränkt = this.storeManager.key(`/fertigkeit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<FertigkeitUnbeschränktKey<id>>>();
-        const keyMissing = this.storeManager.key(`/fertigkeit/${Id}/Missing`).of<TypeOfKey<FertigkeitMissingKey>>();
-        const keyEffectiv = this.storeManager.key(`/fertigkeit/${Id}/Stufe`).of<TypeOfKey<FertigkeitEffectiveKey<id>>>();
-
-        return { keyPurchased, keyFixed, keyUnbeschränkt, keyMissing, keyEffectiv };
+    private getFertigkeitenKeys<id extends string>(Id: id): FertigkeitKeys<id> {
+        return {
+            Purchased: this.storeManager.key(`/fertigkeit/${Id}/purchased`).of<TypeOfKey<FertigkeitPurchasedKey<id>>>(),
+            Effective: this.storeManager.key(`/fertigkeit/${Id}/Stufe`).of<TypeOfKey<FertigkeitEffectiveKey<id>>>(),
+            Fixed: this.storeManager.key(`/fertigkeit/${Id}/fixed`).of<TypeOfKey<FertigkeitFixedKey<id>>>(),
+            Missing: this.storeManager.key(`/fertigkeit/${Id}/Missing`).of<TypeOfKey<FertigkeitMissingKey>>(),
+            Unbeschränkt: this.storeManager.key(`/fertigkeit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<FertigkeitUnbeschränktKey<id>>>(),
+            Cost: this.storeManager.key(`/fertigkeit/${Id}/cost`).of<TypeOfKey<CostKey<'fertigkeit', id>>>(),
+        };
     }
 
 
 
-    private getIdFromFertigkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' } | undefined
+    private getIdFromFertigkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' | 'cost' } | undefined
     private getIdFromFertigkeitKey<id extends string>(key: FertigkeitPurchasedKey<id> | FertigkeitFixedKey<id> | FertigkeitUnbeschränktKey<id> | FertigkeitMissingKey<id> | FertigkeitEffectiveKey<id>) {
         const reg = /\/fertigkeit\/(?<name>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
@@ -184,25 +472,23 @@ export class Charakter {
             : { id: erg, type: type };
     }
 
-    private getPropertieKeys<id extends string>(prop: id) {
+    private getPropertieKeys<id extends string>(prop: id): EigenschaftKeys<id> {
         return {
-            raw: this.storeManager.key(`/eigenschaften/${prop}/raw`).of<TypeOfKey<EigenschaftRawKey<id>>>(),
-            effective: this.storeManager.key(`/eigenschaften/${prop}/effektiv`).of<TypeOfKey<EigenschaftEffective<id>>>(),
-            type: this.storeManager.key(`/eigenschaften/${prop}/type`).of<TypeOfKey<EigenschaftTypeKey<id>>>(),
-            meta: this.storeManager.key(`/eigenschaften/${prop}/meta`).of<TypeOfKey<EigenschaftMetaKey<id>>>()
+            Raw: this.storeManager.key(`/eigenschaften/${prop}/raw`).of<TypeOfKey<EigenschaftRawKey<id>>>(),
+            Effective: this.storeManager.key(`/eigenschaften/${prop}/effektiv`).of<TypeOfKey<EigenschaftEffective<id>>>(),
+            Type: this.storeManager.key(`/eigenschaften/${prop}/type`).of<TypeOfKey<EigenschaftTypeKey<id>>>(),
+            Meta: this.storeManager.key(`/eigenschaften/${prop}/meta`).of<TypeOfKey<EigenschaftMetaKey<id>>>(),
+            Cost: this.storeManager.key(`/eigenschaften/${prop}/cost`).of<TypeOfKey<CostKey<'eigenschaft', id>>>(),
         }
     }
 
-    private getIdFromPropertieKeys(key: Key<string, any>): { id: string, type: 'raw' | 'effektiv' | 'type' | 'meta' } | undefined
-    private getIdFromPropertieKeys<id extends string>(key: EigenschaftRawKey<id>
-        | EigenschaftEffective<id>
-        | EigenschaftTypeKey<id>
-        | EigenschaftMetaKey<id>
+    private getIdFromPropertieKeys(key: Key<string, any>): { id: string, type: 'raw' | 'effektiv' | 'type' | 'meta' | 'cost' } | undefined
+    private getIdFromPropertieKeys<id extends string>(key: PropValues<EigenschaftKeys<id>>
     ) {
         const reg = /\/eigenschaften\/(?<name>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
         const erg = match?.groups?.['name'] as id | undefined;
-        const type = match?.groups?.['type'] as 'raw' | 'effektiv' | 'type' | 'meta' | undefined;
+        const type = match?.groups?.['type'] as 'raw' | 'effektiv' | 'type' | 'meta' | 'cost' | undefined;
         return (erg == undefined || type == undefined)
             ? undefined
             : { id: erg, type: type };
@@ -246,6 +532,7 @@ export class Charakter {
 
         const ageKey = this.storeManager.key('/organism/age').of<number>();
 
+        const costKey = this.storeManager.key('/cost/total').of<Cost>();
 
 
 
@@ -310,13 +597,20 @@ export class Charakter {
             return getLast(morph.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
         })
 
+        this.costStore = this.storeManager.readable(costKey);
 
-
+        const sumCost = this.storeManager.key('/eigenschaften/*/cost').of<Record<string, Record<string, Cost>>>();
+        this.storeManager.readable(sumCost);
+        this.storeManager.derived(costKey, sumCost, (data, cast) => {
+        console.log('ttttt')
+            const costs = (Object.values(cast.newValue).flatMap(x => Object.values(x))).flatMap(x => Object.entries(x));
+            return toCost(costs, ([v1, v2]) => [v1, v2] as const);
+        });
 
 
         for (const key of this.stammdaten.allEigenschaftKeys) {
 
-            const { raw: rawKey, effective: effectiveKey, type: typeKey, meta: metaKey } = this.getPropertieKeys(key);
+            const { Raw: rawKey, Effective: effectiveKey, Type: typeKey, Meta: metaKey, Cost: costKey } = this.getPropertieKeys(key);
 
             const tmpKey = this.storeManager.key(`/tmp/eigenschaft/${key}`).of<{ entry: StaticheDefinition_lebewesen | ReiheDefinition_lebewesen | FormelDefintion_lebewesen | PunktDefintion_lebewesen, type: EigenschaftTypes, level: EigenschaftTypesLevel, morphId?: string, artId?: string, gattungId?: string, } | undefined>();
             // const effectiveKey = this.storeManager.key(`/eigenschaft/${key}/effektiv`).of<number | undefined>();
@@ -327,36 +621,55 @@ export class Charakter {
                 raw: this.storeManager.writable(rawKey, undefined),
                 type: this.storeManager.readable(typeKey),
                 meta: this.storeManager.readable(metaKey),
+                cost: this.storeManager.readable(costKey),
             };
-            const dependentData = this.stammdaten.eigenschaftenDependencys.filter(x => x.Eigenschaft == key).map(x => x.Typ);
+            const dependentData = this.stammdaten.eigenschaftenDependencys.filter(x => x.Eigenschaft == key);
+
+            const mapDependecyToKeys = (dependentData: ("Alter" | "Gattung" | "Art" | "Morph" | `eigenschaft-${string}` | `besonderheit-${string}` | `fertigkeit-${string}` | "Lebensabschnitt-Gattung" | "Lebensabschnitt-Art" | "Lebensabschnitt-Morph")[]) => {
+                const dependentBesonderheiten = dependentData.filter(x => x.startsWith('besonderheit-'))
+                    .map(x => x.substring('besonderheit-'.length))
+                    .flatMap(x => Object.values(this.getBesonterheitKeys(x)));
+                const dependentFertigkeiten = dependentData.filter(x => x.startsWith('fertigkeit-'))
+                    .map(x => x.substring('fertigkeit-'.length))
+                    .flatMap(x => Object.values(this.getFertigkeitenKeys(x)));
+
+                const dependentEigenschaften = dependentData.filter(x => x.startsWith('eigenschaft-'))
+                    .map(x => x.substring('eigenschaft-'.length))
+                    .flatMap(x => Object.values(this.getPropertieKeys(x)));
+
+                const dependentAge = dependentData.filter(x => x.startsWith('Alter'))
+                    .map(x => ageKey);
+
+                const dependentGattung = dependentData.filter(x => x.startsWith('Gattung'))
+                    .map(x => gattungsInstanceKey);
+                const dependentArt = dependentData.filter(x => x.startsWith('Art'))
+                    .map(x => artInstanceKey);
+                const dependentMorph = dependentData.filter(x => x.startsWith('Morph'))
+                    .map(x => morphInstanceKey);
+
+                const dependentLebensabschnittGattung = dependentData.filter(x => x.startsWith('Lebensabschnitt-Gattung')).map(x => lebensabschnittGattungKey);
+                const dependentLebensabschnittArt = dependentData.filter(x => x.startsWith('Lebensabschnitt-Art')).map(x => lebensabschnittArtKey);
+                const dependentLebensabschnittMorph = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(x => lebensabschnittMorphKey);
+
+                const dep = [
+                    ...dependentBesonderheiten,
+                    ...dependentGattung,
+                    ...dependentFertigkeiten,
+                    ...dependentEigenschaften,
+                    ...dependentAge,
+                    ...dependentArt,
+                    ...dependentMorph,
+                    ...dependentLebensabschnittArt,
+                    ...dependentLebensabschnittGattung,
+                    ...dependentLebensabschnittMorph
+                ];
+                return dep;
+            }
 
 
-
-            const dependentBesonderheiten = dependentData.filter(x => x.startsWith('besonderheit-'))
-                .map(x => x.substring('besonderheit-'.length))
-                .flatMap(x => Object.values(this.getBesonterheitKeys(x)));
-            const dependentFertigkeiten = dependentData.filter(x => x.startsWith('fertigkeit-'))
-                .map(x => x.substring('fertigkeit-'.length))
-                .flatMap(x => Object.values(this.getFertigkeitenKeys(x)));
-
-            const dependentEigenschaften = dependentData.filter(x => x.startsWith('eigenschaft-'))
-                .map(x => x.substring('eigenschaft-'.length))
-                .flatMap(x => Object.values(this.getPropertieKeys(x)));
-
-            const dependentAge: Key<string, number>[] = dependentData.filter(x => x.startsWith('Alter'))
-                .map(x => ageKey);
-
-            const dependentGattung: Key<string, number>[] = dependentData.filter(x => x.startsWith('Gattung'))
-                .map(x => gattungsInstanceKey);
-            const dependentArt: Key<string, number>[] = dependentData.filter(x => x.startsWith('Art'))
-                .map(x => artInstanceKey);
-            const dependentMorph: Key<string, number>[] = dependentData.filter(x => x.startsWith('Morph'))
-                .map(x => morphInstanceKey);
-
-            const dependentLebensabschnittGattung: Key<string, LebensabschnittDefinition_lebewesen>[] = dependentData.filter(x => x.startsWith('Lebensabschnitt-Gattung')).map(x => lebensabschnittGattungKey);
-            const dependentLebensabschnittArt: Key<string, LebensabschnittDefinition_lebewesen>[] = dependentData.filter(x => x.startsWith('Lebensabschnitt-Art')).map(x => lebensabschnittArtKey);
-            const dependentLebensabschnittMorph: Key<string, LebensabschnittDefinition_lebewesen>[] = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(x => lebensabschnittMorphKey);
-
+            const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value').map(x => x.Typ));
+            const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost').map(x => x.Typ));
+            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements').map(x => x.Typ));
 
             this.storeManager.derived(tmpKey, [morphInstanceKey, artInstanceKey, gattungsInstanceKey], (data, [{ newValue: morph }, { newValue: art }, { newValue: gattung }]) => {
                 const base = morph?.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'morph' as const }))[0]
@@ -393,15 +706,15 @@ export class Charakter {
             });
 
 
-            if (key == 'GL') {
-                console.log('nom');
-            }
-
-            this.storeManager.derived(effectiveKey, [ageKey, tmpKey, rawKey, metaKey, ...dependentBesonderheiten, ...dependentFertigkeiten, ...dependentEigenschaften, ...dependentAge, ...dependentGattung, ...dependentArt, ...dependentMorph, ...dependentLebensabschnittGattung, ...dependentLebensabschnittArt, ...dependentLebensabschnittMorph], (data, [{ newValue: age }, { newValue: base }, { newValue: setValue }, { newValue: meta }, ...dependent], oldValue) => {
+            this.storeManager.derived(effectiveKey, [ageKey, tmpKey, rawKey, metaKey, ...valueDependency], (data, [{ newValue: age }, { newValue: base }, { newValue: setValue }, { newValue: meta }, ...dependent], oldValue) => {
                 let resultreturn: number;
                 if (base === undefined) {
                     return undefined;
                 }
+
+
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+
 
 
                 if (base.type === 'bereich') {
@@ -450,24 +763,6 @@ export class Charakter {
 
                 } else if (base.type == 'berechnung') {
 
-                    const lookup: { type: 'eigenschaft' | 'fertigkeit' | 'besonderheit', key: string, name: string, index: number }[] = [];
-
-                    for (let i = 0; i < dependentBesonderheiten.length; i++) {
-                        const element = dependentBesonderheiten[i];
-                        lookup.push({ type: 'besonderheit', key: element.Key, name: '', index: i });
-                    }
-                    for (let i = 0; i < dependentFertigkeiten.length; i++) {
-                        const element = dependentFertigkeiten[i];
-                        lookup.push({ type: 'fertigkeit', key: element.Key, name: '', index: i + dependentBesonderheiten.length });
-                    }
-                    for (let i = 0; i < dependentEigenschaften.length; i++) {
-                        const element = dependentEigenschaften[i];
-                        const reg = /\/eigenschaften\/(?<name>[^/]+)\/effektiv/;
-                        const match = element.Key.match(reg);
-                        const name = match?.groups?.['name'] as string;
-                        if (name)
-                            lookup.push({ type: 'eigenschaft' as const, key: element.Key, name: name, index: i + dependentFertigkeiten.length + dependentBesonderheiten.length });
-                    }
 
 
                     const calculation = meta as FormelDefintion_lebewesen;
@@ -478,13 +773,29 @@ export class Charakter {
 
                     const scope: any = {};
 
-
-                    for (const { type, key, name, index } of lookup) {
-                        scope[name] = dependent[index].newValue;
-                        if (scope[name] === undefined) {
+                    for (const element of fertigkeitDependency) {
+                        if (element.Effective.newValue !== undefined)
+                            scope[element.id] = element.Effective.newValue;
+                        else
                             return undefined;
-                        }
                     }
+
+
+                    for (const element of besonderheitDependency) {
+                        if (element.Effective.newValue !== undefined)
+                            scope[element.id] = element.Effective.newValue;
+                        else
+                            return undefined;
+                    }
+
+                    for (const element of eigenschaftDependency) {
+                        if (element.Effective.newValue !== undefined)
+                            scope[element.id] = element.Effective.newValue;
+                        else
+                            return undefined;
+                    }
+
+
 
                     try {
                         const result = mathjs.evaluate(calculation.Formel, scope);
@@ -506,242 +817,7 @@ export class Charakter {
 
 
 
-                // check besonderheiten
-                // const newAge = dependent.filter(x => x.key == ageKey).map(x => x.newValue)[0] as number | undefined;
-
-
-                const enrich = Object.entries(groupBy(dependent.map(e => {
-                    const prop = this.getIdFromPropertieKeys(e.key);
-                    if (prop) {
-
-                        if (prop.type == 'effektiv') {
-                            return {
-                                kind: 'property' as const,
-                                entry: e as KeyData<EigenschaftEffective>,
-                                id: prop.id,
-                                type: prop.type,
-                            }
-                        } else if (prop.type == 'meta') {
-                            return {
-                                kind: 'property' as const,
-                                entry: e as KeyData<EigenschaftMetaKey>,
-                                id: prop.id,
-                                type: prop.type,
-                            }
-                        } else if (prop.type == 'raw') {
-                            return {
-                                kind: 'property' as const,
-                                entry: e as KeyData<EigenschaftRawKey>,
-                                id: prop.id,
-                                type: prop.type,
-                            }
-                        } else if (prop.type == 'type') {
-                            return {
-                                kind: 'property' as const,
-                                entry: e as KeyData<EigenschaftTypeKey>,
-                                id: prop.id,
-                                type: prop.type,
-                            }
-                        }
-                    }
-
-                    const fertigkeit = this.getIdFromFertigkeitKey(e.key);
-                    if (fertigkeit) {
-                        if (fertigkeit.type == 'Stufe') {
-                            return {
-                                kind: 'fertigkeit' as const,
-
-                                entry: e as KeyData<FertigkeitEffectiveKey>,
-                                id: fertigkeit.id,
-                                type: fertigkeit.type
-                            }
-                        } else if (fertigkeit.type == 'Missing') {
-                            return {
-                                kind: 'fertigkeit' as const,
-                                entry: e as KeyData<FertigkeitMissingKey>,
-                                id: fertigkeit.id,
-                                type: fertigkeit.type
-                            }
-                        } else if (fertigkeit.type == 'StufeUnbeschränkt') {
-                            return {
-                                kind: 'fertigkeit' as const,
-                                entry: e as KeyData<FertigkeitUnbeschränktKey>,
-                                id: fertigkeit.id,
-                                type: fertigkeit.type
-                            }
-                        } else if (fertigkeit.type == 'fixed') {
-                            return {
-                                kind: 'fertigkeit' as const,
-                                entry: e as KeyData<FertigkeitFixedKey>,
-                                id: fertigkeit.id,
-                                type: fertigkeit.type
-                            }
-                        } else if (fertigkeit.type == 'purchased') {
-                            return {
-                                kind: 'fertigkeit' as const,
-                                entry: e as KeyData<FertigkeitPurchasedKey>,
-                                id: fertigkeit.id,
-                                type: fertigkeit.type
-                            }
-                        }
-                    }
-                    const besonderheit = this.getIdFromBesonterheitkeitKey(e.key);
-                    if (besonderheit) {
-                        if (besonderheit.type == 'Stufe') {
-                            return {
-                                kind: 'besonderheit' as const,
-                                entry: e as KeyData<BesonderheitEffectiveKey>,
-                                id: besonderheit.id,
-                                type: besonderheit.type,
-                            }
-                        } else if (besonderheit.type == 'Missing') {
-                            return {
-                                kind: 'besonderheit' as const,
-                                entry: e as KeyData<BesonderheitMissingKey>,
-                                id: besonderheit.id,
-                                type: besonderheit.type,
-                            }
-                        } else if (besonderheit.type == 'StufeUnbeschränkt') {
-                            return {
-                                kind: 'besonderheit' as const,
-                                entry: e as KeyData<BesonderheitUnbeschränktKey>,
-                                id: besonderheit.id,
-                                type: besonderheit.type,
-                            }
-                        } else if (besonderheit.type == 'fixed') {
-                            return {
-                                kind: 'besonderheit' as const,
-                                entry: e as KeyData<BesonderheitFixedKey>,
-                                id: besonderheit.id,
-                                type: besonderheit.type,
-                            }
-                        } else if (besonderheit.type == 'purchased') {
-                            return {
-                                kind: 'besonderheit' as const,
-                                entry: e as KeyData<BesonderheitPurchasedKey>,
-                                id: besonderheit.id,
-                                type: besonderheit.type,
-
-
-                            }
-                        }
-                    }
-
-                    return {
-                        kind: 'other' as const,
-                        entry: e as KeyData<Key<string, unknown>>,
-                        id: 'other',
-                        type: 'other' as const,
-                    }
-                        ;
-                }), e => e.id));
-
-
-
-                type MapKeyData<K> = {
-                    [e in keyof K]: KeyData<K[e]>;
-                }
-
-                const fertigkeitDependency = notUndefined(enrich
-                    .map(([key, value]) => {
-                        const erg = {
-                            kind: 'fertigkeit',
-                            id: key,
-                        } as Partial<MapKeyData<FertigkeitKeys>> & { kind: 'fertigkeit', id: string };
-                        if (value[0]?.kind != erg.kind) {
-                            return undefined;
-                        }
-                        for (const v of value) {
-                            if (v.kind === erg.kind) {
-                                if (v.type == 'Stufe') {
-                                    erg.Effective = v.entry;
-                                } else if (v.type == 'Missing') {
-                                    erg.Missing = v.entry;
-                                } else if (v.type == 'StufeUnbeschränkt') {
-                                    erg.Unbeschränkt = v.entry;
-                                } else if (v.type == 'fixed') {
-                                    erg.Fixed = v.entry;
-                                } else if (v.type == 'purchased') {
-                                    erg.Purchased = v.entry;
-                                }
-                            }
-                        }
-                        return erg as MapKeyData<FertigkeitKeys> & { kind: 'fertigkeit', id: string };
-                    }));
-
-
-                const besonderheitDependency = notUndefined(enrich
-                    .map(([key, value]) => {
-                        const erg = {
-                            kind: 'besonderheit',
-                            id: key,
-                        } as Partial<MapKeyData<BesonderheitKeys>> & { kind: 'besonderheit', id: string };
-                        if (value[0]?.kind != erg.kind) {
-                            return undefined;
-                        }
-                        for (const v of value) {
-                            if (v.kind === erg.kind) {
-                                if (v.type == 'Stufe') {
-                                    erg.Effective = v.entry;
-                                } else if (v.type == 'Missing') {
-                                    erg.Missing = v.entry;
-                                } else if (v.type == 'StufeUnbeschränkt') {
-                                    erg.Unbeschränkt = v.entry;
-                                } else if (v.type == 'fixed') {
-                                    erg.Fixed = v.entry;
-                                } else if (v.type == 'purchased') {
-                                    erg.Purchased = v.entry;
-                                }
-                            }
-                        }
-                        return erg as MapKeyData<BesonderheitKeys> & { kind: 'besonderheit', id: string };
-                    }));
-                const eigenschaftDependency = notUndefined(enrich
-                    .map(([key, value]) => {
-                        const erg = {
-                            kind: 'property',
-                            id: key,
-                        } as Partial<MapKeyData<EigenschaftKeys>> & { kind: 'property', id: string };
-                        if (value[0]?.kind != erg.kind) {
-                            return undefined;
-                        }
-                        for (const v of value) {
-                            if (v.kind === erg.kind) {
-                                if (v.type == 'effektiv') {
-                                    erg.Effective = v.entry;
-                                } else if (v.type == 'meta') {
-                                    erg.Meta = v.entry;
-                                } else if (v.type == 'raw') {
-                                    erg.Raw = v.entry;
-                                } else if (v.type == 'type') {
-                                    erg.Type = v.entry;
-                                }
-                            }
-                        }
-                        return erg as MapKeyData<EigenschaftKeys> & { kind: 'property', id: string };
-                    }));
-
-
-
-                const otherDependency = notUndefined(enrich
-                    .flatMap(([key, value]) => {
-                        if (value[0]?.kind === 'other') {
-                            return notUndefined(value.map(x => {
-                                if (x.kind === 'other') {
-                                    return { type: x.type, ...x.entry };
-                                }
-                                return undefined;
-                            }))
-                        } else {
-                            return undefined;
-                        }
-                    }));
-
-
-
-
-
-
+                // check modifier
 
                 const mods =
                     fertigkeitDependency.flatMap(x => {
@@ -758,7 +834,7 @@ export class Charakter {
                         }))
                         .concat(
                             dependent
-                                .filter((x): x is KeyData<Key<string, LebensabschnittDefinition_lebewesen>> => x.key.Key.endsWith('/lebensabschnitt'))
+                                .filter((x): x is KeyData<LebensabschittGattungKey | LebensabschittArtKey | LebensabschittMorphKey> => x.key.Key.endsWith('/lebensabschnitt'))
                                 .flatMap(x =>
                                     notUndefined(x.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? []))
                         ).concat(
@@ -774,7 +850,7 @@ export class Charakter {
                                 })
                         )
                     ;
-
+                //TODO: Talents are not yet handled
 
 
 
@@ -791,11 +867,6 @@ export class Charakter {
             this.storeManager.derived(typeKey, tmpKey, (data, base) => {
                 return base.newValue?.type;
             })
-
-
-
-
-
 
 
             this.storeManager.derived(metaKey, [ageKey, tmpKey, rawKey], (data, [{ newValue: age }, { newValue: base }, { newValue: raw }]) => {
@@ -835,6 +906,68 @@ export class Charakter {
                 } else {
                     return undefined;
                 }
+            });
+            this.storeManager.derived(costKey, [metaKey, rawKey, ...costDependency], (data, [meta, raw, ...dependent]) => {
+
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+
+                if (meta.newValue?.type == 'bereich') {
+                    return toCost(meta.newValue.Kosten, x => {
+
+                        const _default = meta.newValue?.type == 'bereich' ? meta.newValue.default : 0;
+
+
+                        let resultreturn: number | undefined = undefined;
+                        const scope = {
+                            value: raw.newValue ?? _default
+                        };
+                        try {
+                            const result = mathjs.evaluate(x.Berechnung, scope);
+                            if (isResultSet(result)) {
+                                const entries = (result as { entries: any }).entries;
+                                resultreturn = Array.isArray(entries) ? entries[entries.length - 1] : entries;
+                            }
+                            else {
+                                resultreturn = Array.isArray(result) ? result[result.length - 1] : result;
+                            }
+                        } catch (error) {
+                            console.error(`Faild formle ${x.Berechnung} of ${metaKey.Key} ${x.Id}`, error);
+                            return undefined;
+                        }
+                        if (resultreturn) {
+                            return [x.Id, resultreturn] as const;
+                        }
+                    })
+                } else if (meta.newValue?.type == 'reihe') {
+                    return toCost(meta.newValue.currentSchwelle?.Kosten ?? [],
+                        x => {
+                            let resultreturn: number | undefined = undefined;
+                            const scope = {
+                                value: raw.newValue ?? 0
+                            };
+                            try {
+                                const result = mathjs.evaluate(x.Berechnung, scope);
+                                if (isResultSet(result)) {
+                                    const entries = (result as { entries: any }).entries;
+                                    resultreturn = Array.isArray(entries) ? entries[entries.length - 1] : entries;
+                                }
+                                else {
+                                    resultreturn = Array.isArray(result) ? result[result.length - 1] : result;
+                                }
+                            } catch (error) {
+                                console.error(`Faild formle ${x.Berechnung} of ${metaKey.Key} ${x.Id}`, error);
+                                return undefined;
+                            }
+                            if (resultreturn) {
+                                return [x.Id, resultreturn] as const;
+                            }
+                        })
+
+                }
+
+
+                return entriesToCost();
+
             })
         }
 
@@ -845,18 +978,19 @@ export class Charakter {
             const keys = this.getBesonterheitKeys(besonderheit.Id);
 
             this.besonderheiten[besonderheit.Id] = {
-                effective: this.storeManager.readable(keys.keyEffectiv),
-                unconditionally: this.storeManager.readable(keys.keyUnbeschränkt),
-                purchased: this.storeManager.writable(keys.keyPurchased, 0),
-                fixed: this.storeManager.readable(keys.keyFixed),
-                missing: this.storeManager.readable(keys.keyMissing),
+                effective: this.storeManager.readable(keys.Effective),
+                unconditionally: this.storeManager.readable(keys.Unbeschränkt),
+                purchased: this.storeManager.writable(keys.Purchased, 0),
+                fixed: this.storeManager.readable(keys.Fixed),
+                missing: this.storeManager.readable(keys.Missing),
+                cost: this.storeManager.readable(keys.Cost),
             };
 
 
-            this.storeManager.derived(keys.keyEffectiv, [keys.keyUnbeschränkt, keys.keyMissing], (data, [unconditionally, missing]) => {
+            this.storeManager.derived(keys.Effective, [keys.Unbeschränkt, keys.Missing], (data, [unconditionally, missing]) => {
                 return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
             });
-            this.storeManager.derived(keys.keyUnbeschränkt, [keys.keyPurchased, keys.keyFixed], (data, [purchased, fixed]) => {
+            this.storeManager.derived(keys.Unbeschränkt, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
                 return Math.max(purchased.newValue, fixed.newValue);
             });
 
@@ -865,14 +999,14 @@ export class Charakter {
 
             const dependentBesonderheiten: Key<string, number>[] = dependentData.filter(x => x.startsWith('besonderheit-'))
                 .map(x => x.substring('besonderheit-'.length))
-                .map(x => this.getBesonterheitKeys(x).keyEffectiv);
+                .map(x => this.getBesonterheitKeys(x).Effective);
             const dependentFertigkeiten: Key<string, number>[] = dependentData.filter(x => x.startsWith('fertigkeit-'))
                 .map(x => x.substring('fertigkeit-'.length))
-                .map(x => this.getFertigkeitenKeys(x).keyEffectiv);
+                .map(x => this.getFertigkeitenKeys(x).Effective);
 
             const dependentEigenschaften: Key<string, number>[] = dependentData.filter(x => x.startsWith('eigenschaft-'))
                 .map(x => x.substring('eigenschaft-'.length))
-                .map(x => this.getPropertieKeys(x).effective);
+                .map(x => this.getPropertieKeys(x).Effective);
 
             const dependentAge: Key<string, number>[] = dependentData.filter(x => x.startsWith('Alter'))
                 .map(x => ageKey);
@@ -886,14 +1020,19 @@ export class Charakter {
                 .map(x => ageKey);
 
 
-            this.storeManager.derived(keys.keyFixed, [...dependentBesonderheiten, ...dependentFertigkeiten, ...dependentEigenschaften, ...dependentAge, ...dependentGattung, ...dependentArt, ...dependentMorph], (data, dependencys) => {
+            this.storeManager.derived(keys.Fixed, [...dependentBesonderheiten, ...dependentFertigkeiten, ...dependentEigenschaften, ...dependentAge, ...dependentGattung, ...dependentArt, ...dependentMorph], (data, dependencys) => {
                 // todo get fixed besonderheiten
                 return 0;
             });
 
-            this.storeManager.derived(keys.keyMissing, [...dependentBesonderheiten, ...dependentFertigkeiten, ...dependentEigenschaften, ...dependentAge, ...dependentGattung, ...dependentArt, ...dependentMorph], (data, dependencys) => {
+            this.storeManager.derived(keys.Missing, [...dependentBesonderheiten, ...dependentFertigkeiten, ...dependentEigenschaften, ...dependentAge, ...dependentGattung, ...dependentArt, ...dependentMorph], (data, dependencys) => {
                 // todo get Missing stuff
                 return [];
+            });
+
+            this.storeManager.derived(keys.Cost, [...dependentBesonderheiten, ...dependentFertigkeiten, ...dependentEigenschaften, ...dependentAge, ...dependentGattung, ...dependentArt, ...dependentMorph], (data, dependencys) => {
+                // todo get Missing stuff
+                return {};
             });
 
 
@@ -901,6 +1040,7 @@ export class Charakter {
 
 
         }
+
 
 
 

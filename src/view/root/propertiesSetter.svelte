@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { EigenschaftMetaKey, EigenschaftTypes, TypeOfKey } from '../../models/Character';
+	import type { CostKey, EigenschaftMetaKey, EigenschaftTypes, TypeOfKey } from '../../models/Character';
 	import type { Readable, Writable } from 'svelte/store';
 	import type {
 		FormelDefintion_lebewesen,
@@ -13,16 +13,17 @@
 	export let type: Readable<EigenschaftTypes | undefined>;
 	export let effective: Readable<number | undefined>;
 	export let meta: Readable<TypeOfKey<EigenschaftMetaKey>>;
+	export let cost: Readable<TypeOfKey<CostKey<'eigenschaft'>>>;
 
 	// let bereichMeta: Readable<StaticheDefinition_lebewesen | undefined>;
 	// let reiheMeta: Readable<ReiheDefinition_lebewesen | undefined>;
 
 	$: {
-		if (key == 'mut') {
+		if (key == 'MU') {
 			console.log('first');
-			// effective.subscribe((v) => {
-			// 	// console.log('set value', v);
-			// });
+			effective.subscribe((v) => {
+				// console.log('set value', v);
+			});
 		}
 
 		if ($type == 'bereich') {
@@ -62,4 +63,6 @@
 		{key}
 		{$effective}
 	{/if}
+	{JSON.stringify($cost)}
+
 </div>

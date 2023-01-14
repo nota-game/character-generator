@@ -10,13 +10,14 @@
 	export let purchased: Writable<number>;
 	export let fixed: Readable<number>;
 	export let missing: Readable<any>;
+	export let cost: Readable<any>;
 
-	$: entry =  data.besonderheitenMap[key];
+	$: entry = data.besonderheitenMap[key];
 </script>
 
 <div>
 	{key}
 	{$effective}/{entry.Stufe.length}
 	<input type="number" bind:value={$purchased} min={0} max={entry.Stufe.length} />
-
+	{JSON.stringify($cost)}
 </div>

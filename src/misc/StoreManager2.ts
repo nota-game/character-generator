@@ -213,6 +213,16 @@ export default class StoreManager<Param> {
                     x.alsoNotify.add(key.Key);
                     current.dependentOn.add(x.id);
                 });
+                Object.values(this.data).filter(x => {
+                    const reg = new RegExp("^" + x.id.replace('**', '.+').replace('*', '[^/]+') + '($|(/.+))');
+                    return reg.test(key.Key) && x.id !== key.Key
+                }).forEach(x => {
+                    if (set !== undefined) {
+                        throw `${key.Key} is leaf, cant create ${x.id}`;
+                    }
+                    x.dependentOn.add(key.Key);
+                    current.alsoNotify.add(x.id);
+                });
 
             }
             const possibleNewValue = current.fn(this.staticData);
