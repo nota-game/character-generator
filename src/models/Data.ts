@@ -67,6 +67,7 @@ export class Data {
     public readonly besonderheitDependencys: DependencyData[];
     public readonly fertigkeitDependencys: DependencyData[];
     public readonly talentDependencys: DependencyData[];
+    public readonly tagDependencys: DependencyData[];
     public readonly allEigenschaftKeys: string[];
 
     public readonly AusrüstungsEigenschaftMap: Record<string, Readonly<AusrüstungEigengchaftDefinition_kampf_ausstattung>>;
@@ -179,6 +180,14 @@ export class Data {
                         ...(stufe.Mods?.Eigenschaften?.Mod ?? []).map(x => ({ Effecting: 'value', Eigenschaft: x.Eigenschaft, Typ: `fertigkeit-${fertigkeit.Id}` }  satisfies DependencyData))
                     ]))
                 ]),
+            ...(this.instance.Daten.Talente ?? []).flatMap(fertigkeitenGruppe =>
+                [
+                    ...(fertigkeitenGruppe.Talent ?? []).flatMap(talent => talent.Level.flatMap(level => [
+                        ...(level.Mods?.Eigenschaften?.Mod ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Eigenschaft, Typ: `talent-${talent.Id}` }  satisfies DependencyData))
+                    ]))
+                ]),
+
+
             ...(this.instance.Daten.Organismen.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(type => ({ Effecting: 'value', Eigenschaft: berechnung.id, Typ: type }  satisfies DependencyData))),
 
             ...(this.instance.Daten.Organismen.Entwiklung?.Punkt ?? []).flatMap(punkt => [
@@ -366,6 +375,13 @@ export class Data {
                         ...(stufe.Mods?.Besonderheiten?.Besonderheit ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `fertigkeit-${fertigkeit.Id}` }  satisfies DependencyData))
                     ]))
                 ]),
+            ...(this.instance.Daten.Talente ?? []).flatMap(fertigkeitenGruppe =>
+                [
+                    ...(fertigkeitenGruppe.Talent ?? []).flatMap(talent => talent.Level.flatMap(level => [
+                        ...(level.Mods?.Besonderheiten?.Besonderheit ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `talent-${talent.Id}` }  satisfies DependencyData))
+                    ]))
+                ]),
+
 
             ...(this.instance.Daten.Organismen.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                 ...(punkt.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => [
@@ -477,6 +493,114 @@ export class Data {
                         ...getAbleitungen(talent.Ableitungen).map(type => ({ Effecting: 'support' as const, Eigenschaft: talent.Id, Typ: type }  satisfies DependencyData))
                     ]),
                 ]),
+        ], e => `${e.Eigenschaft}δ${e.Typ}δ${e.Effecting}`);
+
+        this.tagDependencys = distinct([
+            ...(this.instance.Daten.Besonderheiten ?? []).flatMap(besonderheitGruppe =>
+                [
+                    ...(besonderheitGruppe.Besonderheit ?? []).flatMap(besonderheit => besonderheit.Stufe.flatMap(stufe => [
+                        ...(stufe.Mods?.Tags?.Tag ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `besonderheit-${besonderheit.Id}` }  satisfies DependencyData)),
+                    ]))
+                ]),
+            ...(this.instance.Daten.Fertigkeiten ?? []).flatMap(fertigkeitenGruppe =>
+                [
+                    ...(fertigkeitenGruppe.Fertigkeit ?? []).flatMap(fertigkeit => fertigkeit.Stufe.flatMap(stufe => [
+                        ...(stufe.Mods?.Tags?.Tag ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `fertigkeit-${fertigkeit.Id}` }  satisfies DependencyData))
+                    ]))
+                ]),
+            ...(this.instance.Daten.Talente ?? []).flatMap(fertigkeitenGruppe =>
+                [
+                    ...(fertigkeitenGruppe.Talent ?? []).flatMap(talent => talent.Level.flatMap(level => [
+                        ...(level.Mods?.Tags?.Tag ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `talent-${talent.Id}` }  satisfies DependencyData))
+                    ]))
+                ]),
+
+            ...(this.instance.Daten.Organismen.Entwiklung?.Punkt ?? []).flatMap(punkt => [
+                ...(punkt.Mods?.Tags?.Tag ?? []).flatMap(x => [
+                    { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'other-alter' } satisfies DependencyData,
+                    { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` } satisfies DependencyData,
+                ])
+            ]),
+            ...(this.instance.Daten.Organismen.Entwiklung?.Reihe ?? []).flatMap(reihe => [
+                ...(reihe.Schwelle.flatMap(schwelle => ([
+                    ... (schwelle.Mods?.Tags?.Tag ?? []).flatMap(x => [
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'other-alter' }  satisfies DependencyData,
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` }  satisfies DependencyData,
+                    ])
+                ])))
+            ]),
+            ...this.instance.Daten.Organismen.Gattung.flatMap(gattung => [
+                ...(gattung.Mods?.Tags?.Tag ?? []).map(y => ({ Effecting: 'value' as const, Eigenschaft: y.Id, Typ: 'Gattung' }  satisfies DependencyData)),
+                ...(gattung.Entwiklung?.Punkt ?? []).flatMap(punkt => [
+                    ...(punkt.Mods?.Tags?.Tag ?? []).flatMap(x => [
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Gattung' }  satisfies DependencyData,
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'other-alter' }  satisfies DependencyData,
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` }  satisfies DependencyData,
+                    ])
+                ]),
+                ...(gattung.Entwiklung?.Reihe ?? []).flatMap(reihe => [
+                    ...(reihe.Schwelle.flatMap(schwelle => ([
+                        ... (schwelle.Mods?.Tags?.Tag ?? []).flatMap(x => [
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Gattung' }  satisfies DependencyData,
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'other-alter' }  satisfies DependencyData,
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` }  satisfies DependencyData,
+                        ])
+                    ])))
+                ]),
+                ...(gattung.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
+                    ...(lebensabschnitt.Mods?.Tags?.Tag ?? []).flatMap(x => ([
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Gattung' }  satisfies DependencyData,
+                        { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'other-alter' }  satisfies DependencyData]))
+                ]),
+                ...(gattung.Art.flatMap(art => [
+                    ...(art.Mods?.Tags?.Tag ?? []).map(y => ({ Effecting: 'value' as const, Eigenschaft: y.Id, Typ: 'Art' }  satisfies DependencyData)),
+                    ...(art.Entwiklung?.Punkt ?? []).flatMap(punkt => [
+                        ...(punkt.Mods?.Tags?.Tag ?? []).flatMap(x => [
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Art' }  satisfies DependencyData,
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'other-alter' }  satisfies DependencyData,
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` }  satisfies DependencyData,
+                        ])
+                    ]),
+                    ...(art.Entwiklung?.Reihe ?? []).flatMap(reihe => [
+                        ...(reihe.Schwelle.flatMap(schwelle => ({
+                            ...(schwelle.Mods?.Tags?.Tag ?? []).flatMap(x => [
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Art' }  satisfies DependencyData,
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'other-alter' }  satisfies DependencyData,
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` }  satisfies DependencyData,
+                            ])
+                        })))
+                    ]),
+                    ...(art.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
+                        ...(lebensabschnitt.Mods?.Tags?.Tag ?? []).flatMap(x => ([
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Art' }  satisfies DependencyData,
+                            { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'other-alter' }  satisfies DependencyData]))
+                    ]),
+                    ...(art.Morphe.Morph.flatMap(morph => [
+                        ...(morph.Mods?.Tags?.Tag ?? []).map(y => ({ Effecting: 'value' as const, Eigenschaft: y.Id, Typ: 'Morph' }  satisfies DependencyData)),
+                        ...(art.Entwiklung?.Punkt ?? []).flatMap(punkt => [
+                            ...(punkt.Mods?.Tags?.Tag ?? []).flatMap(x => [
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Morph' }  satisfies DependencyData,
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'other-alter' }  satisfies DependencyData,
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${punkt.id}` }  satisfies DependencyData,
+                            ])
+                        ]),
+                        ...(morph.Entwiklung?.Reihe ?? []).flatMap(reihe => [
+                            ...(reihe.Schwelle.flatMap(schwelle => ([
+                                ...(schwelle.Mods?.Tags?.Tag ?? []).flatMap(x => [
+                                    { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Morph' }  satisfies DependencyData,
+                                    { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'other-alter' }  satisfies DependencyData,
+                                    { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `eigenschaft-${reihe.id}` }  satisfies DependencyData,
+                                ])
+                            ])))
+                        ]),
+                        ...(morph.Lebensabschnitte?.Lebensabschnitt ?? []).flatMap(lebensabschnitt => [
+                            ...(lebensabschnitt.Mods?.Tags?.Tag ?? []).flatMap(x => ([
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'Morph' }  satisfies DependencyData,
+                                { Effecting: 'value' as const, Eigenschaft: x.Id, Typ: 'other-alter' }  satisfies DependencyData]))
+                        ]),
+                    ])),
+                ])),
+            ]),
         ], e => `${e.Eigenschaft}δ${e.Typ}δ${e.Effecting}`);
 
 

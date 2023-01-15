@@ -22,9 +22,6 @@ export type MissingRequirements = { type: 'tag', id: string }
 
     ;
 
-type MapKeyPropertys<T> = {
-    [e in keyof T]: T[e] extends Key<any, any> ? TypeOfKey<T[e]> : never;
-}
 type MapKeyData<K> = {
     [e in keyof K]: KeyData<K[e]>;
 }
@@ -135,11 +132,6 @@ type BesonderheitMissingKey<id extends string = string> = Key<`/besonderheit/${i
     missing: MissingRequirements;
 }[]>;
 
-type LebensabschittKeys = {
-    Gattung: LebensabschittGattungKey,
-    Art: LebensabschittArtKey,
-    Morph: LebensabschittMorphKey,
-}
 
 
 type LebensabschittGattungKey = Key<'/organism/gattung/lebensabschnitt', LebensabschnittDefinition_lebewesen | undefined>;
@@ -533,7 +525,7 @@ export class Charakter {
                 return erg as MapKeyData<EigenschaftKeys> & { kind: 'property', id: string };
             }));
         const otherDependency = notUndefined(enrich
-            .flatMap(([key, value]) => {
+            .flatMap(([, value]) => {
                 if (value[0]?.kind === 'other') {
                     return notUndefined(value.map(x => {
                         if (x.kind === 'other') {
@@ -798,7 +790,7 @@ export class Charakter {
                 .map(x => x.substring('besonderheit-'.length))
                 .flatMap(x => {
                     if (types != undefined) {
-                        return Object.entries(this.getBesonterheitKeys(x)).filter(([key]) => types.includes(key as any)).map(([key, value]) => value);
+                        return Object.entries(this.getBesonterheitKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
                     }
                     return Object.values(this.getBesonterheitKeys(x));
                 });
@@ -806,7 +798,7 @@ export class Charakter {
                 .map(x => x.substring('fertigkeit-'.length))
                 .flatMap(x => {
                     if (types != undefined) {
-                        return Object.entries(this.getFertigkeitenKeys(x)).filter(([key]) => types.includes(key as any)).map(([key, value]) => value);
+                        return Object.entries(this.getFertigkeitenKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
                     }
                     return Object.values(this.getFertigkeitenKeys(x));
                 });
@@ -815,7 +807,7 @@ export class Charakter {
                 .map(x => x.substring('eigenschaft-'.length))
                 .flatMap(x => {
                     if (types != undefined) {
-                        return Object.entries(this.getPropertieKeys(x)).filter(([key]) => types.includes(key as any)).map(([key, value]) => value);
+                        return Object.entries(this.getPropertieKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
                     }
                     return Object.values(this.getPropertieKeys(x))
                 });
@@ -824,24 +816,24 @@ export class Charakter {
                 .map(x => x.substring('talent-'.length))
                 .flatMap(x => {
                     if (types != undefined) {
-                        return Object.entries(this.getTalentKeys(x)).filter(([key]) => types.includes(key as any)).map(([key, value]) => value);
+                        return Object.entries(this.getTalentKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
                     }
                     return Object.values(this.getTalentKeys(x))
                 });
 
             const dependentAge = dependentData.filter(x => x == 'other-alter')
-                .map(x => ageKey);
+                .map(() => ageKey);
 
             const dependentGattung = dependentData.filter(x => x.startsWith('Gattung'))
-                .map(x => gattungsInstanceKey);
+                .map(() => gattungsInstanceKey);
             const dependentArt = dependentData.filter(x => x.startsWith('Art'))
-                .map(x => artInstanceKey);
+                .map(() => artInstanceKey);
             const dependentMorph = dependentData.filter(x => x.startsWith('Morph'))
-                .map(x => morphInstanceKey);
+                .map(() => morphInstanceKey);
 
-            const dependentLebensabschnittGattung = dependentData.filter(x => x.startsWith('Lebensabschnitt-Gattung')).map(x => lebensabschnittGattungKey);
-            const dependentLebensabschnittArt = dependentData.filter(x => x.startsWith('Lebensabschnitt-Art')).map(x => lebensabschnittArtKey);
-            const dependentLebensabschnittMorph = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(x => lebensabschnittMorphKey);
+            const dependentLebensabschnittGattung = dependentData.filter(x => x.startsWith('Lebensabschnitt-Gattung')).map(() => lebensabschnittGattungKey);
+            const dependentLebensabschnittArt = dependentData.filter(x => x.startsWith('Lebensabschnitt-Art')).map(() => lebensabschnittArtKey);
+            const dependentLebensabschnittMorph = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(() => lebensabschnittMorphKey);
 
             const dep = [
                 ...dependentGattung,
@@ -879,7 +871,6 @@ export class Charakter {
 
             const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
             const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
-            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'));
 
             this.storeManager.derived(tmpKey, [morphInstanceKey, artInstanceKey, gattungsInstanceKey], (data, [{ newValue: morph }, { newValue: art }, { newValue: gattung }]) => {
                 const base = morph?.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'morph' as const }))[0]
@@ -918,14 +909,14 @@ export class Charakter {
             });
 
 
-            this.storeManager.derived(effectiveKey, [ageKey, tmpKey, rawKey, metaKey, ...valueDependency], (data, [{ newValue: age }, { newValue: base }, { newValue: setValue }, { newValue: meta }, ...dependent], oldValue) => {
+            this.storeManager.derived(effectiveKey, [ageKey, tmpKey, rawKey, metaKey, ...valueDependency], (data, [{ newValue: age }, { newValue: base }, { newValue: setValue }, { newValue: meta }, ...dependent]) => {
                 let resultreturn: number;
                 if (base === undefined) {
                     return undefined;
                 }
 
 
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency } = this.groupDependencyData(dependent);
 
 
 
@@ -1211,7 +1202,7 @@ export class Charakter {
             this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
                 // todo get fixed besonderheiten
 
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency } = this.groupDependencyData(dependent);
 
                 const besonderheitMax = Math.max(...besonderheitDependency.map(x =>
                     Math.max(...data.besonderheitenMap[x.id].Stufe.filter((_, i) => i < x.Effective.newValue)
@@ -1240,12 +1231,12 @@ export class Charakter {
             this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
                 // todo get Missing stuff
 
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+                const { besonderheitDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
 
                 const result = filterNull(besonderheit.Stufe
                     .filter((x, i) => i < effective.newValue)
                     .map((x, i) => {
-                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency);
+                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency);
                         if (missing == null) {
                             return null;
                         }
@@ -1333,12 +1324,12 @@ export class Charakter {
             this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
                 // todo get Missing stuff
 
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+                const { besonderheitDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
 
                 const result = filterNull(fertigkeit.Stufe
                     .filter((x, i) => i < effective.newValue)
                     .map((x, i) => {
-                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency);
+                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency);
                         if (missing == null) {
                             return null;
                         }
@@ -1394,7 +1385,6 @@ export class Charakter {
 
             const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
             const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
-            const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
             const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
 
 
@@ -1419,7 +1409,7 @@ export class Charakter {
             this.storeManager.derived(keys.Support, [...supportDependency], (data, [...dependent]) => {
 
 
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, talentDependency } = this.groupDependencyData(dependent);
+                const { talentDependency } = this.groupDependencyData(dependent);
 
 
 
@@ -1429,14 +1419,6 @@ export class Charakter {
                 return [...(talent.Ableitungen?.Ableitung ?? []).map(calculateAbleitung),
                 ...(talent.Ableitungen?.Max ?? []).map(calculateMax)].reduce((p, c) => p + c, 0);
 
-
-
-
-
-
-
-
-                return 0;
 
                 function calculateMax(m: _Max): number {
                     const values = [...m.Ableitung?.map(calculateAbleitung) ?? [],
@@ -1458,7 +1440,7 @@ export class Charakter {
 
 
             this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
-                // todo get fixed besonderheiten
+                // TODO: get fixed talente
 
                 const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
 
@@ -1467,9 +1449,7 @@ export class Charakter {
             });
 
             this.storeManager.derived(keys.Missing, [keys.Base, keys.Support, ...requirementsDependency], (data, [base, support, ...dependent]) => {
-                // todo get Missing stuff
-
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, talentDependency } = this.groupDependencyData(dependent);
+                const { besonderheitDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
 
 
                 if (base.newValue == UNINITILEZED || support.newValue == UNINITILEZED) {
@@ -1516,16 +1496,52 @@ export class Charakter {
                 effective: this.storeManager.readable(keys.Effective),
             };
 
-            const dependentData = this.stammdaten.talentDependencys.filter(x => x.Eigenschaft == tag.Id);
+            const dependentData = this.stammdaten.tagDependencys.filter(x => x.Eigenschaft == tag.Id);
 
             const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
-            const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base']);
-            const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
-            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support']);
 
 
 
-            this.storeManager.derived(keys.Effective, [ageKey], (data) => {
+            this.storeManager.derived(keys.Effective, valueDependency, (data, dependent) => {
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
+
+                for (const b of besonderheitDependency) {
+                    const besonderheit = data.besonderheitenMap[b.id];
+                    for (let index = 0; index < b.Effective.newValue; index++) {
+                        if ((besonderheit.Stufe[index].Mods?.Tags?.Tag.filter(x => x.Id == tag.Id).length ?? 0) > 0) {
+                            return 1
+                        }
+                    }
+                }
+                for (const b of eigenschaftDependency) {
+
+                    if (b.Meta.newValue?.type == "punkt" && b.Effective.newValue == 1) {
+                        return 1;
+                    }
+                    if (b.Meta.newValue?.type == 'reihe') {
+                        if ((b.Meta.newValue.currentSchwelle?.Mods?.Tags?.Tag.filter(x => x.Id == tag.Id).length ?? 0) > 0) {
+                            return 1;
+
+                        }
+                    }
+                }
+                for (const b of fertigkeitDependency) {
+                    const fertigkeit = data.fertigkeitenMap[b.id];
+                    for (let index = 0; index < b.Effective.newValue; index++) {
+                        if ((fertigkeit.Stufe[index].Mods?.Tags?.Tag.filter(x => x.Id == tag.Id).length ?? 0) > 0) {
+                            return 1
+                        }
+                    }
+                }
+                for (const b of talentDependency) {
+                    const talent = data.talentMap[b.id];
+
+                    if (talent.Level.filter(x => x.Wert <= b.Effective.newValue && ((x.Mods?.Tags?.Tag.filter(y => y.Id == tag.Id).length ?? 0) > 0)).length > 0) {
+                        return 1;
+                    }
+                }
+
+
                 return 0;
             });
 
@@ -1573,8 +1589,8 @@ export class Charakter {
 
 
 
-        const talentEffective: Record<string, number> =  Object.fromEntries(talentDependency.map(x => [x.id, x.Effective.newValue] as const));
-        const talentDerivation: Record<string, number> =  Object.fromEntries(talentDependency.map(x => [x.id, x.Support.newValue] as const));
+        const talentEffective: Record<string, number> = Object.fromEntries(talentDependency.map(x => [x.id, x.Effective.newValue] as const));
+        const talentDerivation: Record<string, number> = Object.fromEntries(talentDependency.map(x => [x.id, x.Support.newValue] as const));
         const talentBase: Record<string, number> = Object.fromEntries(talentDependency.map(x => [x.id, x.Base.newValue] as const));
         const besonderheiten: Record<string, number | undefined> = Object.fromEntries(besonderheitDependency.map(x => [x.id, x.Unbeschränkt.newValue] as const));
         const fertigkeiten: Record<string, number | undefined> = Object.fromEntries(fertigkeitDependency.map(x => [x.id, x.Unbeschränkt.newValue] as const));
