@@ -25135,7 +25135,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       <Verbreitung Wert="7" />
       <talent:Level Wert="1">
         <talent:Voraussetzung>
-          <misc:Tag Id="Lesen/Schreiben" />
+          <misc:Tag Id="LesenSchreiben" />
         </talent:Voraussetzung>
       </talent:Level>
     </Talent>
@@ -25374,7 +25374,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       <Verbreitung Wert="7" />
       <talent:Level Wert="1">
         <talent:Voraussetzung>
-          <misc:Tag Id="Lesen/Schreiben" />
+          <misc:Tag Id="LesenSchreiben" />
         </talent:Voraussetzung>
       </talent:Level>
     </Talent>
@@ -25398,7 +25398,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
       <talent:Level Wert="1">
         <talent:Voraussetzung>
           <misc:And>
-            <misc:Tag Id='Lesen/Schreiben'></misc:Tag>
+            <misc:Tag Id='LesenSchreiben'></misc:Tag>
             <talent:Talent Id="Rechnen" Level="4" />
           </misc:And>
         </talent:Voraussetzung>
@@ -25759,7 +25759,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
         <talent:Voraussetzung>
           <misc:And>
             <fertigkeit:Fertigkeit Id="Höhere Mathematik" />
-            <misc:Tag Id="Lesen/Schreiben" />
+            <misc:Tag Id="LesenSchreiben" />
           </misc:And>
         </talent:Voraussetzung>
       </talent:Level>
@@ -27279,7 +27279,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
         <Verbreitung Wert="7" />
         <fertigkeit:Mods>
           <misc:Tags>
-            <misc:Tag Id="Lesen/Schreiben" />
+            <misc:Tag Id="LesenSchreiben" />
           </misc:Tags>
         </fertigkeit:Mods>
       </fertigkeit:Stufe>
@@ -27300,7 +27300,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
         <Verbreitung Wert="7" />
         <fertigkeit:Mods>
           <misc:Tags>
-            <misc:Tag Id="Lesen/Schreiben" />
+            <misc:Tag Id="LesenSchreiben" />
           </misc:Tags>
         </fertigkeit:Mods>
       </fertigkeit:Stufe>
@@ -28905,7 +28905,7 @@ Ausserdem darf eine Waffe Plazieren Taktik die das selbe Ziel wie diese hat in d
     </Eigenschaften>
   </Ausstattung>
   <Tags xmlns="http://nota.org/schema/misc.xsd">
-    <Tag Id="Lesen/Schreiben">
+    <Tag Id="LesenSchreiben">
       <misc:Name>
         <misc:Lokalisirung Sprache="de">
           <![CDATA[Lesen und Schreiben]]>

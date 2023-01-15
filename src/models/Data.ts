@@ -6,7 +6,7 @@ import notaStructure from 'src/data/nota-structure.g.json';
 import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
-import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, BedingungsAuswahl_besonderheit, BedingungsAuswahl_misc, Schutzwert_kampf_ausstattung } from 'src/data/nota.g';
+import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, BedingungsAuswahl_besonderheit, BedingungsAuswahl_misc, Schutzwert_kampf_ausstattung, AbleitungsAuswahl_talent } from 'src/data/nota.g';
 import { distinct } from 'src/misc/misc';
 
 // type lebensabschnittData =
@@ -20,7 +20,7 @@ import { distinct } from 'src/misc/misc';
 
 export type DependencyData = {
     Eigenschaft: string,
-    Effecting: 'value' | 'cost' | 'requirements'
+    Effecting: 'value' | 'cost' | 'requirements' | 'support'
     Typ: `other-${'alter'}` | 'Gattung' | 'Art' | 'Morph'
     | `eigenschaft-${string}`
     | `talent-${string}`
@@ -66,6 +66,7 @@ export class Data {
     public readonly eigenschaftenDependencys: DependencyData[];
     public readonly besonderheitDependencys: DependencyData[];
     public readonly fertigkeitDependencys: DependencyData[];
+    public readonly talentDependencys: DependencyData[];
     public readonly allEigenschaftKeys: string[];
 
     public readonly AusrüstungsEigenschaftMap: Record<string, Readonly<AusrüstungEigengchaftDefinition_kampf_ausstattung>>;
@@ -452,7 +453,7 @@ export class Data {
                     ])),
                 ])),
             ]),
-        ], e => `${e.Eigenschaft}δ${e.Typ}`);
+        ], e => `${e.Eigenschaft}δ${e.Typ}δ${e.Effecting}`);
 
 
 
@@ -463,7 +464,20 @@ export class Data {
                         ...(getRequirements(stufe.Voraussetzung) ?? []).map(type => ({ Effecting: 'requirements' as const, Eigenschaft: fertigkeit.Id, Typ: type }  satisfies DependencyData)),
                     ])),
                 ]),
-        ], e => `${e.Eigenschaft}δ${e.Typ}`);
+        ], e => `${e.Eigenschaft}δ${e.Typ}δ${e.Effecting}`);
+
+
+        this.talentDependencys = distinct([
+            ...(this.instance.Daten.Talente ?? []).flatMap(talentGruppe =>
+                [
+                    ...(talentGruppe.Talent ?? []).flatMap(talent => [
+                        ...talent.Level.flatMap(stufe => [
+                            ...(getRequirements(stufe.Voraussetzung) ?? []).map(type => ({ Effecting: 'requirements' as const, Eigenschaft: talent.Id, Typ: type }  satisfies DependencyData)),
+                        ]),
+                        ...getAbleitungen(talent.Ableitungen).map(type => ({ Effecting: 'support' as const, Eigenschaft: talent.Id, Typ: type }  satisfies DependencyData))
+                    ]),
+                ]),
+        ], e => `${e.Eigenschaft}δ${e.Typ}δ${e.Effecting}`);
 
 
 
@@ -558,17 +572,33 @@ export class Data {
                 | `talent-${string}`
                 | `tag-${string}`)[] => {
                 if (key == 'Fertigkeit') {
-                    const { Id } = value as { Id: string };
-                    return [`fertigkeit-${Id}` as const];
+                    if (Array.isArray(value)) {
+                        return value.map(x => `fertigkeit-${x.Id}` as const)
+                    } else {
+                        const { Id } = value as { Id: string };
+                        return [`fertigkeit-${Id}` as const];
+                    }
                 } else if (key == 'Besonderheit') {
-                    const { Id } = value as { Id: string };
-                    return [`besonderheit-${Id}` as const];
+                    if (Array.isArray(value)) {
+                        return value.map(x => `besonderheit-${x.Id}` as const)
+                    } else {
+                        const { Id } = value as { Id: string };
+                        return [`besonderheit-${Id}` as const];
+                    }
                 } else if (key == 'Tag') {
-                    const { Id } = value as { Id: string };
-                    return [`tag-${Id}` as const];
+                    if (Array.isArray(value)) {
+                        return value.map(x => `tag-${x.Id}` as const)
+                    } else {
+                        const { Id } = value as { Id: string };
+                        return [`tag-${Id}` as const];
+                    }
                 } else if (key == 'Talent') {
-                    const { Id } = value as { Id: string };
-                    return [`talent-${Id}` as const];
+                    if (Array.isArray(value)) {
+                        return value.map(x => `talent-${x.Id}` as const)
+                    } else {
+                        const { Id } = value as { Id: string };
+                        return [`talent-${Id}` as const];
+                    }
                 }
                 else if (key != '#') {
                     return getRequirements(value); // tecnical the type dose not match, but for this implementation it still works :)
@@ -656,4 +686,13 @@ export class Data {
     }
 
 
+}
+
+function getAbleitungen(ableitung: AbleitungsAuswahl_talent | undefined): `talent-${string}`[] {
+    if (ableitung == undefined) {
+        return [];
+    }
+    return [
+        ...ableitung.Ableitung?.map(x => `talent-${x.Id}` as const) ?? [],
+        ...ableitung.Max?.flatMap(x => getAbleitungen(x)) ?? []];
 }

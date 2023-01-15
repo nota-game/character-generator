@@ -31,6 +31,7 @@ type SubscriberData<T, Param> = {
     leaf: boolean;
     changingDependent: Set<string>;
     needUpdate: boolean;
+    updateIncomplete: boolean;
     subscribers: Set<readonly [Subscriber<T>, Invalidator<T>]>;
 };
 // declare type Keys = Key<any>;// | [Key<any, any>, ...Array<Key<any, any>>] | Array<Key<any, any>>;
@@ -55,6 +56,13 @@ declare type KeysValues<T> = T extends Key<any, any>
         ? KeyData<T[K]>
         : never;
     };
+declare type KeysValuesUninitilezed<T> = T extends Key<any, any>
+    ? KeyDataUninitilized<T>
+    : {
+        [K in keyof T]: T[K] extends Key<any, any>
+        ? KeyDataUninitilized<T[K]>
+        : never;
+    };
 
 export declare type KeyData<TKey> =
     TKey extends Key<any, infer TValue>
@@ -63,6 +71,16 @@ export declare type KeyData<TKey> =
         changed: boolean,
         oldValue: TValue | typeof UNINITILEZED,
         newValue: TValue,
+    }
+    : never
+    ;
+export declare type KeyDataUninitilized<TKey> =
+    TKey extends Key<any, infer TValue>
+    ? {
+        key: TKey,
+        changed: boolean,
+        oldValue: TValue | typeof UNINITILEZED,
+        newValue: TValue | typeof UNINITILEZED,
     }
     : never
     ;
@@ -85,6 +103,7 @@ interface KeyOf<key extends string> {
 }
 
 type derivatFunction<T, Param, S extends KeysArray> = (this: SubscriberData<T, Param>, data: Param, values: KeysValues<S>, oldValue: T | typeof UNINITILEZED) => T;
+type derivatFunctionUninitized<T, Param, S extends KeysArray> = (this: SubscriberData<T, Param>, data: Param, values: KeysValuesUninitilezed<S>, oldValue: T | typeof UNINITILEZED) => T;
 
 export default class StoreManager<Param> {
 
@@ -135,7 +154,7 @@ export default class StoreManager<Param> {
 
 
 
-    private prepareData<T>(key: Key<any, T>, set?: (this: SubscriberData<T, Param>, data: Param) => (T | typeof UNINITILEZED)): SubscriberData<T, Param> {
+    private prepareData<T>(key: Key<any, T>, set?: (this: SubscriberData<T, Param>, data: Param) => (T | typeof UNINITILEZED), options?: { configureData?: (data: SubscriberData<T, Param>) => void }): SubscriberData<T, Param> {
         if (!this.data[key.Key]) {
 
             const setFactory = () => {
@@ -196,9 +215,13 @@ export default class StoreManager<Param> {
                 compare: undefined,
                 changingDependent: new Set(),
                 needUpdate: false,
+                updateIncomplete: false,
                 leaf: set !== undefined,
                 subscribers: new Set<readonly [Subscriber<T>, ((value?: T) => void)]>()
             };
+            if (options?.configureData) {
+                options.configureData(current);
+            }
             if (set) {
                 current.fn = (data) => set.call(current, data);
             }
@@ -267,6 +290,9 @@ export default class StoreManager<Param> {
             if (current.value !== UNINITILEZED) {
                 throw new Error(`Not possible already sub kes: ${key.Key}`);
 
+            }
+            if (options?.configureData) {
+                options.configureData(current);
             }
             current.fn = set;
             current.value = current.fn(this.staticData);
@@ -337,6 +363,15 @@ export default class StoreManager<Param> {
                 setValue = new_value;
                 current.value = new_value;
                 this.Notify(current);
+
+                // Debug
+                for (const [key, value] of (Object.entries(this.data))) {
+                    if (value.changingDependent.size > 0) {
+                        console.warn(`Not everything notified ${value.id}, cleanup…`, value.changingDependent);
+                        value.changingDependent.clear();
+
+                    }
+                }
             }
         }
         const update = (updater: Updater<T>): void => {
@@ -363,7 +398,9 @@ export default class StoreManager<Param> {
 
     // , fn: (values: StoresValues<S>, set?: (value: T) => void) => T, initial_value?: T
     // public derived<K extends Keys, T>(values: KeysValues<K>, fn: (values: KeysValues<K>) => T): Readable<T> {
-    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: derivatFunction<T, Param, S>, compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean): Readable<T> & { key: Key<KeyString, T> } {
+    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: derivatFunction<T, Param, S>, options?: { compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean, evalueateUndefined?: false | undefined }): Readable<T> & { key: Key<KeyString, T> }
+    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: derivatFunctionUninitized<T, Param, S>, options?: { compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean, evalueateUndefined: true }): Readable<T> & { key: Key<KeyString, T> }
+    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: derivatFunction<T, Param, S>, options?: { compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean, evalueateUndefined?: boolean }): Readable<T> & { key: Key<KeyString, T> } {
         const single = !Array.isArray(stores);
         const stores_array: Array<Key<any, any>> = single
             ? [stores]
@@ -375,7 +412,8 @@ export default class StoreManager<Param> {
             const toAdd = this.prepareData(x);
         });
         const current: SubscriberData<T, Param> = this.prepareData(key, function (data) {
-            if (this.changingDependent.size == 0 && stores_array.map(x => this.manager.data[x.Key]).every(x => x !== undefined && x.value !== UNINITILEZED && x.changingDependent.size == 0)) {
+            const everyThingReady = (this.changingDependent.size == 0) && stores_array.map(x => this.manager.data[x.Key]).every(x => x !== undefined && x.value !== UNINITILEZED && x.changingDependent.size == 0);
+            if (everyThingReady || this.updateIncomplete) {
                 const changes = stores_array.map((x, i) => this.oldValues == undefined ? true : (this.manager.data[x.Key].compare ?? deepEqual)(this.manager.data[x.Key].value, this.oldValues[i]))
                 this.oldValues = stores_array.map(x => this.manager.data[x.Key].value);
                 const results = stores_array.map((x, i) => (
@@ -385,12 +423,21 @@ export default class StoreManager<Param> {
                         changed: changes[i],
                         key: x,
                     }));
+                if (!everyThingReady) {
+                    // we updated but not all values were present, so we need to update later again.
+                    this.needUpdate = true;
+                }
                 return fn.call(this, data, single ? results[0] : results as any, this.value)
             }
             return UNINITILEZED;
+        }, {
+            configureData: (data) => {
+                data.updateIncomplete = options?.evalueateUndefined ?? false;
+                data.compare = options?.compare;
+            }
         });
 
-        current.compare = compare;
+        // current.updateIncomplete = options?.evalueateUndefined ?? false;
         stores_array.forEach(x => {
             const toAdd = this.prepareData(x);
             toAdd.alsoNotify.add(key.Key);
@@ -421,7 +468,7 @@ export default class StoreManager<Param> {
                 if (!notify.has(also)) {
                     notify.add(also);
                     const next = this.data[also];
-                    collect.call(this, next);
+                    // collect.call(this, next);
                 }
             }
         }
@@ -444,8 +491,10 @@ export default class StoreManager<Param> {
             // if (n.fn == UNINITILEZED) {
             //     continue;
             // }
-            n.changingDependent.add(current.id);
-            this.invalidate(n);
+            if (!n.changingDependent.has(current.id)) {
+                n.changingDependent.add(current.id);
+                this.invalidate(n);
+            }
         }
     }
 
@@ -494,12 +543,14 @@ export default class StoreManager<Param> {
 
 
 
-        if (current.changingDependent.size === 0) {
+        if (current.changingDependent.size === 0 || current.updateIncomplete) {
 
             for (const n of [...clear].map(x => this.data[x])) {
-                    // we also need to change wehen dependent list change
+                // we also need to change wehen dependent list change
+                if (n.changingDependent.has(current.id)) {
                     this.recordChange();
-                n.changingDependent.delete(current.id);
+                    n.changingDependent.delete(current.id);
+                }
             }
         }
         for (const n of [...notify].map(x => this.data[x])) {

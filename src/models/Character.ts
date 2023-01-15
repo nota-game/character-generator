@@ -1,4 +1,4 @@
-import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit } from "../data/nota.g";
+import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max } from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData } from "../misc/StoreManager2";
 import type { Readable, Writable } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
@@ -6,7 +6,7 @@ import * as mathjs from 'mathjs'
 
 import { Data, type DependencyData } from "./Data";
 import { distinct, filterNull, getLast, groupBy, notUndefined, toObjectKey } from "../misc/misc";
-import { cos, index, isResultSet, meanTransformDependencies, xgcd } from "mathjs";
+import { cos, fix, index, isResultSet, meanTransformDependencies, xgcd } from "mathjs";
 
 export type EigenschaftTypes = 'bereich' | 'reihe' | 'punkt' | 'berechnung';
 export type EigenschaftTypesLevel = 'morph' | 'art' | 'gattung' | 'organismus';
@@ -70,6 +70,33 @@ export type TypeOfKey<T extends Key<string, any>> = T extends Key<string, infer 
     : never;
 
 
+type TagKeys<id extends string = string> = {
+    Effective: TagEffectiveKey<id>,
+
+}
+type TagEffectiveKey<id extends string = string> = Key<`/tag/${id}`, number>;
+
+
+type TalentKeys<id extends string = string> = {
+    Effective: TalentEffectiveKey<id>,
+    Base: TalentBaseKey<id>,
+    Support: TalentSupportKey<id>,
+    Fixed: TalentFixedKey<id>,
+    Purchased: TalentPurchasedKey<id>,
+    Missing: TalentMissingKey<id>,
+    Cost: CostKey<'talent', id>,
+}
+
+type TalentEffectiveKey<id extends string = string> = Key<`/talent/${id}/effective`, number>;
+type TalentBaseKey<id extends string = string> = Key<`/talent/${id}/base`, number>;
+type TalentSupportKey<id extends string = string> = Key<`/talent/${id}/support`, number>;
+type TalentFixedKey<id extends string = string> = Key<`/talent/${id}/fixed`, number>;
+type TalentPurchasedKey<id extends string = string> = Key<`/talent/${id}/purchased`, number>;
+type TalentMissingKey<id extends string = string> = Key<`/talent/${id}/missing`, {
+    wert: number;
+    missing: MissingRequirements;
+}[]>;
+
 type FertigkeitKeys<id extends string = string> = {
     Effective: FertigkeitEffectiveKey<id>,
     Unbeschränkt: FertigkeitUnbeschränktKey<id>,
@@ -83,7 +110,7 @@ type FertigkeitEffectiveKey<id extends string = string> = Key<`/fertigkeit/${id}
 type FertigkeitUnbeschränktKey<id extends string = string> = Key<`/fertigkeit/${id}/StufeUnbeschränkt`, number>;
 type FertigkeitFixedKey<id extends string = string> = Key<`/fertigkeit/${id}/fixed`, number>;
 type FertigkeitPurchasedKey<id extends string = string> = Key<`/fertigkeit/${id}/purchased`, number>;
-type FertigkeitMissingKey<id extends string = string> = Key<`/fertigkeit/${id}/Missing`, {
+type FertigkeitMissingKey<id extends string = string> = Key<`/fertigkeit/${id}/missing`, {
     wert: number;
     missing: MissingRequirements;
 }[]>;
@@ -103,7 +130,7 @@ type BesonderheitPurchasedKey<id extends string = string> = Key<`/besonderheit/$
 type BesonderheitFixedKey<id extends string = string> = Key<`/besonderheit/${id}/fixed`, number>;
 type BesonderheitUnbeschränktKey<id extends string = string> = Key<`/besonderheit/${id}/StufeUnbeschränkt`, number>;
 type BesonderheitEffectiveKey<id extends string = string> = Key<`/besonderheit/${id}/Stufe`, number>;
-type BesonderheitMissingKey<id extends string = string> = Key<`/besonderheit/${id}/Missing`, {
+type BesonderheitMissingKey<id extends string = string> = Key<`/besonderheit/${id}/missing`, {
     wert: number;
     missing: MissingRequirements;
 }[]>;
@@ -185,6 +212,20 @@ export class Charakter {
         cost: Readable<TypeOfKey<CostKey<'fertigkeit'>>>,
     }> = {};
 
+    public readonly talente: Record<string, {
+        effective: Readable<number>,
+        base: Readable<number>,
+        support: Readable<number>,
+        purchased: Writable<number>,
+        fixed: Readable<number>,
+        missing: Readable<{ wert: number; missing: MissingRequirements; }[]>,
+        cost: Readable<TypeOfKey<CostKey<'talent'>>>,
+    }> = {};
+
+    public readonly tag: Record<string, {
+        effective: Readable<number>,
+    }> = {};
+
 
     public readonly lebensAbschnitteStore: Readable<{
         gattung: LebensabschnittDefinition_lebewesen | undefined;
@@ -248,7 +289,7 @@ export class Charakter {
                         id: fertigkeit.id,
                         type: fertigkeit.type
                     }
-                } else if (fertigkeit.type == 'Missing') {
+                } else if (fertigkeit.type == 'missing') {
                     return {
                         kind: 'fertigkeit' as const,
                         entry: e as KeyData<FertigkeitMissingKey>,
@@ -287,7 +328,7 @@ export class Charakter {
                         id: besonderheit.id,
                         type: besonderheit.type,
                     }
-                } else if (besonderheit.type == 'Missing') {
+                } else if (besonderheit.type == 'missing') {
                     return {
                         kind: 'besonderheit' as const,
                         entry: e as KeyData<BesonderheitMissingKey>,
@@ -319,6 +360,54 @@ export class Charakter {
                     }
                 }
             }
+            const talent = this.getIdFromTalentKey(e.key);
+            if (talent) {
+                if (talent.type == 'effective') {
+                    return {
+                        kind: 'talent' as const,
+                        entry: e as KeyData<TalentEffectiveKey>,
+                        id: talent.id,
+                        type: talent.type,
+                    }
+                } else if (talent.type == 'base') {
+                    return {
+                        kind: 'talent' as const,
+                        entry: e as KeyData<TalentBaseKey>,
+                        id: talent.id,
+                        type: talent.type,
+                    }
+                } else if (talent.type == 'support') {
+                    return {
+                        kind: 'talent' as const,
+                        entry: e as KeyData<TalentSupportKey>,
+                        id: talent.id,
+                        type: talent.type,
+                    }
+                } else if (talent.type == 'missing') {
+                    return {
+                        kind: 'talent' as const,
+                        entry: e as KeyData<TalentMissingKey>,
+                        id: talent.id,
+                        type: talent.type,
+                    }
+                } else if (talent.type == 'fixed') {
+                    return {
+                        kind: 'talent' as const,
+                        entry: e as KeyData<TalentFixedKey>,
+                        id: talent.id,
+                        type: talent.type,
+                    }
+                } else if (talent.type == 'purchased') {
+                    return {
+                        kind: 'talent' as const,
+                        entry: e as KeyData<TalentPurchasedKey>,
+                        id: talent.id,
+                        type: talent.type,
+
+
+                    }
+                }
+            }
 
             return {
                 kind: 'other' as const,
@@ -335,6 +424,36 @@ export class Charakter {
             [e in keyof K]: KeyData<K[e]>;
         }
 
+        const talentDependency = notUndefined(enrich
+            .map(([key, value]) => {
+                const erg = {
+                    kind: 'talent',
+                    id: key,
+                } as Partial<MapKeyData<TalentKeys>> & { kind: 'talent', id: string };
+                if (value[0]?.kind != erg.kind) {
+                    return undefined;
+                }
+                for (const v of value) {
+                    if (v.kind === erg.kind) {
+                        if (v.type == 'effective') {
+                            erg.Effective = v.entry;
+                        } else if (v.type == 'base') {
+                            erg.Base = v.entry;
+                        } else if (v.type == 'support') {
+                            erg.Support = v.entry;
+                        } else if (v.type == 'missing') {
+                            erg.Missing = v.entry;
+                        } else if (v.type == 'fixed') {
+                            erg.Fixed = v.entry;
+                        } else if (v.type == 'purchased') {
+                            erg.Purchased = v.entry;
+                        }
+                    }
+                }
+                return erg as MapKeyData<TalentKeys> & { kind: 'talent', id: string };
+            }));
+
+
         const fertigkeitDependency = notUndefined(enrich
             .map(([key, value]) => {
                 const erg = {
@@ -348,7 +467,7 @@ export class Charakter {
                     if (v.kind === erg.kind) {
                         if (v.type == 'Stufe') {
                             erg.Effective = v.entry;
-                        } else if (v.type == 'Missing') {
+                        } else if (v.type == 'missing') {
                             erg.Missing = v.entry;
                         } else if (v.type == 'StufeUnbeschränkt') {
                             erg.Unbeschränkt = v.entry;
@@ -376,7 +495,7 @@ export class Charakter {
                     if (v.kind === erg.kind) {
                         if (v.type == 'Stufe') {
                             erg.Effective = v.entry;
-                        } else if (v.type == 'Missing') {
+                        } else if (v.type == 'missing') {
                             erg.Missing = v.entry;
                         } else if (v.type == 'StufeUnbeschränkt') {
                             erg.Unbeschränkt = v.entry;
@@ -426,7 +545,7 @@ export class Charakter {
                     return undefined;
                 }
             }));
-        return { fertigkeitDependency, besonderheitDependency, eigenschaftDependency, otherDependency };
+        return { fertigkeitDependency, besonderheitDependency, eigenschaftDependency, talentDependency, otherDependency };
     }
 
 
@@ -437,19 +556,19 @@ export class Charakter {
             Purchased: this.storeManager.key(`/besonderheit/${Id}/purchased`).of<TypeOfKey<BesonderheitPurchasedKey<id>>>(),
             Effective: this.storeManager.key(`/besonderheit/${Id}/Stufe`).of<TypeOfKey<BesonderheitEffectiveKey<id>>>(),
             Fixed: this.storeManager.key(`/besonderheit/${Id}/fixed`).of<TypeOfKey<BesonderheitFixedKey<id>>>(),
-            Missing: this.storeManager.key(`/besonderheit/${Id}/Missing`).of<TypeOfKey<BesonderheitMissingKey<id>>>(),
+            Missing: this.storeManager.key(`/besonderheit/${Id}/missing`).of<TypeOfKey<BesonderheitMissingKey<id>>>(),
             Unbeschränkt: this.storeManager.key(`/besonderheit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<BesonderheitUnbeschränktKey<id>>>(),
             Cost: this.storeManager.key(`/besonderheit/${Id}/cost`).of<TypeOfKey<CostKey<'besonderheit', id>>>(),
         }
     }
 
 
-    private getIdFromBesonterheitkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' | 'cost' } | undefined
+    private getIdFromBesonterheitkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | 'cost' } | undefined
     private getIdFromBesonterheitkeitKey<id extends string>(key: BesonderheitPurchasedKey<id> | BesonderheitFixedKey<id> | BesonderheitUnbeschränktKey<id> | BesonderheitMissingKey<id> | BesonderheitEffectiveKey<id>) {
         const reg = /\/besonderheit\/(?<name>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
         const erg = match?.groups?.['name'] as id | undefined;
-        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' | undefined;
+        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | undefined;
         return (erg == undefined || type == undefined)
             ? undefined
             : { id: erg, type: type };
@@ -461,20 +580,60 @@ export class Charakter {
             Purchased: this.storeManager.key(`/fertigkeit/${Id}/purchased`).of<TypeOfKey<FertigkeitPurchasedKey<id>>>(),
             Effective: this.storeManager.key(`/fertigkeit/${Id}/Stufe`).of<TypeOfKey<FertigkeitEffectiveKey<id>>>(),
             Fixed: this.storeManager.key(`/fertigkeit/${Id}/fixed`).of<TypeOfKey<FertigkeitFixedKey<id>>>(),
-            Missing: this.storeManager.key(`/fertigkeit/${Id}/Missing`).of<TypeOfKey<FertigkeitMissingKey>>(),
+            Missing: this.storeManager.key(`/fertigkeit/${Id}/missing`).of<TypeOfKey<FertigkeitMissingKey>>(),
             Unbeschränkt: this.storeManager.key(`/fertigkeit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<FertigkeitUnbeschränktKey<id>>>(),
             Cost: this.storeManager.key(`/fertigkeit/${Id}/cost`).of<TypeOfKey<CostKey<'fertigkeit', id>>>(),
         };
     }
 
-
-
-    private getIdFromFertigkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' | 'cost' } | undefined
+    private getIdFromFertigkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | 'cost' } | undefined
     private getIdFromFertigkeitKey<id extends string>(key: FertigkeitPurchasedKey<id> | FertigkeitFixedKey<id> | FertigkeitUnbeschränktKey<id> | FertigkeitMissingKey<id> | FertigkeitEffectiveKey<id>) {
         const reg = /\/fertigkeit\/(?<name>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
         const erg = match?.groups?.['name'] as id | undefined;
-        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'Missing' | 'Stufe' | undefined;
+        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | undefined;
+        return (erg == undefined || type == undefined)
+            ? undefined
+            : { id: erg, type: type };
+    }
+
+
+    private getTagKeys<id extends string>(Id: id): TagKeys<id> {
+        return {
+            Effective: this.storeManager.key(`/tag/${Id}`).of<TypeOfKey<TagEffectiveKey<id>>>(),
+        };
+    }
+
+    private getIdFromTagKey(key: Key<string, any>): { id: string, type: 'effective' } | undefined
+    private getIdFromTagKey<id extends string>(key: TagEffectiveKey<id>) {
+        const reg = /\/tag\/(?<name>[^/]+)/
+        const match = key.Key.match(reg);
+        const erg = match?.groups?.['name'] as id | undefined;
+        const type = 'effective';
+        return (erg == undefined)
+            ? undefined
+            : { id: erg, type: type };
+    }
+
+
+    private getTalentKeys<id extends string>(Id: id): TalentKeys<id> {
+        return {
+            Effective: this.storeManager.key(`/talent/${Id}/effective`).of<TypeOfKey<TalentEffectiveKey<id>>>(),
+            Base: this.storeManager.key(`/talent/${Id}/base`).of<TypeOfKey<TalentBaseKey<id>>>(),
+            Support: this.storeManager.key(`/talent/${Id}/support`).of<TypeOfKey<TalentSupportKey<id>>>(),
+            Purchased: this.storeManager.key(`/talent/${Id}/purchased`).of<TypeOfKey<TalentPurchasedKey<id>>>(),
+            Fixed: this.storeManager.key(`/talent/${Id}/fixed`).of<TypeOfKey<TalentFixedKey<id>>>(),
+            Missing: this.storeManager.key(`/talent/${Id}/missing`).of<TypeOfKey<TalentMissingKey>>(),
+            Cost: this.storeManager.key(`/talent/${Id}/cost`).of<TypeOfKey<CostKey<'talent', id>>>(),
+        };
+    }
+
+    private getIdFromTalentKey(key: Key<string, any>): { id: string, type: 'effective' | 'base' | 'support' | 'purchased' | 'fixed' | 'missing' | 'cost' } | undefined
+    private getIdFromTalentKey<id extends string>(key: TalentPurchasedKey<id> | TalentFixedKey<id> | TalentMissingKey<id> | TalentEffectiveKey<id> | TalentBaseKey<id> | TalentSupportKey<id>) {
+        const reg = /\/talent\/(?<name>[^/]+)\/(?<type>[^/]+)/
+        const match = key.Key.match(reg);
+        const erg = match?.groups?.['name'] as id | undefined;
+        const type = match?.groups?.['type'] as 'effective' | 'base' | 'support' | 'purchased' | 'fixed' | 'missing' | 'cost' | undefined;
         return (erg == undefined || type == undefined)
             ? undefined
             : { id: erg, type: type };
@@ -631,7 +790,7 @@ export class Charakter {
         });
 
 
-        const mapDependecyToKeys = (deps: DependencyData[], types?: (keyof BesonderheitKeys | keyof FertigkeitKeys)[]) => {
+        const mapDependecyToKeys = (deps: DependencyData[], types?: (keyof BesonderheitKeys | keyof FertigkeitKeys | keyof TalentKeys | keyof EigenschaftKeys)[]) => {
 
             const dependentData = deps.map(x => x.Typ);
 
@@ -645,11 +804,30 @@ export class Charakter {
                 });
             const dependentFertigkeiten = dependentData.filter(x => x.startsWith('fertigkeit-'))
                 .map(x => x.substring('fertigkeit-'.length))
-                .flatMap(x => Object.values(this.getFertigkeitenKeys(x)));
+                .flatMap(x => {
+                    if (types != undefined) {
+                        return Object.entries(this.getFertigkeitenKeys(x)).filter(([key]) => types.includes(key as any)).map(([key, value]) => value);
+                    }
+                    return Object.values(this.getFertigkeitenKeys(x));
+                });
 
             const dependentEigenschaften = dependentData.filter(x => x.startsWith('eigenschaft-'))
                 .map(x => x.substring('eigenschaft-'.length))
-                .flatMap(x => Object.values(this.getPropertieKeys(x)));
+                .flatMap(x => {
+                    if (types != undefined) {
+                        return Object.entries(this.getPropertieKeys(x)).filter(([key]) => types.includes(key as any)).map(([key, value]) => value);
+                    }
+                    return Object.values(this.getPropertieKeys(x))
+                });
+
+            const dependentTalent = dependentData.filter(x => x.startsWith('talent-'))
+                .map(x => x.substring('talent-'.length))
+                .flatMap(x => {
+                    if (types != undefined) {
+                        return Object.entries(this.getTalentKeys(x)).filter(([key]) => types.includes(key as any)).map(([key, value]) => value);
+                    }
+                    return Object.values(this.getTalentKeys(x))
+                });
 
             const dependentAge = dependentData.filter(x => x == 'other-alter')
                 .map(x => ageKey);
@@ -666,16 +844,17 @@ export class Charakter {
             const dependentLebensabschnittMorph = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(x => lebensabschnittMorphKey);
 
             const dep = [
-                ...dependentBesonderheiten,
                 ...dependentGattung,
-                ...dependentFertigkeiten,
-                ...dependentEigenschaften,
-                ...dependentAge,
                 ...dependentArt,
                 ...dependentMorph,
+                ...dependentEigenschaften,
+                ...dependentBesonderheiten,
+                ...dependentFertigkeiten,
+                ...dependentTalent,
+                ...dependentAge,
                 ...dependentLebensabschnittArt,
                 ...dependentLebensabschnittGattung,
-                ...dependentLebensabschnittMorph
+                ...dependentLebensabschnittMorph,
             ];
             return dep;
         }
@@ -722,17 +901,19 @@ export class Charakter {
                     ;
                 // console.log('morph', morph?.Id);
                 return base == undefined ? undefined : { ...base, morphId: morph?.Id, gattungId: gattung?.Id, artId: art?.Id };
-            }, (a, b) => {
-                if (a === UNINITILEZED) {
-                    return b === UNINITILEZED;
-                } else if (b === UNINITILEZED) {
-                    return false;
-                } else if (a === undefined) {
-                    return b === undefined;
-                } else if (b === undefined) {
-                    return false;
-                } else {
-                    return a?.entry.id === b?.entry.id && a?.type === b?.type && b?.level === a?.level && a.gattungId == b.gattungId && a.artId == b.artId && a.morphId == b.morphId;
+            }, {
+                compare: (a, b) => {
+                    if (a === UNINITILEZED) {
+                        return b === UNINITILEZED;
+                    } else if (b === UNINITILEZED) {
+                        return false;
+                    } else if (a === undefined) {
+                        return b === undefined;
+                    } else if (b === undefined) {
+                        return false;
+                    } else {
+                        return a?.entry.id === b?.entry.id && a?.type === b?.type && b?.level === a?.level && a.gattungId == b.gattungId && a.artId == b.artId && a.morphId == b.morphId;
+                    }
                 }
             });
 
@@ -1194,6 +1375,167 @@ export class Charakter {
         }
 
 
+        for (const talent of this.stammdaten.Instance.Daten.Talente.flatMap(x => x.Talent)) {
+
+
+            const keys = this.getTalentKeys(talent.Id);
+
+            this.talente[talent.Id] = {
+                effective: this.storeManager.readable(keys.Effective),
+                base: this.storeManager.readable(keys.Base),
+                support: this.storeManager.readable(keys.Support),
+                purchased: this.storeManager.writable(keys.Purchased, 0),
+                fixed: this.storeManager.readable(keys.Fixed),
+                missing: this.storeManager.readable(keys.Missing),
+                cost: this.storeManager.readable(keys.Cost),
+            };
+
+            const dependentData = this.stammdaten.talentDependencys.filter(x => x.Eigenschaft == talent.Id);
+
+            const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+            const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
+            const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
+            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
+
+
+
+            this.storeManager.derived(keys.Effective, [keys.Base, keys.Support, keys.Missing], (data, [base, support, missing]) => {
+                return Math.min(base.newValue + support.newValue, ...missing.newValue.map(x => x.wert - 1));
+            });
+            this.storeManager.derived(keys.Base, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
+
+                const ep = purchased.newValue + fixed.newValue;
+                const complexity = talent.Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
+                const levelCots = data.talentCostTabel[complexity]
+
+
+                for (let i = levelCots.length - 1; i >= 0; i--) {
+                    if (levelCots[i].Kosten.Wert <= ep) {
+                        return i;
+                    }
+                }
+                return 0;
+            });
+            this.storeManager.derived(keys.Support, [...supportDependency], (data, [...dependent]) => {
+
+
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, talentDependency } = this.groupDependencyData(dependent);
+
+
+
+                const lookup = Object.fromEntries(talentDependency.map(x => [x.id, x]));
+
+
+                return [...(talent.Ableitungen?.Ableitung ?? []).map(calculateAbleitung),
+                ...(talent.Ableitungen?.Max ?? []).map(calculateMax)].reduce((p, c) => p + c, 0);
+
+
+
+
+
+
+
+
+                return 0;
+
+                function calculateMax(m: _Max): number {
+                    const values = [...m.Ableitung?.map(calculateAbleitung) ?? [],
+                    ...m.Max?.map(calculateMax) ?? []
+                    ].sort((a, b) => b - a);
+
+                    return values.filter((_, i) => i < m.Anzahl).reduce((p, c) => p + c, 0);
+                }
+
+                function calculateAbleitung(a: _Ableitung) {
+                    const other = lookup[a.Id];
+                    // missing requirments may lower the talent below base.
+                    const otherValue = Math.min(other.Base.newValue, ...other.Missing.newValue.map(x => x.wert));
+
+                    return Math.floor(otherValue / a.Anzahl);
+                }
+            });
+
+
+
+            this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
+                // todo get fixed besonderheiten
+
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+
+                return 0;
+                // return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax);
+            });
+
+            this.storeManager.derived(keys.Missing, [keys.Base, keys.Support, ...requirementsDependency], (data, [base, support, ...dependent]) => {
+                // todo get Missing stuff
+
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, talentDependency } = this.groupDependencyData(dependent);
+
+
+                if (base.newValue == UNINITILEZED || support.newValue == UNINITILEZED) {
+                    return [];
+                }
+                const currentLevel = base.newValue + support.newValue;
+
+                const result = filterNull(talent.Level
+                    .filter(x => x.Wert <= currentLevel)
+                    .map(x => {
+                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency);
+                        if (missing == null) {
+                            return null;
+                        }
+                        return {
+                            wert: x.Wert, missing: missing
+                        };
+                    }));
+
+                return result;
+            }, { evalueateUndefined: true });
+
+            this.storeManager.derived(keys.Cost, [keys.Purchased], (data, [purchased]) => {
+                const defaultKostData = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten)[0];
+                const result = {} as Cost;
+                result[defaultKostData.Id] = purchased.newValue;
+                return result;
+            });
+
+
+
+
+
+        }
+
+
+
+        for (const tag of this.stammdaten.Instance.Daten.Tags.Tag) {
+
+
+            const keys = this.getTagKeys(tag.Id);
+
+            this.tag[tag.Id] = {
+                effective: this.storeManager.readable(keys.Effective),
+            };
+
+            const dependentData = this.stammdaten.talentDependencys.filter(x => x.Eigenschaft == tag.Id);
+
+            const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+            const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base']);
+            const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
+            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support']);
+
+
+
+            this.storeManager.derived(keys.Effective, [ageKey], (data) => {
+                return 0;
+            });
+
+
+
+
+
+        }
+
+
 
 
 
@@ -1218,7 +1560,11 @@ export class Charakter {
         fertigkeitDependency: (MapKeyData<FertigkeitKeys<string>> & {
             kind: 'fertigkeit';
             id: string;
-        })[]
+        })[],
+        talentDependency: (MapKeyData<TalentKeys<string>> & {
+            kind: 'talent';
+            id: string;
+        })[],
     ): MissingRequirements | null {
         if (requirements == undefined)
             return null;
@@ -1227,9 +1573,9 @@ export class Charakter {
 
 
 
-        const talentEffective: Record<string, number> = {};
-        const talentDerivation: Record<string, number> = {};
-        const talentBase: Record<string, number> = {};
+        const talentEffective: Record<string, number> =  Object.fromEntries(talentDependency.map(x => [x.id, x.Effective.newValue] as const));
+        const talentDerivation: Record<string, number> =  Object.fromEntries(talentDependency.map(x => [x.id, x.Support.newValue] as const));
+        const talentBase: Record<string, number> = Object.fromEntries(talentDependency.map(x => [x.id, x.Base.newValue] as const));
         const besonderheiten: Record<string, number | undefined> = Object.fromEntries(besonderheitDependency.map(x => [x.id, x.Unbeschränkt.newValue] as const));
         const fertigkeiten: Record<string, number | undefined> = Object.fromEntries(fertigkeitDependency.map(x => [x.id, x.Unbeschränkt.newValue] as const));
         const tags: Record<string, true | undefined> = {};

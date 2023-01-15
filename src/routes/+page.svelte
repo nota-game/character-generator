@@ -6,6 +6,7 @@
 	import Besonderheit from '../view/root/besonderheit.svelte';
 	import { writable } from 'svelte/store';
 	import Fertigkeit from 'src/view/root/fertigkeit.svelte';
+	import Talent from 'src/view/root/talent.svelte';
 
 	let char: Charakter | undefined;
 
@@ -92,9 +93,14 @@
 		{/each}
 
 		<hr />
-
+		
 		{#each Object.entries(char.fertigkeiten) as [key, entry]}
-			<Fertigkeit data={$data} {key} {...entry} />
+		<Fertigkeit data={$data} {key} {...entry} />
+		{/each}
+		
+		<hr />
+		{#each Object.entries(char.talente) as [key, entry]}
+			<Talent data={$data} {key} {...entry} />
 		{/each}
 	{/if}
 
