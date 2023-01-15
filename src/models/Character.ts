@@ -400,6 +400,18 @@ export class Charakter {
                     }
                 }
             }
+            const tag = this.getIdFromTagKey(e.key);
+            if (tag) {
+                if (tag.type == 'effective') {
+                    return {
+                        kind: 'tag' as const,
+                        entry: e as KeyData<TagEffectiveKey>,
+                        id: tag.id,
+                        type: tag.type,
+                    }
+
+                }
+            }
 
             return {
                 kind: 'other' as const,
@@ -500,6 +512,7 @@ export class Charakter {
                 }
                 return erg as MapKeyData<BesonderheitKeys> & { kind: 'besonderheit', id: string };
             }));
+
         const eigenschaftDependency = notUndefined(enrich
             .map(([key, value]) => {
                 const erg = {
@@ -524,6 +537,24 @@ export class Charakter {
                 }
                 return erg as MapKeyData<EigenschaftKeys> & { kind: 'property', id: string };
             }));
+        const tagDependency = notUndefined(enrich
+            .map(([key, value]) => {
+                const erg = {
+                    kind: 'tag',
+                    id: key,
+                } as Partial<MapKeyData<TagKeys>> & { kind: 'tag', id: string };
+                if (value[0]?.kind != erg.kind) {
+                    return undefined;
+                }
+                for (const v of value) {
+                    if (v.kind === erg.kind) {
+                        if (v.type == 'effective') {
+                            erg.Effective = v.entry;
+                        }
+                    }
+                }
+                return erg as MapKeyData<TagKeys> & { kind: 'tag', id: string };
+            }));
         const otherDependency = notUndefined(enrich
             .flatMap(([, value]) => {
                 if (value[0]?.kind === 'other') {
@@ -537,7 +568,7 @@ export class Charakter {
                     return undefined;
                 }
             }));
-        return { fertigkeitDependency, besonderheitDependency, eigenschaftDependency, talentDependency, otherDependency };
+        return { fertigkeitDependency, besonderheitDependency, eigenschaftDependency, talentDependency, otherDependency, tagDependency };
     }
 
 
@@ -820,6 +851,15 @@ export class Charakter {
                     }
                     return Object.values(this.getTalentKeys(x))
                 });
+         
+                const dependentTag = dependentData.filter(x => x.startsWith('tag-'))
+                .map(x => x.substring('tag-'.length))
+                .flatMap(x => {
+                    if (types != undefined) {
+                        return Object.entries(this.getTagKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                    }
+                    return Object.values(this.getTagKeys(x))
+                });
 
             const dependentAge = dependentData.filter(x => x == 'other-alter')
                 .map(() => ageKey);
@@ -843,6 +883,7 @@ export class Charakter {
                 ...dependentBesonderheiten,
                 ...dependentFertigkeiten,
                 ...dependentTalent,
+                ...dependentTag,
                 ...dependentAge,
                 ...dependentLebensabschnittArt,
                 ...dependentLebensabschnittGattung,
@@ -1458,7 +1499,7 @@ export class Charakter {
             });
 
             this.storeManager.derived(keys.Missing, [keys.Base, keys.Support, ...requirementsDependency], (data, [base, support, ...dependent]) => {
-                const { besonderheitDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
+                const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
 
 
                 if (base.newValue == UNINITILEZED || support.newValue == UNINITILEZED) {
@@ -1469,7 +1510,7 @@ export class Charakter {
                 const result = filterNull(talent.Level
                     .filter(x => x.Wert <= currentLevel)
                     .map(x => {
-                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency);
+                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
                         if (missing == null) {
                             return null;
                         }
@@ -1590,6 +1631,10 @@ export class Charakter {
             kind: 'talent';
             id: string;
         })[],
+        tagDependency: (MapKeyData<TagKeys<string>> & {
+            kind: 'tag';
+            id: string;
+        })[],
     ): MissingRequirements | null {
         if (requirements == undefined)
             return null;
@@ -1603,7 +1648,7 @@ export class Charakter {
         const talentBase: Record<string, number> = Object.fromEntries(talentDependency.map(x => [x.id, x.Base.newValue] as const));
         const besonderheiten: Record<string, number | undefined> = Object.fromEntries(besonderheitDependency.map(x => [x.id, x.Unbeschränkt.newValue] as const));
         const fertigkeiten: Record<string, number | undefined> = Object.fromEntries(fertigkeitDependency.map(x => [x.id, x.Unbeschränkt.newValue] as const));
-        const tags: Record<string, true | undefined> = {};
+        const tags: Record<string, number> = Object.fromEntries(tagDependency.map(x => [x.id, x.Effective.newValue] as const));
 
 
 
@@ -1615,7 +1660,7 @@ export class Charakter {
 
         const singel = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit, negate: boolean): MissingRequirements | null => {
             if (requirements["#"] == 'Tag') {
-                return (tags?.[requirements.Tag.Id] === true) !== negate
+                return (tags?.[requirements.Tag.Id] > 0) !== negate
                     ? null
                     : { type: 'tag', id: requirements.Tag.Id }
             } else if (requirements["#"] === 'Fertigkeit') {
