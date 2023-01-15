@@ -5,6 +5,7 @@
 	import PropertiesSetter from '../view/root/propertiesSetter.svelte';
 	import Besonderheit from '../view/root/besonderheit.svelte';
 	import { writable } from 'svelte/store';
+	import Fertigkeit from 'src/view/root/fertigkeit.svelte';
 
 	let char: Charakter | undefined;
 
@@ -37,7 +38,7 @@
 <hr />
 {#if char}
 	<!-- {#if $cost} -->
-		{JSON.stringify($cost)}
+	{JSON.stringify($cost)}
 	<!-- {/if} -->
 	<hr />
 
@@ -88,6 +89,12 @@
 	{#if $data}
 		{#each Object.entries(char.besonderheiten) as [key, entry]}
 			<Besonderheit data={$data} {key} {...entry} />
+		{/each}
+
+		<hr />
+
+		{#each Object.entries(char.fertigkeiten) as [key, entry]}
+			<Fertigkeit data={$data} {key} {...entry} />
 		{/each}
 	{/if}
 

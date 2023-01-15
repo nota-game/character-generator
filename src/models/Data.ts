@@ -65,6 +65,7 @@ export class Data {
 
     public readonly eigenschaftenDependencys: DependencyData[];
     public readonly besonderheitDependencys: DependencyData[];
+    public readonly fertigkeitDependencys: DependencyData[];
     public readonly allEigenschaftKeys: string[];
 
     public readonly AusrüstungsEigenschaftMap: Record<string, Readonly<AusrüstungEigengchaftDefinition_kampf_ausstattung>>;
@@ -351,7 +352,11 @@ export class Data {
                 [
                     ...(besonderheitGruppe.Besonderheit ?? []).flatMap(besonderheit => besonderheit.Stufe.flatMap(stufe => [
                         ...(stufe.Mods?.Besonderheiten?.Besonderheit ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `besonderheit-${besonderheit.Id}` }  satisfies DependencyData)),
-                        ...(getRequirements(stufe.Voraussetzung) ?? []).map(type => ({ Effecting: 'requirements' as const, Eigenschaft: besonderheit.Id, Typ: type }  satisfies DependencyData))
+                        ...(getRequirements(stufe.Voraussetzung) ?? []).map(type => ({ Effecting: 'requirements' as const, Eigenschaft: besonderheit.Id, Typ: type }  satisfies DependencyData)),
+                        ...stufe.Kosten.flatMap(x =>
+                            getKeysFrom(x.Berechnung).flatMap(type => [
+                                { Effecting: 'cost', Eigenschaft: besonderheit.Id, Typ: type }  satisfies DependencyData,
+                            ])),
                     ]))
                 ]),
             ...(this.instance.Daten.Fertigkeiten ?? []).flatMap(fertigkeitenGruppe =>
@@ -360,7 +365,6 @@ export class Data {
                         ...(stufe.Mods?.Besonderheiten?.Besonderheit ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `fertigkeit-${fertigkeit.Id}` }  satisfies DependencyData))
                     ]))
                 ]),
-            ...(this.instance.Daten.Organismen.Entwiklung?.Berechnung ?? []).flatMap(berechnung => getKeysFrom(berechnung.Formel).map(type => ({ Effecting: 'value' as const, Eigenschaft: berechnung.id, Typ: type }  satisfies DependencyData))),
 
             ...(this.instance.Daten.Organismen.Entwiklung?.Punkt ?? []).flatMap(punkt => [
                 ...(punkt.Mods?.Besonderheiten?.Besonderheit ?? []).flatMap(x => [
@@ -448,6 +452,17 @@ export class Data {
                     ])),
                 ])),
             ]),
+        ], e => `${e.Eigenschaft}δ${e.Typ}`);
+
+
+
+        this.fertigkeitDependencys = distinct([
+            ...(this.instance.Daten.Fertigkeiten ?? []).flatMap(fertigkeitenGruppe =>
+                [
+                    ...(fertigkeitenGruppe.Fertigkeit ?? []).flatMap(fertigkeit => fertigkeit.Stufe.flatMap(stufe => [
+                        ...(getRequirements(stufe.Voraussetzung) ?? []).map(type => ({ Effecting: 'requirements' as const, Eigenschaft: fertigkeit.Id, Typ: type }  satisfies DependencyData)),
+                    ])),
+                ]),
         ], e => `${e.Eigenschaft}δ${e.Typ}`);
 
 

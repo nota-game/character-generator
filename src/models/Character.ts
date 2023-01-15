@@ -176,6 +176,15 @@ export class Charakter {
         cost: Readable<TypeOfKey<CostKey<'besonderheit'>>>,
     }> = {};
 
+    public readonly fertigkeiten: Record<string, {
+        effective: Readable<number>,
+        unconditionally: Readable<number>,
+        purchased: Writable<number>,
+        fixed: Readable<number>,
+        missing: Readable<{ wert: number; missing: MissingRequirements; }[]>,
+        cost: Readable<TypeOfKey<CostKey<'fertigkeit'>>>,
+    }> = {};
+
 
     public readonly lebensAbschnitteStore: Readable<{
         gattung: LebensabschnittDefinition_lebewesen | undefined;
@@ -622,7 +631,7 @@ export class Charakter {
         });
 
 
-        const mapDependecyToKeys = (deps: DependencyData[], types?: (keyof BesonderheitKeys)[]) => {
+        const mapDependecyToKeys = (deps: DependencyData[], types?: (keyof BesonderheitKeys | keyof FertigkeitKeys)[]) => {
 
             const dependentData = deps.map(x => x.Typ);
 
@@ -1065,9 +1074,6 @@ export class Charakter {
                     }));
 
                 return result;
-
-
-                return [];
             });
 
             this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
@@ -1093,6 +1099,91 @@ export class Charakter {
 
                             return [y.Id, resultreturn] as const;
                         })), x => x);
+
+            });
+
+
+
+
+
+        }
+
+
+        for (const fertigkeit of this.stammdaten.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit)) {
+
+
+            const keys = this.getFertigkeitenKeys(fertigkeit.Id);
+
+            this.fertigkeiten[fertigkeit.Id] = {
+                effective: this.storeManager.readable(keys.Effective),
+                unconditionally: this.storeManager.readable(keys.Unbeschränkt),
+                purchased: this.storeManager.writable(keys.Purchased, 0),
+                fixed: this.storeManager.readable(keys.Fixed),
+                missing: this.storeManager.readable(keys.Missing),
+                cost: this.storeManager.readable(keys.Cost),
+            };
+
+            const dependentData = this.stammdaten.fertigkeitDependencys.filter(x => x.Eigenschaft == fertigkeit.Id);
+
+            const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+            const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
+            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt']);
+
+
+
+            this.storeManager.derived(keys.Effective, [keys.Unbeschränkt, keys.Missing], (data, [unconditionally, missing]) => {
+                return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
+            });
+            this.storeManager.derived(keys.Unbeschränkt, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
+                return Math.max(purchased.newValue, fixed.newValue);
+            });
+
+
+
+            this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
+                // todo get fixed besonderheiten
+
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+
+                return 0;
+                // return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax);
+            });
+
+            this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
+                // todo get Missing stuff
+
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+
+                const result = filterNull(fertigkeit.Stufe
+                    .filter((x, i) => i < effective.newValue)
+                    .map((x, i) => {
+                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency);
+                        if (missing == null) {
+                            return null;
+                        }
+                        return {
+                            wert: i + 1, missing: missing
+                        };
+                    }));
+
+                return result;
+            });
+
+            this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+
+                const defaultKostData = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten)[0];
+
+
+                return toCost(
+                    fertigkeit.Stufe.map((x, i) => ({ index: i, ...x }))
+                        .filter(x => x.index < purchased.newValue)
+                        .filter(x => x.index >= fixed.newValue)
+                        .map(y => {
+
+                            return [defaultKostData.Id, y.Kosten] as const;
+                        }), x => x);
 
             });
 
