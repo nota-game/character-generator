@@ -1195,7 +1195,7 @@ export class Charakter {
 
             const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
             const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
-            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt']);
+            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt', 'Effective', "Base", 'Support']);
 
 
 
@@ -1243,7 +1243,7 @@ export class Charakter {
                 const { besonderheitDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
 
                 const result = filterNull(besonderheit.Stufe
-                    .filter((x, i) => i < effective.newValue)
+                    .filter((x, i) => i < (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
                     .map((x, i) => {
                         const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency);
                         if (missing == null) {
@@ -1255,7 +1255,7 @@ export class Charakter {
                     }));
 
                 return result;
-            });
+            }, { evalueateUndefined: true });
 
             this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
 
@@ -1308,7 +1308,7 @@ export class Charakter {
 
             const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
             const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
-            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt']);
+            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt', 'Effective', 'Support', 'Base']);
 
 
 
@@ -1336,7 +1336,7 @@ export class Charakter {
                 const { besonderheitDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
 
                 const result = filterNull(fertigkeit.Stufe
-                    .filter((x, i) => i < effective.newValue)
+                    .filter((x, i) => i < (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
                     .map((x, i) => {
                         const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency);
                         if (missing == null) {
@@ -1348,7 +1348,7 @@ export class Charakter {
                     }));
 
                 return result;
-            });
+            }, { evalueateUndefined: true });
 
             this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
 
