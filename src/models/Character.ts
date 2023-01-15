@@ -916,7 +916,7 @@ export class Charakter {
                 }
 
 
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency } = this.groupDependencyData(dependent);
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
 
 
 
@@ -1022,37 +1022,46 @@ export class Charakter {
 
                 // check modifier
 
-                const mods =
-                    fertigkeitDependency.flatMap(x => {
+                const mods = [
+                    ...fertigkeitDependency.flatMap(x => {
                         const instance = data.fertigkeitenMap[x.id];
                         return instance.Stufe.filter((y, i) => x.Effective.newValue > i).flatMap(y =>
                             notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
                         )
-                    }).concat(
-                        besonderheitDependency.flatMap(x => {
-                            const instance = data.besonderheitenMap[x.id];
-                            return instance.Stufe.filter((y, i) => x.Effective.newValue > i).flatMap(y =>
-                                notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
-                            )
-                        }))
-                        .concat(
-                            dependent
-                                .filter((x): x is KeyData<LebensabschittGattungKey | LebensabschittArtKey | LebensabschittMorphKey> => x.key.Key.endsWith('/lebensabschnitt'))
-                                .flatMap(x =>
-                                    notUndefined(x.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? []))
-                        ).concat(
-                            eigenschaftDependency
-                                .flatMap((x) => {
-                                    if (x.Meta.newValue?.type == 'punkt' && x.Effective.newValue == 1) {
-                                        return (x.Meta.newValue.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
-                                    }
-                                    else if (x.Meta.newValue?.type == 'reihe') {
-                                        return x.Meta.newValue.currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [];
-                                    }
-                                    return [];
-                                })
+                    }),
+
+
+                    ...besonderheitDependency.flatMap(x => {
+                        const instance = data.besonderheitenMap[x.id];
+                        return instance.Stufe.filter((y, i) => x.Effective.newValue > i).flatMap(y =>
+                            notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
                         )
-                    ;
+                    }),
+
+                    ...dependent
+                        .filter((x): x is KeyData<LebensabschittGattungKey | LebensabschittArtKey | LebensabschittMorphKey> => x.key.Key.endsWith('/lebensabschnitt'))
+                        .flatMap(x =>
+                            notUndefined(x.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])),
+
+                    ...eigenschaftDependency
+                        .flatMap((x) => {
+                            if (x.Meta.newValue?.type == 'punkt' && x.Effective.newValue == 1) {
+                                return (x.Meta.newValue.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
+                            }
+                            else if (x.Meta.newValue?.type == 'reihe') {
+                                return x.Meta.newValue.currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [];
+                            }
+                            return [];
+                        }),
+
+                    ...talentDependency.flatMap(x => {
+                        const instance = data.talentMap[x.id];
+                        return instance.Level.filter((y) => x.Effective.newValue >= y.Wert).flatMap(y =>
+                            notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
+                        )
+                    })
+
+                ];
                 //TODO: Talents are not yet handled
 
 
