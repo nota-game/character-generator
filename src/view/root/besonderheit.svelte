@@ -20,4 +20,13 @@
 	{$effective}/{entry.Stufe.length}
 	<input type="number" bind:value={$purchased} min={0} max={entry.Stufe.length} />
 	{JSON.stringify($cost)}
+	{#if Object.values($missing).length > 0}
+		<span class="missing"> {JSON.stringify($missing)}</span>
+	{/if}
 </div>
+
+<style lang="scss">
+	.missing {
+		color: red;
+	}
+</style>

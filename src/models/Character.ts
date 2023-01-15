@@ -1,11 +1,11 @@
-import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType } from "../data/nota.g";
+import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit } from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData } from "../misc/StoreManager2";
 import type { Readable, Writable } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
 import * as mathjs from 'mathjs'
 
 import { Data, type DependencyData } from "./Data";
-import { distinct, getLast, groupBy, notUndefined, toObjectKey } from "../misc/misc";
+import { distinct, filterNull, getLast, groupBy, notUndefined, toObjectKey } from "../misc/misc";
 import { cos, index, isResultSet, meanTransformDependencies, xgcd } from "mathjs";
 
 export type EigenschaftTypes = 'bereich' | 'reihe' | 'punkt' | 'berechnung';
@@ -25,6 +25,10 @@ export type MissingRequirements = { type: 'tag', id: string }
 type MapKeyPropertys<T> = {
     [e in keyof T]: T[e] extends Key<any, any> ? TypeOfKey<T[e]> : never;
 }
+type MapKeyData<K> = {
+    [e in keyof K]: KeyData<K[e]>;
+}
+
 
 type PropValues<T> = T[keyof T]
     ;
@@ -618,11 +622,18 @@ export class Charakter {
         });
 
 
-        const mapDependecyToKeys = (deps: DependencyData[]) => {
+        const mapDependecyToKeys = (deps: DependencyData[], types?: (keyof BesonderheitKeys)[]) => {
+
             const dependentData = deps.map(x => x.Typ);
+
             const dependentBesonderheiten = dependentData.filter(x => x.startsWith('besonderheit-'))
                 .map(x => x.substring('besonderheit-'.length))
-                .flatMap(x => Object.values(this.getBesonterheitKeys(x)));
+                .flatMap(x => {
+                    if (types != undefined) {
+                        return Object.entries(this.getBesonterheitKeys(x)).filter(([key]) => types.includes(key as any)).map(([key, value]) => value);
+                    }
+                    return Object.values(this.getBesonterheitKeys(x));
+                });
             const dependentFertigkeiten = dependentData.filter(x => x.startsWith('fertigkeit-'))
                 .map(x => x.substring('fertigkeit-'.length))
                 .flatMap(x => Object.values(this.getFertigkeitenKeys(x)));
@@ -990,11 +1001,11 @@ export class Charakter {
                 cost: this.storeManager.readable(keys.Cost),
             };
 
-            const dependentData = this.stammdaten.eigenschaftenDependencys.filter(x => x.Eigenschaft == besonderheit.Id);
+            const dependentData = this.stammdaten.besonderheitDependencys.filter(x => x.Eigenschaft == besonderheit.Id);
 
             const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
             const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
-            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'));
+            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt']);
 
 
 
@@ -1036,8 +1047,26 @@ export class Charakter {
                 return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax);
             });
 
-            this.storeManager.derived(keys.Missing, requirementsDependency, (data, dependencys) => {
+            this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
                 // todo get Missing stuff
+
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+
+                const result = filterNull(besonderheit.Stufe
+                    .filter((x, i) => i < effective.newValue)
+                    .map((x, i) => {
+                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency);
+                        if (missing == null) {
+                            return null;
+                        }
+                        return {
+                            wert: i + 1, missing: missing
+                        };
+                    }));
+
+                return result;
+
+
                 return [];
             });
 
@@ -1065,9 +1094,6 @@ export class Charakter {
                             return [y.Id, resultreturn] as const;
                         })), x => x);
 
-
-
-                return {};
             });
 
 
@@ -1082,6 +1108,138 @@ export class Charakter {
 
 
     }
+
+
+
+
+
+
+
+
+
+
+    private static getMissingInternal(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined,
+
+        besonderheitDependency: (MapKeyData<BesonderheitKeys<string>> & {
+            kind: 'besonderheit';
+            id: string;
+        })[],
+        fertigkeitDependency: (MapKeyData<FertigkeitKeys<string>> & {
+            kind: 'fertigkeit';
+            id: string;
+        })[]
+    ): MissingRequirements | null {
+        if (requirements == undefined)
+            return null;
+
+
+
+
+
+        const talentEffective: Record<string, number> = {};
+        const talentDerivation: Record<string, number> = {};
+        const talentBase: Record<string, number> = {};
+        const besonderheiten: Record<string, number | undefined> = Object.fromEntries(besonderheitDependency.map(x => [x.id, x.Unbeschränkt.newValue] as const));
+        const fertigkeiten: Record<string, number | undefined> = Object.fromEntries(fertigkeitDependency.map(x => [x.id, x.Unbeschränkt.newValue] as const));
+        const tags: Record<string, true | undefined> = {};
+
+
+
+
+
+
+
+
+
+        const singel = (requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit, negate: boolean): MissingRequirements | null => {
+            if (requirements["#"] == 'Tag') {
+                return (tags?.[requirements.Tag.Id] === true) !== negate
+                    ? null
+                    : { type: 'tag', id: requirements.Tag.Id }
+            } else if (requirements["#"] === 'Fertigkeit') {
+                return (((fertigkeiten?.[requirements.Fertigkeit.Id] ?? 0) >= requirements.Fertigkeit.Stufe) === true) !== negate
+                    ? null
+                    : { type: 'Fertigkeit', id: requirements.Fertigkeit.Id, Stufe: requirements.Fertigkeit.Stufe }
+            } else if (requirements["#"] === 'Besonderheit') {
+                return (((besonderheiten?.[requirements.Besonderheit.Id] ?? 0) >= requirements.Besonderheit.Stufe) === true) !== negate
+                    ? null
+                    : { type: 'Besonderheit', id: requirements.Besonderheit.Id, Stufe: requirements.Besonderheit.Stufe }
+            } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Basis") {
+                return (((talentBase?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
+                    ? null
+                    : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+            } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Effektiv") {
+                return (((talentEffective?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
+                    ? null
+                    : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+            } else if (requirements["#"] === 'Talent' && requirements.Talent.LevelTyp == "Unterstützung") {
+                return (((talentDerivation?.[requirements.Talent.Id] ?? 0) >= requirements.Talent.Level) === true) !== negate
+                    ? null
+                    : { type: 'Talent', id: requirements.Talent.Id, Stufe: requirements.Talent.Level, Kind: requirements.Talent.LevelTyp }
+            } else if (requirements["#"] === 'Not') {
+                const temp = singel(requirements.Not, !negate);
+                if (temp === null) {
+                    return null;
+                }
+                else {
+                    return { type: 'Not', sub: temp }
+                }
+            } else if (requirements["#"] === 'And') {
+                const temp = multy(requirements.And, negate);
+                if (temp === null || temp.length == 0) {
+                    return null;
+                }
+                else if (temp.length == 1) {
+                    return temp[0];
+                }
+                else {
+                    return { type: 'And', sub: temp }
+                }
+            } else if (requirements["#"] === 'Or') {
+                const temp = multy(requirements.Or, negate);
+                if (temp === null || temp.length === 0) {
+                    return null;
+                }
+                else if (temp.length == 1) {
+                    return temp[0];
+                }
+                else {
+                    return { type: 'Or', sub: temp }
+                }
+            }
+            else {
+                throw Error('Not implemented: restriction');
+            }
+
+
+        }
+
+        const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit, negate: boolean): MissingRequirements[] => {
+            return [
+                ... (filterNull<MissingRequirements>(requirements.And?.map(x => singel({ "#": "And", And: x } as any, negate)) ?? [])),
+                ... (filterNull<MissingRequirements>(requirements.Or?.map(x => singel({ "#": "Or", Or: x } as any, negate)) ?? [])),
+                ... (filterNull<MissingRequirements>(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x } as any, negate)) ?? [])),
+                ... (filterNull<MissingRequirements>(requirements.Not?.map(x => singel({ "#": "Not", Not: x } as any, !negate)) ?? [])),
+                ... (filterNull<MissingRequirements>(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x } as any, negate)) ?? [])),
+                ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any, negate)) ?? [])),
+                ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Talent?.map(x => singel({ "#": "Talent", Talent: x } as any, negate)) ?? [])),
+            ];
+        }
+        return singel(requirements, false);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

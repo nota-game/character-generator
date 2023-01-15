@@ -1,13 +1,13 @@
 import * as base64 from 'base64-uint8';
 import * as mathjs from 'mathjs'
 import { Parser } from 'xsd-ts';
-import nota from './../data/nota.g.xml?raw';
-import notaStructure from './../data/nota-structure.g.json';
+import nota from 'src/data/nota.g.xml?raw';
+import notaStructure from 'src/data/nota-structure.g.json';
 import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
-import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, _Talent4 } from 'src/data/nota.g';
-import { distinct } from '../misc/misc';
+import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, BedingungsAuswahl_besonderheit, BedingungsAuswahl_misc, Schutzwert_kampf_ausstattung } from 'src/data/nota.g';
+import { distinct } from 'src/misc/misc';
 
 // type lebensabschnittData =
 //     | {
@@ -21,7 +21,12 @@ import { distinct } from '../misc/misc';
 export type DependencyData = {
     Eigenschaft: string,
     Effecting: 'value' | 'cost' | 'requirements'
-    Typ: `other-${'alter'}` | 'Gattung' | 'Art' | 'Morph' | `eigenschaft-${string}` | `besonderheit-${string}` | `fertigkeit-${string}`
+    Typ: `other-${'alter'}` | 'Gattung' | 'Art' | 'Morph'
+    | `eigenschaft-${string}`
+    | `talent-${string}`
+    | `besonderheit-${string}`
+    | `fertigkeit-${string}`
+    | `tag-${string}`
     | 'Lebensabschnitt-Gattung' | 'Lebensabschnitt-Art' | 'Lebensabschnitt-Morph'
 }
 
@@ -151,9 +156,10 @@ export class Data {
             }
             return [
                 ...this.allEigenschaftKeys.filter(x => chckPresents(x)).map(x => `eigenschaft-${x}` as const),
-                ...(['alter' ] as const).filter(x => chckPresents(x)).map(x => `other-${x}` as const),
+                ...(['alter'] as const).filter(x => chckPresents(x)).map(x => `other-${x}` as const),
                 ...this.instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit.map(x => x.Id)).filter(x => chckPresents(x)).map(x => `besonderheit-${x}` as const),
                 ...this.instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit.map(x => x.Id)).filter(x => chckPresents(x)).map(x => `fertigkeit-${x}` as const),
+                ...this.instance.Daten.Tags.Tag.map(x => x.Id).filter(x => chckPresents(x)).map(x => `tag-${x}` as const),
             ];
         }
 
@@ -344,7 +350,8 @@ export class Data {
             ...(this.instance.Daten.Besonderheiten ?? []).flatMap(besonderheitGruppe =>
                 [
                     ...(besonderheitGruppe.Besonderheit ?? []).flatMap(besonderheit => besonderheit.Stufe.flatMap(stufe => [
-                        ...(stufe.Mods?.Besonderheiten?.Besonderheit ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `besonderheit-${besonderheit.Id}` }  satisfies DependencyData))
+                        ...(stufe.Mods?.Besonderheiten?.Besonderheit ?? []).map(x => ({ Effecting: 'value' as const, Eigenschaft: x.Id, Typ: `besonderheit-${besonderheit.Id}` }  satisfies DependencyData)),
+                        ...(getRequirements(stufe.Voraussetzung) ?? []).map(type => ({ Effecting: 'requirements' as const, Eigenschaft: besonderheit.Id, Typ: type }  satisfies DependencyData))
                     ]))
                 ]),
             ...(this.instance.Daten.Fertigkeiten ?? []).flatMap(fertigkeitenGruppe =>
@@ -524,6 +531,40 @@ export class Data {
             }
             return [...levels.map(x => ({ Kosten: { Id: x.Kosten.Id, Wert: x.Kosten.Wert } as const } as const))] as const;
         })] as const;
+
+        function getRequirements(bedingung: BedingungsAuswahl_besonderheit | BedingungsAuswahl_misc | undefined) {
+
+            if (bedingung == undefined) {
+                return [];
+            }
+            return Object.entries(bedingung).flatMap(([key, value]): (`eigenschaft-${string}`
+                | `besonderheit-${string}`
+                | `fertigkeit-${string}`
+                | `talent-${string}`
+                | `tag-${string}`)[] => {
+                if (key == 'Fertigkeit') {
+                    const { Id } = value as { Id: string };
+                    return [`fertigkeit-${Id}` as const];
+                } else if (key == 'Besonderheit') {
+                    const { Id } = value as { Id: string };
+                    return [`besonderheit-${Id}` as const];
+                } else if (key == 'Tag') {
+                    const { Id } = value as { Id: string };
+                    return [`tag-${Id}` as const];
+                } else if (key == 'Talent') {
+                    const { Id } = value as { Id: string };
+                    return [`talent-${Id}` as const];
+                }
+                else if (key != '#') {
+                    return getRequirements(value); // tecnical the type dose not match, but for this implementation it still works :)
+                } else {
+                    return [];
+                }
+            });
+
+
+
+        }
     }
     /**
      * init

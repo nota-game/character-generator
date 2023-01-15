@@ -881,6 +881,7 @@ export class Charakter {
     // public getMissingRequirements(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined): MissingRequirements | null {
     //     return this.getMissingInternal(requirements, this.talentEffective, this.talentDerivation, this.talentBase, this.besonderheiten, this.besonderheitenIgnoreRequirements, this.fertigkeiten, this.fertigkeitenIgnoreRequirements, this.tags);
     // }
+    
     // private getMissingInternal(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined, talentEffective: Record<string, number>, talentDerivation: Record<string, number>, talentBase: Record<string, number>, besonderheiten: Record<string, number | undefined>, besonderheitenIgnored: Record<string, number | undefined>, fertigkeiten: Record<string, number | undefined>, fertigkeitenIgnored: Record<string, number | undefined>, tags: Record<string, true | undefined>): MissingRequirements | null {
     //     if (requirements == undefined)
     //         return null;

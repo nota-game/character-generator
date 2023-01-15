@@ -448,7 +448,25 @@ export default class StoreManager<Param> {
             this.invalidate(n);
         }
     }
-    private Notify(current: SubscriberData<any, Param>, valueChanged?: false) {
+
+    // This tracks changes everey Change will increas the number
+    private lastChange = 0;
+    private Notify(current: SubscriberData<any, Param>, valueChanged?: false, alreadyNotified?: Record<string, number>) {
+
+        if (alreadyNotified == undefined) {
+            alreadyNotified = {};
+        }
+
+        // If no change happend since the last notification of this object, there is nothing todo.
+        if (alreadyNotified[current.id] == this.lastChange) {
+            return;
+        } else {
+            alreadyNotified[current.id] = this.lastChange;
+        }
+
+
+
+
 
         const notify = new Set<string>(current.alsoNotify);
         const clear = new Set<string>();
@@ -479,6 +497,8 @@ export default class StoreManager<Param> {
         if (current.changingDependent.size === 0) {
 
             for (const n of [...clear].map(x => this.data[x])) {
+                    // we also need to change wehen dependent list change
+                    this.recordChange();
                 n.changingDependent.delete(current.id);
             }
         }
@@ -491,18 +511,27 @@ export default class StoreManager<Param> {
                 const newValue = n.fn(this.staticData);
                 if (newValue !== UNINITILEZED && !(n.compare ?? deepEqual)(n.value, newValue)) {
                     n.value = newValue;
-                    // n.needsUpdate = false;
-                    this.Notify(n);
+
+                    // we need to note the change before we notify
+                    this.recordChange();
+                    this.Notify(n, undefined, alreadyNotified);
                 }
                 else if (newValue === UNINITILEZED) {
                     n.needUpdate = true;
-                    this.Notify(n, false)
+                    this.Notify(n, false, alreadyNotified)
                 } else {
-                    this.Notify(n, false)
+                    this.Notify(n, false, alreadyNotified)
                 }
             } else {
-                this.Notify(n, false)
+                this.Notify(n, false, alreadyNotified)
             }
+        }
+    }
+
+    private recordChange() {
+        this.lastChange++;
+        if (this.lastChange >= Number.MAX_SAFE_INTEGER) {
+            this.lastChange = 0;
         }
     }
 }
