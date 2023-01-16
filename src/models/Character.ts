@@ -1,4 +1,4 @@
-import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max } from "../data/nota.g";
+import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1 } from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData } from "../misc/StoreManager2";
 import type { Readable, Writable } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
@@ -32,7 +32,7 @@ type PropValues<T> = T[keyof T]
 
 
 type Cost = Record<string, number>;
-export type CostKey<kind extends 'eigenschaft' | 'fertigkeit' | 'besonderheit' | 'talent', id extends string = string> =
+export type CostKey<kind extends 'eigenschaft' | 'fertigkeit' | 'besonderheit' | 'talent' | 'pfad', id extends string = string, id2 extends string = string> =
     kind extends 'eigenschaft'
     ? Key<`/eigenschaften/${id}/cost`, Cost>
     : kind extends 'fertigkeit'
@@ -41,6 +41,8 @@ export type CostKey<kind extends 'eigenschaft' | 'fertigkeit' | 'besonderheit' |
     ? Key<`/besonderheit/${id}/cost`, Cost>
     : kind extends 'talent'
     ? Key<`/talent/${id}/cost`, Cost>
+    : kind extends 'pfad'
+    ? Key<`/pfad/${id}/${id2}/cost`, Cost>
     : never
     ;
 
@@ -72,6 +74,22 @@ type TagKeys<id extends string = string> = {
 
 }
 type TagEffectiveKey<id extends string = string> = Key<`/tag/${id}`, number>;
+
+
+type LevelKeys<pfadId extends string = string, levelId extends string = string> = {
+    Effective: LevelEffectiveKey<pfadId, levelId>,
+    Purchased: LevelPurchasedKey<pfadId, levelId>,
+    Missing: LevelMissingKey<pfadId, levelId>,
+
+    Cost: CostKey<'pfad', pfadId, levelId>,
+}
+
+type LevelEffectiveKey<id extends string = string, levelId extends string = string> = Key<`/pfad/${id}/${levelId}/effective`, number>;
+type LevelPurchasedKey<id extends string = string, levelId extends string = string> = Key<`/pfad/${id}/${levelId}/purchased`, number>;
+type LevelMissingKey<id extends string = string, levelId extends string = string> = Key<`/pfad/${id}/${levelId}/missing`, {
+    wert: number;
+    missing: MissingRequirements;
+}[]>;
 
 
 type TalentKeys<id extends string = string> = {
@@ -218,6 +236,12 @@ export class Charakter {
         effective: Readable<number>,
     }> = {};
 
+    public readonly pfad: Record<string, Record<string, {
+        effective: Readable<number>,
+        purchased: Writable<number>,
+        missing: Readable<{ wert: number; missing: MissingRequirements; }[]>,
+        cost: Readable<TypeOfKey<CostKey<'pfad'>>>,
+    }>> = {};
 
     public readonly lebensAbschnitteStore: Readable<{
         gattung: LebensabschnittDefinition_lebewesen | undefined;
@@ -662,6 +686,27 @@ export class Charakter {
             : { id: erg, type: type };
     }
 
+    private getLevelKeys<PfadId extends string, LevelId extends string>(pfadId: PfadId, levelId: LevelId): LevelKeys<PfadId, LevelId> {
+        return {
+            Effective: this.storeManager.key(`/pfad/${pfadId}/${levelId}/effective`).of<TypeOfKey<LevelEffectiveKey<PfadId, LevelId>>>(),
+            Purchased: this.storeManager.key(`/pfad/${pfadId}/${levelId}/purchased`).of<TypeOfKey<LevelPurchasedKey<PfadId, LevelId>>>(),
+            Missing: this.storeManager.key(`/pfad/${pfadId}/${levelId}/missing`).of<TypeOfKey<LevelMissingKey<PfadId, LevelId>>>(),
+            Cost: this.storeManager.key(`/pfad/${pfadId}/${levelId}/cost`).of<TypeOfKey<CostKey<'pfad', PfadId, LevelId>>>(),
+        };
+    }
+
+    private getIdFromLevelKey(key: Key<string, any>): { path: string, level: string, type: 'effective' | 'purchased' | 'missing' | 'cost' } | undefined
+    private getIdFromLevelKey<id extends string, levelId extends string>(key: LevelEffectiveKey<id, levelId> | LevelPurchasedKey<id, levelId> | LevelMissingKey<id, levelId> | CostKey<'pfad', id, levelId>) {
+        const reg = /\/pfad\/(?<name>[^/]+)\/(?<level>[^/]+)\/(?<type>[^/]+)/
+        const match = key.Key.match(reg);
+        const erg = match?.groups?.['name'] as id | undefined;
+        const erg2 = match?.groups?.['level'] as levelId | undefined;
+        const type = match?.groups?.['type'] as 'effective' | 'purchased' | 'missing' | 'cost' | undefined;
+        return (erg == undefined || type == undefined)
+            ? undefined
+            : { path: erg, level: erg2, type: type };
+    }
+
     private getPropertieKeys<id extends string>(prop: id): EigenschaftKeys<id> {
         return {
             Raw: this.storeManager.key(`/eigenschaften/${prop}/raw`).of<TypeOfKey<EigenschaftRawKey<id>>>(),
@@ -851,8 +896,8 @@ export class Charakter {
                     }
                     return Object.values(this.getTalentKeys(x))
                 });
-         
-                const dependentTag = dependentData.filter(x => x.startsWith('tag-'))
+
+            const dependentTag = dependentData.filter(x => x.startsWith('tag-'))
                 .map(x => x.substring('tag-'.length))
                 .flatMap(x => {
                     if (types != undefined) {
@@ -1281,12 +1326,12 @@ export class Charakter {
             this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
                 // todo get Missing stuff
 
-                const { besonderheitDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
+                const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
 
                 const result = filterNull(besonderheit.Stufe
                     .filter((x, i) => i < (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
                     .map((x, i) => {
-                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency);
+                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
                         if (missing == null) {
                             return null;
                         }
@@ -1365,7 +1410,7 @@ export class Charakter {
             this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
                 // todo get fixed besonderheiten
 
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, tagDependency } = this.groupDependencyData(dependent);
 
                 return 0;
                 // return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax);
@@ -1374,12 +1419,12 @@ export class Charakter {
             this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
                 // todo get Missing stuff
 
-                const { besonderheitDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
+                const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
 
                 const result = filterNull(fertigkeit.Stufe
                     .filter((x, i) => i < (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
                     .map((x, i) => {
-                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency);
+                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
                         if (missing == null) {
                             return null;
                         }
@@ -1535,6 +1580,127 @@ export class Charakter {
 
         }
 
+        for (const pfad of this.stammdaten.Instance.Daten.Pfade.flatMap(x => x.Pfad)) {
+            this.pfad[pfad.Id] = {};
+            for (const level of pfad.Levels.Level) {
+                const keys = this.getLevelKeys(pfad.Id, level.Id);
+
+                this.pfad[pfad.Id][level.Id] = {
+                    effective: this.storeManager.readable(keys.Effective),
+                    purchased: this.storeManager.writable(keys.Purchased, 0),
+                    missing: this.storeManager.readable(keys.Missing),
+                    cost: this.storeManager.readable(keys.Cost),
+                };
+
+                const dependentData = this.stammdaten.talentDependencys.filter(x => x.Eigenschaft == level.Id);
+
+                const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+                const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
+                const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
+
+
+
+                // this.storeManager.derived(keys.Effective, [keys.Base, keys.Support, keys.Missing], (data, [base, support, missing]) => {
+                //     return Math.min(base.newValue + support.newValue, ...missing.newValue.map(x => x.wert - 1));
+                // });
+                // this.storeManager.derived(keys.Base, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
+
+                //     const ep = purchased.newValue + fixed.newValue;
+                //     const complexity = level.Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
+                //     const levelCots = data.talentCostTabel[complexity]
+
+
+                //     for (let i = levelCots.length - 1; i >= 0; i--) {
+                //         if (levelCots[i].Kosten.Wert <= ep) {
+                //             return i;
+                //         }
+                //     }
+                //     return 0;
+                // });
+                // this.storeManager.derived(keys.Support, [...supportDependency], (data, [...dependent]) => {
+
+
+                //     const { talentDependency } = this.groupDependencyData(dependent);
+
+
+
+                //     const lookup = Object.fromEntries(talentDependency.map(x => [x.id, x]));
+
+
+                //     return [...(level.Ableitungen?.Ableitung ?? []).map(calculateAbleitung),
+                //     ...(level.Ableitungen?.Max ?? []).map(calculateMax)].reduce((p, c) => p + c, 0);
+
+
+                //     function calculateMax(m: _Max): number {
+                //         const values = [...m.Ableitung?.map(calculateAbleitung) ?? [],
+                //         ...m.Max?.map(calculateMax) ?? []
+                //         ].sort((a, b) => b - a);
+
+                //         return values.filter((_, i) => i < m.Anzahl).reduce((p, c) => p + c, 0);
+                //     }
+
+                //     function calculateAbleitung(a: _Ableitung) {
+                //         const other = lookup[a.Id];
+                //         // missing requirments may lower the talent below base.
+                //         const otherValue = Math.min(other.Base.newValue, ...other.Missing.newValue.map(x => x.wert));
+
+                //         return Math.floor(otherValue / a.Anzahl);
+                //     }
+                // });
+
+
+
+                // this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
+                //     // TODO: get fixed talente
+
+                //     const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+
+                //     return 0;
+                //     // return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax);
+                // });
+
+                // this.storeManager.derived(keys.Missing, [keys.Base, keys.Support, ...requirementsDependency], (data, [base, support, ...dependent]) => {
+                //     const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
+
+                //     const Voraussetzung = data.levelMap[pfad.Id][level.Id].Voraussetzung;
+                //     this.levelPrerequire(Voraussetzung?.LevelVoraussetzung,{} );
+                //     const missing = Charakter.getMissingInternal(Voraussetzung?.Zusätzlich, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
+
+
+
+                //     if (base.newValue == UNINITILEZED || support.newValue == UNINITILEZED) {
+                //         return [];
+                //     }
+                //     const currentLevel = base.newValue + support.newValue;
+
+                //     const result = filterNull(level.Level
+                //         .filter(x => x.Wert <= currentLevel)
+                //         .map(x => {
+                //             if (missing == null) {
+                //                 return null;
+                //             }
+                //             return {
+                //                 wert: x.Wert, missing: missing
+                //             };
+                //         }));
+
+                //     return result;
+                // }, { evalueateUndefined: true });
+
+                // this.storeManager.derived(keys.Cost, [keys.Purchased], (data, [purchased]) => {
+                //     const defaultKostData = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten)[0];
+                //     const result = {} as Cost;
+                //     result[defaultKostData.Id] = purchased.newValue;
+                //     return result;
+                // });
+
+
+
+
+
+            }
+        }
+
 
 
         for (const tag of this.stammdaten.Instance.Daten.Tags.Tag) {
@@ -1614,7 +1780,76 @@ export class Charakter {
 
 
 
+    private levelPrerequire(root: _LevelAuswahl|undefined, levels: Record<string, number>) {
+        type missingData = ({
+            type: 'and';
+            level: string;
+            minValue: number;
+        }
+            | {
+                type: 'or';
+                sub: missingData[]
+            }
+            | {
+                type: 'not';
+                sub: missingData[]
+            }
+        );
 
+        const evalLevel = (lvl: _Level1): missingData[] => {
+
+
+            if (levels[lvl.Id] >= lvl.mindestVorkommen) {
+                return [];
+            } else {
+                return [{ type: 'and', level: lvl.Id, minValue: lvl.mindestVorkommen }];
+            }
+        };
+
+        const single = (e: _LevelAuswahl): missingData[] => {
+            if (e["#"] === "Not") {
+                return [{ type: 'not', sub: single(e.Not) }];
+            } else if (e["#"] === "And") {
+                return evalAnd(e.And);
+            } else if (e["#"] === "Or") {
+                return evalOr(e.Or);
+            } else if (e["#"] === "Level") {
+                return evalLevel(e.Level);
+            } else {
+                throw Error('Not supported')
+            }
+
+        }
+        const evalAnd = (e: _LevelAuswahlen): missingData[] => {
+            return [
+                ...(e.And?.flatMap(x => evalAnd(x)) ?? []),
+                ...(e.Or?.flatMap(x => evalOr(x)) ?? []),
+                ...(e.Level?.flatMap(x => evalLevel(x)) ?? []),
+                ...(e.Not?.flatMap(x => ({ type: 'not' as const, sub: single(x) })) ?? []),
+            ];
+        }
+        const evalOr = (e: _LevelAuswahlen): missingData[] => {
+            const sub = [
+                ...(e.And?.flatMap(x => evalAnd(x)) ?? []),
+                ...(e.Or?.flatMap(x => evalOr(x)) ?? []),
+                ...(e.Level?.flatMap(x => evalLevel(x)) ?? []),
+                ...(e.Not?.flatMap(x => ({ type: 'not' as const, sub: single(x) })) ?? []),];
+            return [{ type: 'or', sub }];
+        }
+
+        if(root===undefined){
+            return []
+        }
+
+        return single(root);
+
+
+        // const succes = l.Voraussetzung?.LevelVoraussetzung
+        //     ? single(l.Voraussetzung?.LevelVoraussetzung)
+        //     : true;
+
+        // return succes;
+    }
 
 
     private static getMissingInternal(requirements: BedingungsAuswahl_misc | BedingungsAuswahl_besonderheit | undefined,

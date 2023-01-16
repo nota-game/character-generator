@@ -1,5 +1,10 @@
 <script lang="ts">
-	import type { CostKey, EigenschaftMetaKey, EigenschaftTypes, TypeOfKey } from '../../models/Character';
+	import type {
+		CostKey,
+		EigenschaftMetaKey,
+		EigenschaftTypes,
+		TypeOfKey
+	} from '../../models/Character';
 	import type { Readable, Writable } from 'svelte/store';
 	import type {
 		FormelDefintion_lebewesen,
@@ -34,35 +39,39 @@
 	}
 </script>
 
-<div>
-	{#if $type == 'bereich' && $meta?.type == 'bereich'}
-		{#if $effective}
+{#if $effective}
+	<div>
+		{#if $type == 'bereich' && $meta?.type == 'bereich'}
+			{#if $effective}
+				{key}
+				{$effective}
+				{$meta.einheit}
+				<input type="number" bind:value={$raw} min={$meta?.minInklusiv} max={$meta?.maxInklusiv} />
+			{/if}
+		{:else if $type == 'reihe' && $meta?.type == 'reihe'}
+			<label>
+				{key}
+				{$effective}
+				{$meta.einheit}
+				<br />
+				<input
+					type="range"
+					bind:value={$raw}
+					max={Math.max(
+						...$meta.schwellenForAge.map((x) => x.Wert),
+						...$meta.quantileForAge.map((x) => x.Wert)
+					)}
+					min={Math.min(
+						...$meta.schwellenForAge.map((x) => x.Wert),
+						...$meta.quantileForAge.map((x) => x.Wert)
+					)}
+				/>
+			</label>
+		{:else if $type == 'berechnung' && $meta?.type == 'berechnung'}
 			{key}
 			{$effective}
-			<input type="number" bind:value={$raw} min={$meta?.minInklusiv} max={$meta?.maxInklusiv} />
+			{$meta.einheit}
 		{/if}
-	{:else if $type == 'reihe' && $meta?.type == 'reihe'}
-		<label>
-			{key}
-			{$effective}
-			<br />
-			<input
-				type="range"
-				bind:value={$raw}
-				max={Math.max(
-					...$meta.schwellenForAge.map((x) => x.Wert),
-					...$meta.quantileForAge.map((x) => x.Wert)
-				)}
-				min={Math.min(
-					...$meta.schwellenForAge.map((x) => x.Wert),
-					...$meta.quantileForAge.map((x) => x.Wert)
-				)}
-			/>
-		</label>
-	{:else if $type == 'berechnung'}
-		{key}
-		{$effective}
-	{/if}
-	{JSON.stringify($cost)}
-
-</div>
+		{JSON.stringify($cost)}
+	</div>
+{/if}

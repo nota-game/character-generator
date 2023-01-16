@@ -6,7 +6,7 @@ import notaStructure from 'src/data/nota-structure.g.json';
 import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
-import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, BedingungsAuswahl_besonderheit, BedingungsAuswahl_misc, Schutzwert_kampf_ausstattung, AbleitungsAuswahl_talent } from 'src/data/nota.g';
+import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, BedingungsAuswahl_besonderheit, BedingungsAuswahl_misc, Schutzwert_kampf_ausstattung, AbleitungsAuswahl_talent, LevelDefinition_misc } from 'src/data/nota.g';
 import { distinct } from 'src/misc/misc';
 
 // type lebensabschnittData =
@@ -47,6 +47,7 @@ export class Data {
     public readonly besonderheitenCategoryMap: Record<string, Record<string, Readonly<BesonderheitDefinition_besonderheit>>>;
 
     public readonly pfadMap: Record<string, Readonly<PfadDefinition_pfad & { Kategorie: string }>>;
+    public readonly levelMap: Record<string, Record<string, Readonly<LevelDefinition_misc>>>;
     public readonly pfadCategoryMap: Record<string, { Name: Lokalisierungen_misc, Beschreibung: Lokalisierungen_misc } & Record<string, Readonly<PfadDefinition_pfad>>>;
 
     public readonly tagMap: Record<string, Readonly<TagDefinition_misc>>;
@@ -621,7 +622,10 @@ export class Data {
 
         this.tagMap = data.Daten.Tags.Tag.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, TagDefinition_misc>)
 
-        this.pfadMap = data.Daten.Pfade.flatMap(x => x.Pfad.map(y => ({ ...y, Kategorie: x.Id }))).reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, PfadDefinition_pfad & { Kategorie: string }>)
+        this.pfadMap = data.Daten.Pfade.flatMap(x => x.Pfad.map(y => ({ ...y, Kategorie: x.Id }))).reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, PfadDefinition_pfad & { Kategorie: string }>);
+        this.levelMap = Object.fromEntries(data.Daten.Pfade.flatMap(x => x.Pfad.map(y => [y.Id, Object.fromEntries(y.Levels.Level.map(z => [z.Id, z as LevelDefinition_misc] as const))])));//.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, PfadDefinition_pfad & { Kategorie: string }>);
+
+
         this.pfadCategoryMap = data.Daten.Pfade.map(x => ({
             Name: x.Name,
             Beschreibung: x.Beschreibung,

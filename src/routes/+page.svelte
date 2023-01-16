@@ -8,6 +8,7 @@
 	import Fertigkeit from 'src/view/root/fertigkeit.svelte';
 	import Talent from 'src/view/root/talent.svelte';
 	import Tag from 'src/view/root/tag.svelte';
+	import { filter } from 'mathjs';
 
 	let char: Charakter | undefined;
 
