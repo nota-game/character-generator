@@ -4,51 +4,59 @@
 	import type { Readable, Writable } from 'svelte/store';
 	import Missing from './Missing.svelte';
 
-	export let key: string;
+	export let pathId: string;
+	export let levelId: string;
 	export let data: Data;
 	export let char: Charakter;
 
 	export let effective: Readable<number>;
-	export let base: Readable<number>;
-	export let support: Readable<number>;
 	export let purchased: Writable<number>;
-	export let fixed: Readable<number>;
 	export let missing: Readable<any>;
 	export let cost: Readable<any>;
 
-	$: entry = data.talentMap[key];
+	$: entry = data.levelMap[pathId][levelId];
 
+
+
+	
 	let addFuture = char.getSimulation(
-		'talent',
+		'level',
 		(other) => {
-			other.talente[key].purchased.update((n) => n + 1);
+			other.pfad[pathId][levelId].purchased.update((n) => n + 1);
 		},
-		key
+		pathId,levelId
 	);
 
 	let removeFuture = char.getSimulation(
-		'talent',
+		'level',
 		(other) => {
-			other.talente[key].purchased.update((n) => n - 1);
+			other.pfad[pathId][levelId].purchased.update((n) => n - 1);
 		},
-		key
+		pathId,levelId
 	);
+	
+
 </script>
 
 <div>
-	{key}
-	{$effective} (Basis: {$base} Ableitung: {$support}) {$fixed + $purchased} EP
+	<!-- {#if $effective} -->
+	{pathId}-{levelId}
 
-	<button on:click={() => purchased.update((x) => x + 1)}>+</button>
+	{$effective}/{entry.WiederhoteNutzung} {JSON.stringify($cost)}
+	{#if Object.values($missing).length > 0}
+		<span class="missing"> {JSON.stringify($missing)}</span>
+	{/if}
+	<br />
+	<button
+		on:click={() => purchased.update((x) => x + 1)}
+		disabled={$purchased >= entry.WiederhoteNutzung}>+</button
+	>
 	<span class="future"> <Missing change={$addFuture} /></span>
 	<button on:click={() => purchased.update((x) => x - 1)} disabled={$purchased == 0}>-</button>
 	<span class="future"> <Missing change={$removeFuture} /></span>
-
-	{JSON.stringify($cost)}
-	{#if $missing && Object.values($missing).length > 0}
-		<span class="missing"> {JSON.stringify($missing)}</span>
-	{/if}
+	<!-- {/if} -->
 </div>
+
 
 <style lang="scss">
 	.missing {

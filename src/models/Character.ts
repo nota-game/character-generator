@@ -1,6 +1,6 @@
 import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1 } from "../data/nota.g";
-import StoreManager, { UNINITILEZED, type Key, type KeyData } from "../misc/StoreManager2";
-import type { Readable, Writable } from "svelte/store";
+import StoreManager, { UNINITILEZED, type Key, type KeyData, type Readable, type Writable } from "../misc/StoreManager2";
+import { derived, type Readable as ReadableOriginal, type Writable as WritableOriginal } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
 import * as mathjs from 'mathjs'
 
@@ -14,6 +14,7 @@ export type EigenschaftTypesLevel = 'morph' | 'art' | 'gattung' | 'organismus';
 export type MissingRequirements = { type: 'tag', id: string }
     | { type: 'Fertigkeit', id: string, Stufe: number }
     | { type: 'Besonderheit', id: string, Stufe: number }
+    | { type: 'Level', id: string, pfad: string, Stufe: number }
     | { type: 'Talent', id: string, Stufe: number, Kind: 'Basis' | 'Effektiv' | 'Unterstützung' }
     | { type: 'Not', sub: MissingRequirements }
     | { type: 'And', sub: MissingRequirements[] }
@@ -30,6 +31,51 @@ type MapKeyData<K> = {
 type PropValues<T> = T[keyof T]
     ;
 
+
+
+export type CharacterChange = {
+    changedCost: {
+        key: string;
+        new: number;
+        old: number;
+        differece: number;
+    }[];
+    changedLevels: {
+        key: { path: string, level: string };
+        new: number;
+        old: number;
+    }[];
+    changedTags: {
+        key: string;
+        new: number;
+        old: number;
+    }[];
+    changedTalents: {
+        key: string;
+        new: number;
+        old: number;
+        newEp: number;
+        oldEp: number;
+    }[];
+    changedFertigkeiten: {
+        key: string;
+        new: number;
+        old: number;
+        newIgnored: number;
+        oldIgnored: number;
+    }[];
+    changedBestonderheiten: {
+        key: string;
+        new: number;
+        old: number;
+        newIgnored: number;
+        oldIgnored: number;
+    }[];
+    requirements: {
+        added: ({ missingOnType: 'besonderheit' | 'fertigkeit' | 'talent', missingOnId: string, missing: MissingRequirements } | { missingOnType: 'level', missingOnId: { path: string, level: string }, missing: MissingRequirements })[];
+        removed: ({ missingOnType: 'besonderheit' | 'fertigkeit' | 'talent', missingOnId: string, missing: MissingRequirements } | { missingOnType: 'level', missingOnId: { path: string, level: string }, missing: MissingRequirements })[];
+    };
+};
 
 type Cost = Record<string, number>;
 export type CostKey<kind extends 'eigenschaft' | 'fertigkeit' | 'besonderheit' | 'talent' | 'pfad', id extends string = string, id2 extends string = string> =
@@ -180,6 +226,9 @@ function entriesToCost(entries?: (readonly [string, number])[]): Cost {
 
 export class Charakter {
 
+    public readonly twin: Charakter | undefined;
+
+
     public readonly ageStore: Writable<number>;
 
     public readonly gattungsIdStore: Writable<string | undefined>;
@@ -253,7 +302,7 @@ export class Charakter {
     public readonly stammdaten: Data;
     private readonly id: string;
 
-    private readonly storeManager;
+    private readonly storeManager: StoreManager<Data>;
 
 
 
@@ -424,6 +473,38 @@ export class Charakter {
                     }
                 }
             }
+            const level = this.getIdFromLevelKey(e.key);
+            if (level) {
+                if (level.type == 'effective') {
+                    return {
+                        kind: 'level' as const,
+                        entry: e as KeyData<LevelEffectiveKey>,
+                        levelId: level.level,
+                        pathId: level.path,
+                        id: `${level.path}|${level.level}`,
+                        type: level.type,
+                    }
+
+                } else if (level.type == 'missing') {
+                    return {
+                        kind: 'level' as const,
+                        entry: e as KeyData<LevelMissingKey>,
+                        levelId: level.level,
+                        pathId: level.path,
+                        id: `${level.path}|${level.level}`,
+                        type: level.type,
+                    }
+                } else if (level.type == 'purchased') {
+                    return {
+                        kind: 'level' as const,
+                        entry: e as KeyData<LevelPurchasedKey>,
+                        levelId: level.level,
+                        pathId: level.path,
+                        id: `${level.path}|${level.level}`,
+                        type: level.type,
+                    }
+                }
+            }
             const tag = this.getIdFromTagKey(e.key);
             if (tag) {
                 if (tag.type == 'effective') {
@@ -537,6 +618,37 @@ export class Charakter {
                 return erg as MapKeyData<BesonderheitKeys> & { kind: 'besonderheit', id: string };
             }));
 
+
+        const levelDependency = notUndefined(enrich
+            .map(([key, value]) => {
+                const erg = {
+                    kind: 'level',
+                    id: key,
+                    path: ''
+                } as Partial<MapKeyData<LevelKeys>> & { kind: 'level', id: string, path: string };
+                if (value[0]?.kind != erg.kind) {
+                    return undefined;
+                }
+                for (const v of value) {
+                    if (v.kind === erg.kind) {
+                        if (v.type == 'effective') {
+                            erg.Effective = v.entry;
+                            erg.path = v.pathId;
+                            erg.id = v.levelId;
+                        } else if (v.type == 'missing') {
+                            erg.Missing = v.entry;
+                            erg.path = v.pathId;
+                            erg.id = v.levelId;
+                        } else if (v.type == 'purchased') {
+                            erg.Purchased = v.entry;
+                            erg.path = v.pathId;
+                            erg.id = v.levelId;
+                        }
+                    }
+                }
+                return erg as MapKeyData<LevelKeys> & { kind: 'level', id: string, path: string };
+            }));
+
         const eigenschaftDependency = notUndefined(enrich
             .map(([key, value]) => {
                 const erg = {
@@ -592,7 +704,7 @@ export class Charakter {
                     return undefined;
                 }
             }));
-        return { fertigkeitDependency, besonderheitDependency, eigenschaftDependency, talentDependency, otherDependency, tagDependency };
+        return { fertigkeitDependency, besonderheitDependency, eigenschaftDependency, talentDependency, otherDependency, tagDependency, levelDependency };
     }
 
 
@@ -600,12 +712,12 @@ export class Charakter {
 
     private getBesonterheitKeys<id extends string>(Id: id): BesonderheitKeys {
         return {
-            Purchased: this.storeManager.key(`/besonderheit/${Id}/purchased`).of<TypeOfKey<BesonderheitPurchasedKey<id>>>(),
-            Effective: this.storeManager.key(`/besonderheit/${Id}/Stufe`).of<TypeOfKey<BesonderheitEffectiveKey<id>>>(),
-            Fixed: this.storeManager.key(`/besonderheit/${Id}/fixed`).of<TypeOfKey<BesonderheitFixedKey<id>>>(),
-            Missing: this.storeManager.key(`/besonderheit/${Id}/missing`).of<TypeOfKey<BesonderheitMissingKey<id>>>(),
-            Unbeschränkt: this.storeManager.key(`/besonderheit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<BesonderheitUnbeschränktKey<id>>>(),
-            Cost: this.storeManager.key(`/besonderheit/${Id}/cost`).of<TypeOfKey<CostKey<'besonderheit', id>>>(),
+            Purchased: StoreManager.key(`/besonderheit/${Id}/purchased`).of<TypeOfKey<BesonderheitPurchasedKey<id>>>(),
+            Effective: StoreManager.key(`/besonderheit/${Id}/Stufe`).of<TypeOfKey<BesonderheitEffectiveKey<id>>>(),
+            Fixed: StoreManager.key(`/besonderheit/${Id}/fixed`).of<TypeOfKey<BesonderheitFixedKey<id>>>(),
+            Missing: StoreManager.key(`/besonderheit/${Id}/missing`).of<TypeOfKey<BesonderheitMissingKey<id>>>(),
+            Unbeschränkt: StoreManager.key(`/besonderheit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<BesonderheitUnbeschränktKey<id>>>(),
+            Cost: StoreManager.key(`/besonderheit/${Id}/cost`).of<TypeOfKey<CostKey<'besonderheit', id>>>(),
         }
     }
 
@@ -624,12 +736,12 @@ export class Charakter {
 
     private getFertigkeitenKeys<id extends string>(Id: id): FertigkeitKeys<id> {
         return {
-            Purchased: this.storeManager.key(`/fertigkeit/${Id}/purchased`).of<TypeOfKey<FertigkeitPurchasedKey<id>>>(),
-            Effective: this.storeManager.key(`/fertigkeit/${Id}/Stufe`).of<TypeOfKey<FertigkeitEffectiveKey<id>>>(),
-            Fixed: this.storeManager.key(`/fertigkeit/${Id}/fixed`).of<TypeOfKey<FertigkeitFixedKey<id>>>(),
-            Missing: this.storeManager.key(`/fertigkeit/${Id}/missing`).of<TypeOfKey<FertigkeitMissingKey>>(),
-            Unbeschränkt: this.storeManager.key(`/fertigkeit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<FertigkeitUnbeschränktKey<id>>>(),
-            Cost: this.storeManager.key(`/fertigkeit/${Id}/cost`).of<TypeOfKey<CostKey<'fertigkeit', id>>>(),
+            Purchased: StoreManager.key(`/fertigkeit/${Id}/purchased`).of<TypeOfKey<FertigkeitPurchasedKey<id>>>(),
+            Effective: StoreManager.key(`/fertigkeit/${Id}/Stufe`).of<TypeOfKey<FertigkeitEffectiveKey<id>>>(),
+            Fixed: StoreManager.key(`/fertigkeit/${Id}/fixed`).of<TypeOfKey<FertigkeitFixedKey<id>>>(),
+            Missing: StoreManager.key(`/fertigkeit/${Id}/missing`).of<TypeOfKey<FertigkeitMissingKey>>(),
+            Unbeschränkt: StoreManager.key(`/fertigkeit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<FertigkeitUnbeschränktKey<id>>>(),
+            Cost: StoreManager.key(`/fertigkeit/${Id}/cost`).of<TypeOfKey<CostKey<'fertigkeit', id>>>(),
         };
     }
 
@@ -647,7 +759,7 @@ export class Charakter {
 
     private getTagKeys<id extends string>(Id: id): TagKeys<id> {
         return {
-            Effective: this.storeManager.key(`/tag/${Id}`).of<TypeOfKey<TagEffectiveKey<id>>>(),
+            Effective: StoreManager.key(`/tag/${Id}`).of<TypeOfKey<TagEffectiveKey<id>>>(),
         };
     }
 
@@ -665,13 +777,13 @@ export class Charakter {
 
     private getTalentKeys<id extends string>(Id: id): TalentKeys<id> {
         return {
-            Effective: this.storeManager.key(`/talent/${Id}/effective`).of<TypeOfKey<TalentEffectiveKey<id>>>(),
-            Base: this.storeManager.key(`/talent/${Id}/base`).of<TypeOfKey<TalentBaseKey<id>>>(),
-            Support: this.storeManager.key(`/talent/${Id}/support`).of<TypeOfKey<TalentSupportKey<id>>>(),
-            Purchased: this.storeManager.key(`/talent/${Id}/purchased`).of<TypeOfKey<TalentPurchasedKey<id>>>(),
-            Fixed: this.storeManager.key(`/talent/${Id}/fixed`).of<TypeOfKey<TalentFixedKey<id>>>(),
-            Missing: this.storeManager.key(`/talent/${Id}/missing`).of<TypeOfKey<TalentMissingKey>>(),
-            Cost: this.storeManager.key(`/talent/${Id}/cost`).of<TypeOfKey<CostKey<'talent', id>>>(),
+            Effective: StoreManager.key(`/talent/${Id}/effective`).of<TypeOfKey<TalentEffectiveKey<id>>>(),
+            Base: StoreManager.key(`/talent/${Id}/base`).of<TypeOfKey<TalentBaseKey<id>>>(),
+            Support: StoreManager.key(`/talent/${Id}/support`).of<TypeOfKey<TalentSupportKey<id>>>(),
+            Purchased: StoreManager.key(`/talent/${Id}/purchased`).of<TypeOfKey<TalentPurchasedKey<id>>>(),
+            Fixed: StoreManager.key(`/talent/${Id}/fixed`).of<TypeOfKey<TalentFixedKey<id>>>(),
+            Missing: StoreManager.key(`/talent/${Id}/missing`).of<TypeOfKey<TalentMissingKey>>(),
+            Cost: StoreManager.key(`/talent/${Id}/cost`).of<TypeOfKey<CostKey<'talent', id>>>(),
         };
     }
 
@@ -688,10 +800,10 @@ export class Charakter {
 
     private getLevelKeys<PfadId extends string, LevelId extends string>(pfadId: PfadId, levelId: LevelId): LevelKeys<PfadId, LevelId> {
         return {
-            Effective: this.storeManager.key(`/pfad/${pfadId}/${levelId}/effective`).of<TypeOfKey<LevelEffectiveKey<PfadId, LevelId>>>(),
-            Purchased: this.storeManager.key(`/pfad/${pfadId}/${levelId}/purchased`).of<TypeOfKey<LevelPurchasedKey<PfadId, LevelId>>>(),
-            Missing: this.storeManager.key(`/pfad/${pfadId}/${levelId}/missing`).of<TypeOfKey<LevelMissingKey<PfadId, LevelId>>>(),
-            Cost: this.storeManager.key(`/pfad/${pfadId}/${levelId}/cost`).of<TypeOfKey<CostKey<'pfad', PfadId, LevelId>>>(),
+            Effective: StoreManager.key(`/pfad/${pfadId}/${levelId}/effective`).of<TypeOfKey<LevelEffectiveKey<PfadId, LevelId>>>(),
+            Purchased: StoreManager.key(`/pfad/${pfadId}/${levelId}/purchased`).of<TypeOfKey<LevelPurchasedKey<PfadId, LevelId>>>(),
+            Missing: StoreManager.key(`/pfad/${pfadId}/${levelId}/missing`).of<TypeOfKey<LevelMissingKey<PfadId, LevelId>>>(),
+            Cost: StoreManager.key(`/pfad/${pfadId}/${levelId}/cost`).of<TypeOfKey<CostKey<'pfad', PfadId, LevelId>>>(),
         };
     }
 
@@ -709,11 +821,11 @@ export class Charakter {
 
     private getPropertieKeys<id extends string>(prop: id): EigenschaftKeys<id> {
         return {
-            Raw: this.storeManager.key(`/eigenschaften/${prop}/raw`).of<TypeOfKey<EigenschaftRawKey<id>>>(),
-            Effective: this.storeManager.key(`/eigenschaften/${prop}/effektiv`).of<TypeOfKey<EigenschaftEffective<id>>>(),
-            Type: this.storeManager.key(`/eigenschaften/${prop}/type`).of<TypeOfKey<EigenschaftTypeKey<id>>>(),
-            Meta: this.storeManager.key(`/eigenschaften/${prop}/meta`).of<TypeOfKey<EigenschaftMetaKey<id>>>(),
-            Cost: this.storeManager.key(`/eigenschaften/${prop}/cost`).of<TypeOfKey<CostKey<'eigenschaft', id>>>(),
+            Raw: StoreManager.key(`/eigenschaften/${prop}/raw`).of<TypeOfKey<EigenschaftRawKey<id>>>(),
+            Effective: StoreManager.key(`/eigenschaften/${prop}/effektiv`).of<TypeOfKey<EigenschaftEffective<id>>>(),
+            Type: StoreManager.key(`/eigenschaften/${prop}/type`).of<TypeOfKey<EigenschaftTypeKey<id>>>(),
+            Meta: StoreManager.key(`/eigenschaften/${prop}/meta`).of<TypeOfKey<EigenschaftMetaKey<id>>>(),
+            Cost: StoreManager.key(`/eigenschaften/${prop}/cost`).of<TypeOfKey<CostKey<'eigenschaft', id>>>(),
         }
     }
 
@@ -733,518 +845,615 @@ export class Charakter {
     /**
      *
      */
-    constructor(stammdaten: Data, id: string) {
+    constructor(stammdaten: Data, id: string, cloneFrom?: Charakter) {
         this.stammdaten = stammdaten;
         this.id = id;
-        this.storeManager = new StoreManager(stammdaten);
 
 
 
+        const gattungsIdKey = StoreManager.key('/organism/gattung/selected').of<string | undefined>();
+        const artIdKey = StoreManager.key('/organism/art/selected').of<string | undefined>();
+        const morphIdKey = StoreManager.key('/organism/morph/selected').of<string | undefined>();
+
+        const gattungsInstanceKey = StoreManager.key('/organism/gattung/instance').of<GattungDefinition_lebewesen | undefined>();
+        const artInstanceKey = StoreManager.key('/organism/art/instance').of<ArtDefinition_lebewesen | undefined>();
+        const morphInstanceKey = StoreManager.key('/organism/morph/instance').of<MorphDefinition_lebewesen | undefined>();
+
+        const gattungPossibleKey = StoreManager.key('/organism/gattung/possible').of<string[]>();
+        const artPossibleKey = StoreManager.key('/organism/art/possible').of<string[]>();
+        const morphPossibleKey = StoreManager.key('/organism/morph/possible').of<string[]>();
+
+        const ageKey = StoreManager.key('/organism/age').of<number>();
+
+        const costKey = StoreManager.key('/points/total').of<Cost>();
+
+        const lebensabschnittGattungKey = StoreManager.key('/organism/gattung/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
+        const lebensabschnittArtKey = StoreManager.key('/organism/art/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
+        const lebensabschnittMorphKey = StoreManager.key('/organism/morph/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
+        const lebensabschnittKey = StoreManager.key('/organism/*/lebensabschnitt').of<{ gattung: LebensabschnittDefinition_lebewesen | undefined, art: LebensabschnittDefinition_lebewesen | undefined, morph: LebensabschnittDefinition_lebewesen | undefined }>()
+
+        const sumCost = StoreManager.key('/**/cost').of<Record<string, Record<string, Record<string, Cost>>>>();
 
 
 
+        if (cloneFrom) {
 
+            const storeList: Record<string, ({ id: string, manager: StoreManager<Data> } & ({ type: 'writable', store: Writable<unknown> } | { type: 'readable' | 'writable' | 'aggregated', store: Readable<unknown> }))> = {}
 
-
-
-
-
-
-
-
-
-        const gattungsIdKey = this.storeManager.key('/organism/gattung/selected').of<string | undefined>();
-        const artIdKey = this.storeManager.key('/organism/art/selected').of<string | undefined>();
-        const morphIdKey = this.storeManager.key('/organism/morph/selected').of<string | undefined>();
-
-        const gattungsInstanceKey = this.storeManager.key('/organism/gattung/instance').of<GattungDefinition_lebewesen | undefined>();
-        const artInstanceKey = this.storeManager.key('/organism/art/instance').of<ArtDefinition_lebewesen | undefined>();
-        const morphInstanceKey = this.storeManager.key('/organism/morph/instance').of<MorphDefinition_lebewesen | undefined>();
-
-        const gattungPossibleKey = this.storeManager.key('/organism/gattung/possible').of<string[]>();
-        const artPossibleKey = this.storeManager.key('/organism/art/possible').of<string[]>();
-        const morphPossibleKey = this.storeManager.key('/organism/morph/possible').of<string[]>();
-
-        const ageKey = this.storeManager.key('/organism/age').of<number>();
-
-        const costKey = this.storeManager.key('/points/total').of<Cost>();
-
-
-
-        this.ageStore = this.storeManager.writable(ageKey, 1);
-
-        this.gattungsIdStore = this.storeManager.writable(gattungsIdKey, undefined);
-        this.possibleGattungStore = this.storeManager.derived(gattungPossibleKey, [], function (data) {
-            return data.Instance.Daten.Organismen.Gattung.map(x => x.Id);
-        });
-        this.gattungsStore = this.storeManager.derived(gattungsInstanceKey, gattungsIdKey, function (data, gattungsId) {
-            if (gattungsId === undefined) {
-                return undefined;
-            }
-            const selectedGattung = data.Instance.Daten.Organismen.Gattung.filter(x => x.Id == gattungsId.newValue)[0];
-            return selectedGattung;
-        });
-
-        this.artIdStore = this.storeManager.writable(artIdKey, undefined);
-        this.possibleArtStore = this.storeManager.derived(artPossibleKey, gattungsInstanceKey, function (_data, selectedGattung) {
-            if (selectedGattung === undefined) {
-                return [];
-            }
-            return selectedGattung.newValue?.Art.map(x => x.Id) ?? [];
-        });
-        this.artStore = this.storeManager.derived(artInstanceKey, [artIdKey, gattungsInstanceKey], function (data, [artId, gattung]) {
-            if (gattung.newValue === undefined || artId.newValue === undefined) {
-                return undefined;
-            }
-            const selectedGattung = gattung.newValue.Art.filter(x => x.Id == artId.newValue)[0];
-            return selectedGattung;
-        });
-
-        this.morphIdStore = this.storeManager.writable(morphIdKey, undefined);
-        this.possibleMorphStore = this.storeManager.derived(morphPossibleKey, artInstanceKey, function (_data, selectedArt) {
-            if (selectedArt === undefined) {
-                return [];
-            }
-            return selectedArt.newValue?.Morphe.Morph.map(x => x.Id) ?? [];
-        });
-        this.morphStore = this.storeManager.derived(morphInstanceKey, [morphIdKey, artInstanceKey], function (data, [artId, art]) {
-            if (art.newValue === undefined || artId.newValue === undefined) {
-                return undefined;
-            }
-            const selectedGattung = art.newValue.Morphe.Morph.filter(x => x.Id == artId.newValue)[0];
-            return selectedGattung;
-        });
-
-        const lebensabschnittGattungKey = this.storeManager.key('/organism/gattung/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
-        const lebensabschnittArtKey = this.storeManager.key('/organism/art/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
-        const lebensabschnittMorphKey = this.storeManager.key('/organism/morph/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
-        const lebensabschnittKey = this.storeManager.key('/organism/*/lebensabschnitt').of<{ gattung: LebensabschnittDefinition_lebewesen | undefined, art: LebensabschnittDefinition_lebewesen | undefined, morph: LebensabschnittDefinition_lebewesen | undefined }>()
-
-        this.lebensAbschnitteStore = this.storeManager.readable(lebensabschnittKey);
-
-        this.storeManager.derived(lebensabschnittGattungKey, [ageKey, gattungsInstanceKey], (data, [age, gattung]) => {
-            return getLast(gattung.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
-        })
-        this.storeManager.derived(lebensabschnittArtKey, [ageKey, artInstanceKey], (data, [age, art]) => {
-            return getLast(art.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
-        })
-        this.storeManager.derived(lebensabschnittMorphKey, [ageKey, morphInstanceKey], (data, [age, morph],) => {
-            return getLast(morph.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
-        })
-
-        this.costStore = this.storeManager.readable(costKey);
-
-        const sumCost = this.storeManager.key('/**/cost').of<Record<string, Record<string, Record<string, Cost>>>>();
-
-        this.storeManager.readable(sumCost);
-        this.storeManager.derived(costKey, sumCost, (data, cast) => {
-
-
-            function filterCost(obj: object): Cost[] {
-                return Object.entries(obj).flatMap(([key, value]) => {
-                    if (key == 'cost') {
-                        return [value] as Cost[];
-                    } else if (typeof value == 'object') {
-                        return filterCost(value);
-                    } else {
-                        return [];
-                    }
-                })
-            }
-
-
-            const costs = filterCost(cast.newValue);
-            return toCost(costs.flatMap(x => Object.entries(x)), ([v1, v2]) => [v1, v2] as const);
-        });
-
-
-        const mapDependecyToKeys = (deps: DependencyData[], types?: (keyof BesonderheitKeys | keyof FertigkeitKeys | keyof TalentKeys | keyof EigenschaftKeys)[]) => {
-
-            const dependentData = deps.map(x => x.Typ);
-
-            const dependentBesonderheiten = dependentData.filter(x => x.startsWith('besonderheit-'))
-                .map(x => x.substring('besonderheit-'.length))
-                .flatMap(x => {
-                    if (types != undefined) {
-                        return Object.entries(this.getBesonterheitKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
-                    }
-                    return Object.values(this.getBesonterheitKeys(x));
-                });
-            const dependentFertigkeiten = dependentData.filter(x => x.startsWith('fertigkeit-'))
-                .map(x => x.substring('fertigkeit-'.length))
-                .flatMap(x => {
-                    if (types != undefined) {
-                        return Object.entries(this.getFertigkeitenKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
-                    }
-                    return Object.values(this.getFertigkeitenKeys(x));
-                });
-
-            const dependentEigenschaften = dependentData.filter(x => x.startsWith('eigenschaft-'))
-                .map(x => x.substring('eigenschaft-'.length))
-                .flatMap(x => {
-                    if (types != undefined) {
-                        return Object.entries(this.getPropertieKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
-                    }
-                    return Object.values(this.getPropertieKeys(x))
-                });
-
-            const dependentTalent = dependentData.filter(x => x.startsWith('talent-'))
-                .map(x => x.substring('talent-'.length))
-                .flatMap(x => {
-                    if (types != undefined) {
-                        return Object.entries(this.getTalentKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
-                    }
-                    return Object.values(this.getTalentKeys(x))
-                });
-
-            const dependentTag = dependentData.filter(x => x.startsWith('tag-'))
-                .map(x => x.substring('tag-'.length))
-                .flatMap(x => {
-                    if (types != undefined) {
-                        return Object.entries(this.getTagKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
-                    }
-                    return Object.values(this.getTagKeys(x))
-                });
-
-            const dependentAge = dependentData.filter(x => x == 'other-alter')
-                .map(() => ageKey);
-
-            const dependentGattung = dependentData.filter(x => x.startsWith('Gattung'))
-                .map(() => gattungsInstanceKey);
-            const dependentArt = dependentData.filter(x => x.startsWith('Art'))
-                .map(() => artInstanceKey);
-            const dependentMorph = dependentData.filter(x => x.startsWith('Morph'))
-                .map(() => morphInstanceKey);
-
-            const dependentLebensabschnittGattung = dependentData.filter(x => x.startsWith('Lebensabschnitt-Gattung')).map(() => lebensabschnittGattungKey);
-            const dependentLebensabschnittArt = dependentData.filter(x => x.startsWith('Lebensabschnitt-Art')).map(() => lebensabschnittArtKey);
-            const dependentLebensabschnittMorph = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(() => lebensabschnittMorphKey);
-
-            const dep = [
-                ...dependentGattung,
-                ...dependentArt,
-                ...dependentMorph,
-                ...dependentEigenschaften,
-                ...dependentBesonderheiten,
-                ...dependentFertigkeiten,
-                ...dependentTalent,
-                ...dependentTag,
-                ...dependentAge,
-                ...dependentLebensabschnittArt,
-                ...dependentLebensabschnittGattung,
-                ...dependentLebensabschnittMorph,
-            ];
-            return dep;
-        }
-
-
-        for (const key of this.stammdaten.allEigenschaftKeys) {
-
-            const { Raw: rawKey, Effective: effectiveKey, Type: typeKey, Meta: metaKey, Cost: costKey } = this.getPropertieKeys(key);
-
-            const tmpKey = this.storeManager.key(`/tmp/eigenschaft/${key}`).of<{ entry: StaticheDefinition_lebewesen | ReiheDefinition_lebewesen | FormelDefintion_lebewesen | PunktDefintion_lebewesen, type: EigenschaftTypes, level: EigenschaftTypesLevel, morphId?: string, artId?: string, gattungId?: string, } | undefined>();
-            // const effectiveKey = this.storeManager.key(`/eigenschaft/${key}/effektiv`).of<number | undefined>();
-            // const writablStore = this.storeManager.writable(rawKey, undefined);
-
-            this.eigenschaften[key] = {
-                effective: this.storeManager.readable(effectiveKey),
-                raw: this.storeManager.writable(rawKey, undefined),
-                type: this.storeManager.readable(typeKey),
-                meta: this.storeManager.readable(metaKey),
-                cost: this.storeManager.readable(costKey),
-            };
-            const dependentData = this.stammdaten.eigenschaftenDependencys.filter(x => x.Eigenschaft == key);
-
-            const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
-            const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
-
-            this.storeManager.derived(tmpKey, [morphInstanceKey, artInstanceKey, gattungsInstanceKey], (data, [{ newValue: morph }, { newValue: art }, { newValue: gattung }]) => {
-                const base = morph?.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'morph' as const }))[0]
-                    ?? morph?.Entwiklung?.Bereich?.filter(x => x.id == key).map(x => ({ entry: x, type: 'bereich' as const, level: 'morph' as const }))[0]
-                    ?? morph?.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'morph' as const }))[0]
-                    ?? morph?.Entwiklung?.Reihe?.filter(x => x.id == key).map(x => ({ entry: x, type: 'reihe' as const, level: 'morph' as const }))[0]
-                    ?? art?.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'art' as const }))[0]
-                    ?? art?.Entwiklung?.Bereich?.filter(x => x.id == key).map(x => ({ entry: x, type: 'bereich' as const, level: 'art' as const }))[0]
-                    ?? art?.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'art' as const }))[0]
-                    ?? art?.Entwiklung?.Reihe?.filter(x => x.id == key).map(x => ({ entry: x, type: 'reihe' as const, level: 'art' as const }))[0]
-                    ?? gattung?.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'gattung' as const }))[0]
-                    ?? gattung?.Entwiklung?.Bereich?.filter(x => x.id == key).map(x => ({ entry: x, type: 'bereich' as const, level: 'gattung' as const }))[0]
-                    ?? gattung?.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'gattung' as const }))[0]
-                    ?? gattung?.Entwiklung?.Reihe?.filter(x => x.id == key).map(x => ({ entry: x, type: 'reihe' as const, level: 'gattung' as const }))[0]
-                    ?? data.Instance.Daten.Organismen.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'organismus' as const }))[0]
-                    ?? data.Instance.Daten.Organismen.Entwiklung?.Bereich?.filter(x => x.id == key).map(x => ({ entry: x, type: 'bereich' as const, level: 'organismus' as const }))[0]
-                    ?? data.Instance.Daten.Organismen.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'organismus' as const }))[0]
-                    ?? data.Instance.Daten.Organismen.Entwiklung?.Reihe?.filter(x => x.id == key).map(x => ({ entry: x, type: 'reihe' as const, level: 'organismus' as const }))[0]
-                    ;
-                // console.log('morph', morph?.Id);
-                return base == undefined ? undefined : { ...base, morphId: morph?.Id, gattungId: gattung?.Id, artId: art?.Id };
-            }, {
-                compare: (a, b) => {
-                    if (a === UNINITILEZED) {
-                        return b === UNINITILEZED;
-                    } else if (b === UNINITILEZED) {
-                        return false;
-                    } else if (a === undefined) {
-                        return b === undefined;
-                    } else if (b === undefined) {
-                        return false;
-                    } else {
-                        return a?.entry.id === b?.entry.id && a?.type === b?.type && b?.level === a?.level && a.gattungId == b.gattungId && a.artId == b.artId && a.morphId == b.morphId;
-                    }
-                }
+            this.storeManager = cloneFrom.storeManager.clone((data) => {
+                storeList[data.id] = (data);
             });
 
 
-            this.storeManager.derived(effectiveKey, [ageKey, tmpKey, rawKey, metaKey, ...valueDependency], (data, [{ newValue: age }, { newValue: base }, { newValue: setValue }, { newValue: meta }, ...dependent]) => {
-                let resultreturn: number;
-                if (base === undefined) {
+            this.ageStore = storeList[ageKey.Key].store as Writable<number>;
+
+            this.gattungsIdStore = storeList[gattungsIdKey.Key].store as Writable<string>;
+            this.possibleGattungStore = storeList[gattungPossibleKey.Key].store as Readable<string[]>;
+            this.gattungsStore = storeList[gattungsInstanceKey.Key].store as Readable<GattungDefinition_lebewesen>;
+
+            this.artIdStore = storeList[artIdKey.Key].store as Writable<string>;;
+            this.possibleArtStore = storeList[artPossibleKey.Key].store as Readable<string[]>;
+            this.artStore = storeList[artInstanceKey.Key].store as Readable<ArtDefinition_lebewesen>;
+
+            this.morphIdStore = storeList[morphIdKey.Key].store as Writable<string>;
+            this.possibleMorphStore = storeList[morphPossibleKey.Key].store as Readable<string[]>;
+            this.morphStore = storeList[morphInstanceKey.Key].store as Readable<MorphDefinition_lebewesen>;
+
+
+            this.lebensAbschnitteStore = storeList[lebensabschnittKey.Key].store as Readable<{
+                gattung: LebensabschnittDefinition_lebewesen | undefined;
+                art: LebensabschnittDefinition_lebewesen | undefined;
+                morph: LebensabschnittDefinition_lebewesen | undefined;
+            }>;
+
+
+            this.costStore = storeList[costKey.Key].store as Readable<Cost>;
+
+
+            for (const key of this.stammdaten.allEigenschaftKeys) {
+                const { Raw: rawKey, Effective: effectiveKey, Type: typeKey, Meta: metaKey, Cost: costKey } = this.getPropertieKeys(key);
+                this.eigenschaften[key] = {
+                    effective: storeList[effectiveKey.Key].store as Readable<number>,
+                    raw: storeList[rawKey.Key].store as Writable<number>,
+                    type: storeList[typeKey.Key].store as Readable<EigenschaftTypes>,
+                    meta: storeList[metaKey.Key].store as Readable<TypeOfKey<EigenschaftMetaKey>>,
+                    cost: storeList[costKey.Key].store as Readable<TypeOfKey<CostKey<'eigenschaft'>>>,
+                };
+            }
+
+
+            for (const besonderheit of this.stammdaten.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit)) {
+                const keys = this.getBesonterheitKeys(besonderheit.Id);
+                this.besonderheiten[besonderheit.Id] = {
+                    effective: storeList[keys.Effective.Key].store as Readable<number>,
+                    unconditionally: storeList[keys.Unbeschränkt.Key].store as Readable<number>,
+                    purchased: storeList[keys.Purchased.Key].store as Writable<number>,
+                    fixed: storeList[keys.Fixed.Key].store as Readable<number>,
+                    missing: storeList[keys.Missing.Key].store as Readable<TypeOfKey<BesonderheitMissingKey>>,
+                    cost: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'besonderheit'>>>,
+                };
+            }
+
+
+            for (const fertigkeit of this.stammdaten.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit)) {
+                const keys = this.getFertigkeitenKeys(fertigkeit.Id);
+                this.fertigkeiten[fertigkeit.Id] = {
+                    effective: storeList[keys.Effective.Key].store as Readable<number>,
+                    unconditionally: storeList[keys.Unbeschränkt.Key].store as Readable<number>,
+                    purchased: storeList[keys.Purchased.Key].store as Writable<number>,
+                    fixed: storeList[keys.Fixed.Key].store as Readable<number>,
+                    missing: storeList[keys.Missing.Key].store as Readable<TypeOfKey<FertigkeitMissingKey>>,
+                    cost: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'fertigkeit'>>>,
+                };
+            }
+
+
+            for (const talent of this.stammdaten.Instance.Daten.Talente.flatMap(x => x.Talent)) {
+                const keys = this.getTalentKeys(talent.Id);
+                this.talente[talent.Id] = {
+                    effective: storeList[keys.Effective.Key].store as Readable<number>,
+                    base: storeList[keys.Base.Key].store as Readable<number>,
+                    support: storeList[keys.Support.Key].store as Readable<number>,
+                    purchased: storeList[keys.Purchased.Key].store as Writable<number>,
+                    fixed: storeList[keys.Fixed.Key].store as Readable<number>,
+                    missing: storeList[keys.Missing.Key].store as Readable<TypeOfKey<TalentMissingKey>>,
+                    cost: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'talent'>>>,
+                };
+            }
+
+            for (const path of this.stammdaten.Instance.Daten.Pfade.flatMap(x => x.Pfad)) {
+                this.pfad[path.Id] = {};
+                for (const level of path.Levels.Level) {
+                    const keys = this.getLevelKeys(path.Id, level.Id);
+                    this.pfad[path.Id][level.Id] = {
+                        effective: storeList[keys.Effective.Key].store as Readable<number>,
+                        purchased: storeList[keys.Purchased.Key].store as Writable<number>,
+                        missing: storeList[keys.Missing.Key].store as Readable<TypeOfKey<LevelMissingKey>>,
+                        cost: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'pfad'>>>,
+                    };
+                }
+            }
+
+
+
+
+            for (const tag of this.stammdaten.Instance.Daten.Tags.Tag) {
+
+
+                const keys = this.getTagKeys(tag.Id);
+
+                this.tag[tag.Id] = {
+                    effective: storeList[keys.Effective.Key].store as Readable<number>
+                };
+            }
+
+
+
+        } else {
+
+
+            this.storeManager = new StoreManager(stammdaten);
+
+
+
+
+
+
+            this.ageStore = this.storeManager.writable(ageKey, 1);
+
+            this.gattungsIdStore = this.storeManager.writable(gattungsIdKey, undefined);
+            this.possibleGattungStore = this.storeManager.derived(gattungPossibleKey, [], function (data) {
+                return data.Instance.Daten.Organismen.Gattung.map(x => x.Id);
+            });
+            this.gattungsStore = this.storeManager.derived(gattungsInstanceKey, gattungsIdKey, function (data, gattungsId) {
+                if (gattungsId === undefined) {
                     return undefined;
                 }
+                const selectedGattung = data.Instance.Daten.Organismen.Gattung.filter(x => x.Id == gattungsId.newValue)[0];
+                return selectedGattung;
+            });
 
-
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
-
-
-
-                if (base.type === 'bereich') {
-                    const entry = base.entry as StaticheDefinition_lebewesen;
-
-
-                    if (setValue === undefined) {
-                        resultreturn = entry.default;
-                    } else if (setValue > entry.maxInklusiv) {
-                        resultreturn = entry.maxInklusiv;
-                    } else if (setValue < entry.minInklusiv) {
-                        resultreturn = entry.minInklusiv;
-                    } else {
-                        resultreturn = setValue;
-                    }
-                } else if (base.type == 'punkt') {
-                    const punkt = base.entry as PunktDefintion_lebewesen;
-                    const start = punkt.Zeitpunkt[0].alter ?? 0;
-                    const end = punkt.Zeitpunkt[1]?.alter;
-                    if (age < start) {
-                        resultreturn = 0;
-                    } else if (end !== undefined && age < end) {
-                        resultreturn = setValue != 0 && setValue != undefined ? 1 : 0;
-                    } else {
-                        resultreturn = 1;
-                    }
-
-
-                } else if (base.type == 'reihe') {
-                    const reihe = meta as ReiheDefinition_lebewesen & { quantileForAge: Quantile[], schwellenForAge: Schwelle[], currentSchwelle?: Schwelle };
-                    // const reihe = currentEntwicklung.Reihe?.filter(x => x.id == currentProperty.id)[0];
-                    if (reihe == undefined) {
-                        return undefined;
-                    }
-                    const quantile = reihe.quantileForAge;
-
-
-                    const min = Math.min(...quantile.map(x => x.Wert))
-                    const max = Math.max(...quantile.map(x => x.Wert))
-
-
-                    if (setValue == undefined)
-                        resultreturn = min;
-                    else
-                        resultreturn = Math.min(max, Math.max(min, setValue));
-
-                } else if (base.type == 'berechnung') {
-
-
-
-                    const calculation = meta as FormelDefintion_lebewesen;
-                    if (calculation == undefined) {
-                        return undefined;
-                    }
-
-
-                    const scope: any = {};
-
-                    for (const element of fertigkeitDependency) {
-                        if (element.Effective.newValue !== undefined)
-                            scope[element.id] = element.Effective.newValue;
-                        else
-                            return undefined;
-                    }
-
-
-                    for (const element of besonderheitDependency) {
-                        if (element.Effective.newValue !== undefined)
-                            scope[element.id] = element.Effective.newValue;
-                        else
-                            return undefined;
-                    }
-
-                    for (const element of eigenschaftDependency) {
-                        if (element.Effective.newValue !== undefined)
-                            scope[element.id] = element.Effective.newValue;
-                        else
-                            return undefined;
-                    }
-
-
-
-                    try {
-                        const result = mathjs.evaluate(calculation.Formel, scope);
-                        if (isResultSet(result)) {
-                            const entries = (result as { entries: any }).entries;
-                            resultreturn = Array.isArray(entries) ? entries[entries.length - 1] : entries;
-                        }
-                        else {
-                            resultreturn = Array.isArray(result) ? result[result.length - 1] : result;
-                        }
-                    } catch (error) {
-                        console.error(`Faild formle ${calculation.Formel} of ${calculation.id}`, error);
-                        return undefined;
-                    }
-
-                } else {
+            this.artIdStore = this.storeManager.writable(artIdKey, undefined);
+            this.possibleArtStore = this.storeManager.derived(artPossibleKey, gattungsInstanceKey, function (_data, selectedGattung) {
+                if (selectedGattung === undefined) {
+                    return [];
+                }
+                return selectedGattung.newValue?.Art.map(x => x.Id) ?? [];
+            });
+            this.artStore = this.storeManager.derived(artInstanceKey, [artIdKey, gattungsInstanceKey], function (data, [artId, gattung]) {
+                if (gattung.newValue === undefined || artId.newValue === undefined) {
                     return undefined;
                 }
+                const selectedGattung = gattung.newValue.Art.filter(x => x.Id == artId.newValue)[0];
+                return selectedGattung;
+            });
+
+            this.morphIdStore = this.storeManager.writable(morphIdKey, undefined);
+            this.possibleMorphStore = this.storeManager.derived(morphPossibleKey, artInstanceKey, function (_data, selectedArt) {
+                if (selectedArt === undefined) {
+                    return [];
+                }
+                return selectedArt.newValue?.Morphe.Morph.map(x => x.Id) ?? [];
+            });
+            this.morphStore = this.storeManager.derived(morphInstanceKey, [morphIdKey, artInstanceKey], function (data, [artId, art]) {
+                if (art.newValue === undefined || artId.newValue === undefined) {
+                    return undefined;
+                }
+                const selectedGattung = art.newValue.Morphe.Morph.filter(x => x.Id == artId.newValue)[0];
+                return selectedGattung;
+            });
 
 
+            this.lebensAbschnitteStore = this.storeManager.readable(lebensabschnittKey);
 
-                // check modifier
+            this.storeManager.derived(lebensabschnittGattungKey, [ageKey, gattungsInstanceKey], (data, [age, gattung]) => {
+                return getLast(gattung.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
+            })
+            this.storeManager.derived(lebensabschnittArtKey, [ageKey, artInstanceKey], (data, [age, art]) => {
+                return getLast(art.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
+            })
+            this.storeManager.derived(lebensabschnittMorphKey, [ageKey, morphInstanceKey], (data, [age, morph],) => {
+                return getLast(morph.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
+            })
 
-                const mods = [
-                    ...fertigkeitDependency.flatMap(x => {
-                        const instance = data.fertigkeitenMap[x.id];
-                        return instance.Stufe.filter((y, i) => x.Effective.newValue > i).flatMap(y =>
-                            notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
-                        )
-                    }),
+            this.costStore = this.storeManager.readable(costKey);
 
 
-                    ...besonderheitDependency.flatMap(x => {
-                        const instance = data.besonderheitenMap[x.id];
-                        return instance.Stufe.filter((y, i) => x.Effective.newValue > i).flatMap(y =>
-                            notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
-                        )
-                    }),
+            this.storeManager.readable(sumCost);
+            this.storeManager.derived(costKey, sumCost, (data, cast) => {
 
-                    ...dependent
-                        .filter((x): x is KeyData<LebensabschittGattungKey | LebensabschittArtKey | LebensabschittMorphKey> => x.key.Key.endsWith('/lebensabschnitt'))
-                        .flatMap(x =>
-                            notUndefined(x.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])),
 
-                    ...eigenschaftDependency
-                        .flatMap((x) => {
-                            if (x.Meta.newValue?.type == 'punkt' && x.Effective.newValue == 1) {
-                                return (x.Meta.newValue.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
-                            }
-                            else if (x.Meta.newValue?.type == 'reihe') {
-                                return x.Meta.newValue.currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [];
-                            }
+                function filterCost(obj: object): Cost[] {
+                    return Object.entries(obj).flatMap(([key, value]) => {
+                        if (key == 'cost') {
+                            return [value] as Cost[];
+                        } else if (typeof value == 'object') {
+                            return filterCost(value);
+                        } else {
                             return [];
+                        }
+                    })
+                }
+
+
+                const costs = filterCost(cast.newValue);
+                return toCost(costs.flatMap(x => Object.entries(x)), ([v1, v2]) => [v1, v2] as const);
+            });
+
+
+            const mapDependecyToKeys = (deps: DependencyData[], types?: (keyof BesonderheitKeys | keyof FertigkeitKeys | keyof TalentKeys | keyof EigenschaftKeys)[]) => {
+
+                const dependentData = deps.map(x => x.Typ);
+
+                const dependentBesonderheiten = dependentData.filter(x => x.startsWith('besonderheit-'))
+                    .map(x => x.substring('besonderheit-'.length))
+                    .flatMap(x => {
+                        if (types != undefined) {
+                            return Object.entries(this.getBesonterheitKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                        }
+                        return Object.values(this.getBesonterheitKeys(x));
+                    });
+                const dependentFertigkeiten = dependentData.filter(x => x.startsWith('fertigkeit-'))
+                    .map(x => x.substring('fertigkeit-'.length))
+                    .flatMap(x => {
+                        if (types != undefined) {
+                            return Object.entries(this.getFertigkeitenKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                        }
+                        return Object.values(this.getFertigkeitenKeys(x));
+                    });
+
+                const dependentEigenschaften = dependentData.filter(x => x.startsWith('eigenschaft-'))
+                    .map(x => x.substring('eigenschaft-'.length))
+                    .flatMap(x => {
+                        if (types != undefined) {
+                            return Object.entries(this.getPropertieKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                        }
+                        return Object.values(this.getPropertieKeys(x))
+                    });
+
+                const dependentTalent = dependentData.filter(x => x.startsWith('talent-'))
+                    .map(x => x.substring('talent-'.length))
+                    .flatMap(x => {
+                        if (types != undefined) {
+                            return Object.entries(this.getTalentKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                        }
+                        return Object.values(this.getTalentKeys(x));
+                    });
+
+                const dependentTag = dependentData.filter(x => x.startsWith('tag-'))
+                    .map(x => x.substring('tag-'.length))
+                    .flatMap(x => {
+                        if (types != undefined) {
+                            return Object.entries(this.getTagKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                        }
+                        return Object.values(this.getTagKeys(x));
+                    });
+                const dependentLevel = deps.filter(x => x.Typ.startsWith('level-'))
+                    .map(x => x.Typ.substring('level-'.length))
+                    .map(x => ({ path: x.split('|')[0], level: x.split('|')[1] }))
+                    .flatMap(x => {
+                        if (types != undefined) {
+                            return Object.entries(this.getLevelKeys(x.path, x.level)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                        }
+                        return Object.values(this.getLevelKeys(x.path, x.level));
+                    });
+
+                const dependentAge = dependentData.filter(x => x == 'other-alter')
+                    .map(() => ageKey);
+
+                const dependentGattung = dependentData.filter(x => x.startsWith('Gattung'))
+                    .map(() => gattungsInstanceKey);
+                const dependentArt = dependentData.filter(x => x.startsWith('Art'))
+                    .map(() => artInstanceKey);
+                const dependentMorph = dependentData.filter(x => x.startsWith('Morph'))
+                    .map(() => morphInstanceKey);
+
+                const dependentLebensabschnittGattung = dependentData.filter(x => x.startsWith('Lebensabschnitt-Gattung')).map(() => lebensabschnittGattungKey);
+                const dependentLebensabschnittArt = dependentData.filter(x => x.startsWith('Lebensabschnitt-Art')).map(() => lebensabschnittArtKey);
+                const dependentLebensabschnittMorph = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(() => lebensabschnittMorphKey);
+
+                const dep = [
+                    ...dependentGattung,
+                    ...dependentArt,
+                    ...dependentMorph,
+                    ...dependentEigenschaften,
+                    ...dependentBesonderheiten,
+                    ...dependentFertigkeiten,
+                    ...dependentTalent,
+                    ...dependentTag,
+                    ...dependentLevel,
+                    ...dependentAge,
+                    ...dependentLebensabschnittArt,
+                    ...dependentLebensabschnittGattung,
+                    ...dependentLebensabschnittMorph,
+                ];
+                return dep;
+            }
+
+
+            for (const key of this.stammdaten.allEigenschaftKeys) {
+
+                const { Raw: rawKey, Effective: effectiveKey, Type: typeKey, Meta: metaKey, Cost: costKey } = this.getPropertieKeys(key);
+
+                const tmpKey = StoreManager.key(`/tmp/eigenschaft/${key}`).of<{ entry: StaticheDefinition_lebewesen | ReiheDefinition_lebewesen | FormelDefintion_lebewesen | PunktDefintion_lebewesen, type: EigenschaftTypes, level: EigenschaftTypesLevel, morphId?: string, artId?: string, gattungId?: string, } | undefined>();
+                // const effectiveKey = StoreManager.key(`/eigenschaft/${key}/effektiv`).of<number | undefined>();
+                // const writablStore = this.storeManager.writable(rawKey, undefined);
+
+                this.eigenschaften[key] = {
+                    effective: this.storeManager.readable(effectiveKey),
+                    raw: this.storeManager.writable(rawKey, undefined),
+                    type: this.storeManager.readable(typeKey),
+                    meta: this.storeManager.readable(metaKey),
+                    cost: this.storeManager.readable(costKey),
+                };
+                const dependentData = this.stammdaten.eigenschaftenDependencys.filter(x => x.Eigenschaft == key);
+
+                const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+                const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
+
+                this.storeManager.derived(tmpKey, [morphInstanceKey, artInstanceKey, gattungsInstanceKey], (data, [{ newValue: morph }, { newValue: art }, { newValue: gattung }]) => {
+                    const base = morph?.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'morph' as const }))[0]
+                        ?? morph?.Entwiklung?.Bereich?.filter(x => x.id == key).map(x => ({ entry: x, type: 'bereich' as const, level: 'morph' as const }))[0]
+                        ?? morph?.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'morph' as const }))[0]
+                        ?? morph?.Entwiklung?.Reihe?.filter(x => x.id == key).map(x => ({ entry: x, type: 'reihe' as const, level: 'morph' as const }))[0]
+                        ?? art?.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'art' as const }))[0]
+                        ?? art?.Entwiklung?.Bereich?.filter(x => x.id == key).map(x => ({ entry: x, type: 'bereich' as const, level: 'art' as const }))[0]
+                        ?? art?.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'art' as const }))[0]
+                        ?? art?.Entwiklung?.Reihe?.filter(x => x.id == key).map(x => ({ entry: x, type: 'reihe' as const, level: 'art' as const }))[0]
+                        ?? gattung?.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'gattung' as const }))[0]
+                        ?? gattung?.Entwiklung?.Bereich?.filter(x => x.id == key).map(x => ({ entry: x, type: 'bereich' as const, level: 'gattung' as const }))[0]
+                        ?? gattung?.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'gattung' as const }))[0]
+                        ?? gattung?.Entwiklung?.Reihe?.filter(x => x.id == key).map(x => ({ entry: x, type: 'reihe' as const, level: 'gattung' as const }))[0]
+                        ?? data.Instance.Daten.Organismen.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'organismus' as const }))[0]
+                        ?? data.Instance.Daten.Organismen.Entwiklung?.Bereich?.filter(x => x.id == key).map(x => ({ entry: x, type: 'bereich' as const, level: 'organismus' as const }))[0]
+                        ?? data.Instance.Daten.Organismen.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'organismus' as const }))[0]
+                        ?? data.Instance.Daten.Organismen.Entwiklung?.Reihe?.filter(x => x.id == key).map(x => ({ entry: x, type: 'reihe' as const, level: 'organismus' as const }))[0]
+                        ;
+                    // console.log('morph', morph?.Id);
+                    return base == undefined ? undefined : { ...base, morphId: morph?.Id, gattungId: gattung?.Id, artId: art?.Id };
+                }, {
+                    compare: (a, b) => {
+                        if (a === UNINITILEZED) {
+                            return b === UNINITILEZED;
+                        } else if (b === UNINITILEZED) {
+                            return false;
+                        } else if (a === undefined) {
+                            return b === undefined;
+                        } else if (b === undefined) {
+                            return false;
+                        } else {
+                            return a?.entry.id === b?.entry.id && a?.type === b?.type && b?.level === a?.level && a.gattungId == b.gattungId && a.artId == b.artId && a.morphId == b.morphId;
+                        }
+                    }
+                });
+
+
+                this.storeManager.derived(effectiveKey, [ageKey, tmpKey, rawKey, metaKey, ...valueDependency], (data, [{ newValue: age }, { newValue: base }, { newValue: setValue }, { newValue: meta }, ...dependent]) => {
+                    let resultreturn: number;
+                    if (base === undefined) {
+                        return undefined;
+                    }
+
+
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
+
+
+
+                    if (base.type === 'bereich') {
+                        const entry = base.entry as StaticheDefinition_lebewesen;
+
+
+                        if (setValue === undefined) {
+                            resultreturn = entry.default;
+                        } else if (setValue > entry.maxInklusiv) {
+                            resultreturn = entry.maxInklusiv;
+                        } else if (setValue < entry.minInklusiv) {
+                            resultreturn = entry.minInklusiv;
+                        } else {
+                            resultreturn = setValue;
+                        }
+                    } else if (base.type == 'punkt') {
+                        const punkt = base.entry as PunktDefintion_lebewesen;
+                        const start = punkt.Zeitpunkt[0].alter ?? 0;
+                        const end = punkt.Zeitpunkt[1]?.alter;
+                        if (age < start) {
+                            resultreturn = 0;
+                        } else if (end !== undefined && age < end) {
+                            resultreturn = setValue != 0 && setValue != undefined ? 1 : 0;
+                        } else {
+                            resultreturn = 1;
+                        }
+
+
+                    } else if (base.type == 'reihe') {
+                        const reihe = meta as ReiheDefinition_lebewesen & { quantileForAge: Quantile[], schwellenForAge: Schwelle[], currentSchwelle?: Schwelle };
+                        // const reihe = currentEntwicklung.Reihe?.filter(x => x.id == currentProperty.id)[0];
+                        if (reihe == undefined) {
+                            return undefined;
+                        }
+                        const quantile = reihe.quantileForAge;
+
+
+                        const min = Math.min(...quantile.map(x => x.Wert))
+                        const max = Math.max(...quantile.map(x => x.Wert))
+
+
+                        if (setValue == undefined)
+                            resultreturn = min;
+                        else
+                            resultreturn = Math.min(max, Math.max(min, setValue));
+
+                    } else if (base.type == 'berechnung') {
+
+
+
+                        const calculation = meta as FormelDefintion_lebewesen;
+                        if (calculation == undefined) {
+                            return undefined;
+                        }
+
+
+                        const scope: any = {};
+
+                        for (const element of fertigkeitDependency) {
+                            if (element.Effective.newValue !== undefined)
+                                scope[element.id] = element.Effective.newValue;
+                            else
+                                return undefined;
+                        }
+
+
+                        for (const element of besonderheitDependency) {
+                            if (element.Effective.newValue !== undefined)
+                                scope[element.id] = element.Effective.newValue;
+                            else
+                                return undefined;
+                        }
+
+                        for (const element of eigenschaftDependency) {
+                            if (element.Effective.newValue !== undefined)
+                                scope[element.id] = element.Effective.newValue;
+                            else
+                                return undefined;
+                        }
+
+
+
+                        try {
+                            const result = mathjs.evaluate(calculation.Formel, scope);
+                            if (isResultSet(result)) {
+                                const entries = (result as { entries: any }).entries;
+                                resultreturn = Array.isArray(entries) ? entries[entries.length - 1] : entries;
+                            }
+                            else {
+                                resultreturn = Array.isArray(result) ? result[result.length - 1] : result;
+                            }
+                        } catch (error) {
+                            console.error(`Faild formle ${calculation.Formel} of ${calculation.id}`, error);
+                            return undefined;
+                        }
+
+                    } else {
+                        return undefined;
+                    }
+
+
+
+                    // check modifier
+
+                    const mods = [
+                        ...fertigkeitDependency.flatMap(x => {
+                            const instance = data.fertigkeitenMap[x.id];
+                            return instance.Stufe.filter((y, i) => x.Effective.newValue > i).flatMap(y =>
+                                notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
+                            )
                         }),
 
-                    ...talentDependency.flatMap(x => {
-                        const instance = data.talentMap[x.id];
-                        return instance.Level.filter((y) => x.Effective.newValue >= y.Wert).flatMap(y =>
-                            notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
-                        )
-                    })
 
-                ];
-                //TODO: Talents are not yet handled
+                        ...besonderheitDependency.flatMap(x => {
+                            const instance = data.besonderheitenMap[x.id];
+                            return instance.Stufe.filter((y, i) => x.Effective.newValue > i).flatMap(y =>
+                                notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
+                            )
+                        }),
+
+                        ...dependent
+                            .filter((x): x is KeyData<LebensabschittGattungKey | LebensabschittArtKey | LebensabschittMorphKey> => x.key.Key.endsWith('/lebensabschnitt'))
+                            .flatMap(x =>
+                                notUndefined(x.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])),
+
+                        ...eigenschaftDependency
+                            .flatMap((x) => {
+                                if (x.Meta.newValue?.type == 'punkt' && x.Effective.newValue == 1) {
+                                    return (x.Meta.newValue.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
+                                }
+                                else if (x.Meta.newValue?.type == 'reihe') {
+                                    return x.Meta.newValue.currentSchwelle?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [];
+                                }
+                                return [];
+                            }),
+
+                        ...talentDependency.flatMap(x => {
+                            const instance = data.talentMap[x.id];
+                            return instance.Level.filter((y) => x.Effective.newValue >= y.Wert).flatMap(y =>
+                                notUndefined(y.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])
+                            )
+                        })
+
+                    ];
+                    //TODO: Talents are not yet handled
 
 
 
-                const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
-                const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
+                    const addMod = mods.filter(x => x.Type == 'additiv').reduce((p, c) => p + c.Mod, 0);
+                    const multiMod = mods.filter(x => x.Type == 'multiplikativ').reduce((p, c) => p + (c.Mod - 1), 1);
 
 
 
 
 
-                return resultreturn * multiMod + addMod;
+                    return resultreturn * multiMod + addMod;
 
-            })
-            this.storeManager.derived(typeKey, tmpKey, (data, base) => {
-                return base.newValue?.type;
-            })
+                })
+                this.storeManager.derived(typeKey, tmpKey, (data, base) => {
+                    return base.newValue?.type;
+                })
 
 
-            this.storeManager.derived(metaKey, [ageKey, tmpKey, rawKey], (data, [{ newValue: age }, { newValue: base }, { newValue: raw }]) => {
-                if (base === undefined) {
-                    return undefined;
-                }
-                if (base.type === 'bereich') {
-                    const entry = base.entry as StaticheDefinition_lebewesen;
-                    return { type: base.type, ...entry };
-                } else if (base.type == 'punkt') {
-                    const punkt = base.entry as PunktDefintion_lebewesen;
-                    return { type: base.type, ...punkt };
-
-                } else if (base.type == 'berechnung') {
-                    const formel = base.entry as FormelDefintion_lebewesen;
-                    return { type: base.type, ...formel };
-
-                } else if (base.type == 'reihe') {
-                    const reihe = base.entry as ReiheDefinition_lebewesen;
-
-                    // const reihe = currentEntwicklung.Reihe?.filter(x => x.id == currentProperty.id)[0];
-                    if (reihe == undefined) {
+                this.storeManager.derived(metaKey, [ageKey, tmpKey, rawKey], (data, [{ newValue: age }, { newValue: base }, { newValue: raw }]) => {
+                    if (base === undefined) {
                         return undefined;
                     }
-                    const result = raw
-                        ? { ...reihe, ...Charakter.applyAge(age, reihe, raw) }
-                        : { ...reihe, ...Charakter.applyAge(age, reihe) };
-                    // if (raw) {
-                    //     const { quantile, schwellen, currentSchwelle } = Charakter.applyAge(age, reihe, raw);
-                    //     return { ...reihe, quantile, schwellen, currentSchwelle };
-                    // } else {
-                    //     const { quantile, schwellen } = Charakter.applyAge(age, reihe);
-                    //     return { ...reihe, quantile, schwellen };
-                    // }
-                    return { type: base.type, ...result };
+                    if (base.type === 'bereich') {
+                        const entry = base.entry as StaticheDefinition_lebewesen;
+                        return { type: base.type, ...entry };
+                    } else if (base.type == 'punkt') {
+                        const punkt = base.entry as PunktDefintion_lebewesen;
+                        return { type: base.type, ...punkt };
 
-                } else {
-                    return undefined;
-                }
-            });
-            this.storeManager.derived(costKey, [metaKey, rawKey, ...costDependency], (data, [meta, raw, ...dependent]) => {
+                    } else if (base.type == 'berechnung') {
+                        const formel = base.entry as FormelDefintion_lebewesen;
+                        return { type: base.type, ...formel };
 
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+                    } else if (base.type == 'reihe') {
+                        const reihe = base.entry as ReiheDefinition_lebewesen;
 
-                if (meta.newValue?.type == 'bereich') {
-                    return toCost(meta.newValue.Kosten, x => {
-
-                        const _default = meta.newValue?.type == 'bereich' ? meta.newValue.default : 0;
-
-
-                        let resultreturn: number | undefined = undefined;
-                        const scope = {
-                            value: raw.newValue ?? _default
-                        };
-                        try {
-                            resultreturn = evaluateBerechnung(x.Berechnung, scope);
-                        } catch (error) {
-                            console.error(`Faild formle ${x.Berechnung} of ${metaKey.Key} ${x.Id}`, error);
+                        // const reihe = currentEntwicklung.Reihe?.filter(x => x.id == currentProperty.id)[0];
+                        if (reihe == undefined) {
                             return undefined;
                         }
-                        if (resultreturn) {
-                            return [x.Id, resultreturn] as const;
-                        }
-                    })
-                } else if (meta.newValue?.type == 'reihe') {
-                    return toCost(meta.newValue.currentSchwelle?.Kosten ?? [],
-                        x => {
+                        const result = raw
+                            ? { ...reihe, ...Charakter.applyAge(age, reihe, raw) }
+                            : { ...reihe, ...Charakter.applyAge(age, reihe) };
+                        // if (raw) {
+                        //     const { quantile, schwellen, currentSchwelle } = Charakter.applyAge(age, reihe, raw);
+                        //     return { ...reihe, quantile, schwellen, currentSchwelle };
+                        // } else {
+                        //     const { quantile, schwellen } = Charakter.applyAge(age, reihe);
+                        //     return { ...reihe, quantile, schwellen };
+                        // }
+                        return { type: base.type, ...result };
+
+                    } else {
+                        return undefined;
+                    }
+                });
+                this.storeManager.derived(costKey, [metaKey, rawKey, ...costDependency], (data, [meta, raw, ...dependent]) => {
+
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
+
+                    if (meta.newValue?.type == 'bereich') {
+                        return toCost(meta.newValue.Kosten, x => {
+
+                            const _default = meta.newValue?.type == 'bereich' ? meta.newValue.default : 0;
+
+
                             let resultreturn: number | undefined = undefined;
                             const scope = {
-                                value: raw.newValue ?? 0
+                                value: raw.newValue ?? _default
                             };
                             try {
-                                const result = mathjs.evaluate(x.Berechnung, scope);
-                                if (isResultSet(result)) {
-                                    const entries = (result as { entries: any }).entries;
-                                    resultreturn = Array.isArray(entries) ? entries[entries.length - 1] : entries;
-                                }
-                                else {
-                                    resultreturn = Array.isArray(result) ? result[result.length - 1] : result;
-                                }
+                                resultreturn = evaluateBerechnung(x.Berechnung, scope);
                             } catch (error) {
                                 console.error(`Faild formle ${x.Berechnung} of ${metaKey.Key} ${x.Id}`, error);
                                 return undefined;
@@ -1253,517 +1462,542 @@ export class Charakter {
                                 return [x.Id, resultreturn] as const;
                             }
                         })
+                    } else if (meta.newValue?.type == 'reihe') {
+                        return toCost(meta.newValue.currentSchwelle?.Kosten ?? [],
+                            x => {
+                                let resultreturn: number | undefined = undefined;
+                                const scope = {
+                                    value: raw.newValue ?? 0
+                                };
+                                try {
+                                    const result = mathjs.evaluate(x.Berechnung, scope);
+                                    if (isResultSet(result)) {
+                                        const entries = (result as { entries: any }).entries;
+                                        resultreturn = Array.isArray(entries) ? entries[entries.length - 1] : entries;
+                                    }
+                                    else {
+                                        resultreturn = Array.isArray(result) ? result[result.length - 1] : result;
+                                    }
+                                } catch (error) {
+                                    console.error(`Faild formle ${x.Berechnung} of ${metaKey.Key} ${x.Id}`, error);
+                                    return undefined;
+                                }
+                                if (resultreturn) {
+                                    return [x.Id, resultreturn] as const;
+                                }
+                            })
 
-                }
-
-
-                return entriesToCost();
-
-            })
-        }
-
-
-        for (const besonderheit of this.stammdaten.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit)) {
-
-
-            const keys = this.getBesonterheitKeys(besonderheit.Id);
-
-            this.besonderheiten[besonderheit.Id] = {
-                effective: this.storeManager.readable(keys.Effective),
-                unconditionally: this.storeManager.readable(keys.Unbeschränkt),
-                purchased: this.storeManager.writable(keys.Purchased, 0),
-                fixed: this.storeManager.readable(keys.Fixed),
-                missing: this.storeManager.readable(keys.Missing),
-                cost: this.storeManager.readable(keys.Cost),
-            };
-
-            const dependentData = this.stammdaten.besonderheitDependencys.filter(x => x.Eigenschaft == besonderheit.Id);
-
-            const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
-            const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
-            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt', 'Effective', "Base", 'Support']);
-
-
-
-            this.storeManager.derived(keys.Effective, [keys.Unbeschränkt, keys.Missing], (data, [unconditionally, missing]) => {
-                return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
-            });
-            this.storeManager.derived(keys.Unbeschränkt, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
-                return Math.max(purchased.newValue, fixed.newValue);
-            });
-
-
-
-            this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
-                // todo get fixed besonderheiten
-
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency } = this.groupDependencyData(dependent);
-
-                const besonderheitMax = Math.max(...besonderheitDependency.map(x =>
-                    Math.max(...data.besonderheitenMap[x.id].Stufe.filter((_, i) => i < x.Effective.newValue)
-                        .map(x => Math.max(...(x.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? [])))
-                ));
-
-                const fertigkeitMax = Math.max(...fertigkeitDependency.map(x =>
-                    Math.max(...data.fertigkeitenMap[x.id].Stufe.filter((_, i) => i < x.Effective.newValue)
-                        .map(x => Math.max(...(x.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? [])))
-                ));
-
-
-                const eigenschaftMax = Math.max(...eigenschaftDependency.map(x => {
-                    if (x.Meta.newValue?.type == 'punkt' && x.Effective.newValue == 1) {
-                        return Math.max(...(x.Meta.newValue.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? []);
-                    } else if (x.Meta.newValue?.type == 'reihe') {
-                        return Math.max(...(x.Meta.newValue.currentSchwelle?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? []);
                     }
-                    return 0;
 
-                }));
 
-                return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax);
-            });
+                    return entriesToCost();
 
-            this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
-                // todo get Missing stuff
+                })
+            }
 
-                const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
 
-                const result = filterNull(besonderheit.Stufe
-                    .filter((x, i) => i < (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
-                    .map((x, i) => {
-                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
-                        if (missing == null) {
-                            return null;
-                        }
-                        return {
-                            wert: i + 1, missing: missing
-                        };
-                    }));
+            for (const besonderheit of this.stammdaten.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit)) {
 
-                return result;
-            }, { evalueateUndefined: true });
 
-            this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+                const keys = this.getBesonterheitKeys(besonderheit.Id);
 
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
-
-
-                return toCost(
-                    besonderheit.Stufe.map((x, i) => ({ index: i, ...x }))
-                        .filter(x => x.index < purchased.newValue)
-                        .filter(x => x.index >= fixed.newValue)
-                        .flatMap(x => x.Kosten.map(y => {
-
-                            let resultreturn: number;
-
-                            try {
-                                resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
-                            } catch (error) {
-                                console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
-                                resultreturn = 0;
-                            }
-
-
-                            return [y.Id, resultreturn] as const;
-                        })), x => x);
-
-            });
-
-
-
-
-
-        }
-
-
-        for (const fertigkeit of this.stammdaten.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit)) {
-
-
-            const keys = this.getFertigkeitenKeys(fertigkeit.Id);
-
-            this.fertigkeiten[fertigkeit.Id] = {
-                effective: this.storeManager.readable(keys.Effective),
-                unconditionally: this.storeManager.readable(keys.Unbeschränkt),
-                purchased: this.storeManager.writable(keys.Purchased, 0),
-                fixed: this.storeManager.readable(keys.Fixed),
-                missing: this.storeManager.readable(keys.Missing),
-                cost: this.storeManager.readable(keys.Cost),
-            };
-
-            const dependentData = this.stammdaten.fertigkeitDependencys.filter(x => x.Eigenschaft == fertigkeit.Id);
-
-            const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
-            const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
-            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt', 'Effective', 'Support', 'Base']);
-
-
-
-            this.storeManager.derived(keys.Effective, [keys.Unbeschränkt, keys.Missing], (data, [unconditionally, missing]) => {
-                return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
-            });
-            this.storeManager.derived(keys.Unbeschränkt, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
-                return Math.max(purchased.newValue, fixed.newValue);
-            });
-
-
-
-            this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
-                // todo get fixed besonderheiten
-
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, tagDependency } = this.groupDependencyData(dependent);
-
-                return 0;
-                // return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax);
-            });
-
-            this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
-                // todo get Missing stuff
-
-                const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
-
-                const result = filterNull(fertigkeit.Stufe
-                    .filter((x, i) => i < (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
-                    .map((x, i) => {
-                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
-                        if (missing == null) {
-                            return null;
-                        }
-                        return {
-                            wert: i + 1, missing: missing
-                        };
-                    }));
-
-                return result;
-            }, { evalueateUndefined: true });
-
-            this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
-
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
-
-                const defaultKostData = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten)[0];
-
-
-                return toCost(
-                    fertigkeit.Stufe.map((x, i) => ({ index: i, ...x }))
-                        .filter(x => x.index < purchased.newValue)
-                        .filter(x => x.index >= fixed.newValue)
-                        .map(y => {
-
-                            return [defaultKostData.Id, y.Kosten] as const;
-                        }), x => x);
-
-            });
-
-
-
-
-
-        }
-
-
-        for (const talent of this.stammdaten.Instance.Daten.Talente.flatMap(x => x.Talent)) {
-
-
-            const keys = this.getTalentKeys(talent.Id);
-
-            this.talente[talent.Id] = {
-                effective: this.storeManager.readable(keys.Effective),
-                base: this.storeManager.readable(keys.Base),
-                support: this.storeManager.readable(keys.Support),
-                purchased: this.storeManager.writable(keys.Purchased, 0),
-                fixed: this.storeManager.readable(keys.Fixed),
-                missing: this.storeManager.readable(keys.Missing),
-                cost: this.storeManager.readable(keys.Cost),
-            };
-
-            const dependentData = this.stammdaten.talentDependencys.filter(x => x.Eigenschaft == talent.Id);
-
-            const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
-            const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
-            const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
-
-
-
-            this.storeManager.derived(keys.Effective, [keys.Base, keys.Support, keys.Missing], (data, [base, support, missing]) => {
-                return Math.min(base.newValue + support.newValue, ...missing.newValue.map(x => x.wert - 1));
-            });
-            this.storeManager.derived(keys.Base, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
-
-                const ep = purchased.newValue + fixed.newValue;
-                const complexity = talent.Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
-                const levelCots = data.talentCostTabel[complexity]
-
-
-                for (let i = levelCots.length - 1; i >= 0; i--) {
-                    if (levelCots[i].Kosten.Wert <= ep) {
-                        return i;
-                    }
-                }
-                return 0;
-            });
-            this.storeManager.derived(keys.Support, [...supportDependency], (data, [...dependent]) => {
-
-
-                const { talentDependency } = this.groupDependencyData(dependent);
-
-
-
-                const lookup = Object.fromEntries(talentDependency.map(x => [x.id, x]));
-
-
-                return [...(talent.Ableitungen?.Ableitung ?? []).map(calculateAbleitung),
-                ...(talent.Ableitungen?.Max ?? []).map(calculateMax)].reduce((p, c) => p + c, 0);
-
-
-                function calculateMax(m: _Max): number {
-                    const values = [...m.Ableitung?.map(calculateAbleitung) ?? [],
-                    ...m.Max?.map(calculateMax) ?? []
-                    ].sort((a, b) => b - a);
-
-                    return values.filter((_, i) => i < m.Anzahl).reduce((p, c) => p + c, 0);
-                }
-
-                function calculateAbleitung(a: _Ableitung) {
-                    const other = lookup[a.Id];
-                    // missing requirments may lower the talent below base.
-                    const otherValue = Math.min(other.Base.newValue, ...other.Missing.newValue.map(x => x.wert));
-
-                    return Math.floor(otherValue / a.Anzahl);
-                }
-            });
-
-
-
-            this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
-                // TODO: get fixed talente
-
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
-
-                return 0;
-                // return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax);
-            });
-
-            this.storeManager.derived(keys.Missing, [keys.Base, keys.Support, ...requirementsDependency], (data, [base, support, ...dependent]) => {
-                const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
-
-
-                if (base.newValue == UNINITILEZED || support.newValue == UNINITILEZED) {
-                    return [];
-                }
-                const currentLevel = base.newValue + support.newValue;
-
-                const result = filterNull(talent.Level
-                    .filter(x => x.Wert <= currentLevel)
-                    .map(x => {
-                        const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
-                        if (missing == null) {
-                            return null;
-                        }
-                        return {
-                            wert: x.Wert, missing: missing
-                        };
-                    }));
-
-                return result;
-            }, { evalueateUndefined: true });
-
-            this.storeManager.derived(keys.Cost, [keys.Purchased], (data, [purchased]) => {
-                const defaultKostData = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten)[0];
-                const result = {} as Cost;
-                result[defaultKostData.Id] = purchased.newValue;
-                return result;
-            });
-
-
-
-
-
-        }
-
-        for (const pfad of this.stammdaten.Instance.Daten.Pfade.flatMap(x => x.Pfad)) {
-            this.pfad[pfad.Id] = {};
-            for (const level of pfad.Levels.Level) {
-                const keys = this.getLevelKeys(pfad.Id, level.Id);
-
-                this.pfad[pfad.Id][level.Id] = {
+                this.besonderheiten[besonderheit.Id] = {
                     effective: this.storeManager.readable(keys.Effective),
+                    unconditionally: this.storeManager.readable(keys.Unbeschränkt),
                     purchased: this.storeManager.writable(keys.Purchased, 0),
+                    fixed: this.storeManager.readable(keys.Fixed),
                     missing: this.storeManager.readable(keys.Missing),
                     cost: this.storeManager.readable(keys.Cost),
                 };
 
-                const dependentData = this.stammdaten.talentDependencys.filter(x => x.Eigenschaft == level.Id);
+                const dependentData = this.stammdaten.besonderheitDependencys.filter(x => x.Eigenschaft == besonderheit.Id);
 
                 const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
-                const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
-                const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
+                const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
+                const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt', 'Effective', "Base", 'Support']);
 
 
 
-                // this.storeManager.derived(keys.Effective, [keys.Base, keys.Support, keys.Missing], (data, [base, support, missing]) => {
-                //     return Math.min(base.newValue + support.newValue, ...missing.newValue.map(x => x.wert - 1));
-                // });
-                // this.storeManager.derived(keys.Base, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
-
-                //     const ep = purchased.newValue + fixed.newValue;
-                //     const complexity = level.Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
-                //     const levelCots = data.talentCostTabel[complexity]
-
-
-                //     for (let i = levelCots.length - 1; i >= 0; i--) {
-                //         if (levelCots[i].Kosten.Wert <= ep) {
-                //             return i;
-                //         }
-                //     }
-                //     return 0;
-                // });
-                // this.storeManager.derived(keys.Support, [...supportDependency], (data, [...dependent]) => {
-
-
-                //     const { talentDependency } = this.groupDependencyData(dependent);
+                this.storeManager.derived(keys.Effective, [keys.Unbeschränkt, keys.Missing], (data, [unconditionally, missing]) => {
+                    return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
+                });
+                this.storeManager.derived(keys.Unbeschränkt, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
+                    return Math.max(purchased.newValue, fixed.newValue);
+                });
 
 
 
-                //     const lookup = Object.fromEntries(talentDependency.map(x => [x.id, x]));
+                this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
+                    // todo get fixed besonderheiten
+
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, tagDependency, levelDependency } = this.groupDependencyData(dependent);
+
+                    const besonderheitMax = Math.max(...besonderheitDependency.map(x =>
+                        Math.max(...data.besonderheitenMap[x.id].Stufe.filter((_, i) => i < x.Effective.newValue)
+                            .map(x => Math.max(...(x.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? [])))
+                    ));
+
+                    const fertigkeitMax = Math.max(...fertigkeitDependency.map(x =>
+                        Math.max(...data.fertigkeitenMap[x.id].Stufe.filter((_, i) => i < x.Effective.newValue)
+                            .map(x => Math.max(...(x.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? [])))
+                    ));
 
 
-                //     return [...(level.Ableitungen?.Ableitung ?? []).map(calculateAbleitung),
-                //     ...(level.Ableitungen?.Max ?? []).map(calculateMax)].reduce((p, c) => p + c, 0);
+                    const eigenschaftMax = Math.max(...eigenschaftDependency.map(x => {
+                        if (x.Meta.newValue?.type == 'punkt' && x.Effective.newValue == 1) {
+                            return Math.max(...(x.Meta.newValue.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? []);
+                        } else if (x.Meta.newValue?.type == 'reihe') {
+                            return Math.max(...(x.Meta.newValue.currentSchwelle?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? []);
+                        }
+                        return 0;
+
+                    }));
+
+                    const levelMax = Math.max(
+                        ...(levelDependency.filter(x => x.Effective.newValue > 0).flatMap(x => data.levelMap[x.path][x.id].Besonderheit?.filter(y => y.Id == besonderheit.Id).map(y => y.Stufe) ?? []))
+                    );
 
 
-                //     function calculateMax(m: _Max): number {
-                //         const values = [...m.Ableitung?.map(calculateAbleitung) ?? [],
-                //         ...m.Max?.map(calculateMax) ?? []
-                //         ].sort((a, b) => b - a);
+                    return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax, levelMax);
+                });
 
-                //         return values.filter((_, i) => i < m.Anzahl).reduce((p, c) => p + c, 0);
-                //     }
+                this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
+                    // todo get Missing stuff
 
-                //     function calculateAbleitung(a: _Ableitung) {
-                //         const other = lookup[a.Id];
-                //         // missing requirments may lower the talent below base.
-                //         const otherValue = Math.min(other.Base.newValue, ...other.Missing.newValue.map(x => x.wert));
+                    const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
 
-                //         return Math.floor(otherValue / a.Anzahl);
-                //     }
-                // });
+                    const result = filterNull(besonderheit.Stufe
+                        .filter((x, i) => i < (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
+                        .map((x, i) => {
+                            const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
+                            if (missing == null) {
+                                return null;
+                            }
+                            return {
+                                wert: i + 1, missing: missing
+                            };
+                        }));
 
+                    return result;
+                }, { evalueateUndefined: true });
 
+                this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
 
-                // this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
-                //     // TODO: get fixed talente
-
-                //     const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
-
-                //     return 0;
-                //     // return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax);
-                // });
-
-                // this.storeManager.derived(keys.Missing, [keys.Base, keys.Support, ...requirementsDependency], (data, [base, support, ...dependent]) => {
-                //     const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
-
-                //     const Voraussetzung = data.levelMap[pfad.Id][level.Id].Voraussetzung;
-                //     this.levelPrerequire(Voraussetzung?.LevelVoraussetzung,{} );
-                //     const missing = Charakter.getMissingInternal(Voraussetzung?.Zusätzlich, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
 
 
+                    return toCost(
+                        besonderheit.Stufe.map((x, i) => ({ index: i, ...x }))
+                            .filter(x => x.index < purchased.newValue)
+                            .filter(x => x.index >= fixed.newValue)
+                            .flatMap(x => x.Kosten.map(y => {
 
-                //     if (base.newValue == UNINITILEZED || support.newValue == UNINITILEZED) {
-                //         return [];
-                //     }
-                //     const currentLevel = base.newValue + support.newValue;
+                                let resultreturn: number;
 
-                //     const result = filterNull(level.Level
-                //         .filter(x => x.Wert <= currentLevel)
-                //         .map(x => {
-                //             if (missing == null) {
-                //                 return null;
-                //             }
-                //             return {
-                //                 wert: x.Wert, missing: missing
-                //             };
-                //         }));
+                                try {
+                                    resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                                } catch (error) {
+                                    console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
+                                    resultreturn = 0;
+                                }
 
-                //     return result;
-                // }, { evalueateUndefined: true });
 
-                // this.storeManager.derived(keys.Cost, [keys.Purchased], (data, [purchased]) => {
-                //     const defaultKostData = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten)[0];
-                //     const result = {} as Cost;
-                //     result[defaultKostData.Id] = purchased.newValue;
-                //     return result;
-                // });
+                                return [y.Id, resultreturn] as const;
+                            })), x => x);
+
+                });
 
 
 
 
 
             }
-        }
+
+
+            for (const fertigkeit of this.stammdaten.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit)) {
+
+
+                const keys = this.getFertigkeitenKeys(fertigkeit.Id);
+
+                this.fertigkeiten[fertigkeit.Id] = {
+                    effective: this.storeManager.readable(keys.Effective),
+                    unconditionally: this.storeManager.readable(keys.Unbeschränkt),
+                    purchased: this.storeManager.writable(keys.Purchased, 0),
+                    fixed: this.storeManager.readable(keys.Fixed),
+                    missing: this.storeManager.readable(keys.Missing),
+                    cost: this.storeManager.readable(keys.Cost),
+                };
+
+                const dependentData = this.stammdaten.fertigkeitDependencys.filter(x => x.Eigenschaft == fertigkeit.Id);
+
+                const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+                const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
+                const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt', 'Effective', 'Support', 'Base']);
 
 
 
-        for (const tag of this.stammdaten.Instance.Daten.Tags.Tag) {
-
-
-            const keys = this.getTagKeys(tag.Id);
-
-            this.tag[tag.Id] = {
-                effective: this.storeManager.readable(keys.Effective),
-            };
-
-            const dependentData = this.stammdaten.tagDependencys.filter(x => x.Eigenschaft == tag.Id);
-
-            const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+                this.storeManager.derived(keys.Effective, [keys.Unbeschränkt, keys.Missing], (data, [unconditionally, missing]) => {
+                    return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
+                });
+                this.storeManager.derived(keys.Unbeschränkt, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
+                    return Math.max(purchased.newValue, fixed.newValue);
+                });
 
 
 
-            this.storeManager.derived(keys.Effective, valueDependency, (data, dependent) => {
-                const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
+                this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, tagDependency, levelDependency } = this.groupDependencyData(dependent);
+                    return Math.max(0,
+                        ...(levelDependency.filter(x => x.Effective.newValue > 0).flatMap(x => data.levelMap[x.path][x.id].Fertigkeit?.filter(y => y.Id == fertigkeit.Id).map(y => y.Stufe) ?? []))
+                    );
+                });
 
-                for (const b of besonderheitDependency) {
-                    const besonderheit = data.besonderheitenMap[b.id];
-                    for (let index = 0; index < b.Effective.newValue; index++) {
-                        if ((besonderheit.Stufe[index].Mods?.Tags?.Tag.filter(x => x.Id == tag.Id).length ?? 0) > 0) {
-                            return 1
+                this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
+                    // todo get Missing stuff
+
+                    const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
+
+                    const result = filterNull(fertigkeit.Stufe
+                        .filter((x, i) => i < (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
+                        .map((x, i) => {
+                            const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
+                            if (missing == null) {
+                                return null;
+                            }
+                            return {
+                                wert: i + 1, missing: missing
+                            };
+                        }));
+
+                    return result;
+                }, { evalueateUndefined: true });
+
+                this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+
+                    const defaultKostData = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten)[0];
+
+
+                    return toCost(
+                        fertigkeit.Stufe.map((x, i) => ({ index: i, ...x }))
+                            .filter(x => x.index < purchased.newValue)
+                            .filter(x => x.index >= fixed.newValue)
+                            .map(y => {
+
+                                return [defaultKostData.Id, y.Kosten] as const;
+                            }), x => x);
+
+                });
+
+
+
+
+
+            }
+
+
+            for (const talent of this.stammdaten.Instance.Daten.Talente.flatMap(x => x.Talent)) {
+
+
+                const keys = this.getTalentKeys(talent.Id);
+
+                this.talente[talent.Id] = {
+                    effective: this.storeManager.readable(keys.Effective),
+                    base: this.storeManager.readable(keys.Base),
+                    support: this.storeManager.readable(keys.Support),
+                    purchased: this.storeManager.writable(keys.Purchased, 0),
+                    fixed: this.storeManager.readable(keys.Fixed),
+                    missing: this.storeManager.readable(keys.Missing),
+                    cost: this.storeManager.readable(keys.Cost),
+                };
+
+                const dependentData = this.stammdaten.talentDependencys.filter(x => x.Eigenschaft == talent.Id);
+
+                const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'), ['Effective']);
+                const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
+                const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
+
+
+
+                this.storeManager.derived(keys.Effective, [keys.Base, keys.Support, keys.Missing], (data, [base, support, missing]) => {
+                    return Math.min(base.newValue + support.newValue, ...missing.newValue.map(x => x.wert - 1));
+                });
+                this.storeManager.derived(keys.Base, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
+
+                    const ep = purchased.newValue + fixed.newValue;
+                    const complexity = talent.Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1
+                    const levelCots = data.talentCostTabel[complexity]
+
+
+                    for (let i = levelCots.length - 1; i >= 0; i--) {
+                        if (levelCots[i].Kosten.Wert <= ep) {
+                            return i;
                         }
                     }
-                }
-                for (const b of eigenschaftDependency) {
+                    return 0;
+                });
+                this.storeManager.derived(keys.Support, [...supportDependency], (data, [...dependent]) => {
 
-                    if (b.Meta.newValue?.type == "punkt" && b.Effective.newValue == 1) {
-                        return 1;
+
+                    const { talentDependency } = this.groupDependencyData(dependent);
+
+
+
+                    const lookup = Object.fromEntries(talentDependency.map(x => [x.id, x]));
+
+
+                    return [...(talent.Ableitungen?.Ableitung ?? []).map(calculateAbleitung),
+                    ...(talent.Ableitungen?.Max ?? []).map(calculateMax)].reduce((p, c) => p + c, 0);
+
+
+                    function calculateMax(m: _Max): number {
+                        const values = [...m.Ableitung?.map(calculateAbleitung) ?? [],
+                        ...m.Max?.map(calculateMax) ?? []
+                        ].sort((a, b) => b - a);
+
+                        return values.filter((_, i) => i < m.Anzahl).reduce((p, c) => p + c, 0);
                     }
-                    if (b.Meta.newValue?.type == 'reihe') {
-                        if ((b.Meta.newValue.currentSchwelle?.Mods?.Tags?.Tag.filter(x => x.Id == tag.Id).length ?? 0) > 0) {
+
+                    function calculateAbleitung(a: _Ableitung) {
+                        const other = lookup[a.Id];
+                        // missing requirments may lower the talent below base.
+                        const otherValue = Math.min(other.Base.newValue, ...other.Missing.newValue.map(x => x.wert));
+
+                        return Math.floor(otherValue / a.Anzahl);
+                    }
+                });
+
+
+
+                this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, levelDependency } = this.groupDependencyData(dependent);
+                    const total = (levelDependency.flatMap(x => data.levelMap[x.path][x.id].Talent?.map(y => y.EP * x.Effective.newValue) ?? [])).reduce((p, c) => p + c, 0);
+                    return total;
+                });
+
+                this.storeManager.derived(keys.Missing, [keys.Base, keys.Support, ...requirementsDependency], (data, [base, support, ...dependent]) => {
+                    const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
+
+
+                    if (base.newValue == UNINITILEZED || support.newValue == UNINITILEZED) {
+                        return [];
+                    }
+                    const currentLevel = base.newValue + support.newValue;
+
+                    const result = filterNull(talent.Level
+                        .filter(x => x.Wert <= currentLevel)
+                        .map(x => {
+                            const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
+                            if (missing == null) {
+                                return null;
+                            }
+                            return {
+                                wert: x.Wert, missing: missing
+                            };
+                        }));
+
+                    return result;
+                }, { evalueateUndefined: true });
+
+                this.storeManager.derived(keys.Cost, [keys.Purchased], (data, [purchased]) => {
+                    const defaultKostData = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten)[0];
+                    const result = {} as Cost;
+                    result[defaultKostData.Id] = purchased.newValue;
+                    return result;
+                });
+
+
+
+
+
+            }
+
+            for (const path of this.stammdaten.Instance.Daten.Pfade.flatMap(x => x.Pfad)) {
+                this.pfad[path.Id] = {};
+                for (const level of path.Levels.Level) {
+                    const keys = this.getLevelKeys(path.Id, level.Id);
+
+                    this.pfad[path.Id][level.Id] = {
+                        effective: this.storeManager.readable(keys.Effective),
+                        purchased: this.storeManager.writable(keys.Purchased, 0),
+                        missing: this.storeManager.readable(keys.Missing),
+                        cost: this.storeManager.readable(keys.Cost),
+                    };
+
+                    const dependentData = this.stammdaten.levelDependencys.filter(x => x.Eigenschaft == `${path.Id}|${level.Id}`);
+
+                    // const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+                    // const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
+                    const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
+                    const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'), ['Effective']);
+
+
+
+
+
+                    this.storeManager.derived(keys.Effective, [keys.Purchased, keys.Missing], (data, [purchased, missing]) => {
+                        return Math.min(purchased.newValue, ...missing.newValue.map(x => x.wert - 1));
+                    });
+
+
+
+                    this.storeManager.derived(keys.Missing, [keys.Purchased, ...requirementsDependency], (data, [purchased, ...dependent]) => {
+                        const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency, levelDependency } = this.groupDependencyData(dependent);
+
+                        if (purchased.newValue == UNINITILEZED || purchased.newValue == 0) {
+                            return [];
+                        }
+                        const Voraussetzung = data.levelMap[path.Id][level.Id].Voraussetzung;
+
+
+                        const levelMap = Object.fromEntries(levelDependency.map(x => [x.id, (x.Effective.newValue as unknown === UNINITILEZED) ? 0 : x.Effective.newValue]))
+
+
+
+                        const misc = this.levelPrerequire(Voraussetzung?.LevelVoraussetzung, levelMap, path.Id);
+                        const missing = Charakter.getMissingInternal(Voraussetzung?.Zusätzlich, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
+                        let mis: MissingRequirements;
+                        if (misc?.type == 'And') {
+                            if (missing?.type == "And") {
+                                misc.sub.push(...missing.sub);
+                            } else if (missing != null) {
+                                misc.sub.push(missing);
+                            }
+                            mis = misc;
+                        } else if (missing?.type == 'And') {
+                            if (misc != null) {
+                                missing.sub.push(misc);
+                            }
+                            mis = missing;
+                        } else if (misc == null) {
+                            if (missing !== null)
+                                mis = missing;
+                            else {
+                                return [];
+                            }
+                        } else if (missing == null) {
+                            if (misc !== null) {
+                                mis = misc;
+                            } else {
+                                return [];
+                            }
+                        }
+                        else {
+                            mis = { type: 'And', sub: [misc, missing] };
+                        }
+
+                        return [{ wert: 1, missing: mis }];
+                    }, { evalueateUndefined: true });
+
+
+
+                    this.storeManager.derived(keys.Cost, [keys.Purchased, ...costDependency], (data, [purchased, ...dependencys]) => {
+
+                        const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+
+
+
+                        return toCost(level.Kosten.map(y => {
+
+                            let total = 0;
+                            for (let index = 0; index < purchased.newValue; index++) {
+
+
+                                const scope = {
+                                    value: index
+                                };
+                                try {
+                                    total += evaluateBerechnung(y.Berechnung, scope, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                                } catch (error) {
+                                    console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
+                                }
+                            }
+
+                            return [y.Id, total] as const;
+                        }), x => x);
+
+
+
+
+                    });
+
+
+
+
+
+                }
+            }
+
+
+
+
+            for (const tag of this.stammdaten.Instance.Daten.Tags.Tag) {
+
+
+                const keys = this.getTagKeys(tag.Id);
+
+                this.tag[tag.Id] = {
+                    effective: this.storeManager.readable(keys.Effective),
+                };
+
+                const dependentData = this.stammdaten.tagDependencys.filter(x => x.Eigenschaft == tag.Id);
+
+                const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+
+
+
+                this.storeManager.derived(keys.Effective, valueDependency, (data, dependent) => {
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
+
+                    for (const b of besonderheitDependency) {
+                        const besonderheit = data.besonderheitenMap[b.id];
+                        for (let index = 0; index < b.Effective.newValue; index++) {
+                            if ((besonderheit.Stufe[index].Mods?.Tags?.Tag.filter(x => x.Id == tag.Id).length ?? 0) > 0) {
+                                return 1
+                            }
+                        }
+                    }
+                    for (const b of eigenschaftDependency) {
+
+                        if (b.Meta.newValue?.type == "punkt" && b.Effective.newValue == 1) {
                             return 1;
+                        }
+                        if (b.Meta.newValue?.type == 'reihe') {
+                            if ((b.Meta.newValue.currentSchwelle?.Mods?.Tags?.Tag.filter(x => x.Id == tag.Id).length ?? 0) > 0) {
+                                return 1;
 
+                            }
                         }
                     }
-                }
-                for (const b of fertigkeitDependency) {
-                    const fertigkeit = data.fertigkeitenMap[b.id];
-                    for (let index = 0; index < b.Effective.newValue; index++) {
-                        if ((fertigkeit.Stufe[index].Mods?.Tags?.Tag.filter(x => x.Id == tag.Id).length ?? 0) > 0) {
-                            return 1
+                    for (const b of fertigkeitDependency) {
+                        const fertigkeit = data.fertigkeitenMap[b.id];
+                        for (let index = 0; index < b.Effective.newValue; index++) {
+                            if ((fertigkeit.Stufe[index].Mods?.Tags?.Tag.filter(x => x.Id == tag.Id).length ?? 0) > 0) {
+                                return 1
+                            }
                         }
                     }
-                }
-                for (const b of talentDependency) {
-                    const talent = data.talentMap[b.id];
+                    for (const b of talentDependency) {
+                        const talent = data.talentMap[b.id];
 
-                    if (talent.Level.filter(x => x.Wert <= b.Effective.newValue && ((x.Mods?.Tags?.Tag.filter(y => y.Id == tag.Id).length ?? 0) > 0)).length > 0) {
-                        return 1;
+                        if (talent.Level.filter(x => x.Wert <= b.Effective.newValue && ((x.Mods?.Tags?.Tag.filter(y => y.Id == tag.Id).length ?? 0) > 0)).length > 0) {
+                            return 1;
+                        }
                     }
-                }
 
 
-                return 0;
-            });
+                    return 0;
+                });
 
 
 
 
+
+            }
+
+
+            this.twin = new Charakter(stammdaten, id, this);
 
         }
 
@@ -1780,68 +2014,95 @@ export class Charakter {
 
 
 
-    private levelPrerequire(root: _LevelAuswahl|undefined, levels: Record<string, number>) {
-        type missingData = ({
-            type: 'and';
-            level: string;
-            minValue: number;
-        }
-            | {
-                type: 'or';
-                sub: missingData[]
-            }
-            | {
-                type: 'not';
-                sub: missingData[]
-            }
-        );
+    private levelPrerequire(root: _LevelAuswahl | undefined, levels: Record<string, number>, pfadId: string): MissingRequirements | null {
+        // type missingData = ({
+        //     type: 'and';
+        //     level: string;
+        //     minValue: number;
+        // }
+        //     | {
+        //         type: 'or';
+        //         sub: missingData[]
+        //     }
+        //     | {
+        //         type: 'not';
+        //         sub: missingData[]
+        //     }
+        // );
 
-        const evalLevel = (lvl: _Level1): missingData[] => {
-
-
-            if (levels[lvl.Id] >= lvl.mindestVorkommen) {
-                return [];
+        const evalLevel = (lvl: _Level1, negate: boolean): MissingRequirements | null => {
+            if ((levels[lvl.Id] >= lvl.mindestVorkommen) !== negate) {
+                return null;
             } else {
-                return [{ type: 'and', level: lvl.Id, minValue: lvl.mindestVorkommen }];
+                return { type: 'Level', id: lvl.Id, pfad: pfadId, Stufe: lvl.mindestVorkommen };
             }
         };
 
-        const single = (e: _LevelAuswahl): missingData[] => {
+        const single = (e: _LevelAuswahl, negate: boolean): MissingRequirements | null => {
             if (e["#"] === "Not") {
-                return [{ type: 'not', sub: single(e.Not) }];
+                const sub = single(e.Not, !negate);
+                if (sub == null) {
+                    return null
+                } else {
+                    return { type: 'Not', sub: sub };
+                }
             } else if (e["#"] === "And") {
-                return evalAnd(e.And);
+                return evalAnd(e.And, negate);
             } else if (e["#"] === "Or") {
-                return evalOr(e.Or);
+                return evalOr(e.Or, negate);
             } else if (e["#"] === "Level") {
-                return evalLevel(e.Level);
+                return evalLevel(e.Level, negate);
             } else {
                 throw Error('Not supported')
             }
 
         }
-        const evalAnd = (e: _LevelAuswahlen): missingData[] => {
-            return [
-                ...(e.And?.flatMap(x => evalAnd(x)) ?? []),
-                ...(e.Or?.flatMap(x => evalOr(x)) ?? []),
-                ...(e.Level?.flatMap(x => evalLevel(x)) ?? []),
-                ...(e.Not?.flatMap(x => ({ type: 'not' as const, sub: single(x) })) ?? []),
-            ];
+        const evalAnd = (e: _LevelAuswahlen, negate: boolean): MissingRequirements | null => {
+            const sub = filterNull([
+                ...(e.And?.map(x => evalAnd(x, negate)) ?? []),
+                ...(e.Or?.map(x => evalOr(x, negate)) ?? []),
+                ...(e.Level?.map(x => evalLevel(x, negate)) ?? []),
+                ...(e.Not?.map(x => ({ type: 'Not' as const, sub: single(x, !negate) as MissingRequirements })).filter((x) => x.sub != null) ?? []),
+            ]);
+
+
+            if (sub.length > 0) {
+                return {
+                    type: 'And', sub: sub
+                };
+            } else {
+                return null;
+            }
+
         }
-        const evalOr = (e: _LevelAuswahlen): missingData[] => {
-            const sub = [
-                ...(e.And?.flatMap(x => evalAnd(x)) ?? []),
-                ...(e.Or?.flatMap(x => evalOr(x)) ?? []),
-                ...(e.Level?.flatMap(x => evalLevel(x)) ?? []),
-                ...(e.Not?.flatMap(x => ({ type: 'not' as const, sub: single(x) })) ?? []),];
-            return [{ type: 'or', sub }];
+        const evalOr = (e: _LevelAuswahlen, negate: boolean): MissingRequirements | null => {
+            const sub = filterNull([
+                ...(e.And?.flatMap(x => evalAnd(x, negate)) ?? []),
+                ...(e.Or?.flatMap(x => evalOr(x, negate)) ?? []),
+                ...(e.Level?.flatMap(x => evalLevel(x, negate)) ?? []),
+                ...(e.Not?.map(x => ({ type: 'Not' as const, sub: single(x, !negate) as MissingRequirements })).filter((x) => x.sub != null) ?? []),
+
+            ]);
+
+            const max = (e.And?.length ?? 0)
+                + (e.Or?.length ?? 0)
+                + (e.Level?.length ?? 0)
+                + (e.Not?.length ?? 0);
+
+            if (sub.length == max) {
+                return { type: 'Or', sub: sub };
+            } else {
+                return null;
+            }
+
+
         }
 
-        if(root===undefined){
-            return []
+        if (root === undefined) {
+            return null
         }
 
-        return single(root);
+        return single(root, false);
 
 
         // const succes = l.Voraussetzung?.LevelVoraussetzung
@@ -1878,12 +2139,18 @@ export class Charakter {
 
 
 
-        const talentEffective: Record<string, number> = Object.fromEntries(talentDependency.map(x => [x.id, x.Effective.newValue] as const));
-        const talentDerivation: Record<string, number> = Object.fromEntries(talentDependency.map(x => [x.id, x.Support.newValue] as const));
-        const talentBase: Record<string, number> = Object.fromEntries(talentDependency.map(x => [x.id, x.Base.newValue] as const));
-        const besonderheiten: Record<string, number | undefined> = Object.fromEntries(besonderheitDependency.map(x => [x.id, x.Unbeschränkt.newValue] as const));
-        const fertigkeiten: Record<string, number | undefined> = Object.fromEntries(fertigkeitDependency.map(x => [x.id, x.Unbeschränkt.newValue] as const));
-        const tags: Record<string, number> = Object.fromEntries(tagDependency.map(x => [x.id, x.Effective.newValue] as const));
+        function safeGuard<T>(obj: T, def: T): T {
+            if (obj == UNINITILEZED) {
+                return def;
+            }
+            return obj;
+        }
+        const talentEffective: Record<string, number> = Object.fromEntries(talentDependency.map(x => [x.id, safeGuard(x.Effective.newValue, 0)] as const));
+        const talentDerivation: Record<string, number> = Object.fromEntries(talentDependency.map(x => [x.id, safeGuard(x.Support.newValue, 0)] as const));
+        const talentBase: Record<string, number> = Object.fromEntries(talentDependency.map(x => [x.id, safeGuard(x.Base.newValue, 0)] as const));
+        const besonderheiten: Record<string, number | undefined> = Object.fromEntries(besonderheitDependency.map(x => [x.id, safeGuard(x.Unbeschränkt.newValue, 0)] as const));
+        const fertigkeiten: Record<string, number | undefined> = Object.fromEntries(fertigkeitDependency.map(x => [x.id, safeGuard(x.Unbeschränkt.newValue, 0)] as const));
+        const tags: Record<string, number> = Object.fromEntries(tagDependency.map(x => [x.id, safeGuard(x.Effective.newValue, 0)] as const));
 
 
 
@@ -1927,7 +2194,7 @@ export class Charakter {
                     return { type: 'Not', sub: temp }
                 }
             } else if (requirements["#"] === 'And') {
-                const temp = multy(requirements.And, negate);
+                const { requirement: temp } = multy(requirements.And, negate);
                 if (temp === null || temp.length == 0) {
                     return null;
                 }
@@ -1938,8 +2205,8 @@ export class Charakter {
                     return { type: 'And', sub: temp }
                 }
             } else if (requirements["#"] === 'Or') {
-                const temp = multy(requirements.Or, negate);
-                if (temp === null || temp.length === 0) {
+                const { requirement: temp, max } = multy(requirements.Or, negate);
+                if (temp === null || temp.length !== max) {
                     return null;
                 }
                 else if (temp.length == 1) {
@@ -1956,16 +2223,28 @@ export class Charakter {
 
         }
 
-        const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit, negate: boolean): MissingRequirements[] => {
-            return [
-                ... (filterNull<MissingRequirements>(requirements.And?.map(x => singel({ "#": "And", And: x } as any, negate)) ?? [])),
-                ... (filterNull<MissingRequirements>(requirements.Or?.map(x => singel({ "#": "Or", Or: x } as any, negate)) ?? [])),
-                ... (filterNull<MissingRequirements>(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x } as any, negate)) ?? [])),
-                ... (filterNull<MissingRequirements>(requirements.Not?.map(x => singel({ "#": "Not", Not: x } as any, !negate)) ?? [])),
-                ... (filterNull<MissingRequirements>(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x } as any, negate)) ?? [])),
-                ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any, negate)) ?? [])),
-                ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Talent?.map(x => singel({ "#": "Talent", Talent: x } as any, negate)) ?? [])),
-            ];
+        const multy = (requirements: BedingungsAuswahlen_misc | BedingungsAuswahlen_besonderheit, negate: boolean) => {
+
+            const max = (requirements.And?.length ?? 0)
+                + (requirements.Or?.length ?? 0)
+                + (requirements.Besonderheit?.length ?? 0)
+                + (requirements.Not?.length ?? 0)
+                + (requirements.Tag?.length ?? 0)
+                + ((requirements as BedingungsAuswahlen_misc).Fertigkeit?.length ?? 0)
+                + ((requirements as BedingungsAuswahlen_misc).Talent?.length ?? 0);
+
+
+            return {
+                max, requirement: [
+                    ... (filterNull<MissingRequirements>(requirements.And?.map(x => singel({ "#": "And", And: x } as any, negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Or?.map(x => singel({ "#": "Or", Or: x } as any, negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Besonderheit?.map(x => singel({ "#": "Besonderheit", Besonderheit: x } as any, negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Not?.map(x => singel({ "#": "Not", Not: x } as any, !negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>(requirements.Tag?.map(x => singel({ "#": "Tag", Tag: x } as any, negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Fertigkeit?.map(x => singel({ "#": "Fertigkeit", Fertigkeit: x } as any, negate)) ?? [])),
+                    ... (filterNull<MissingRequirements>((requirements as BedingungsAuswahlen_misc).Talent?.map(x => singel({ "#": "Talent", Talent: x } as any, negate)) ?? [])),
+                ]
+            };
         }
         return singel(requirements, false);
     }
@@ -2056,7 +2335,461 @@ export class Charakter {
 
 
 
+
+
+
+
+    public getSimulation(type: 'level', callback: (char: Charakter) => void, key: string, key2: string): ReadableOriginal<CharacterChange>;
+    public getSimulation(type: 'besonderheit' | 'fertigkeit' | 'talent', callback: (char: Charakter) => void, key: string): ReadableOriginal<CharacterChange>;
+    getSimulation(type: 'besonderheit' | 'fertigkeit' | 'talent' | 'level', callback: (char: Charakter) => void, key: string, key2?: string): ReadableOriginal<CharacterChange> {
+
+        const handler = () => {
+            const timetag = `simulation-go-${type}-${key}-${key2 ?? ''}`;
+            console.time(timetag);
+
+
+            const twin = this.twin;
+            if (twin === undefined) {
+                return {
+                    changedCost: [],
+                    changedBestonderheiten: [],
+                    changedFertigkeiten: [],
+                    changedTalents: [],
+                    changedTags: [],
+                    changedLevels: [],
+                    requirements: { added: [], removed: [] }
+                } satisfies CharacterChange;
+            }
+
+            callback(twin);
+
+            const punkteKeys = distinct(Object.keys(twin.costStore.currentValue()).concat(Object.keys(this.costStore.currentValue())));
+
+            const copyCostRaw = twin.costStore.currentValue();
+            const copyCost = copyCostRaw === UNINITILEZED ? {} : copyCostRaw;
+
+
+            const originalCostRaw = this.costStore.currentValue();
+            const originalCost = originalCostRaw === UNINITILEZED ? {} : originalCostRaw;
+
+
+            const changedCost = punkteKeys.map(x => ({
+                key: x,
+                new: copyCost[x],
+                old: originalCost[x],
+                differece: copyCost[x] - originalCost[x]
+            })).filter(x => x.differece != 0);
+
+            function removeUninitilized<T>(params: T | typeof UNINITILEZED, d: T): T {
+                if (params == UNINITILEZED) {
+                    return d;
+                } else {
+                    return params;
+                }
+            }
+
+            const besonderheitenKeys = distinct(
+                Object.keys(twin.besonderheiten)
+                    .concat(Object.keys(this.besonderheiten))
+            );
+            const changedBestonderheiten = besonderheitenKeys
+                .map((key) => {
+                    return {
+                        key: key,
+                        new: removeUninitilized(twin.besonderheiten[key].effective.currentValue(), 0),
+                        old: removeUninitilized(this.besonderheiten[key].effective.currentValue(), 0),
+                        newIgnored: removeUninitilized(twin.besonderheiten[key].unconditionally.currentValue(), 0),
+                        oldIgnored: removeUninitilized(this.besonderheiten[key].unconditionally.currentValue(), 0)
+                    };
+                })
+                .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
+
+            const fertigkeitenKeys = distinct(
+                Object.keys(twin.fertigkeiten)
+                    .concat(Object.keys(this.fertigkeiten))
+            );
+            const changedFertigkeiten = fertigkeitenKeys
+                .map((key) => {
+                    return {
+                        key: key,
+                        new: removeUninitilized(twin.fertigkeiten[key].effective.currentValue(), 0),
+                        old: removeUninitilized(this.fertigkeiten[key].effective.currentValue(), 0),
+                        newIgnored: removeUninitilized(twin.fertigkeiten[key].unconditionally.currentValue(), 0),
+                        oldIgnored: removeUninitilized(this.fertigkeiten[key].unconditionally.currentValue(), 0)
+                    };
+                })
+                .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
+
+            const tagsKeys = distinct(
+                Object.keys(twin.tag)
+                    .concat(Object.keys(this.tag))
+            );
+            const changedTags = tagsKeys
+                .map((key) => {
+                    return {
+                        key: key,
+                        new: removeUninitilized(twin.tag[key].effective.currentValue(), 0),
+                        old: removeUninitilized(this.tag[key].effective.currentValue(), 0),
+                    };
+                })
+                .filter((x) => x.old != x.new);
+
+
+
+            const talentKeys = distinct(
+                Object.keys(twin.talente).concat(Object.keys(this.talente))
+            );
+            const changedTalents = talentKeys
+                .map((key) => {
+                    return {
+                        key: key,
+                        new: removeUninitilized(twin.talente[key].effective.currentValue(), 0),
+                        old: removeUninitilized(this.talente[key].effective.currentValue(), 0),
+                        newEp: removeUninitilized(twin.talente[key].fixed.currentValue(), 0) + removeUninitilized(twin.talente[key].purchased.currentValue(), 0),
+                        oldEp: removeUninitilized(this.talente[key].fixed.currentValue(), 0) + removeUninitilized(this.talente[key].purchased.currentValue(), 0)
+                    };
+                })
+                .filter((x) => x.old != x.new || x.oldEp != x.newEp);
+
+
+
+
+
+            const levelKeys = distinct(
+                Object.entries(twin.pfad).flatMap(([path, levels]) => Object.keys(levels).map(l => ({ path: path, level: l })))
+                    .concat(Object.entries(this.pfad).flatMap(([path, levels]) => Object.keys(levels).map(l => ({ path, level: l }))))
+            );
+            const changedLevels = levelKeys
+                .map(({ path: path, level }) => {
+                    return {
+                        key: { path: path, level },
+                        new: removeUninitilized(twin.pfad[path][level].effective.currentValue(), 0),
+                        old: removeUninitilized(this.pfad[path][level].effective.currentValue(), 0),
+                    };
+                })
+                .filter((x) => x.old != x.new);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            const currentMissing =
+                [
+                    ...besonderheitenKeys.flatMap(x => removeUninitilized(this.besonderheiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
+                    ...talentKeys.flatMap(x => removeUninitilized(this.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
+                    ...fertigkeitenKeys.flatMap(x => removeUninitilized(this.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
+                    ...levelKeys.flatMap(({ path, level }) => removeUninitilized(this.pfad[path][level].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'level' as const, missingOnId: { path, level }, ...missing }))),
+
+                ].sort(compaleInternal);
+            const twinMissing =
+                [
+                    ...besonderheitenKeys.flatMap(x => removeUninitilized(twin.besonderheiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
+                    ...talentKeys.flatMap(x => removeUninitilized(twin.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
+                    ...fertigkeitenKeys.flatMap(x => removeUninitilized(twin.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
+                    ...levelKeys.flatMap(({ path, level }) => removeUninitilized(twin.pfad[path][level].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'level' as const, missingOnId: { path, level }, ...missing }))),
+
+                ].sort(compaleInternal);
+
+            function contains(list: { missing: MissingRequirements }[], element: { missing: MissingRequirements }) {
+                for (const c of list) {
+                    const comp = compareRequirement(c.missing, element.missing);
+                    if (comp == 0) {
+                        return true;
+                    } else if (comp < 0) {
+                        // we can stop here since the lists are sorted
+                        return false;
+                    }
+                }
+                return false;
+            }
+            const newMissing = twinMissing.filter(x => !contains(currentMissing, x));
+            const removedMissing = currentMissing.filter(x => !contains(twinMissing, x));
+
+
+
+
+
+
+
+
+
+
+            twin.storeManager.resetClone();
+
+            console.timeEnd(timetag);
+
+            return {
+                changedLevels,
+                changedCost: changedCost,
+                changedBestonderheiten: changedBestonderheiten,
+                changedFertigkeiten: changedFertigkeiten,
+                changedTalents: changedTalents,
+                changedTags,
+                requirements: { added: newMissing, removed: removedMissing },
+            } satisfies CharacterChange;
+        };
+
+
+        if (type == 'besonderheit') {
+            if (this.besonderheiten[key] === undefined) {
+                throw new Error(`Unknown besondereit ${key}`);
+            }
+            const xxx = this.getBesonterheitKeys(key);
+            const stores = [xxx.Effective].map(x => this.storeManager.readable(x));
+            return derived(stores, handler);
+        } else if (type == 'fertigkeit') {
+            if (this.fertigkeiten[key] === undefined) {
+                throw new Error(`Unknown besondereit ${key}`);
+            }
+            const fertigkeitKeys = this.getFertigkeitenKeys(key);
+            const stores = [fertigkeitKeys.Effective].map(x => this.storeManager.readable(x));
+            return derived(stores, handler);
+        } else if (type == 'talent') {
+            if (this.talente[key] === undefined) {
+                throw new Error(`Unknown besondereit ${key}`);
+            }
+            const talendKes = this.getTalentKeys(key);
+            const stores = [talendKes.Effective].map(x => this.storeManager.readable(x));
+            return derived(stores, handler);
+        } else if (type == 'level') {
+            if (this.pfad[key][key2 ?? ''] === undefined) {
+                throw new Error(`Unknown besondereit ${key}`);
+            }
+            const levelKeys = this.getLevelKeys(key, key2 ?? '');
+            const stores = [levelKeys.Effective].map(x => this.storeManager.readable(x));
+            return derived(stores, handler);
+        }
+
+
+        throw 'NotImplemented';
+
+        function compaleInternal(a: { wert: number; missing: MissingRequirements; missingOnType: "besonderheit" | "fertigkeit" | "talent"; missingOnId: string; } | { wert: number; missing: MissingRequirements; missingOnType: "level"; missingOnId: { path: string; level: string; }; }, b: { wert: number; missing: MissingRequirements; missingOnType: "besonderheit" | "fertigkeit" | "talent"; missingOnId: string; } | { wert: number; missing: MissingRequirements; missingOnType: "level"; missingOnId: { path: string; level: string; }; }) {
+
+            const typeCompare = a.missingOnType.localeCompare(b.missingOnType);
+            if (typeCompare !== 0) {
+                return typeCompare;
+            }
+
+            if (typeof a.missingOnId === 'object') {
+                if (typeof b.missingOnId === 'object') {
+                    const pathComp = a.missingOnId.path.localeCompare(b.missingOnId.path) != 0
+                        ? a.missingOnId.path.localeCompare(b.missingOnId.path)
+                        : a.missingOnId.level.localeCompare(b.missingOnId.level);
+                    if (pathComp !== 0) {
+                        return pathComp;
+                    } else {
+                        return -1;
+                    }
+
+                }
+            } else if (typeof b.missingOnId === 'object') {
+                return 1;
+            }
+            else {
+                const idCompare = a.missingOnId.localeCompare(b.missingOnId);
+                if (idCompare !== 0) {
+                    return idCompare;
+                }
+            }
+
+
+
+            return compareRequirement(a.missing, b.missing);
+        };
+    }
+    // // const copyData = JSON.parse(JSON.stringify(this.Data));
+    // // const copy = new Charakter(this.stammdaten, copyData);
+    // // console.log("GetSimulation")
+    // let lastData: string | undefined;
+    // let lastResult: CharacterChange | undefined;
+    // return derived(this.DataStore, data => {
+    //     const copyString = JSON.stringify(data);
+    //     // console.log("GetSimulationCalculated")
+    //     // console.time("simulation-create")
+
+    //     if (copyString == lastData) {
+    //         // console.log(    "was same")
+    //         return lastResult!;
+    //     }
+    //     console.time("simulation-callback")
+    //     const copyData = JSON.parse(copyString);
+
+    //     // console.info('{}!=={}',copyData,lastData)
+
+
+    //     const copy = new Charakter(this.stammdaten, copyData);
+    //     // console.timeEnd("simulation-create")
+
+
+    //     // const tmep= serialize(copy,{lossy:false});
+    //     // copy = deserialize(tmep);
+
+    //     callback(copy);
+    //     console.timeEnd("simulation-callback")
+    //     // console.log("simulation-logedData",copyData)
+
+    //     const punkteKeys = distinct(Object.keys(copy.punkte).concat(Object.keys(this.punkte)));
+
+    //     const changedPunkte = punkteKeys.map(x => ({
+    //         key: x,
+    //         new: copy.punkte[x],
+    //         old: this.punkte[x],
+    //         differece: copy.punkte[x] - this.punkte[x]
+    //     }))
+
+
+    //     const talentKeys = distinct(
+    //         Object.keys(copy.talentEffective).concat(Object.keys(this.talentEffective))
+    //     );
+    //     const changedTalents = talentKeys
+    //         .map((key) => {
+    //             return {
+    //                 key: key,
+    //                 new: copy.talentEffective[key],
+    //                 old: this.talentEffective[key],
+    //                 newEp: copy.talentBaseEP[key] + copy.getTalentPurchasedEP(key),
+    //                 oldEp: this.talentBaseEP[key] + this.getTalentPurchasedEP(key)
+    //             };
+    //         })
+    //         .filter((x) => x.old != x.new || x.oldEp != x.newEp);
+
+    //     const fertigkeitenKeys = distinct(
+    //         Object.keys(copy.fertigkeiten)
+    //             .concat(Object.keys(this.fertigkeiten))
+    //             .concat(Object.keys(copy.fertigkeitenIgnoreRequirements))
+    //             .concat(Object.keys(this.fertigkeitenIgnoreRequirements))
+    //     );
+
+    //     const changedFertigkeiten = fertigkeitenKeys
+    //         .map((key) => {
+    //             return {
+    //                 key: key,
+    //                 new: copy.fertigkeiten[key] ?? 0,
+    //                 old: this.fertigkeiten[key] ?? 0,
+    //                 newIgnored: copy.fertigkeitenIgnoreRequirements[key] ?? 0,
+    //                 oldIgnored: this.fertigkeitenIgnoreRequirements[key] ?? 0
+    //             };
+    //         })
+    //         .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
+    //     const besonderheitenKeys = distinct(
+    //         Object.keys(copy.besonderheiten)
+    //             .concat(Object.keys(this.besonderheiten))
+    //             .concat(Object.keys(copy.besonderheitenIgnoreRequirements))
+    //             .concat(Object.keys(this.besonderheitenIgnoreRequirements))
+    //     );
+
+    //     const changedBestonderheiten = besonderheitenKeys
+    //         .map((key) => {
+    //             return {
+    //                 key: key,
+    //                 new: copy.besonderheiten[key] ?? 0,
+    //                 old: this.besonderheiten[key] ?? 0,
+    //                 newIgnored: copy.besonderheitenIgnoreRequirements[key] ?? 0,
+    //                 oldIgnored: this.besonderheitenIgnoreRequirements[key] ?? 0
+    //             };
+    //         })
+    //         .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
+
+    //     const currentMissing = this.allMissingRequirements.sort(compareRequirement);
+    //     const copyMissing = copy.allMissingRequirements.sort(compareRequirement);
+
+    //     function contains(list: MissingRequirements[], element: MissingRequirements) {
+    //         for (const c of list) {
+    //             const comp = compareRequirement(c, element);
+    //             if (comp == 0) {
+    //                 return true;
+    //             } else if (comp < 0) {
+    //                 // we can stop here since the lists are sorted
+    //                 return false;
+    //             }
+    //         }
+    //         return false;
+    //     }
+    //     const newMissing = copyMissing.filter(x => !contains(currentMissing, x));
+    //     const removedMissing = currentMissing.filter(x => !contains(copyMissing, x));
+    //     const newResult = { changedPunkte, changedTalents, changedFertigkeiten, changedBestonderheiten, requirements: { added: newMissing, removed: removedMissing } };
+    //     lastData = copyString;
+    //     lastResult = newResult;
+    //     return newResult;
+
+    // });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2132,5 +2865,62 @@ function evaluateBerechnung(Berechnung: string, scope?: Record<string, number>, 
     else {
         return Array.isArray(result) ? result[result.length - 1] : result;
     }
+
+}
+
+
+
+function compareRequirement(a: MissingRequirements, b: MissingRequirements): 0 | -1 | 1 {
+    function typeOrder(type: 'tag' | 'Fertigkeit' | 'Besonderheit' | 'Talent' | 'Level' | 'Not' | 'And' | 'Or') {
+        switch (type) {
+            case 'Talent': return 1;
+            case 'Fertigkeit': return 2;
+            case 'Besonderheit': return 3;
+            case 'tag': return 4;
+            case 'Level': return 5;
+            case 'Not': return 6;
+            case 'And': return 7;
+            case 'Or': return 8;
+            default:
+                return -1;
+        }
+    }
+    if (a.type != b.type) {
+        return typeOrder(a.type) < typeOrder(b.type) ? -1 : 1;
+    } else {
+
+        if ((a.type == 'Fertigkeit' || a.type == 'Besonderheit' || a.type == 'tag' || a.type == 'Talent')
+            && (b.type == 'Fertigkeit' || b.type == 'Besonderheit' || b.type == 'tag' || b.type == 'Talent')) {
+
+            if (a.id != b.id) {
+                return a.id.localeCompare(b.id) as 1 | -1;
+            }
+            else if ((a.type == 'Fertigkeit' || a.type == 'Talent' || a.type == 'Besonderheit') && (b.type == 'Fertigkeit' || b.type == 'Talent' || b.type == 'Besonderheit') && a.Stufe != b.Stufe) {
+                return a.Stufe < b.Stufe ? -1 : 1;
+            }
+            if (a.type == 'Talent' && b.type == 'Talent' && a.Kind != b.Kind) {
+                return a.Kind.localeCompare(b.Kind) as 1 | -1;
+            }
+        } else if (a.type == 'Not' && b.type == 'Not') {
+            return compareRequirement(a.sub, b.sub);
+        } else if (a.type == 'And' && b.type == 'And' || a.type == 'Or' && b.type == 'Or') {
+            for (let i = 0; i < a.sub.length; i++) {
+                const aSub = a.sub[i];
+                const bSub = b.sub[i];
+                if (bSub === undefined) {
+                    // a is Longer
+                    return 1;
+                }
+                const subComp = compareRequirement(aSub, bSub);
+                if (subComp != 0) {
+                    return subComp;
+                }
+            }
+            if (b.sub.length > a.sub.length) {
+                return -1;
+            }
+        }
+    }
+    return 0;
 
 }

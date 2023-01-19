@@ -9,6 +9,7 @@
 	import Talent from 'src/view/root/talent.svelte';
 	import Tag from 'src/view/root/tag.svelte';
 	import { filter } from 'mathjs';
+	import PathLevel from 'src/view/root/pathLevel.svelte';
 
 	let char: Charakter | undefined;
 
@@ -91,22 +92,28 @@
 
 	{#if $data}
 		{#each Object.entries(char.besonderheiten) as [key, entry]}
-			<Besonderheit data={$data} {key} {...entry} />
+			<Besonderheit data={$data} {key} {char} {...entry} />
 		{/each}
 
 		<hr />
 
 		{#each Object.entries(char.fertigkeiten) as [key, entry]}
-			<Fertigkeit data={$data} {key} {...entry} />
+			<Fertigkeit data={$data} {key} {char} {...entry} />
 		{/each}
 
 		<hr />
 		{#each Object.entries(char.talente) as [key, entry]}
-			<Talent data={$data} {key} {...entry} />
+			<Talent data={$data} {key} {char} {...entry} />
 		{/each}
 		<hr />
 		{#each Object.entries(char.tag) as [key, entry]}
-			<Tag data={$data} {key} {...entry} />
+		<Tag data={$data} {key} {char} {...entry} />
+		{/each}
+		<hr />
+		{#each Object.entries(char.pfad) as [pathId, entry]}
+		{#each Object.entries(entry) as [levelId, level]}
+			<PathLevel data={$data} {char} {pathId} {levelId} {...level} />
+		{/each}
 		{/each}
 	{/if}
 

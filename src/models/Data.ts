@@ -6,7 +6,7 @@ import notaStructure from 'src/data/nota-structure.g.json';
 import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
-import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, BedingungsAuswahl_besonderheit, BedingungsAuswahl_misc, Schutzwert_kampf_ausstattung, AbleitungsAuswahl_talent, LevelDefinition_misc } from 'src/data/nota.g';
+import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, BedingungsAuswahl_besonderheit, LevelAuswahl_misc, BedingungsAuswahl_misc, Schutzwert_kampf_ausstattung, AbleitungsAuswahl_talent, LevelDefinition_misc } from 'src/data/nota.g';
 import { distinct } from 'src/misc/misc';
 
 // type lebensabschnittData =
@@ -27,6 +27,7 @@ export type DependencyData = {
     | `besonderheit-${string}`
     | `fertigkeit-${string}`
     | `tag-${string}`
+    | `level-${string}`
     | 'Lebensabschnitt-Gattung' | 'Lebensabschnitt-Art' | 'Lebensabschnitt-Morph'
 }
 
@@ -69,6 +70,8 @@ export class Data {
     public readonly fertigkeitDependencys: DependencyData[];
     public readonly talentDependencys: DependencyData[];
     public readonly tagDependencys: DependencyData[];
+    public readonly levelDependencys: DependencyData[];
+
     public readonly allEigenschaftKeys: string[];
 
     public readonly AusrüstungsEigenschaftMap: Record<string, Readonly<AusrüstungEigengchaftDefinition_kampf_ausstattung>>;
@@ -359,6 +362,12 @@ export class Data {
         ], e => `${e.Eigenschaft}δ${e.Typ}δ${e.Effecting}`);
 
         this.besonderheitDependencys = distinct([
+            ...(this.instance.Daten.Pfade ?? []).flatMap(pfadGruppe => pfadGruppe.Pfad.flatMap((pfad) =>
+                pfad.Levels.Level.flatMap(level =>
+                    level.Besonderheit?.map(x => ({ Effecting: 'value', Eigenschaft: x.Id, Typ: `level-${pfad.Id}|${level.Id}` }  satisfies DependencyData)) ?? []
+                )
+            )),
+
             ...(this.instance.Daten.Besonderheiten ?? []).flatMap(besonderheitGruppe =>
                 [
                     ...(besonderheitGruppe.Besonderheit ?? []).flatMap(besonderheit => besonderheit.Stufe.flatMap(stufe => [
@@ -475,6 +484,11 @@ export class Data {
 
 
         this.fertigkeitDependencys = distinct([
+            ...(this.instance.Daten.Pfade ?? []).flatMap(pfadGruppe => pfadGruppe.Pfad.flatMap((pfad) =>
+                pfad.Levels.Level.flatMap(level =>
+                    level.Fertigkeit?.map(x => ({ Effecting: 'value', Eigenschaft: x.Id, Typ: `level-${pfad.Id}|${level.Id}` }  satisfies DependencyData)) ?? []
+                )
+            )),
             ...(this.instance.Daten.Fertigkeiten ?? []).flatMap(fertigkeitenGruppe =>
                 [
                     ...(fertigkeitenGruppe.Fertigkeit ?? []).flatMap(fertigkeit => fertigkeit.Stufe.flatMap(stufe => [
@@ -485,6 +499,11 @@ export class Data {
 
 
         this.talentDependencys = distinct([
+            ...(this.instance.Daten.Pfade ?? []).flatMap(pfadGruppe => pfadGruppe.Pfad.flatMap((pfad) =>
+                pfad.Levels.Level.flatMap(level =>
+                    level.Talent?.map(x => ({ Effecting: 'value', Eigenschaft: x.Id, Typ: `level-${pfad.Id}|${level.Id}` }  satisfies DependencyData)) ?? []
+                )
+            )),
             ...(this.instance.Daten.Talente ?? []).flatMap(talentGruppe =>
                 [
                     ...(talentGruppe.Talent ?? []).flatMap(talent => [
@@ -497,6 +516,11 @@ export class Data {
         ], e => `${e.Eigenschaft}δ${e.Typ}δ${e.Effecting}`);
 
         this.tagDependencys = distinct([
+            ...(this.instance.Daten.Pfade ?? []).flatMap(pfadGruppe => pfadGruppe.Pfad.flatMap((pfad) =>
+                pfad.Levels.Level.flatMap(level =>
+                    level.Tag?.map(x => ({ Effecting: 'value', Eigenschaft: x.Id, Typ: `level-${pfad.Id}|${level.Id}` }  satisfies DependencyData)) ?? []
+                )
+            )),
             ...(this.instance.Daten.Besonderheiten ?? []).flatMap(besonderheitGruppe =>
                 [
                     ...(besonderheitGruppe.Besonderheit ?? []).flatMap(besonderheit => besonderheit.Stufe.flatMap(stufe => [
@@ -607,6 +631,25 @@ export class Data {
 
 
 
+        this.levelDependencys = distinct([
+            ...(this.instance.Daten.Pfade ?? []).flatMap(pfadGruppe =>
+                [
+                    ...(pfadGruppe.Pfad ?? []).flatMap(pfad => [
+                        ...pfad.Levels.Level.flatMap(level => [
+                            ...(getRequirements(level.Voraussetzung?.Zusätzlich) ?? []).map(type => ({ Effecting: 'requirements' as const, Eigenschaft: `${pfad.Id}|${level.Id}`, Typ: type }  satisfies DependencyData)),
+                            ...(getRequirements(level.Voraussetzung?.LevelVoraussetzung, pfad.Id) ?? []).map(type => ({ Effecting: 'requirements' as const, Eigenschaft: `${pfad.Id}|${level.Id}`, Typ: type }  satisfies DependencyData)),
+                            ...level.Kosten.flatMap(x =>
+                                getKeysFrom(x.Berechnung).flatMap(type => [
+                                    { Effecting: 'cost', Eigenschaft: `${pfad.Id}|${level.Id}`, Typ: type }  satisfies DependencyData,
+                                ])),
+                        ]),
+                        // ...getAbleitungen(pfad.Ableitungen).map(type => ({ Effecting: 'support' as const, Eigenschaft: pfad.Id, Typ: type }  satisfies DependencyData))
+                    ]),
+                ]),
+        ], e => `${e.Eigenschaft}δ${e.Typ}δ${e.Effecting}`);
+
+
+
         this.AusrüstungsEigenschaftMap = data.Daten.Ausstattung.Eigenschaften.Eigenschaft.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, AusrüstungEigengchaftDefinition_kampf_ausstattung>)
         this.nahkampfMap = data.Daten.Ausstattung.Waffen.Nahkampfwaffe.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, NahkampfWaffenDefinition_kampf_ausstattung>)
         this.fernkampfMap = data.Daten.Ausstattung.Waffen.Fernkampfwaffe.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, FernkampfwaffenDafinition_kampf_ausstattung>)
@@ -689,7 +732,7 @@ export class Data {
             return [...levels.map(x => ({ Kosten: { Id: x.Kosten.Id, Wert: x.Kosten.Wert } as const } as const))] as const;
         })] as const;
 
-        function getRequirements(bedingung: BedingungsAuswahl_besonderheit | BedingungsAuswahl_misc | undefined) {
+        function getRequirements(bedingung: BedingungsAuswahl_besonderheit | BedingungsAuswahl_misc | LevelAuswahl_misc | undefined, pathID?: string) {
 
             if (bedingung == undefined) {
                 return [];
@@ -698,7 +741,8 @@ export class Data {
                 | `besonderheit-${string}`
                 | `fertigkeit-${string}`
                 | `talent-${string}`
-                | `tag-${string}`)[] => {
+                | `tag-${string}`
+                | `level-${string}`)[] => {
                 if (key == 'Fertigkeit') {
                     if (Array.isArray(value)) {
                         return value.map(x => `fertigkeit-${x.Id}` as const)
@@ -727,9 +771,19 @@ export class Data {
                         const { Id } = value as { Id: string };
                         return [`talent-${Id}` as const];
                     }
+                } else if (key == 'Level') {
+                    if (pathID == undefined) {
+                        throw new Error('Faild to privede path id');
+                    }
+                    if (Array.isArray(value)) {
+                        return value.map(x => `level-${pathID}|${x.Id}` as const)
+                    } else {
+                        const { Id } = value as { Id: string };
+                        return [`level-${pathID}|${Id}` as const];
+                    }
                 }
                 else if (key != '#') {
-                    return getRequirements(value); // tecnical the type dose not match, but for this implementation it still works :)
+                    return getRequirements(value, pathID); // tecnical the type dose not match, but for this implementation it still works :)
                 } else {
                     return [];
                 }

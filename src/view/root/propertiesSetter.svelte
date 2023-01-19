@@ -20,22 +20,14 @@
 	export let meta: Readable<TypeOfKey<EigenschaftMetaKey>>;
 	export let cost: Readable<TypeOfKey<CostKey<'eigenschaft'>>>;
 
-	// let bereichMeta: Readable<StaticheDefinition_lebewesen | undefined>;
-	// let reiheMeta: Readable<ReiheDefinition_lebewesen | undefined>;
 
 	$: {
-		if (key == 'MU') {
-			console.log('first');
-			effective.subscribe((v) => {
-				// console.log('set value', v);
-			});
-		}
 
-		if ($type == 'bereich') {
-			if ($raw == $effective) {
-				// $raw = $effective;
-			}
-		}
+		// if ($type == 'bereich') {
+		// 	if ($raw == $effective) {
+		// 		// $raw = $effective;
+		// 	}
+		// }
 	}
 </script>
 
@@ -57,6 +49,7 @@
 				<input
 					type="range"
 					bind:value={$raw}
+					step={0.2}
 					max={Math.max(
 						...$meta.schwellenForAge.map((x) => x.Wert),
 						...$meta.quantileForAge.map((x) => x.Wert)

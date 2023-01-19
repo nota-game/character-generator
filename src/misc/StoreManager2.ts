@@ -1,6 +1,6 @@
 'use strict';
 
-import type { Readable, StartStopNotifier, Subscriber, Unsubscriber, Updater, Writable } from "svelte/store";
+import type { Readable as ReadableOriginal, Writable as WritableOriginal, StartStopNotifier, Subscriber, Unsubscriber, Updater } from "svelte/store";
 import * as internal from "svelte/internal";
 
 import type structuredClone from "@ungap/structured-clone";
@@ -14,6 +14,16 @@ function identity(p: any) {
     return p;
 }
 
+
+export interface Readable<T, KeyString extends string = string> extends ReadableOriginal<T> {
+    key: Key<KeyString, T>;
+    currentValue: () => T | typeof UNINITILEZED
+}
+
+export interface Writable<T, KeyString extends string = string> extends WritableOriginal<T> {
+    key: Key<KeyString, T>;
+    currentValue: () => T | typeof UNINITILEZED
+}
 // eslint-disable-next-line @typescript-eslint/ban-types
 
 export const UNINITILEZED: unique symbol = Symbol.for("UNINITILEZED");
@@ -28,7 +38,7 @@ type SubscriberData<T, Param> = {
     compare: ((a: T, b: T) => boolean) | undefined;
     dependentOn: Set<string>;
     oldValues: any[] | undefined,
-    leaf: boolean;
+    storeType: 'readable' | 'writable' | 'aggregated';
     changingDependent: Set<string>;
     needUpdate: boolean;
     updateIncomplete: boolean;
@@ -107,7 +117,7 @@ type derivatFunctionUninitized<T, Param, S extends KeysArray> = (this: Subscribe
 
 export default class StoreManager<Param> {
 
-    public key<key extends string>(key: key): KeyOf<key> {
+    public static key<key extends string>(key: key): KeyOf<key> {
         return {
             of() {
                 return { Key: key };
@@ -117,14 +127,64 @@ export default class StoreManager<Param> {
 
     private readonly data: Record<string, SubscriberData<any, Param>> = {};
     private readonly staticData: Param;
+    private readonly clonedFrom: StoreManager<Param> | undefined;
+    private readonly clonedTo: StoreManager<Param>[] = [];
 
+    private readonly changedValues: Set<string> = new Set();
+
+    private suspendNotification = false;
 
     /**
      *
      */
-    constructor(staticData: Param) {
+    constructor(staticData: Param, cloneFrom?: { other: StoreManager<Param>, callback: (store: { id: string, manager: StoreManager<Param> } & ({ type: 'writable', store: Writable<unknown> } | { type: 'readable' | 'writable' | 'aggregated', store: Readable<unknown> })) => void }) {
         this.staticData = staticData;
         this.subscriber_queue = [];
+        this.clonedFrom = cloneFrom?.other;
+        if (cloneFrom) {
+            this.suspendNotification = true;
+            if (cloneFrom.other.clonedFrom !== undefined) {
+                throw new Error('Clone from Clone not permitted');
+            }
+            cloneFrom.other.clonedTo.push(this);
+            this.data = {};
+            for (const key of Object.keys(cloneFrom.other.data)) {
+                const original = cloneFrom.other.data[key];
+                const element = { ...original };
+                this.data[key] = element;
+                element.changingDependent = new Set();
+                element.manager = this;
+                element.subscribers = new Set();
+
+                if (element.storeType == 'writable') {
+                    const writable = this.writableInternal(StoreManager.key(element.id).of<unknown>(), (key, setFunction) => {
+                        element.fn = setFunction;
+                        return element;
+                    }, element.value, element.compare);
+                    cloneFrom.callback({ type: element.storeType, store: writable, id: element.id, manager: this });
+                } else {
+                    const store = this.readable(StoreManager.key(element.id).of<unknown>())
+                    cloneFrom.callback({ type: element.storeType, store: store, id: element.id, manager: this });
+                }
+
+            }
+            this.suspendNotification = false;
+        }
+    }
+
+    public resetClone() {
+        if (this.clonedFrom == undefined) {
+            return;
+        }
+        for (const key of this.changedValues) {
+            this.data[key].value = this.clonedFrom.data[key].value;
+        }
+        this.changedValues.clear();
+    }
+
+    public clone(callback: (store: { id: string, manager: StoreManager<Param> } & ({ type: 'writable', store: Writable<unknown> } | { type: 'readable' | 'writable' | 'aggregated', store: Readable<unknown> })) => void): StoreManager<Param> {
+        const other = new StoreManager(this.staticData, { other: this, callback });
+        return other;
     }
 
     private readonly subscriber_queue: Array<any>;
@@ -133,8 +193,8 @@ export default class StoreManager<Param> {
      * @param value initial value
      * @param {StartStopNotifier}start start and stop notifications for subscriptions
      */
-    public readable<KeyString extends string, T>(key: Key<KeyString, T>): Readable<T> & { key: Key<KeyString, T> } {
-        const current = this.prepareData(key);
+    public readable<KeyString extends string, T>(key: Key<KeyString, T>): Readable<T> {
+        const current = this.prepareData(key, 'readable');
         const subscribe = (run: Subscriber<T>, invalidate: Invalidator<T> = internal.noop): Unsubscriber => {
             const subscriber = [run, invalidate] as const;
             current.subscribers.add(subscriber);
@@ -146,7 +206,8 @@ export default class StoreManager<Param> {
         }
         return {
             subscribe,
-            key
+            key,
+            currentValue: () => current.value
         };
     }
 
@@ -154,29 +215,35 @@ export default class StoreManager<Param> {
 
 
 
-    private prepareData<T>(key: Key<any, T>, set?: (this: SubscriberData<T, Param>, data: Param) => (T | typeof UNINITILEZED), options?: { configureData?: (data: SubscriberData<T, Param>) => void }): SubscriberData<T, Param> {
+    private prepareData<T>(key: Key<any, T>, storeType: 'readable' | 'writable' | 'aggregated', set?: (this: SubscriberData<T, Param>, data: Param) => (T | typeof UNINITILEZED), options?: { configureData?: (data: SubscriberData<T, Param>) => void }): SubscriberData<T, Param> {
+        if (storeType == 'readable' && set !== undefined) {
+            throw new Error(`Store ${key.Key} was set to readable but has a setter`);
+        }
         if (!this.data[key.Key]) {
 
+            if (this.clonedTo.length > 0 || this.clonedFrom !== undefined) {
+                throw new Error(`Can't introduce new store ${key.Key} when already cloned`);
+            }
+
             const setFactory = () => {
+
                 // wildcardIds are initilized here and must be readonly
-
-
-                return () => {
+                return function (this: SubscriberData<T, Param>, data: Param) {
                     // if (current.value !== UNINITILEZED)
                     //     return current.value;
 
                     if ([...current.dependentOn.values()].filter(x => {
-                        if (this.data[x] === undefined)
+                        if (this.manager.data[x] === undefined)
                             console.log("*****************")
                         // throw new Error("AURS " +x);
-                        return this.data[x]?.leaf ?? false
-                    }).map(x => this.data[x].value !== UNINITILEZED).every(x => x)) {
+                        return this.manager.data[x]?.storeType ?? false
+                    }).map(x => this.manager.data[x].value !== UNINITILEZED).every(x => x)) {
 
 
                         // find the part that is fix
                         const root = key.Key.replace(/\/\*.*/, "");
-                        return this.mergeDeep({},
-                            ...[...current.dependentOn.values()].filter(x => this.data[x]?.leaf).map(x => {
+                        return StoreManager.mergeDeep({},
+                            ...[...current.dependentOn.values()].filter(x => this.manager.data[x]?.storeType).map(x => {
                                 let tail = x.substring(root.length);
                                 if (!tail.startsWith('/')) {
                                     throw 'not implemented';
@@ -189,7 +256,7 @@ export default class StoreManager<Param> {
                                 for (let i = 0; i < part.length; i++) {
                                     const element = part[i];
                                     if (i == part.length - 1) {
-                                        currentPart[element] = this.data[x].value;
+                                        currentPart[element] = this.manager.data[x].value;
                                     } else {
                                         currentPart[element] = {};
                                         currentPart = currentPart[element];
@@ -216,7 +283,7 @@ export default class StoreManager<Param> {
                 changingDependent: new Set(),
                 needUpdate: false,
                 updateIncomplete: false,
-                leaf: set !== undefined,
+                storeType: storeType,
                 subscribers: new Set<readonly [Subscriber<T>, ((value?: T) => void)]>()
             };
             if (options?.configureData) {
@@ -228,23 +295,23 @@ export default class StoreManager<Param> {
             this.data[key.Key] = current;
 
             if (set == undefined) {
-                const reg = new RegExp("^" + key.Key.replace('**', '.+').replace('*', '[^/]+') + '($|(/.+))');
+                const reg = generateRegex(key.Key);
                 Object.values(this.data).filter(x => reg.test(x.id) && x.id !== key.Key).forEach(x => {
                     if (set !== undefined) {
                         throw `${key.Key} is leaf, cant create ${x.id}`;
                     }
-                    x.alsoNotify.add(key.Key);
-                    current.dependentOn.add(x.id);
+                    AddDependency(x, current);
+
                 });
                 Object.values(this.data).filter(x => {
-                    const reg = new RegExp("^" + x.id.replace('**', '.+').replace('*', '[^/]+') + '($|(/.+))');
+                    const reg = generateRegex(x.id);
                     return reg.test(key.Key) && x.id !== key.Key
                 }).forEach(x => {
                     if (set !== undefined) {
                         throw `${key.Key} is leaf, cant create ${x.id}`;
                     }
-                    x.dependentOn.add(key.Key);
-                    current.alsoNotify.add(x.id);
+                    AddDependency(current, x);
+
                 });
 
             }
@@ -258,16 +325,15 @@ export default class StoreManager<Param> {
 
             }
 
-            if (current.leaf) {
+            if (current.storeType == 'aggregated') {
 
                 Object.values(this.data).forEach(other => {
-                    const reg = new RegExp("^" + other.id.replace('**', '.+').replace('*', '[^/]+') + '($|(/.+))');
+                    const reg = generateRegex(other.id);
                     if (reg.test(current.id) && current.id !== other.id) {
                         // if (other.leaf) {
                         //     throw `${other.id} is leaf, cant create ${current.id}`;
                         // }
-                        current.alsoNotify.add(other.id);
-                        other.dependentOn.add(current.id);
+                        AddDependency(current, other);
                         const newValue = other.fn(this.staticData);
                         this.Notify(current);
                         // current.needsUpdate.delete(key.Key);
@@ -283,8 +349,12 @@ export default class StoreManager<Param> {
             return current;
         }
         else if (set !== undefined) {
+            if (this.clonedTo.length > 0 || this.clonedFrom !== undefined) {
+                throw new Error(`Can't introduce new store ${key.Key} when already cloned`);
+            }
+
             const current = (this.data[key.Key] as SubscriberData<T, Param>);
-            if (current.leaf) {
+            if (current.storeType !== 'readable') {// redables may be changed later to writables
                 throw new Error(`Called Writable or derevide multiple Times for key ${key.Key}`);
             }
             if (current.value !== UNINITILEZED) {
@@ -298,7 +368,7 @@ export default class StoreManager<Param> {
             current.value = current.fn(this.staticData);
             this.Notify(current);
             // current.needsUpdate.delete(key.Key);
-            current.leaf = true;
+            current.storeType = storeType;
 
             return current;
         }
@@ -310,7 +380,7 @@ export default class StoreManager<Param> {
     }
 
 
-    private mergeDeep(target: any, ...sources: any[]): any {
+    private static mergeDeep(target: any, ...sources: any[]): any {
         function isObject(item: any) {
             return (item && typeof item === 'object' && !Array.isArray(item));
         }
@@ -323,7 +393,7 @@ export default class StoreManager<Param> {
                     if (!target[key]) Object.assign(target, {
                         [key]: {}
                     });
-                    this.mergeDeep(target[key], source[key]);
+                    StoreManager.mergeDeep(target[key], source[key]);
                 } else {
                     Object.assign(target, {
                         [key]: source[key]
@@ -332,13 +402,14 @@ export default class StoreManager<Param> {
             }
         }
 
-        return this.mergeDeep(target, ...sources);
+        return StoreManager.mergeDeep(target, ...sources);
     }
 
+    private writableInternal<T, KeyString extends string>(key: Key<KeyString, T>, getCurrent: (key: Key<any, T>, set: (this: SubscriberData<T, Param>, data: Param) => (T | typeof UNINITILEZED)) => SubscriberData<T, Param>, value: T, compare?: (a: T, b: T) => boolean): Writable<T> {
 
-    public writable<T, KeyString extends string>(key: Key<KeyString, T>, value: T, compare?: (a: T, b: T) => boolean): Writable<T> & { key: Key<KeyString, T> } {
         let setValue = value;
-        const current = this.prepareData(key, () => setValue);
+        const setFunction = () => setValue;
+        const current = getCurrent(key, setFunction);
         current.changingDependent.delete(key.Key);
         current.compare = compare;
         // if (current.fn) {
@@ -362,14 +433,15 @@ export default class StoreManager<Param> {
                 this.invalidate(current);
                 setValue = new_value;
                 current.value = new_value;
+                current.manager.changedValues.add(current.id);
+                this.clonedTo.forEach(x => { x.data[current.id].value = new_value; x.changedValues.add(current.id); })
                 this.Notify(current);
 
                 // Debug
                 for (const [key, value] of (Object.entries(this.data))) {
                     if (value.changingDependent.size > 0) {
-                        console.warn(`Not everything notified ${value.id}, cleanup…`, value.changingDependent);
+                        console.warn(`Not everything notified when changing ${current.id}: ${value.id} has missing entrys, cleanup ${this.clonedFrom == undefined ? 'main' : 'clone'}…`, value.changingDependent);
                         value.changingDependent.clear();
-
                     }
                 }
             }
@@ -383,6 +455,8 @@ export default class StoreManager<Param> {
                 this.invalidate(current);
                 setValue = new_value;
                 current.value = new_value;
+                current.manager.changedValues.add(current.id);
+                this.clonedTo.forEach(x => { x.data[current.id].value = new_value; x.changedValues.add(current.id); })
                 this.Notify(current);
             }
         }
@@ -392,15 +466,19 @@ export default class StoreManager<Param> {
         //     return x;
         // })
         return {
-            subscribe, set, update, key
+            subscribe, set, update, key, currentValue: () => setValue
         };
+    }
+
+    public writable<T, KeyString extends string>(key: Key<KeyString, T>, value: T, compare?: (a: T, b: T) => boolean): Writable<T> {
+        return this.writableInternal(key, (key, setFunction) => this.prepareData(key, 'writable', setFunction), value, compare);
     }
 
     // , fn: (values: StoresValues<S>, set?: (value: T) => void) => T, initial_value?: T
     // public derived<K extends Keys, T>(values: KeysValues<K>, fn: (values: KeysValues<K>) => T): Readable<T> {
-    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: derivatFunction<T, Param, S>, options?: { compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean, evalueateUndefined?: false | undefined }): Readable<T> & { key: Key<KeyString, T> }
-    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: derivatFunctionUninitized<T, Param, S>, options?: { compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean, evalueateUndefined: true }): Readable<T> & { key: Key<KeyString, T> }
-    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: derivatFunction<T, Param, S>, options?: { compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean, evalueateUndefined?: boolean }): Readable<T> & { key: Key<KeyString, T> } {
+    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: derivatFunction<T, Param, S>, options?: { compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean, evalueateUndefined?: false | undefined }): Readable<T>
+    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: derivatFunctionUninitized<T, Param, S>, options?: { compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean, evalueateUndefined: true }): Readable<T>
+    public derived<S extends KeysArray, T, KeyString extends string>(key: Key<KeyString, T>, stores: S, fn: derivatFunction<T, Param, S>, options?: { compare?: (a: T | typeof UNINITILEZED, b: T | typeof UNINITILEZED) => boolean, evalueateUndefined?: boolean }): Readable<T> {
         const single = !Array.isArray(stores);
         const stores_array: Array<Key<any, any>> = single
             ? [stores]
@@ -409,9 +487,9 @@ export default class StoreManager<Param> {
         // let oldValues: any[];
 
         stores_array.forEach(x => {
-            const toAdd = this.prepareData(x);
+            const toAdd = this.prepareData(x, 'readable');
         });
-        const current: SubscriberData<T, Param> = this.prepareData(key, function (data) {
+        const current: SubscriberData<T, Param> = this.prepareData(key, 'aggregated', function (data) {
             const everyThingReady = (this.changingDependent.size == 0) && stores_array.map(x => this.manager.data[x.Key]).every(x => x !== undefined && x.value !== UNINITILEZED && x.changingDependent.size == 0);
             if (everyThingReady || this.updateIncomplete) {
                 const changes = stores_array.map((x, i) => this.oldValues == undefined ? true : (this.manager.data[x.Key].compare ?? deepEqual)(this.manager.data[x.Key].value, this.oldValues[i]))
@@ -439,9 +517,11 @@ export default class StoreManager<Param> {
 
         // current.updateIncomplete = options?.evalueateUndefined ?? false;
         stores_array.forEach(x => {
-            const toAdd = this.prepareData(x);
-            toAdd.alsoNotify.add(key.Key);
-            current.dependentOn.add(x.Key);
+            const toAdd = this.prepareData(x, 'readable');
+
+            AddDependency(toAdd, current);
+
+
         });
 
 
@@ -500,10 +580,30 @@ export default class StoreManager<Param> {
 
     // This tracks changes everey Change will increas the number
     private lastChange = 0;
-    private Notify(current: SubscriberData<any, Param>, valueChanged?: false, alreadyNotified?: Record<string, number>) {
+    private Notify(current: SubscriberData<any, Param>, valueChanged?: false) {
+        const toNotify = new Set<string>();
+        toNotify.add(current.id);
+        this.NotifyInternal(current, valueChanged, {}, toNotify);
 
-        if (alreadyNotified == undefined) {
-            alreadyNotified = {};
+        if (toNotify) {
+
+
+
+            for (const element of [...toNotify]) {
+                const data = current.manager.data[element];
+
+
+                for (const [subscriber, invalidator] of data.subscribers) {
+
+                    invalidator();
+                    subscriber(data.value);
+                }
+            }
+        }
+    }
+    private NotifyInternal(current: SubscriberData<any, Param>, valueChanged: false | undefined, alreadyNotified: Record<string, number>, subscribersToNotiyf: Set<string>) {
+        if (this.suspendNotification) {
+            return;
         }
 
         // If no change happend since the last notification of this object, there is nothing todo.
@@ -531,15 +631,13 @@ export default class StoreManager<Param> {
         }
         collect.call(this, current);
 
-        if (current.value !== UNINITILEZED) {
+        // if (current.value !== UNINITILEZED) {
 
-            for (const [_, invalidator] of current.subscribers) {
-                invalidator();
-            }
-            for (const [subscriber] of current.subscribers) {
-                subscriber(current.value);
-            }
-        }
+
+        //     // for (const [subscriber] of current.subscribers) {
+        //     //     subscriber(current.value);
+        //     // }
+        // }
 
 
 
@@ -562,21 +660,29 @@ export default class StoreManager<Param> {
                 const newValue = n.fn(this.staticData);
                 if (newValue !== UNINITILEZED && !(n.compare ?? deepEqual)(n.value, newValue)) {
                     n.value = newValue;
+                    n.manager.changedValues.add(n.id);
+                    subscribersToNotiyf.add(n.id);
+
+                    this.clonedTo.forEach(x => { x.data[n.id].value = newValue; x.changedValues.add(n.id); })
 
                     // we need to note the change before we notify
                     this.recordChange();
-                    this.Notify(n, undefined, alreadyNotified);
+                    this.NotifyInternal(n, undefined, alreadyNotified, subscribersToNotiyf);
                 }
                 else if (newValue === UNINITILEZED) {
                     n.needUpdate = true;
-                    this.Notify(n, false, alreadyNotified)
+                    this.NotifyInternal(n, false, alreadyNotified, subscribersToNotiyf)
                 } else {
-                    this.Notify(n, false, alreadyNotified)
+                    this.NotifyInternal(n, false, alreadyNotified, subscribersToNotiyf)
                 }
             } else {
-                this.Notify(n, false, alreadyNotified)
+                this.NotifyInternal(n, false, alreadyNotified, subscribersToNotiyf)
             }
         }
+
+
+        return subscribersToNotiyf;
+
     }
 
     private recordChange() {
@@ -586,3 +692,12 @@ export default class StoreManager<Param> {
         }
     }
 }
+function AddDependency(notifier: SubscriberData<any, any>, dependend: SubscriberData<any, any>) {
+    notifier.alsoNotify.add(dependend.id);
+    dependend.dependentOn.add(notifier.id);
+}
+
+function generateRegex(key: string) {
+    return new RegExp("^" + (key).replace('|', '\\|').replace('**', '.+').replace('*', '[^/]+') + '($|(/.+))');
+}
+

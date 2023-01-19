@@ -4,6 +4,7 @@
 
 	export let key: string;
 	export let data: Data;
+	export let char: Charakter;
 
 	export let effective: Readable<number>;
 
