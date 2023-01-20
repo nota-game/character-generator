@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { getTextTalent, renderRequirement, renderRequirementMap } from 'src/misc/misc';
 	import type { CharacterChange, Charakter } from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
 	import type { Readable, Writable } from 'svelte/store';
-	import Missing from './Missing.svelte';
+	import Missing from './ChangeView.svelte';
 
 	export let key: string;
 	export let data: Data;
@@ -44,7 +45,10 @@
 </script>
 
 <div>
-	{key}
+	<!-- {key} -->
+
+	{getTextTalent(entry, char)}
+
 	{$effective} (Basis: {$base} Ableitung: {$support}) {$fixed + $purchased} EP
 
 	<button on:click={() => purchased.update((x) => x + 1)}>+</button>
@@ -53,7 +57,7 @@
 			{#await $addFuture}
 				Calculating
 			{:then f}
-				<Missing change={f} />
+				<Missing change={f} {data} {char} />
 			{/await}
 		</span>
 	{/if}
@@ -63,14 +67,20 @@
 			{#await $removeFuture}
 				Calculating
 			{:then f}
-				<Missing change={f} />
+				<Missing change={f} {data} {char} />
 			{/await}
 		</span>
 	{/if}
 
 	{JSON.stringify($cost)}
-	{#if $missing && Object.values($missing).length > 0}
-		<span class="missing"> {JSON.stringify($missing)}</span>
+	{#if Object.values($missing).length > 0}
+		<ul>
+			{#each $missing as m}
+				<li class="missing">
+					{renderRequirementMap(m, data, { type: 'talent', value: entry }, char)}
+				</li>
+			{/each}
+		</ul>
 	{/if}
 </div>
 

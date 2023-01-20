@@ -84,8 +84,22 @@ export type CharacterChange = {
         // oldIgnored: number;
     }[];
     requirements: {
-        added: ({ missingOnType: 'besonderheit' | 'fertigkeit' | 'talent', missingOnId: string, missing: MissingRequirements } | { missingOnType: 'level', missingOnId: { path: string, level: string }, missing: MissingRequirements })[];
-        removed: ({ missingOnType: 'besonderheit' | 'fertigkeit' | 'talent', missingOnId: string, missing: MissingRequirements } | { missingOnType: 'level', missingOnId: { path: string, level: string }, missing: MissingRequirements })[];
+        added: (typeWithMissing)[];
+        removed: typeWithMissing[];
+    };
+};
+type typeWithMissing = {
+    wert: number;
+    missing: MissingRequirements;
+    missingOnType: "besonderheit" | "fertigkeit" | "talent";
+    missingOnId: string;
+} | {
+    wert: number;
+    missing: MissingRequirements;
+    missingOnType: "level";
+    missingOnId: {
+        path: string;
+        level: string;
     };
 };
 
@@ -1559,7 +1573,8 @@ export class Charakter {
                     return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
                 });
                 this.storeManager.derived(keys.Unbeschränkt, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
-                    return Math.max(purchased.newValue, fixed.newValue);
+                    return Math.min(besonderheit.Stufe.length, Math.max(purchased.newValue, fixed.newValue));
+                   
                 });
 
 
@@ -1677,7 +1692,7 @@ export class Charakter {
                     return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
                 });
                 this.storeManager.derived(keys.Unbeschränkt, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
-                    return Math.max(purchased.newValue, fixed.newValue);
+                    return Math.min(fertigkeit.Stufe.length, Math.max(purchased.newValue, fixed.newValue));
                 });
 
 
@@ -2547,7 +2562,7 @@ export class Charakter {
                             ...talentKeys.flatMap(x => removeUninitilized(twin.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
                             ...fertigkeitenKeys.flatMap(x => removeUninitilized(twin.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
                             ...levelKeys.flatMap(({ path, level }) => {
-                           
+
                                 const currentValue = twin.pfad[path][level].missing.currentValue();
                                 const uninitilzeud = removeUninitilized(currentValue, []);
                                 const result = uninitilzeud.flatMap(missing => ({ missingOnType: 'level' as const, missingOnId: { path, level }, ...missing }));
@@ -2558,9 +2573,11 @@ export class Charakter {
 
                         ].sort(compaleInternal);
 
-                    function contains(list: { missing: MissingRequirements }[], element: { missing: MissingRequirements }) {
+
+
+                    function contains(list: typeWithMissing[], element: typeWithMissing) {
                         for (const c of list) {
-                            const comp = compareRequirement(c.missing, element.missing);
+                            const comp = compaleInternal(element, c);
                             if (comp == 0) {
                                 return true;
                             } else if (comp < 0) {
@@ -2637,7 +2654,22 @@ export class Charakter {
 
         throw 'NotImplemented';
 
-        function compaleInternal(a: { wert: number; missing: MissingRequirements; missingOnType: "besonderheit" | "fertigkeit" | "talent"; missingOnId: string; } | { wert: number; missing: MissingRequirements; missingOnType: "level"; missingOnId: { path: string; level: string; }; }, b: { wert: number; missing: MissingRequirements; missingOnType: "besonderheit" | "fertigkeit" | "talent"; missingOnId: string; } | { wert: number; missing: MissingRequirements; missingOnType: "level"; missingOnId: { path: string; level: string; }; }) {
+        type typeWithMissing = {
+            wert: number;
+            missing: MissingRequirements;
+            missingOnType: "besonderheit" | "fertigkeit" | "talent";
+            missingOnId: string;
+        } | {
+            wert: number;
+            missing: MissingRequirements;
+            missingOnType: "level";
+            missingOnId: {
+                path: string;
+                level: string;
+            };
+        };
+
+        function compaleInternal(a: typeWithMissing, b: typeWithMissing) {
 
             const typeCompare = a.missingOnType.localeCompare(b.missingOnType);
             if (typeCompare !== 0) {
@@ -2658,14 +2690,16 @@ export class Charakter {
                 }
             } else if (typeof b.missingOnId === 'object') {
                 return 1;
-            }
-            else {
+            } else {
                 const idCompare = a.missingOnId.localeCompare(b.missingOnId);
                 if (idCompare !== 0) {
                     return idCompare;
                 }
             }
 
+            if (a.wert !== b.wert) {
+                return (a.wert - b.wert) < 0 ? -1 : 1;
+            }
 
 
             return compareRequirement(a.missing, b.missing);
@@ -2838,18 +2872,22 @@ function compareRequirement(a: MissingRequirements, b: MissingRequirements): 0 |
         return typeOrder(a.type) < typeOrder(b.type) ? -1 : 1;
     } else {
 
-        if ((a.type == 'Fertigkeit' || a.type == 'Besonderheit' || a.type == 'tag' || a.type == 'Talent')
-            && (b.type == 'Fertigkeit' || b.type == 'Besonderheit' || b.type == 'tag' || b.type == 'Talent')) {
+        if ((a.type == 'Fertigkeit' || a.type == 'Besonderheit' || a.type == 'tag' || a.type == 'Talent' || a.type == 'Level')
+            && (b.type == 'Fertigkeit' || b.type == 'Besonderheit' || b.type == 'tag' || b.type == 'Talent' || b.type == 'Level')) {
 
-            if (a.id != b.id) {
+            if (a.type == 'Level' && b.type == 'Level' && a.pfad != b.pfad) { // we need to compare path first for level
+                return a.pfad.localeCompare(b.pfad) as 1 | -1;
+            }
+            else if (a.id != b.id) {
                 return a.id.localeCompare(b.id) as 1 | -1;
             }
-            else if ((a.type == 'Fertigkeit' || a.type == 'Talent' || a.type == 'Besonderheit') && (b.type == 'Fertigkeit' || b.type == 'Talent' || b.type == 'Besonderheit') && a.Stufe != b.Stufe) {
+            else if ((a.type == 'Fertigkeit' || a.type == 'Talent' || a.type == 'Besonderheit' || a.type == 'Level') && (b.type == 'Fertigkeit' || b.type == 'Talent' || b.type == 'Besonderheit' || b.type == 'Level') && a.Stufe != b.Stufe) {
                 return a.Stufe < b.Stufe ? -1 : 1;
             }
-            if (a.type == 'Talent' && b.type == 'Talent' && a.Kind != b.Kind) {
+            else if (a.type == 'Talent' && b.type == 'Talent' && a.Kind != b.Kind) {
                 return a.Kind.localeCompare(b.Kind) as 1 | -1;
             }
+
         } else if (a.type == 'Not' && b.type == 'Not') {
             return compareRequirement(a.sub, b.sub);
         } else if (a.type == 'And' && b.type == 'And' || a.type == 'Or' && b.type == 'Or') {

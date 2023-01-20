@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { getTextBesonderheit, renderRequirement, renderRequirementMap } from 'src/misc/misc';
 	import type { CharacterChange, Charakter } from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
 	import type { Readable, Writable } from 'svelte/store';
-	import Missing from './Missing.svelte';
+	import Missing from './ChangeView.svelte';
 
 	export let key: string;
 	export let data: Data;
@@ -49,10 +50,12 @@
 
 <!-- {#if addFuture} -->
 <div>
-	{key}
+	{getTextBesonderheit(entry, $effective, char)}
 	{$effective}/{entry.Stufe.length}
 	<!-- <input type="number" bind:value={$purchased} min={0} max={entry.Stufe.length} /> -->
 	{JSON.stringify($cost)}
+
+
 	<button
 		on:click={() => purchased.update((x) => x + 1)}
 		disabled={$effective >= entry.Stufe.length}>+</button
@@ -62,7 +65,7 @@
 			{#await $addFuture}
 				Calculating
 			{:then f}
-				<Missing change={f} />
+				<Missing change={f} {data} {char} />
 			{/await}
 		</span>
 	{/if}
@@ -72,10 +75,21 @@
 			{#await $removeFuture}
 				Calculating
 			{:then f}
-				<Missing change={f} />
+				<Missing change={f} {data} {char} />
 			{/await}
 		</span>
 	{/if}
+
+	{#if Object.values($missing).length > 0}
+		<ul>
+			{#each $missing as m}
+				<li class="missing">
+					{renderRequirementMap(m, data, { type: 'besondereit', value: entry }, char)}
+				</li>
+			{/each}
+		</ul>
+	{/if}
+
 </div>
 
 <!-- {/if} -->

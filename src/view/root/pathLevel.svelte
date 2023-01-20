@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { getText, getTextPfad, renderRequirement, renderRequirementMap } from 'src/misc/misc';
 	import type { CharacterChange, Charakter } from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
 	import type { Readable, Writable } from 'svelte/store';
-	import Missing from './Missing.svelte';
+	import Missing from './ChangeView.svelte';
 
 	export let pathId: string;
 	export let levelId: string;
@@ -17,6 +18,7 @@
 	export let cost: Readable<any>;
 
 	$: entry = data.levelMap[pathId][levelId];
+	$: entryPfad = data.pfadMap[pathId];
 
 	let addFuture: Readable<Promise<CharacterChange>>;
 	let removeFuture: Readable<Promise<CharacterChange>>;
@@ -45,13 +47,11 @@
 
 <div>
 	<!-- {#if $effective} -->
-	{pathId}-{levelId}
+	{getTextPfad(entryPfad, entry, char)}
 
 	{$effective}/{entry.WiederhoteNutzung}
 	{JSON.stringify($cost)}
-	{#if Object.values($missing).length > 0}
-		<span class="missing"> {JSON.stringify($missing)}</span>
-	{/if}
+
 	<br />
 	<button
 		on:click={() => purchased.update((x) => x + 1)}
@@ -62,7 +62,7 @@
 			{#await $addFuture}
 				Calculating
 			{:then f}
-				<Missing change={f} />
+				<Missing change={f} {data} {char} />
 			{/await}
 		</span>
 	{/if}
@@ -72,10 +72,21 @@
 			{#await $removeFuture}
 				Calculating
 			{:then f}
-				<Missing change={f} />
+				<Missing change={f} {data} {char} />
 			{/await}
 		</span>
 	{/if}
+
+	{#if Object.values($missing).length > 0}
+		<ul>
+			{#each $missing as m}
+				<li class="missing">
+					{renderRequirementMap(m, data, { type: 'level', level: entry, pfad: entryPfad }, char)}
+				</li>
+			{/each}
+		</ul>
+	{/if}
+
 	<!-- {/if} -->
 </div>
 

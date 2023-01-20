@@ -1,8 +1,9 @@
 <script lang="ts">
-	import type { CharacterChange, Charakter } from 'src/models/Character';
+	import { getTextFertigkeit, renderRequirement, renderRequirementMap } from 'src/misc/misc';
+	import type { CharacterChange, Charakter, MissingRequirements } from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
 	import type { Readable, Writable } from 'svelte/store';
-	import Missing from './Missing.svelte';
+	import Missing from './ChangeView.svelte';
 
 	export let key: string;
 	export let data: Data;
@@ -14,7 +15,12 @@
 	export let unconditionally: Readable<number>;
 	export let purchased: Writable<number>;
 	export let fixed: Readable<number>;
-	export let missing: Readable<any>;
+	export let missing: Readable<
+		{
+			wert: number;
+			missing: MissingRequirements;
+		}[]
+	>;
 	export let cost: Readable<any>;
 
 	$: entry = data.fertigkeitenMap[key];
@@ -43,7 +49,7 @@
 </script>
 
 <div>
-	{key}
+	{getTextFertigkeit(entry, $effective, char)}
 	{$effective}/{entry.Stufe.length} ({$purchased})
 	<button
 		on:click={() => purchased.update((x) => x + 1)}
@@ -54,7 +60,7 @@
 			{#await $addFuture}
 				Calculating
 			{:then f}
-				<Missing change={f} />
+				<Missing change={f} {data} {char} />
 			{/await}
 		</span>
 	{/if}
@@ -64,13 +70,19 @@
 			{#await $removeFuture}
 				Calculating
 			{:then f}
-				<Missing change={f} />
+				<Missing change={f} {data} {char} />
 			{/await}
 		</span>
 	{/if}
 	{JSON.stringify($cost)}
 	{#if Object.values($missing).length > 0}
-		<span class="missing"> {JSON.stringify($missing)}</span>
+		<ul>
+			{#each $missing as m}
+				<li class="missing">
+					{renderRequirementMap(m, data, { type: 'fertigkeit', value: entry }, char)}
+				</li>
+			{/each}
+		</ul>
 	{/if}
 </div>
 

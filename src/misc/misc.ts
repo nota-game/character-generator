@@ -2,10 +2,25 @@
 // // import { type MissingRequirements, Charakter } from "../models/Character";
 // import type { Data } from "../models/Data";
 
+import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigkeit, Geschlecht_misc, LevelDefinition_misc, Lokalisierungen_misc, PfadDefinition_pfad, TalentDefinition_talent } from "src/data/nota.g";
+import { Charakter, type MissingRequirements } from "src/models/Character";
+import type { Data } from "src/models/Data";
+import { UNINITILEZED } from "./StoreManager2";
+
 export function filterNull<T>(x: (T | null | undefined)[]): T[] {
     return x.filter(y => y !== null && y !== undefined) as T[];
 }
 
+
+export function handleUninitilized<T>(params: T | typeof UNINITILEZED): T | undefined;
+export function handleUninitilized<T>(params: T | typeof UNINITILEZED, d: T): T;
+export function handleUninitilized<T>(params: T | typeof UNINITILEZED, d?: T): T | undefined {
+    if (params == UNINITILEZED) {
+        return d;
+    } else {
+        return params;
+    }
+}
 
 export function getLast<T>(array?: T[]) {
     if (array == undefined) return undefined;
@@ -29,7 +44,7 @@ export function groupBy<T, K extends keyof any>(list: T[], getKey: (item: T) => 
 export function toObjectKey<T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T> {
     return list.reduce((previous, currentItem) => {
         const group = getKey(currentItem);
-        
+
         previous[group] = currentItem;
         return previous;
     }, {} as Record<K, T>)
@@ -60,248 +75,282 @@ export function join(array: string[], delimeter?: string): string {
     return array.reduce((p, c) => p.length == 0 ? c : p + delimeter + c, "");
 }
 
-// export function getText(p: Lokalisierungen_misc | undefined, options?: { sex: Geschlecht_misc } | Charakter): string {
-//     const languege = 'de';
-//     if (!p) {
-//         return '';
-//     }
 
 
-//     const sex: Geschlecht_misc = (options instanceof Charakter) ?
-//         options.organismus?.morph.Geschlecht ?? 'Unspezifiziert'
-//         : options == undefined
-//             ? 'Unspezifiziert'
-//             : options.sex;
+export function getText(p: Lokalisierungen_misc | undefined, options?: { sex: Geschlecht_misc } | Charakter): string {
+    const languege = 'de';
+    if (!p) {
+        return '';
+    }
 
 
-//     const lokalisation = p.Lokalisirung.filter(x => x.meta.Sprache == languege)
-//         ?? p.Lokalisirung.filter(x => x.meta.Sprache == p.Lokalisirung[0].meta.Sprache);
-
-//     return (lokalisation.filter(x => x.meta.Geschlecht == sex)[0]
-//         ?? lokalisation.filter(x => x.meta.Geschlecht == "Unspezifiziert")[0]
-//         ?? lokalisation.filter(x => x.meta.Geschlecht == "Neutral")[0]
-//         ?? lokalisation[0]
-//     ).value;
-// }
-
-// export function getTextTalent(p: TalentDefinition_talent | undefined, format: 'Name' | 'Probe' | 'NameProbe' = 'NameProbe'): string {
-//     if (!p) {
-//         return '';
-//     }
-//     const probe = [];
-
-//     for (let i = 0; i < (p.Probe.Antipathie?.length ?? 0); i++) {
-//         probe.push('AN');
-//     }
-//     for (let i = 0; i < (p.Probe.Einfluss?.length ?? 0); i++) {
-//         probe.push('EI');
-//     }
-//     for (let i = 0; i < (p.Probe.Fokus?.length ?? 0); i++) {
-//         probe.push('FO');
-//     }
-//     for (let i = 0; i < (p.Probe.Gewandtheit?.length ?? 0); i++) {
-//         probe.push('GE');
-//     }
-//     for (let i = 0; i < (p.Probe.Glück?.length ?? 0); i++) {
-//         probe.push('GL');
-//     }
-//     for (let i = 0; i < (p.Probe.Intuition?.length ?? 0); i++) {
-//         probe.push('IN');
-//     }
-//     for (let i = 0; i < (p.Probe.Klugheit?.length ?? 0); i++) {
-//         probe.push('KL');
-//     }
-//     for (let i = 0; i < (p.Probe.Konstitution?.length ?? 0); i++) {
-//         probe.push('KO');
-//     }
-//     for (let i = 0; i < (p.Probe.Mut?.length ?? 0); i++) {
-//         probe.push('MU');
-//     }
-//     for (let i = 0; i < (p.Probe.Feinmotorik?.length ?? 0); i++) {
-//         probe.push('FM');
-//     }
-//     for (let i = 0; i < (p.Probe.Stärke?.length ?? 0); i++) {
-//         probe.push('ST');
-//     }
-//     for (let i = 0; i < (p.Probe.Sympathie?.length ?? 0); i++) {
-//         probe.push('SY');
-//     }
-//     if (probe.length !== 3) {
-//         console.error('Falche anzahl Attibute', probe)
-//         throw Error('Falche anzahl Attibute');
-//     }
-//     if (format == 'NameProbe')
-//         return `${getText(p.Name)} (${probe[0]}•${probe[1]}•${probe[2]})`
-//     else if (format == 'Name')
-//         return getText(p.Name)
-//     else if (format == 'Probe')
-//         return `${probe[0]}•${probe[1]}•${probe[2]}`
-//     throw Error('Unbekantes Format')
-// }
-// export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter): string {
-//     if (!p) {
-//         return '';
-//     }
-//     const numbers = ['Ⅰ', 'Ⅱ', "Ⅲ", 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ', 'Ⅺ', 'Ⅻ']
-//     const list = [
-//         ...p.Stufe.filter((_, i) => i < stufe).map((x, i) => ({ name: x.Name, stufe: i + 1 })).reverse().filter(x => x.name),
-//         { name: p.Name, stufe: 1 }
-//     ];
-//     const base = list[0];
-//     const next = [
-//         ...p.Stufe.map((x, i) => ({ name: x.Name, stufe: i + 1 })).filter((x) => x.stufe > base.stufe).filter(x => x.name)
-//     ][0]?.stufe ?? p.Stufe.length + 1;
-
-//     if (base.stufe < next - 1) {
-//         return `${getText(base.name, options)} ${numbers[stufe - base.stufe] ?? stufe - base.stufe + 1}`;
-
-//     } else {
-//         return getText(base.name, options);
-//     }
-// }
-// export function getTextFertigkeit(p: FertigkeitDefinition_fertigkeit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter): string {
-//     if (!p) {
-//         return '';
-//     }
-
-//     const numbers = ['Ⅰ', 'Ⅱ', "Ⅲ", 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ', 'Ⅺ', 'Ⅻ']
-//     const list = [
-//         ...p.Stufe.filter((_, i) => i < stufe).map((x, i) => ({ name: x.Name, stufe: i + 1 })).reverse().filter(x => x.name),
-//         { name: p.Name, stufe: 1 }
-//     ];
-//     const base = list[0];
-//     const next = [
-//         ...p.Stufe.map((x, i) => ({ name: x.Name, stufe: i + 1 })).filter((x) => x.stufe > base.stufe).filter(x => x.name)
-//     ][0]?.stufe ?? p.Stufe.length + 1;
-
-//     if (base.stufe < next - 1) {
-//         return `${getText(base.name, options)} ${numbers[stufe - base.stufe] ?? stufe - base.stufe + 1}`;
-
-//     } else {
-//         return getText(base.name, options);
-//     }
-// }
+    const sex: Geschlecht_misc = (options instanceof Charakter) ?
+        handleUninitilized(options.morphStore.currentValue())?.Geschlecht ?? 'Unspezifiziert'
+        : options == undefined
+            ? 'Unspezifiziert'
+            : options.sex;
 
 
-// export function renderRequirement(req: MissingRequirements, data: Data | undefined) {
-//     if (!data)
-//         return "";
-//     const buildname = (
-//         m: MissingRequirements & { type: 'Besonderheit' | 'Fertigkeit' | 'tag' | 'Talent' }
-//     ) => {
-//         if (m.type === 'Besonderheit') {
-//             const d = data.besonderheitenMap[m.id];
-//             return `${getTextBesonderheit(d, m.Stufe)}`;
-//         } else if (m.type === 'Fertigkeit') {
-//             const d = data.fertigkeitenMap[m.id];
-//             return `${getTextFertigkeit(d, m.Stufe)}`;
-//         } else if (m.type === 'tag') {
-//             const d = data.tagMap[m.id];
-//             return `${getText(d.Name)}`;
-//         } else if (m.type === 'Talent') {
-//             const d = data.talentMap[m.id];
-//             return m.Kind === 'Effektiv'
-//                 ? `${getText(d.Name)} auf ${m.Stufe}`
-//                 : m.Kind === 'Basis'
-//                     ? `${getText(d.Name)} TaB auf ${m.Stufe}`
-//                     : m.Kind === 'Unterstützung'
-//                         ? `${getText(d.Name)} TaA auf ${m.Stufe}`
-//                         : `${getText(d.Name)}`;
-//         } else {
-//             throw Error('Shuld not happen');
-//         }
-//     };
-//     if (req.type === 'And' && req.sub.every((x) => x.type !== 'Or' && x.type !== 'And')) {
-//         const neg = req.sub.filter((x) => x.type === 'Not');
-//         const pos = req.sub.filter((x) => x.type !== 'Not');
-//         const posNames = pos
-//             .map((x) => buildname(x as any));
-//         const negNames = neg
-//             .map((x) => buildname((x as any).sub));
+    const lokalisation = p.Lokalisirung.filter(x => x.meta.Sprache == languege)
+        ?? p.Lokalisirung.filter(x => x.meta.Sprache == p.Lokalisirung[0].meta.Sprache);
 
-//         if (neg.length > 0 && pos.length > 0) {
-//             const posString =
-//                 pos.length > 1
-//                     ? `Es werden ${posNames
-//                         .slice(0, pos.length - 1)
-//                         .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${posNames[pos.length - 1]
-//                     } benötigt und `
-//                     : `Es wird ${posNames
-//                         .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} benötigt und `;
-//             const negString =
-//                 neg.length > 1
-//                     ? `${negNames
-//                         .slice(0, neg.length - 1)
-//                         .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
-//                     } dürfen nicht vorhanden sein.`
-//                     : `${negNames[0]} darf nicht vorhanden sein.`;
-//             return posString + negString;
-//         } else if (neg.length > 0) {
-//             return neg.length > 1
-//                 ? `${negNames
-//                     .slice(0, neg.length - 1)
-//                     .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
-//                 } dürfen nicht vorhanden sein.`
-//                 : `${negNames} darf nicht vorhanden sein.`;
-//         } else if (pos.length > 0) {
-//             return pos.length > 1
-//                 ? `Es werden ${posNames
-//                     .slice(0, pos.length - 1)
-//                     .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${posNames[pos.length - 1]} benötigt.`
-//                 : `Es wird ${posNames
-//                     .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} benötigt.`;
-//         }
-//     } else if (req.type === 'Or' && req.sub.every((x) => x.type !== 'Or' && x.type !== 'And')) {
-//         {
-//             const neg = req.sub.filter((x) => x.type === 'Not');
-//             const pos = req.sub.filter((x) => x.type !== 'Not');
-//             const posNames = pos
-//                 .map((x) => buildname(x as any));
-//             const negNames = neg
-//                 .map((x) => buildname((x as any).sub));
-//             if (neg.length > 0 && pos.length > 0) {
-//                 const posString =
-//                     pos.length > 1
-//                         ? `${posNames
-//                             .slice(0, pos.length - 1)
-//                             .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} oder ${posNames[pos.length - 1]
-//                         } muss vorhanden sein oder `
-//                         : `Es wird ${posNames[0]} benötigt oder `;
-//                 const negString =
-//                     neg.length > 1
-//                         ? `eines der folgenden, ${negNames
-//                             .slice(0, neg.length - 1)
-//                             .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
-//                         } darf nicht vorhanden sein.`
-//                         : ` ${negNames[0]} darf nicht vorhanden sein.`;
-//                 return posString + negString;
-//             } else if (neg.length > 0) {
-//                 return neg.length > 1
-//                     ? `Eines von ${negNames
-//                         .slice(0, neg.length - 1)
-//                         .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
-//                     } darf nicht vorhanden sein.`
-//                     : `${negNames[0]} darf nicht vorhanden sein.`;
-//             } else if (pos.length > 0) {
+    return (lokalisation.filter(x => x.meta.Geschlecht == sex)[0]
+        ?? lokalisation.filter(x => x.meta.Geschlecht == "Unspezifiziert")[0]
+        ?? lokalisation.filter(x => x.meta.Geschlecht == "Neutral")[0]
+        ?? lokalisation[0]
+    ).value;
+}
 
-//                 pos.length > 1
-//                     ? `Es wird ${posNames
-//                         .slice(0, pos.length - 1)
-//                         .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} oder ${posNames[pos.length - 1]
-//                     } benötigt.`
-//                     : `Es wird ${posNames
-//                         .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} benötigt.`;
-//             }
-//         }
-//     } else if (req.type === 'Not') {
-//         if (req.sub.type !== 'Or' && req.sub.type !== 'And') {
-//             return `${buildname(req.sub as any)} darf nicht vorhanden sein.`;
-//         }
-//     } else {
-//         return `${buildname(req as any)} muß vorhanden sein.`;
-//     }
-//     return JSON.stringify(req);
-// }
+export function getTextTalent(p: TalentDefinition_talent | undefined, character: Charakter, format: 'Name' | 'Probe' | 'NameProbe' = 'NameProbe'): string {
+    if (!p) {
+        return '';
+    }
+    const probe = [
+        ...filterNull(p.Probe.flatMap(x => x.Eigenschaft.map(y => y.Name))
+            .map(x => handleUninitilized(character.eigenschaften[x ?? '']?.meta.currentValue()))
+            .map(x => x?.Abkürzung))];
+    if (format == 'NameProbe' && probe.length > 0)
+        return `${getText(p.Name)} (${probe.map(x => getText(x)).reduce((p, c) => `${p}•${c}`)})`
+    else if (format == 'NameProbe')
+        return `${getText(p.Name)}`
+    else if (format == 'Name')
+        return getText(p.Name)
+    else if (format == 'Probe')
+        return `${probe[0]}•${probe[1]}•${probe[2]}`
+    throw Error('Unbekantes Format')
+}
+export function getTextPfad(p: PfadDefinition_pfad | undefined, level?: LevelDefinition_misc, options?: { sex: Geschlecht_misc } | Charakter): string {
+    if (!p) {
+        return '';
+    }
+
+    if (level && getText(level.Name).length > 0) {
+        return `${getText(p.Name, options)} (${getText(level.Name)})`;
+    } else {
+
+        return getText(p.Name, options);
+    }
+}
+export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter): string {
+    if (!p) {
+        return '';
+    }
+    const numbers = ['Ⅰ', 'Ⅱ', "Ⅲ", 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ', 'Ⅺ', 'Ⅻ']
+    const list = [
+        ...p.Stufe.filter((_, i) => i < stufe).map((x, i) => ({ name: x.Name, stufe: i + 1 })).reverse().filter(x => x.name),
+        { name: p.Name, stufe: 1 }
+    ];
+    const base = list[0];
+    const next = [
+        ...p.Stufe.map((x, i) => ({ name: x.Name, stufe: i + 1 })).filter((x) => x.stufe > base.stufe).filter(x => x.name)
+    ][0]?.stufe ?? p.Stufe.length + 1;
+
+    if (base.stufe < next - 1) {
+        return `${getText(base.name, options)} ${numbers[stufe - base.stufe] ?? stufe - base.stufe + 1}`;
+
+    } else {
+        return getText(base.name, options);
+    }
+}
+export function getTextFertigkeit(p: FertigkeitDefinition_fertigkeit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter): string {
+    if (!p) {
+        return '';
+    }
+
+    const numbers = ['Ⅰ', 'Ⅱ', "Ⅲ", 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ', 'Ⅺ', 'Ⅻ']
+    const list = [
+        ...p.Stufe.filter((_, i) => i < stufe).map((x, i) => ({ name: x.Name, stufe: i + 1 })).reverse().filter(x => x.name),
+        { name: p.Name, stufe: 1 }
+    ];
+    const base = list[0];
+    const next = [
+        ...p.Stufe.map((x, i) => ({ name: x.Name, stufe: i + 1 })).filter((x) => x.stufe > base.stufe).filter(x => x.name)
+    ][0]?.stufe ?? p.Stufe.length + 1;
+
+    if (base.stufe < next - 1) {
+        return `${getText(base.name, options)} ${numbers[stufe - base.stufe] ?? stufe - base.stufe + 1}`;
+
+    } else {
+        return getText(base.name, options);
+    }
+}
+
+
+export function renderRequirementMap(req: {
+    wert: number;
+    missing: MissingRequirements;
+}, data: Data, of:
+        { type: 'talent', value: TalentDefinition_talent| string }
+
+    , options: (Charakter)): string;
+export function renderRequirementMap(req: {
+    wert: number;
+    missing: MissingRequirements;
+}, data: Data, of: { type: 'fertigkeit', value: FertigkeitDefinition_fertigkeit | string }
+    | { type: 'besondereit', value: BesonderheitDefinition_besonderheit | string }
+    | { type: 'level', level: LevelDefinition_misc | string, pfad: PfadDefinition_pfad | string }
+    , options?: ({ sex: Geschlecht_misc } | Charakter)): string;
+export function renderRequirementMap(req: {
+    wert: number;
+    missing: MissingRequirements;
+}, data: Data, of: { type: 'fertigkeit', value: FertigkeitDefinition_fertigkeit | string }
+    | { type: 'besondereit', value: BesonderheitDefinition_besonderheit | string }
+    | { type: 'talent', value: TalentDefinition_talent | string }
+    | { type: 'level', level: LevelDefinition_misc | string, pfad: PfadDefinition_pfad | string }
+    , options?: ({ sex: Geschlecht_misc } | Charakter)) {
+
+    const text = renderRequirement(req.missing, data);
+
+    if (of.type == 'fertigkeit') {
+
+        const fertigkeit = (typeof of.value == 'string') ? data?.fertigkeitenMap[of.value] : of.value;
+        return `${text.substring(0, text.length - 1)}, um ${getTextFertigkeit(fertigkeit, req.wert, options)} zu Aktivieren.`
+    } else if (of.type == 'besondereit') {
+        const besoderheit = (typeof of.value == 'string') ? data?.besonderheitenMap[of.value] : of.value;
+        return `${text.substring(0, text.length - 1)}, um ${getTextBesonderheit(besoderheit, req.wert, options)} zu Aktivieren.`
+    } else if (of.type == 'talent') {
+        if (options instanceof Charakter) {
+
+            const talent = (typeof of.value == 'string') ? data?.talentMap[of.value] : of.value;
+            return `${text.substring(0, text.length - 1)}, um ${getTextTalent(talent, options, 'Name')} auf ${req.wert} zu Steigern.`
+        } else {
+            throw new Error('Render talent needs a character');
+        }
+    } else if (of.type == 'level') {
+
+        const pfad = (typeof of.pfad == 'string') ? data.pfadMap[of.pfad] : of.pfad;
+        const level = (typeof of.level == 'string') ? data?.levelMap[pfad.Id][of.level] : of.level;
+
+        return `${text.substring(0, text.length - 1)}, um ${getTextPfad(pfad, level, options)} zu Aktivieren.`
+    }
+
+
+    return text;
+
+}
+export function renderRequirement(req: MissingRequirements, data: Data | undefined) {
+    if (!data)
+        return "";
+    const buildname = (
+        m: MissingRequirements
+    ) => {
+        if (m.type === 'Besonderheit') {
+            const d = data.besonderheitenMap[m.id];
+            return `${getTextBesonderheit(d, m.Stufe)}`;
+        } else if (m.type === 'Fertigkeit') {
+            const d = data.fertigkeitenMap[m.id];
+            return `${getTextFertigkeit(d, m.Stufe)}`;
+        } else if (m.type === 'tag') {
+            const d = data.tagMap[m.id];
+            return `${getText(d.Name)}`;
+        } else if (m.type === 'Level') {
+            const d = data.pfadMap[m.pfad];
+            const d2 = data.levelMap[m.pfad][m.id];
+            return `${getText(d.Name)} (${getText(d2.Name)})`;
+        } else if (m.type === 'Talent') {
+            const d = data.talentMap[m.id];
+            return m.Kind === 'Effektiv'
+                ? `${getText(d.Name)} auf ${m.Stufe}`
+                : m.Kind === 'Basis'
+                    ? `${getText(d.Name)} TaB auf ${m.Stufe}`
+                    : m.Kind === 'Unterstützung'
+                        ? `${getText(d.Name)} TaA auf ${m.Stufe}`
+                        : `${getText(d.Name)}`;
+        } else {
+            throw Error(`Shuld not happen ${JSON.stringify(m)}`);
+        }
+    };
+    if (req.type === 'And' && req.sub.every((x) => x.type !== 'Or' && x.type !== 'And')) {
+        const neg = req.sub.filter((x) => x.type === 'Not');
+        const pos = req.sub.filter((x) => x.type !== 'Not');
+        const posNames = pos
+            .map((x) => buildname(x as any));
+        const negNames = neg
+            .map((x) => buildname((x as any).sub));
+
+        if (neg.length > 0 && pos.length > 0) {
+            const posString =
+                pos.length > 1
+                    ? `Es werden ${posNames
+                        .slice(0, pos.length - 1)
+                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${posNames[pos.length - 1]
+                    } benötigt und `
+                    : `Es wird ${posNames
+                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} benötigt und `;
+            const negString =
+                neg.length > 1
+                    ? `${negNames
+                        .slice(0, neg.length - 1)
+                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
+                    } dürfen nicht vorhanden sein.`
+                    : `${negNames[0]} darf nicht vorhanden sein.`;
+            return posString + negString;
+        } else if (neg.length > 0) {
+            return neg.length > 1
+                ? `${negNames
+                    .slice(0, neg.length - 1)
+                    .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
+                } dürfen nicht vorhanden sein.`
+                : `${negNames} darf nicht vorhanden sein.`;
+        } else if (pos.length > 0) {
+            return pos.length > 1
+                ? `Es werden ${posNames
+                    .slice(0, pos.length - 1)
+                    .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${posNames[pos.length - 1]} benötigt.`
+                : `Es wird ${posNames
+                    .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} benötigt.`;
+        }
+    } else if (req.type === 'Or' && req.sub.every((x) => x.type !== 'Or' && x.type !== 'And')) {
+        {
+            const neg = req.sub.filter((x) => x.type === 'Not');
+            const pos = req.sub.filter((x) => x.type !== 'Not');
+            const posNames = pos
+                .map((x) => buildname(x as any));
+            const negNames = neg
+                .map((x) => buildname((x as any).sub));
+            if (neg.length > 0 && pos.length > 0) {
+                const posString =
+                    pos.length > 1
+                        ? `${posNames
+                            .slice(0, pos.length - 1)
+                            .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} oder ${posNames[pos.length - 1]
+                        } muss vorhanden sein oder `
+                        : `Es wird ${posNames[0]} benötigt oder `;
+                const negString =
+                    neg.length > 1
+                        ? `eines der folgenden, ${negNames
+                            .slice(0, neg.length - 1)
+                            .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
+                        } darf nicht vorhanden sein.`
+                        : ` ${negNames[0]} darf nicht vorhanden sein.`;
+                return posString + negString;
+            } else if (neg.length > 0) {
+                return neg.length > 1
+                    ? `Eines von ${negNames
+                        .slice(0, neg.length - 1)
+                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} und ${negNames[neg.length - 1]
+                    } darf nicht vorhanden sein.`
+                    : `${negNames[0]} darf nicht vorhanden sein.`;
+            } else if (pos.length > 0) {
+
+                pos.length > 1
+                    ? `Es wird ${posNames
+                        .slice(0, pos.length - 1)
+                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} oder ${posNames[pos.length - 1]
+                    } benötigt.`
+                    : `Es wird ${posNames
+                        .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} benötigt.`;
+            }
+        }
+    } else if (req.type === 'Not') {
+        if (req.sub.type !== 'Or' && req.sub.type !== 'And') {
+            return `${buildname(req.sub as any)} darf nicht vorhanden sein.`;
+        }
+    } else {
+        return `${buildname(req as any)} muß vorhanden sein.`;
+    }
+    return JSON.stringify(req);
+}
 
 // export function readonlyMapStore<T>(create: (key: string) => T): Readonly<Record<string, T>> {
 //     const target: Record<string, T> = {};
