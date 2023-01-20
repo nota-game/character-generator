@@ -31,6 +31,18 @@ type MapKeyData<K> = {
 type PropValues<T> = T[keyof T]
     ;
 
+type missingMapping = ({
+    type: 'besonderheit' | 'fertigkeit' | 'talent' | 'tag';
+    id: string;
+} | {
+    type: 'level';
+    id: {
+        level: string;
+        path: string;
+    };
+}) & {
+    missing: MissingRequirements[];
+};
 
 
 export type CharacterChange = {
@@ -61,15 +73,15 @@ export type CharacterChange = {
         key: string;
         new: number;
         old: number;
-        newIgnored: number;
-        oldIgnored: number;
+        // newIgnored: number;
+        // oldIgnored: number;
     }[];
     changedBestonderheiten: {
         key: string;
         new: number;
         old: number;
-        newIgnored: number;
-        oldIgnored: number;
+        // newIgnored: number;
+        // oldIgnored: number;
     }[];
     requirements: {
         added: ({ missingOnType: 'besonderheit' | 'fertigkeit' | 'talent', missingOnId: string, missing: MissingRequirements } | { missingOnType: 'level', missingOnId: { path: string, level: string }, missing: MissingRequirements })[];
@@ -243,6 +255,7 @@ export class Charakter {
     public readonly morphStore: Readable<MorphDefinition_lebewesen | undefined>;
     public readonly possibleMorphStore: Readable<string[]>;
     public readonly costStore: Readable<Cost>;
+    public readonly missingStore: Readable<missingMapping[]>;
 
 
     public readonly eigenschaften: Record<string, {
@@ -866,6 +879,7 @@ export class Charakter {
         const ageKey = StoreManager.key('/organism/age').of<number>();
 
         const costKey = StoreManager.key('/points/total').of<Cost>();
+        const missingKey = StoreManager.key('/totalMissing').of<missingMapping[]>();
 
         const lebensabschnittGattungKey = StoreManager.key('/organism/gattung/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
         const lebensabschnittArtKey = StoreManager.key('/organism/art/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
@@ -873,6 +887,7 @@ export class Charakter {
         const lebensabschnittKey = StoreManager.key('/organism/*/lebensabschnitt').of<{ gattung: LebensabschnittDefinition_lebewesen | undefined, art: LebensabschnittDefinition_lebewesen | undefined, morph: LebensabschnittDefinition_lebewesen | undefined }>()
 
         const sumCost = StoreManager.key('/**/cost').of<Record<string, Record<string, Record<string, Cost>>>>();
+        const sumMissing = StoreManager.key('/**/missing').of<Record<string, Record<string, Record<string, MissingRequirements>>>>();
 
 
 
@@ -1057,12 +1072,36 @@ export class Charakter {
             })
 
             this.costStore = this.storeManager.readable(costKey);
+            this.missingStore = this.storeManager.readable(missingKey);
 
 
+            this.storeManager.readable(sumMissing);
+            this.storeManager.derived(missingKey, sumMissing, (data, cast) => {
+
+
+                function filterCost(obj: object, path: string[]): missingMapping[] {
+                    return Object.entries(obj).flatMap(([key, value]) => {
+                        if (key == 'missing') {
+                            if (!Array.isArray(value) || value.length == 0) {
+                                return [];
+                            }
+                            else if (path.length == 2)
+                                return [{ missing: value, type: path[0], id: path[1] }] as missingMapping[];
+                            else if (path.length == 3)
+                                return [{ missing: value, type: path[0], id: { path: path[1], level: path[2] } }] as missingMapping[];
+                            else
+                                throw '';
+                        } else if (typeof value == 'object') {
+                            return filterCost(value, [...path, key]);
+                        } else {
+                            return [];
+                        }
+                    })
+                }
+                return filterCost(cast.newValue, []);
+            });
             this.storeManager.readable(sumCost);
             this.storeManager.derived(costKey, sumCost, (data, cast) => {
-
-
                 function filterCost(obj: object): Cost[] {
                     return Object.entries(obj).flatMap(([key, value]) => {
                         if (key == 'cost') {
@@ -1074,8 +1113,6 @@ export class Charakter {
                         }
                     })
                 }
-
-
                 const costs = filterCost(cast.newValue);
                 return toCost(costs.flatMap(x => Object.entries(x)), ([v1, v2]) => [v1, v2] as const);
             });
@@ -2339,180 +2376,193 @@ export class Charakter {
 
 
 
-    public getSimulation(type: 'level', callback: (char: Charakter) => void, key: string, key2: string): ReadableOriginal<CharacterChange>;
-    public getSimulation(type: 'besonderheit' | 'fertigkeit' | 'talent', callback: (char: Charakter) => void, key: string): ReadableOriginal<CharacterChange>;
-    getSimulation(type: 'besonderheit' | 'fertigkeit' | 'talent' | 'level', callback: (char: Charakter) => void, key: string, key2?: string): ReadableOriginal<CharacterChange> {
+    public getSimulation(type: 'level', callback: (char: Charakter) => void, key: string, key2: string): ReadableOriginal<Promise<CharacterChange>>;
+    public getSimulation(type: 'besonderheit' | 'fertigkeit' | 'talent', callback: (char: Charakter) => void, key: string): ReadableOriginal<Promise<CharacterChange>>;
+    getSimulation(type: 'besonderheit' | 'fertigkeit' | 'talent' | 'level', callback: (char: Charakter) => void, key: string, key2?: string): ReadableOriginal<Promise<CharacterChange>> {
+
+        let promis: Promise<CharacterChange> | undefined;
 
         const handler = () => {
-            const timetag = `simulation-go-${type}-${key}-${key2 ?? ''}`;
-            console.time(timetag);
 
-
-            const twin = this.twin;
-            if (twin === undefined) {
-                return {
-                    changedCost: [],
-                    changedBestonderheiten: [],
-                    changedFertigkeiten: [],
-                    changedTalents: [],
-                    changedTags: [],
-                    changedLevels: [],
-                    requirements: { added: [], removed: [] }
-                } satisfies CharacterChange;
+            if (promis !== undefined) {
+                return promis;
             }
 
-            callback(twin);
-
-            const punkteKeys = distinct(Object.keys(twin.costStore.currentValue()).concat(Object.keys(this.costStore.currentValue())));
-
-            const copyCostRaw = twin.costStore.currentValue();
-            const copyCost = copyCostRaw === UNINITILEZED ? {} : copyCostRaw;
+            return new Promise<CharacterChange>((resolve, reject) => {
 
 
-            const originalCostRaw = this.costStore.currentValue();
-            const originalCost = originalCostRaw === UNINITILEZED ? {} : originalCostRaw;
+                setTimeout(() => {
+
+                    const timetag = `simulation-go-${type}-${key}-${key2 ?? ''}`;
+                    console.time(timetag);
 
 
-            const changedCost = punkteKeys.map(x => ({
-                key: x,
-                new: copyCost[x],
-                old: originalCost[x],
-                differece: copyCost[x] - originalCost[x]
-            })).filter(x => x.differece != 0);
+                    const twin = this.twin;
+                    if (twin === undefined) {
+                        resolve({
+                            changedCost: [],
+                            changedBestonderheiten: [],
+                            changedFertigkeiten: [],
+                            changedTalents: [],
+                            changedTags: [],
+                            changedLevels: [],
+                            requirements: { added: [], removed: [] }
+                        } satisfies CharacterChange);
+                        return;
+                    }
 
-            function removeUninitilized<T>(params: T | typeof UNINITILEZED, d: T): T {
-                if (params == UNINITILEZED) {
-                    return d;
-                } else {
-                    return params;
-                }
-            }
+                    callback(twin);
 
-            const besonderheitenKeys = distinct(
-                Object.keys(twin.besonderheiten)
-                    .concat(Object.keys(this.besonderheiten))
-            );
-            const changedBestonderheiten = besonderheitenKeys
-                .map((key) => {
-                    return {
-                        key: key,
-                        new: removeUninitilized(twin.besonderheiten[key].effective.currentValue(), 0),
-                        old: removeUninitilized(this.besonderheiten[key].effective.currentValue(), 0),
-                        newIgnored: removeUninitilized(twin.besonderheiten[key].unconditionally.currentValue(), 0),
-                        oldIgnored: removeUninitilized(this.besonderheiten[key].unconditionally.currentValue(), 0)
-                    };
-                })
-                .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
+                    const punkteKeys = distinct(Object.keys(twin.costStore.currentValue()).concat(Object.keys(this.costStore.currentValue())));
 
-            const fertigkeitenKeys = distinct(
-                Object.keys(twin.fertigkeiten)
-                    .concat(Object.keys(this.fertigkeiten))
-            );
-            const changedFertigkeiten = fertigkeitenKeys
-                .map((key) => {
-                    return {
-                        key: key,
-                        new: removeUninitilized(twin.fertigkeiten[key].effective.currentValue(), 0),
-                        old: removeUninitilized(this.fertigkeiten[key].effective.currentValue(), 0),
-                        newIgnored: removeUninitilized(twin.fertigkeiten[key].unconditionally.currentValue(), 0),
-                        oldIgnored: removeUninitilized(this.fertigkeiten[key].unconditionally.currentValue(), 0)
-                    };
-                })
-                .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
-
-            const tagsKeys = distinct(
-                Object.keys(twin.tag)
-                    .concat(Object.keys(this.tag))
-            );
-            const changedTags = tagsKeys
-                .map((key) => {
-                    return {
-                        key: key,
-                        new: removeUninitilized(twin.tag[key].effective.currentValue(), 0),
-                        old: removeUninitilized(this.tag[key].effective.currentValue(), 0),
-                    };
-                })
-                .filter((x) => x.old != x.new);
+                    const copyCostRaw = twin.costStore.currentValue();
+                    const copyCost = copyCostRaw === UNINITILEZED ? {} : copyCostRaw;
 
 
-
-            const talentKeys = distinct(
-                Object.keys(twin.talente).concat(Object.keys(this.talente))
-            );
-            const changedTalents = talentKeys
-                .map((key) => {
-                    return {
-                        key: key,
-                        new: removeUninitilized(twin.talente[key].effective.currentValue(), 0),
-                        old: removeUninitilized(this.talente[key].effective.currentValue(), 0),
-                        newEp: removeUninitilized(twin.talente[key].fixed.currentValue(), 0) + removeUninitilized(twin.talente[key].purchased.currentValue(), 0),
-                        oldEp: removeUninitilized(this.talente[key].fixed.currentValue(), 0) + removeUninitilized(this.talente[key].purchased.currentValue(), 0)
-                    };
-                })
-                .filter((x) => x.old != x.new || x.oldEp != x.newEp);
+                    const originalCostRaw = this.costStore.currentValue();
+                    const originalCost = originalCostRaw === UNINITILEZED ? {} : originalCostRaw;
 
 
+                    const changedCost = punkteKeys.map(x => ({
+                        key: x,
+                        new: copyCost[x],
+                        old: originalCost[x],
+                        differece: copyCost[x] - originalCost[x]
+                    })).filter(x => x.differece != 0);
 
+                    function removeUninitilized<T>(params: T | typeof UNINITILEZED, d: T): T {
+                        if (params == UNINITILEZED) {
+                            return d;
+                        } else {
+                            return params;
+                        }
+                    }
 
+                    const besonderheitenKeys = distinct(
+                        Object.keys(twin.besonderheiten)
+                            .concat(Object.keys(this.besonderheiten))
+                    );
+                    const changedBestonderheiten = besonderheitenKeys
+                        .map((key) => {
+                            return {
+                                key: key,
+                                new: removeUninitilized(twin.besonderheiten[key].effective.currentValue(), 0),
+                                old: removeUninitilized(this.besonderheiten[key].effective.currentValue(), 0),
+                                // newIgnored: removeUninitilized(twin.besonderheiten[key].unconditionally.currentValue(), 0),
+                                // oldIgnored: removeUninitilized(this.besonderheiten[key].unconditionally.currentValue(), 0)
+                            };
+                        })
+                        .filter((x) => x.old != x.new );
 
-            const levelKeys = distinct(
-                Object.entries(twin.pfad).flatMap(([path, levels]) => Object.keys(levels).map(l => ({ path: path, level: l })))
-                    .concat(Object.entries(this.pfad).flatMap(([path, levels]) => Object.keys(levels).map(l => ({ path, level: l }))))
-            );
-            const changedLevels = levelKeys
-                .map(({ path: path, level }) => {
-                    return {
-                        key: { path: path, level },
-                        new: removeUninitilized(twin.pfad[path][level].effective.currentValue(), 0),
-                        old: removeUninitilized(this.pfad[path][level].effective.currentValue(), 0),
-                    };
-                })
-                .filter((x) => x.old != x.new);
+                    const fertigkeitenKeys = distinct(
+                        Object.keys(twin.fertigkeiten)
+                            .concat(Object.keys(this.fertigkeiten))
+                    );
+                    const changedFertigkeiten = fertigkeitenKeys
+                        .map((key) => {
+                            return {
+                                key: key,
+                                new: removeUninitilized(twin.fertigkeiten[key].effective.currentValue(), 0),
+                                old: removeUninitilized(this.fertigkeiten[key].effective.currentValue(), 0),
+                                // newIgnored: removeUninitilized(twin.fertigkeiten[key].unconditionally.currentValue(), 0),
+                                // oldIgnored: removeUninitilized(this.fertigkeiten[key].unconditionally.currentValue(), 0)
+                            };
+                        })
+                        .filter((x) => x.old != x.new);
+
+                    const tagsKeys = distinct(
+                        Object.keys(twin.tag)
+                            .concat(Object.keys(this.tag))
+                    );
+                    const changedTags = tagsKeys
+                        .map((key) => {
+                            return {
+                                key: key,
+                                new: removeUninitilized(twin.tag[key].effective.currentValue(), 0),
+                                old: removeUninitilized(this.tag[key].effective.currentValue(), 0),
+                            };
+                        })
+                        .filter((x) => x.old != x.new);
 
 
 
-
-
-
-
+                    const talentKeys = distinct(
+                        Object.keys(twin.talente).concat(Object.keys(this.talente))
+                    );
+                    const changedTalents = talentKeys
+                        .map((key) => {
+                            return {
+                                key: key,
+                                new: removeUninitilized(twin.talente[key].effective.currentValue(), 0),
+                                old: removeUninitilized(this.talente[key].effective.currentValue(), 0),
+                                newEp: removeUninitilized(twin.talente[key].fixed.currentValue(), 0) + removeUninitilized(twin.talente[key].purchased.currentValue(), 0),
+                                oldEp: removeUninitilized(this.talente[key].fixed.currentValue(), 0) + removeUninitilized(this.talente[key].purchased.currentValue(), 0)
+                            };
+                        })
+                        .filter((x) => x.old != x.new || x.oldEp != x.newEp);
 
 
 
 
 
+                    const levelKeys = distinct(
+                        Object.entries(twin.pfad).flatMap(([path, levels]) => Object.keys(levels).map(l => ({ path: path, level: l })))
+                            .concat(Object.entries(this.pfad).flatMap(([path, levels]) => Object.keys(levels).map(l => ({ path, level: l }))))
+                    );
+                    const changedLevels = levelKeys
+                        .map(({ path: path, level }) => {
+                            return {
+                                key: { path: path, level },
+                                new: removeUninitilized(twin.pfad[path][level].effective.currentValue(), 0),
+                                old: removeUninitilized(this.pfad[path][level].effective.currentValue(), 0),
+                            };
+                        })
+                        .filter((x) => x.old != x.new);
 
 
-            const currentMissing =
-                [
-                    ...besonderheitenKeys.flatMap(x => removeUninitilized(this.besonderheiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
-                    ...talentKeys.flatMap(x => removeUninitilized(this.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
-                    ...fertigkeitenKeys.flatMap(x => removeUninitilized(this.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
-                    ...levelKeys.flatMap(({ path, level }) => removeUninitilized(this.pfad[path][level].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'level' as const, missingOnId: { path, level }, ...missing }))),
 
-                ].sort(compaleInternal);
-            const twinMissing =
-                [
-                    ...besonderheitenKeys.flatMap(x => removeUninitilized(twin.besonderheiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
-                    ...talentKeys.flatMap(x => removeUninitilized(twin.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
-                    ...fertigkeitenKeys.flatMap(x => removeUninitilized(twin.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
-                    ...levelKeys.flatMap(({ path, level }) => removeUninitilized(twin.pfad[path][level].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'level' as const, missingOnId: { path, level }, ...missing }))),
 
-                ].sort(compaleInternal);
 
-            function contains(list: { missing: MissingRequirements }[], element: { missing: MissingRequirements }) {
-                for (const c of list) {
-                    const comp = compareRequirement(c.missing, element.missing);
-                    if (comp == 0) {
-                        return true;
-                    } else if (comp < 0) {
-                        // we can stop here since the lists are sorted
+
+
+
+
+
+
+
+
+
+                    const currentMissing =
+                        [
+                            ...besonderheitenKeys.flatMap(x => removeUninitilized(this.besonderheiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
+                            ...talentKeys.flatMap(x => removeUninitilized(this.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
+                            ...fertigkeitenKeys.flatMap(x => removeUninitilized(this.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
+                            ...levelKeys.flatMap(({ path, level }) => removeUninitilized(this.pfad[path][level].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'level' as const, missingOnId: { path, level }, ...missing }))),
+
+                        ].sort(compaleInternal);
+                    const twinMissing =
+                        [
+                            ...besonderheitenKeys.flatMap(x => removeUninitilized(twin.besonderheiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
+                            ...talentKeys.flatMap(x => removeUninitilized(twin.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
+                            ...fertigkeitenKeys.flatMap(x => removeUninitilized(twin.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
+                            ...levelKeys.flatMap(({ path, level }) => removeUninitilized(twin.pfad[path][level].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'level' as const, missingOnId: { path, level }, ...missing }))),
+
+                        ].sort(compaleInternal);
+
+                    function contains(list: { missing: MissingRequirements }[], element: { missing: MissingRequirements }) {
+                        for (const c of list) {
+                            const comp = compareRequirement(c.missing, element.missing);
+                            if (comp == 0) {
+                                return true;
+                            } else if (comp < 0) {
+                                // we can stop here since the lists are sorted
+                                return false;
+                            }
+                        }
                         return false;
                     }
-                }
-                return false;
-            }
-            const newMissing = twinMissing.filter(x => !contains(currentMissing, x));
-            const removedMissing = currentMissing.filter(x => !contains(twinMissing, x));
+                    const newMissing = twinMissing.filter(x => !contains(currentMissing, x));
+                    const removedMissing = currentMissing.filter(x => !contains(twinMissing, x));
 
 
 
@@ -2523,50 +2573,57 @@ export class Charakter {
 
 
 
-            twin.storeManager.resetClone();
+                    twin.storeManager.resetClone();
 
-            console.timeEnd(timetag);
+                    console.timeEnd(timetag);
+                    promis = undefined;
+                    resolve({
+                        changedLevels,
+                        changedCost: changedCost,
+                        changedBestonderheiten: changedBestonderheiten,
+                        changedFertigkeiten: changedFertigkeiten,
+                        changedTalents: changedTalents,
+                        changedTags,
+                        requirements: { added: newMissing, removed: removedMissing },
+                    } satisfies CharacterChange);
+                }, 500);
 
-            return {
-                changedLevels,
-                changedCost: changedCost,
-                changedBestonderheiten: changedBestonderheiten,
-                changedFertigkeiten: changedFertigkeiten,
-                changedTalents: changedTalents,
-                changedTags,
-                requirements: { added: newMissing, removed: removedMissing },
-            } satisfies CharacterChange;
+
+            });
+
+
         };
 
-
+        const alweysStors = [this.costStore, this.missingStore];
         if (type == 'besonderheit') {
             if (this.besonderheiten[key] === undefined) {
                 throw new Error(`Unknown besondereit ${key}`);
             }
             const xxx = this.getBesonterheitKeys(key);
-            const stores = [xxx.Effective].map(x => this.storeManager.readable(x));
-            return derived(stores, handler);
+            const stores = Object.values(xxx).map(x => this.storeManager.readable(x));
+            return derived([...stores, ...alweysStors], handler);
         } else if (type == 'fertigkeit') {
             if (this.fertigkeiten[key] === undefined) {
                 throw new Error(`Unknown besondereit ${key}`);
             }
-            const fertigkeitKeys = this.getFertigkeitenKeys(key);
-            const stores = [fertigkeitKeys.Effective].map(x => this.storeManager.readable(x));
-            return derived(stores, handler);
+            const xxx = this.getFertigkeitenKeys(key);
+            const stores = Object.values(xxx).map(x => this.storeManager.readable(x));
+
+            return derived([...stores, ...alweysStors], handler);
         } else if (type == 'talent') {
             if (this.talente[key] === undefined) {
                 throw new Error(`Unknown besondereit ${key}`);
             }
-            const talendKes = this.getTalentKeys(key);
-            const stores = [talendKes.Effective].map(x => this.storeManager.readable(x));
-            return derived(stores, handler);
+            const xxx = this.getTalentKeys(key);
+            const stores = Object.values(xxx).map(x => this.storeManager.readable(x));
+            return derived([...stores, ...alweysStors], handler);
         } else if (type == 'level') {
             if (this.pfad[key][key2 ?? ''] === undefined) {
                 throw new Error(`Unknown besondereit ${key}`);
             }
-            const levelKeys = this.getLevelKeys(key, key2 ?? '');
-            const stores = [levelKeys.Effective].map(x => this.storeManager.readable(x));
-            return derived(stores, handler);
+            const xxx = this.getLevelKeys(key, key2 ?? '');
+            const stores = Object.values(xxx).map(x => this.storeManager.readable(x));
+            return derived([...stores, ...alweysStors], handler);
         }
 
 
@@ -2606,122 +2663,6 @@ export class Charakter {
             return compareRequirement(a.missing, b.missing);
         };
     }
-    // // const copyData = JSON.parse(JSON.stringify(this.Data));
-    // // const copy = new Charakter(this.stammdaten, copyData);
-    // // console.log("GetSimulation")
-    // let lastData: string | undefined;
-    // let lastResult: CharacterChange | undefined;
-    // return derived(this.DataStore, data => {
-    //     const copyString = JSON.stringify(data);
-    //     // console.log("GetSimulationCalculated")
-    //     // console.time("simulation-create")
-
-    //     if (copyString == lastData) {
-    //         // console.log(    "was same")
-    //         return lastResult!;
-    //     }
-    //     console.time("simulation-callback")
-    //     const copyData = JSON.parse(copyString);
-
-    //     // console.info('{}!=={}',copyData,lastData)
-
-
-    //     const copy = new Charakter(this.stammdaten, copyData);
-    //     // console.timeEnd("simulation-create")
-
-
-    //     // const tmep= serialize(copy,{lossy:false});
-    //     // copy = deserialize(tmep);
-
-    //     callback(copy);
-    //     console.timeEnd("simulation-callback")
-    //     // console.log("simulation-logedData",copyData)
-
-    //     const punkteKeys = distinct(Object.keys(copy.punkte).concat(Object.keys(this.punkte)));
-
-    //     const changedPunkte = punkteKeys.map(x => ({
-    //         key: x,
-    //         new: copy.punkte[x],
-    //         old: this.punkte[x],
-    //         differece: copy.punkte[x] - this.punkte[x]
-    //     }))
-
-
-    //     const talentKeys = distinct(
-    //         Object.keys(copy.talentEffective).concat(Object.keys(this.talentEffective))
-    //     );
-    //     const changedTalents = talentKeys
-    //         .map((key) => {
-    //             return {
-    //                 key: key,
-    //                 new: copy.talentEffective[key],
-    //                 old: this.talentEffective[key],
-    //                 newEp: copy.talentBaseEP[key] + copy.getTalentPurchasedEP(key),
-    //                 oldEp: this.talentBaseEP[key] + this.getTalentPurchasedEP(key)
-    //             };
-    //         })
-    //         .filter((x) => x.old != x.new || x.oldEp != x.newEp);
-
-    //     const fertigkeitenKeys = distinct(
-    //         Object.keys(copy.fertigkeiten)
-    //             .concat(Object.keys(this.fertigkeiten))
-    //             .concat(Object.keys(copy.fertigkeitenIgnoreRequirements))
-    //             .concat(Object.keys(this.fertigkeitenIgnoreRequirements))
-    //     );
-
-    //     const changedFertigkeiten = fertigkeitenKeys
-    //         .map((key) => {
-    //             return {
-    //                 key: key,
-    //                 new: copy.fertigkeiten[key] ?? 0,
-    //                 old: this.fertigkeiten[key] ?? 0,
-    //                 newIgnored: copy.fertigkeitenIgnoreRequirements[key] ?? 0,
-    //                 oldIgnored: this.fertigkeitenIgnoreRequirements[key] ?? 0
-    //             };
-    //         })
-    //         .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
-    //     const besonderheitenKeys = distinct(
-    //         Object.keys(copy.besonderheiten)
-    //             .concat(Object.keys(this.besonderheiten))
-    //             .concat(Object.keys(copy.besonderheitenIgnoreRequirements))
-    //             .concat(Object.keys(this.besonderheitenIgnoreRequirements))
-    //     );
-
-    //     const changedBestonderheiten = besonderheitenKeys
-    //         .map((key) => {
-    //             return {
-    //                 key: key,
-    //                 new: copy.besonderheiten[key] ?? 0,
-    //                 old: this.besonderheiten[key] ?? 0,
-    //                 newIgnored: copy.besonderheitenIgnoreRequirements[key] ?? 0,
-    //                 oldIgnored: this.besonderheitenIgnoreRequirements[key] ?? 0
-    //             };
-    //         })
-    //         .filter((x) => x.old != x.new || x.oldIgnored != x.newIgnored);
-
-    //     const currentMissing = this.allMissingRequirements.sort(compareRequirement);
-    //     const copyMissing = copy.allMissingRequirements.sort(compareRequirement);
-
-    //     function contains(list: MissingRequirements[], element: MissingRequirements) {
-    //         for (const c of list) {
-    //             const comp = compareRequirement(c, element);
-    //             if (comp == 0) {
-    //                 return true;
-    //             } else if (comp < 0) {
-    //                 // we can stop here since the lists are sorted
-    //                 return false;
-    //             }
-    //         }
-    //         return false;
-    //     }
-    //     const newMissing = copyMissing.filter(x => !contains(currentMissing, x));
-    //     const removedMissing = currentMissing.filter(x => !contains(copyMissing, x));
-    //     const newResult = { changedPunkte, changedTalents, changedFertigkeiten, changedBestonderheiten, requirements: { added: newMissing, removed: removedMissing } };
-    //     lastData = copyString;
-    //     lastResult = newResult;
-    //     return newResult;
-
-    // });
 }
 
 

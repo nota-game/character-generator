@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Charakter } from 'src/models/Character';
+	import type { CharacterChange, Charakter } from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
 	import type { Readable, Writable } from 'svelte/store';
 	import Missing from './Missing.svelte';
@@ -7,6 +7,8 @@
 	export let key: string;
 	export let data: Data;
 	export let char: Charakter;
+
+	export let useFuture: boolean;
 
 	export let effective: Readable<number>;
 	export let unconditionally: Readable<number>;
@@ -17,21 +19,27 @@
 
 	$: entry = data.fertigkeitenMap[key];
 
-	let addFuture = char.getSimulation(
-		'fertigkeit',
-		(other) => {
-			other.fertigkeiten[key].purchased.update((n) => n + 1);
-		},
-		key
-	);
+	let addFuture: Readable<Promise<CharacterChange>>;
+	let removeFuture: Readable<Promise<CharacterChange>>;
+	$: {
+		if (useFuture) {
+			addFuture = char.getSimulation(
+				'fertigkeit',
+				(other) => {
+					other.fertigkeiten[key].purchased.update((n) => n + 1);
+				},
+				key
+			);
 
-	let removeFuture = char.getSimulation(
-		'fertigkeit',
-		(other) => {
-			other.fertigkeiten[key].purchased.update((n) => n - 1);
-		},
-		key
-	);
+			removeFuture = char.getSimulation(
+				'fertigkeit',
+				(other) => {
+					other.fertigkeiten[key].purchased.update((n) => n - 1);
+				},
+				key
+			);
+		}
+	}
 </script>
 
 <div>
@@ -41,9 +49,25 @@
 		on:click={() => purchased.update((x) => x + 1)}
 		disabled={$purchased >= entry.Stufe.length}>+</button
 	>
-	<span class="future"> <Missing change={$addFuture} /></span>
+	{#if addFuture}
+		<span class="future">
+			{#await $addFuture}
+				Calculating
+			{:then f}
+				<Missing change={f} />
+			{/await}
+		</span>
+	{/if}
 	<button on:click={() => purchased.update((x) => x - 1)} disabled={$purchased == 0}>-</button>
-	<span class="future"> <Missing change={$removeFuture} /></span>
+	{#if removeFuture}
+		<span class="future">
+			{#await $removeFuture}
+				Calculating
+			{:then f}
+				<Missing change={f} />
+			{/await}
+		</span>
+	{/if}
 	{JSON.stringify($cost)}
 	{#if Object.values($missing).length > 0}
 		<span class="missing"> {JSON.stringify($missing)}</span>

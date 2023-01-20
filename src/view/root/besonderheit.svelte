@@ -8,6 +8,8 @@
 	export let data: Data;
 	export let char: Charakter;
 
+	export let useFuture: boolean;
+
 	export let effective: Readable<number>;
 	export let unconditionally: Readable<number>;
 	export let purchased: Writable<number>;
@@ -19,22 +21,28 @@
 
 	// $: {
 	// if (key === 'Wohlhabend')
-	let addFuture = char.getSimulation(
-		'besonderheit',
-		(other) => {
-			other.besonderheiten[key].purchased.update((n) => n + 1);
-		},
-		key
-	);
 
-	let removeFuture = char.getSimulation(
-		'besonderheit',
-		(other) => {
-			other.besonderheiten[key].purchased.update((n) => n - 1);
-		},
-		key
-	);
-	// }
+	let addFuture: Readable<Promise<CharacterChange>>;
+	let removeFuture: Readable<Promise<CharacterChange>>;
+	$: {
+		if (useFuture) {
+			addFuture = char.getSimulation(
+				'besonderheit',
+				(other) => {
+					other.besonderheiten[key].purchased.update((n) => n + 1);
+				},
+				key
+			);
+
+			removeFuture = char.getSimulation(
+				'besonderheit',
+				(other) => {
+					other.besonderheiten[key].purchased.update((n) => n - 1);
+				},
+				key
+			);
+		}
+	}
 
 	$: entry = data.besonderheitenMap[key];
 </script>
@@ -49,11 +57,24 @@
 		on:click={() => purchased.update((x) => x + 1)}
 		disabled={$effective >= entry.Stufe.length}>+</button
 	>
-	<span class="future"> <Missing change={$addFuture} /></span>
-	<button on:click={() => purchased.update((x) => x - 1)} disabled={$effective == 0}>-</button>
-	<span class="future"> <Missing change={$removeFuture} /></span>
-	{#if Object.values($missing).length > 0}
-		<span class="missing"> {JSON.stringify($missing)}</span>
+	{#if addFuture}
+		<span class="future">
+			{#await $addFuture}
+				Calculating
+			{:then f}
+				<Missing change={f} />
+			{/await}
+		</span>
+	{/if}
+	<button on:click={() => purchased.update((x) => x - 1)} disabled={$purchased == 0}>-</button>
+	{#if removeFuture}
+		<span class="future">
+			{#await $removeFuture}
+				Calculating
+			{:then f}
+				<Missing change={f} />
+			{/await}
+		</span>
 	{/if}
 </div>
 

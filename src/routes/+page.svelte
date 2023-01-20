@@ -33,6 +33,7 @@
 
 	$: ageStore = char?.ageStore;
 	$: lebensabschnitteStore = char?.lebensAbschnitteStore;
+	$: missingStore = char?.missingStore;
 	$: cost = char?.costStore;
 </script>
 
@@ -92,36 +93,42 @@
 
 	{#if $data}
 		{#each Object.entries(char.besonderheiten) as [key, entry]}
-			<Besonderheit data={$data} {key} {char} {...entry} />
+			<Besonderheit data={$data} {key} {char} {...entry} useFuture />
 		{/each}
 
 		<hr />
 
 		{#each Object.entries(char.fertigkeiten) as [key, entry]}
-			<Fertigkeit data={$data} {key} {char} {...entry} />
+			<Fertigkeit data={$data} {key} {char} {...entry} useFuture />
 		{/each}
 
 		<hr />
 		{#each Object.entries(char.talente) as [key, entry]}
-			<Talent data={$data} {key} {char} {...entry} />
+			<Talent data={$data} {key} {char} {...entry} useFuture />
 		{/each}
 		<hr />
 		{#each Object.entries(char.tag) as [key, entry]}
-		<Tag data={$data} {key} {char} {...entry} />
+			<Tag data={$data} {key} {char} {...entry} />
 		{/each}
 		<hr />
 		{#each Object.entries(char.pfad) as [pathId, entry]}
-		{#each Object.entries(entry) as [levelId, level]}
-			<PathLevel data={$data} {char} {pathId} {levelId} {...level} />
-		{/each}
+			{#each Object.entries(entry) as [levelId, level]}
+				<PathLevel data={$data} {char} {pathId} {levelId} {...level} useFuture />
+			{/each}
 		{/each}
 	{/if}
 
 	<div>
-		<pre>
-        {JSON.stringify($lebensabschnitteStore, undefined, 1)}
+		<pre class="missing">
+{JSON.stringify($missingStore, undefined, 1)}
     </pre>
 	</div>
 {:else}
 	loding
 {/if}
+
+<style lang="scss">
+	.missing {
+		color: red;
+	}
+</style>
