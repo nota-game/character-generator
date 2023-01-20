@@ -2393,8 +2393,8 @@ export class Charakter {
 
                 setTimeout(() => {
 
-                    const timetag = `simulation-go-${type}-${key}-${key2 ?? ''}`;
-                    console.time(timetag);
+                    // const timetag = `simulation-go-${type}-${key}-${key2 ?? ''}`;
+                    // console.time(timetag);
 
 
                     const twin = this.twin;
@@ -2452,7 +2452,7 @@ export class Charakter {
                                 // oldIgnored: removeUninitilized(this.besonderheiten[key].unconditionally.currentValue(), 0)
                             };
                         })
-                        .filter((x) => x.old != x.new );
+                        .filter((x) => x.old != x.new);
 
                     const fertigkeitenKeys = distinct(
                         Object.keys(twin.fertigkeiten)
@@ -2507,7 +2507,8 @@ export class Charakter {
 
                     const levelKeys = distinct(
                         Object.entries(twin.pfad).flatMap(([path, levels]) => Object.keys(levels).map(l => ({ path: path, level: l })))
-                            .concat(Object.entries(this.pfad).flatMap(([path, levels]) => Object.keys(levels).map(l => ({ path, level: l }))))
+                            .concat(Object.entries(this.pfad).flatMap(([path, levels]) => Object.keys(levels).map(l => ({ path, level: l })))),
+                        (v) => `${v.level}∫${v.path}`
                     );
                     const changedLevels = levelKeys
                         .map(({ path: path, level }) => {
@@ -2545,7 +2546,15 @@ export class Charakter {
                             ...besonderheitenKeys.flatMap(x => removeUninitilized(twin.besonderheiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
                             ...talentKeys.flatMap(x => removeUninitilized(twin.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
                             ...fertigkeitenKeys.flatMap(x => removeUninitilized(twin.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
-                            ...levelKeys.flatMap(({ path, level }) => removeUninitilized(twin.pfad[path][level].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'level' as const, missingOnId: { path, level }, ...missing }))),
+                            ...levelKeys.flatMap(({ path, level }) => {
+                           
+                                const currentValue = twin.pfad[path][level].missing.currentValue();
+                                const uninitilzeud = removeUninitilized(currentValue, []);
+                                const result = uninitilzeud.flatMap(missing => ({ missingOnType: 'level' as const, missingOnId: { path, level }, ...missing }));
+
+                                return result;
+                            }
+                            ),
 
                         ].sort(compaleInternal);
 
@@ -2572,10 +2581,9 @@ export class Charakter {
 
 
 
-
                     twin.storeManager.resetClone();
 
-                    console.timeEnd(timetag);
+                    // console.timeEnd(timetag);
                     promis = undefined;
                     resolve({
                         changedLevels,
