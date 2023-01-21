@@ -18,6 +18,9 @@
 	export let fixed: Readable<number>;
 	export let missing: Readable<any>;
 	export let cost: Readable<any>;
+	export let nextLevelSupport: Readable<any>;
+	export let nextLevelEpCost: Readable<number>;
+	export let previousLevelEpCost: Readable<number>;
 
 	$: entry = data.talentMap[key];
 
@@ -73,6 +76,12 @@
 	{/if}
 
 	{JSON.stringify($cost)}
+
+	<br />
+	{JSON.stringify($nextLevelSupport, undefined, ' ')}
+	<br />
+	+ {$nextLevelEpCost} / {$previousLevelEpCost}
+	<br />
 	{#if Object.values($missing).length > 0}
 		<ul>
 			{#each $missing as m}
@@ -82,6 +91,8 @@
 			{/each}
 		</ul>
 	{/if}
+	<br />
+	<br />
 </div>
 
 <style lang="scss">

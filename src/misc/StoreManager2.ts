@@ -350,7 +350,7 @@ export default class StoreManager<Param> {
 
             }
 
-            if (current.storeType == 'aggregated') {
+            if (current.storeType == 'aggregated'||current.storeType == 'writable') {
 
                 Object.values(this.data).forEach(other => {
                     const reg = generateRegex(other.id);
@@ -520,6 +520,7 @@ export default class StoreManager<Param> {
             const toAdd = this.prepareData(x, 'readable');
         });
         const current: SubscriberData<T, Param> = this.prepareData(key, 'aggregated', function (data) {
+            const missingStore = stores_array.map(x => this.manager.data[x.Key]).filter(x => !(x !== undefined && x.value !== UNINITILEZED && x.changingDependent.size == 0))
             const everyThingReady = (this.changingDependent.size == 0) && stores_array.map(x => this.manager.data[x.Key]).every(x => x !== undefined && x.value !== UNINITILEZED && x.changingDependent.size == 0);
             if (everyThingReady || this.updateIncomplete) {
                 const changes = stores_array.map((x, i) => this.oldValues == undefined ? true : (this.manager.data[x.Key].compare ?? deepEqual)(this.manager.data[x.Key].value, this.oldValues[i]))

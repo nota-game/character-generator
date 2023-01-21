@@ -191,13 +191,13 @@
         </misc:Name>
         <lebewesen:Formel>1</lebewesen:Formel>
       </lebewesen:Berechnung>
-      <lebewesen:Berechnung id="gewicht" Reihenfolge="2" einheit="kg">
+      <lebewesen:Berechnung id="gewicht" Reihenfolge="2" einheit="kg" gruppe="abgeleitet">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">Gewicht</misc:Lokalisirung>
         </misc:Name>
         <lebewesen:Formel>bmi*(größe/100)*(größe/100)</lebewesen:Formel>
       </lebewesen:Berechnung>
-      <lebewesen:Berechnung id="ausdauer" Reihenfolge="10">
+      <lebewesen:Berechnung id="ausdauer" Reihenfolge="10" gruppe="abgeleitet">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">Ausdaure</misc:Lokalisirung>
         </misc:Name>
@@ -209,13 +209,13 @@
         </misc:Name>
         <lebewesen:Formel>9999999999</lebewesen:Formel>
       </lebewesen:Berechnung>
-      <lebewesen:Berechnung id="kraft" Reihenfolge="10">
+      <lebewesen:Berechnung id="kraft" Reihenfolge="10" gruppe="abgeleitet">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">Kraft</misc:Lokalisirung>
         </misc:Name>
         <lebewesen:Formel>_over = max(0,gewicht-kraftGewichtCap);_under = min(kraftGewichtCap,gewicht);ceil((91/30 * (1/ ST )*(1/ ST )+1529/300*1/ST+3/50)*_under)</lebewesen:Formel>
       </lebewesen:Berechnung>
-      <lebewesen:Berechnung id="GlP" Reihenfolge="10">
+      <lebewesen:Berechnung id="GlP" Reihenfolge="10" gruppe="abgeleitet">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">Glücks Punkte</misc:Lokalisirung>
         </misc:Name>
@@ -902,7 +902,7 @@ Wassermenschen beisitzen eine Natürliche Magie welche Ihren Unterkörper in ein
             <lebewesen:Entwiklung>
 
 
-              <lebewesen:Reihe id="größe" einheit="cm" startAlter="0" step="0.5">
+              <lebewesen:Reihe id="größe" einheit="cm" startAlter="0" step="0.5" gruppe="sekundär">
                 <misc:Name>
                   <misc:Lokalisirung Sprache="de">
                     <![CDATA[Größe]]>
@@ -3192,7 +3192,7 @@ Wassermenschen beisitzen eine Natürliche Magie welche Ihren Unterkörper in ein
                 </lebewesen:Schwelle>
 
               </lebewesen:Reihe>
-              <lebewesen:Reihe id="bmi" einheit="kg/m²" startAlter="0.5" step="0.5">
+              <lebewesen:Reihe id="bmi" einheit="kg/m²" startAlter="0.5" step="0.5" gruppe="sekundär">
                 <misc:Name>
                   <misc:Lokalisirung Sprache="de">
                     <![CDATA[BMI]]>
@@ -5419,7 +5419,7 @@ Wassermenschen beisitzen eine Natürliche Magie welche Ihren Unterkörper in ein
               <pfad:Pfad Id="Kirin" />
             </StandardPfade>
             <lebewesen:Entwiklung>
-              <lebewesen:Reihe id="größe" einheit="cm" startAlter="0" step="0.5">
+              <lebewesen:Reihe id="größe" einheit="cm" startAlter="0" step="0.5" gruppe="sekundär">
                 <misc:Name>
                   <misc:Lokalisirung Sprache="de">
                     <![CDATA[Größe]]>
@@ -7704,7 +7704,7 @@ Wassermenschen beisitzen eine Natürliche Magie welche Ihren Unterkörper in ein
                 </lebewesen:Schwelle>
 
               </lebewesen:Reihe>
-              <lebewesen:Reihe id="bmi" einheit="kg/m²" startAlter="0.5" step="0.5">
+              <lebewesen:Reihe id="bmi" einheit="kg/m²" startAlter="0.5" step="0.5" gruppe="sekundär">
                 <misc:Name>
                   <misc:Lokalisirung Sprache="de">
                     <![CDATA[BMI]]>
@@ -9949,7 +9949,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
             </StandardPfade>
             <lebewesen:Entwiklung>
 
-              <lebewesen:Reihe id="größe" einheit="cm" startAlter="0" step="0.5">
+              <lebewesen:Reihe id="größe" einheit="cm" startAlter="0" step="0.5" gruppe="sekundär">
                 <misc:Name>
                   <misc:Lokalisirung Sprache="de">
                     <![CDATA[Größe]]>
@@ -12234,7 +12234,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
                 </lebewesen:Schwelle>
 
               </lebewesen:Reihe>
-              <lebewesen:Reihe id="bmi" einheit="kg/m²" startAlter="0.5" step="0.5">
+              <lebewesen:Reihe id="bmi" einheit="kg/m²" startAlter="0.5" step="0.5" gruppe="sekundär">
                 <misc:Name>
                   <misc:Lokalisirung Sprache="de">
                     <![CDATA[BMI]]>
@@ -14674,7 +14674,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
                 </lebewesen:Schwelle>
 
               </lebewesen:Reihe>
-              <lebewesen:Reihe id="horn" einheit="cm" startAlter="0" step="0.5">
+              <lebewesen:Reihe id="horn" einheit="cm" startAlter="0" step="0.5" gruppe="sekundär">
                 <misc:Name>
                   <misc:Lokalisirung Sprache="de">
                     <![CDATA[Hornlänge]]>
@@ -16479,7 +16479,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
             </StandardPfade>
             <lebewesen:Entwiklung>
 
-              <lebewesen:Reihe id="größe" einheit="cm" startAlter="0" step="0.5">
+              <lebewesen:Reihe id="größe" einheit="cm" startAlter="0" step="0.5" gruppe="sekundär">
                 <misc:Name>
                   <misc:Lokalisirung Sprache="de">
                     <![CDATA[Größe]]>
@@ -18764,7 +18764,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
                 </lebewesen:Schwelle>
 
               </lebewesen:Reihe>
-              <lebewesen:Reihe id="bmi" einheit="kg/m²" startAlter="0.5" step="0.5">
+              <lebewesen:Reihe id="bmi" einheit="kg/m²" startAlter="0.5" step="0.5" gruppe="sekundär">
                 <misc:Name>
                   <misc:Lokalisirung Sprache="de">
                     <![CDATA[BMI]]>
@@ -21204,7 +21204,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
                 </lebewesen:Schwelle>
 
               </lebewesen:Reihe>
-              <lebewesen:Reihe id="horn" einheit="cm" startAlter="0" step="0.5">
+              <lebewesen:Reihe id="horn" einheit="cm" startAlter="0" step="0.5" gruppe="sekundär">
                 <misc:Name>
                   <misc:Lokalisirung Sprache="de">
                     <![CDATA[Hornlänge]]>
@@ -23250,11 +23250,11 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
         </misc:Level>
 
 
-        <misc:Level Id="Resturant" WiederhoteNutzung="1">
+        <misc:Level Id="Restaurant" WiederhoteNutzung="1">
           <misc:Kosten Id="Kultur" Berechnung="20" />
           <misc:Name>
-            <misc:Lokalisirung Sprache="de">Returant Koch</misc:Lokalisirung>
-            <misc:Lokalisirung Sprache="de" Geschlecht="Weiblich">Returant Köchin</misc:Lokalisirung>
+            <misc:Lokalisirung Sprache="de">Restaurant Koch</misc:Lokalisirung>
+            <misc:Lokalisirung Sprache="de" Geschlecht="Weiblich">Restaurant Köchin</misc:Lokalisirung>
           </misc:Name>
 
           <misc:Voraussetzung>
@@ -23279,7 +23279,7 @@ Ihre Hautfarbe reicht von blass rosa bis über ockerfarben und Ash grau bis hin 
           <misc:Voraussetzung>
             <misc:LevelVoraussetzung>
               <misc:And>
-                <misc:Level Id="Resturant" />
+                <misc:Level Id="Restaurant" />
               </misc:And>
             </misc:LevelVoraussetzung>
           </misc:Voraussetzung>

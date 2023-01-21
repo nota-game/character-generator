@@ -1,4 +1,4 @@
-import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1 } from "../data/nota.g";
+import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1, Ableitung_talent, Max_talent } from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData, type Readable, type Writable } from "../misc/StoreManager2";
 import { derived, type Readable as ReadableOriginal, type Writable as WritableOriginal } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
@@ -19,9 +19,23 @@ export type MissingRequirements = { type: 'tag', id: string }
     | { type: 'Not', sub: MissingRequirements }
     | { type: 'And', sub: MissingRequirements[] }
     | { type: 'Or', sub: MissingRequirements[] }
-
-
     ;
+
+
+export type PersistanceData = {
+    stammdatenId: string,
+    id: string,
+    name: string,
+    age: number,
+    pfad: Record<string, Record<string, number>>,
+    besonderheiten: Record<string, number>,
+    fertigkeiten: Record<string, number>,
+    talente: Record<string, number>,
+    eigenschaften: Record<string, number>,
+    gattung?: string,
+    art?: string,
+    morph?: string,
+}
 
 type MapKeyData<K> = {
     [e in keyof K]: KeyData<K[e]>;
@@ -170,6 +184,9 @@ type TalentKeys<id extends string = string> = {
     Support: TalentSupportKey<id>,
     Fixed: TalentFixedKey<id>,
     Purchased: TalentPurchasedKey<id>,
+    NextLevelSupport: TalentNextLevelSupportKey<id>,
+    NextLevelEpCost: TalentNextLevelEpCostKey<id>,
+    PreviousLevelEpCost: TalentPreviousLevelEpCostKey<id>,
     Missing: TalentMissingKey<id>,
     Cost: CostKey<'talent', id>,
 }
@@ -179,6 +196,9 @@ type TalentBaseKey<id extends string = string> = Key<`/talent/${id}/base`, numbe
 type TalentSupportKey<id extends string = string> = Key<`/talent/${id}/support`, number>;
 type TalentFixedKey<id extends string = string> = Key<`/talent/${id}/fixed`, number>;
 type TalentPurchasedKey<id extends string = string> = Key<`/talent/${id}/purchased`, number>;
+type TalentNextLevelSupportKey<id extends string = string> = Key<`/talent/${id}/nextLevelSupport`, TalentSupportIncrease[]>;
+type TalentNextLevelEpCostKey<id extends string = string> = Key<`/talent/${id}/nextLevelEp`, number>;
+type TalentPreviousLevelEpCostKey<id extends string = string> = Key<`/talent/${id}/previousLevelEp`, number>;
 type TalentMissingKey<id extends string = string> = Key<`/talent/${id}/missing`, {
     wert: number;
     missing: MissingRequirements;
@@ -250,12 +270,21 @@ function entriesToCost(entries?: (readonly [string, number])[]): Cost {
 
 
 
+type TalentSupportIncrease = {
+    id: string;
+    increaseTaB: number;
+    increaseEP: number;
+};
+
 export class Charakter {
 
     public readonly twin: Charakter | undefined;
 
 
     public readonly ageStore: Writable<number>;
+    public readonly nameStore: Writable<string>;
+
+    public readonly persistanceStore: Readable<PersistanceData>;
 
     public readonly gattungsIdStore: Writable<string | undefined>;
     public readonly gattungsStore: Readable<GattungDefinition_lebewesen | undefined>;
@@ -298,6 +327,8 @@ export class Charakter {
         cost: Readable<TypeOfKey<CostKey<'fertigkeit'>>>,
     }> = {};
 
+
+
     public readonly talente: Record<string, {
         effective: Readable<number>,
         base: Readable<number>,
@@ -305,6 +336,10 @@ export class Charakter {
         purchased: Writable<number>,
         fixed: Readable<number>,
         missing: Readable<{ wert: number; missing: MissingRequirements; }[]>,
+        nextLevelSupport: Readable<TalentSupportIncrease[]>,
+        nextLevelEpCost: Readable<number>,
+        previousLevelEpCost: Readable<number>,
+
         cost: Readable<TypeOfKey<CostKey<'talent'>>>,
     }> = {};
 
@@ -810,6 +845,9 @@ export class Charakter {
             Purchased: StoreManager.key(`/talent/${Id}/purchased`).of<TypeOfKey<TalentPurchasedKey<id>>>(),
             Fixed: StoreManager.key(`/talent/${Id}/fixed`).of<TypeOfKey<TalentFixedKey<id>>>(),
             Missing: StoreManager.key(`/talent/${Id}/missing`).of<TypeOfKey<TalentMissingKey>>(),
+            NextLevelSupport: StoreManager.key(`/talent/${Id}/nextLevelSupport`).of<TypeOfKey<TalentNextLevelSupportKey>>(),
+            NextLevelEpCost: StoreManager.key(`/talent/${Id}/nextLevelEp`).of<TypeOfKey<TalentNextLevelEpCostKey>>(),
+            PreviousLevelEpCost: StoreManager.key(`/talent/${Id}/previousLevelEp`).of<TypeOfKey<TalentPreviousLevelEpCostKey>>(),
             Cost: StoreManager.key(`/talent/${Id}/cost`).of<TypeOfKey<CostKey<'talent', id>>>(),
         };
     }
@@ -872,9 +910,12 @@ export class Charakter {
     /**
      *
      */
-    constructor(stammdaten: Data, id: string, cloneFrom?: Charakter) {
+    constructor(stammdaten: Data, idOrPersisted: string | PersistanceData, cloneFrom?: Charakter) {
         this.stammdaten = stammdaten;
-        this.id = id;
+
+
+        this.id = typeof idOrPersisted == 'string' ? idOrPersisted : idOrPersisted.id;
+
 
 
 
@@ -891,6 +932,10 @@ export class Charakter {
         const morphPossibleKey = StoreManager.key('/organism/morph/possible').of<string[]>();
 
         const ageKey = StoreManager.key('/organism/age').of<number>();
+        const nameKey = StoreManager.key('/name').of<string>();
+
+        const dataStoreKey = StoreManager.key('/persistance').of<PersistanceData>();
+
 
         const costKey = StoreManager.key('/points/total').of<Cost>();
         const missingKey = StoreManager.key('/totalMissing').of<missingMapping[]>();
@@ -915,6 +960,8 @@ export class Charakter {
 
 
             this.ageStore = storeList[ageKey.Key].store as Writable<number>;
+            this.nameStore = storeList[nameKey.Key].store as Writable<string>;
+
 
             this.gattungsIdStore = storeList[gattungsIdKey.Key].store as Writable<string>;
             this.possibleGattungStore = storeList[gattungPossibleKey.Key].store as Readable<string[]>;
@@ -928,6 +975,7 @@ export class Charakter {
             this.possibleMorphStore = storeList[morphPossibleKey.Key].store as Readable<string[]>;
             this.morphStore = storeList[morphInstanceKey.Key].store as Readable<MorphDefinition_lebewesen>;
 
+            this.persistanceStore = storeList[dataStoreKey.Key].store as Readable<PersistanceData>;
 
             this.lebensAbschnitteStore = storeList[lebensabschnittKey.Key].store as Readable<{
                 gattung: LebensabschnittDefinition_lebewesen | undefined;
@@ -987,6 +1035,9 @@ export class Charakter {
                     purchased: storeList[keys.Purchased.Key].store as Writable<number>,
                     fixed: storeList[keys.Fixed.Key].store as Readable<number>,
                     missing: storeList[keys.Missing.Key].store as Readable<TypeOfKey<TalentMissingKey>>,
+                    nextLevelSupport: storeList[keys.NextLevelSupport.Key].store as Readable<TypeOfKey<TalentNextLevelSupportKey>>,
+                    nextLevelEpCost: storeList[keys.NextLevelEpCost.Key].store as Readable<TypeOfKey<TalentNextLevelEpCostKey>>,
+                    previousLevelEpCost: storeList[keys.PreviousLevelEpCost.Key].store as Readable<TypeOfKey<TalentPreviousLevelEpCostKey>>,
                     cost: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'talent'>>>,
                 };
             }
@@ -1030,6 +1081,7 @@ export class Charakter {
 
 
             this.ageStore = this.storeManager.writable(ageKey, 1);
+            this.nameStore = this.storeManager.writable(nameKey, '');
 
             this.gattungsIdStore = this.storeManager.writable(gattungsIdKey, undefined);
             this.possibleGattungStore = this.storeManager.derived(gattungPossibleKey, [], function (data) {
@@ -1131,6 +1183,39 @@ export class Charakter {
                 const costs = filterCost(cast.newValue);
                 return toCost(costs.flatMap(x => Object.entries(x)), ([v1, v2]) => [v1, v2] as const);
             });
+
+
+
+
+            this.persistanceStore = this.storeManager.derived(dataStoreKey, [
+                nameKey,
+                ageKey,
+                StoreManager.key('/pfad/**/purchased').of<Record<string, Record<string, { purchased: number }>>>(),
+                StoreManager.key('/besonderheit/*/purchased').of<Record<string, { purchased: number }>>(),
+                StoreManager.key('/fertigkeit/*/purchased').of<Record<string, { purchased: number }>>(),
+                StoreManager.key('/talent/*/purchased').of<Record<string, { purchased: number }>>(),
+                StoreManager.key('/eigenschaften/*/raw').of<Record<string, { raw: number }>>(),
+                gattungsIdKey,
+                artIdKey,
+                morphIdKey,
+            ], (data, [name, age, pfad, besonderheiten, fertigkeiten, talente, eigenschaften, gattung, art, morph]) => {
+                console.log('persist');
+                return {
+                    stammdatenId: this.stammdaten.id,
+                    id: this.id,
+                    name: name.newValue,
+                    age: age.newValue,
+                    pfad: Object.fromEntries(Object.entries(pfad.newValue).map(([key, levls]) => [key, Object.fromEntries(Object.entries(levls).filter(([, { purchased: value }]) => value > 0).map(([key, { purchased: value }]) => [key, value]))]).filter(([, subRecord]) => Object.values(subRecord).length > 0)),
+                    besonderheiten: Object.fromEntries(Object.entries(besonderheiten.newValue).filter(([, { purchased: value }]) => value > 0).map(([key, { purchased: value }]) => [key, value])),
+                    fertigkeiten: Object.fromEntries(Object.entries(fertigkeiten.newValue).filter(([, { purchased: value }]) => value > 0).map(([key, { purchased: value }]) => [key, value])),
+                    talente: Object.fromEntries(Object.entries(talente.newValue).filter(([, { purchased: value }]) => value > 0).map(([key, { purchased: value }]) => [key, value])),
+                    eigenschaften: Object.fromEntries(Object.entries(eigenschaften.newValue).filter(([, { raw: value }]) => value > 0).map(([key, { raw: value }]) => [key, value])),
+                    gattung: gattung.newValue,
+                    art: art.newValue,
+                    morph: morph.newValue
+                };
+            })
+
 
 
             const mapDependecyToKeys = (deps: DependencyData[], types?: (keyof BesonderheitKeys | keyof FertigkeitKeys | keyof TalentKeys | keyof EigenschaftKeys)[]) => {
@@ -1762,6 +1847,9 @@ export class Charakter {
                     purchased: this.storeManager.writable(keys.Purchased, 0),
                     fixed: this.storeManager.readable(keys.Fixed),
                     missing: this.storeManager.readable(keys.Missing),
+                    nextLevelSupport: this.storeManager.readable(keys.NextLevelSupport),
+                    nextLevelEpCost: this.storeManager.readable(keys.NextLevelEpCost),
+                    previousLevelEpCost: this.storeManager.readable(keys.PreviousLevelEpCost),
                     cost: this.storeManager.readable(keys.Cost),
                 };
 
@@ -1769,6 +1857,7 @@ export class Charakter {
 
                 const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'), ['Effective']);
                 const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
+                const nextLevelDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Effective', 'Purchased', 'Fixed']);
                 const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
 
 
@@ -1822,6 +1911,32 @@ export class Charakter {
                 });
 
 
+                this.storeManager.derived(keys.NextLevelEpCost, [keys.Purchased, keys.Fixed, keys.Base], (data, [purchased, fixed, base]) => {
+
+                    const ep = purchased.newValue + fixed.newValue;
+                    const complexity = talent.Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+                    const levelCots = data.talentCostTabel[complexity]
+
+                    const { Kosten: { Wert: nextLevelCost } } = levelCots[base.newValue + 1];
+                    return nextLevelCost - ep;
+
+                });
+                this.storeManager.derived(keys.PreviousLevelEpCost, [keys.Purchased, keys.Fixed, keys.Base], (data, [purchased, fixed, base]) => {
+
+                    const ep = purchased.newValue + fixed.newValue;
+                    const complexity = talent.Komplexität.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+                    const levelCots = data.talentCostTabel[complexity]
+
+                    if (base.newValue == 0) {
+                        return -purchased.newValue;
+                    }
+                    const { Kosten: { Wert: nextLevelCost } } = levelCots[base.newValue - 1];
+                    const reduction = nextLevelCost - ep;
+                    return Math.max(reduction, -purchased.newValue);
+
+                });
+
+
 
                 this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
                     const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, levelDependency } = this.groupDependencyData(dependent);
@@ -1858,6 +1973,85 @@ export class Charakter {
                     const result = {} as Cost;
                     result[defaultKostData.Id] = purchased.newValue;
                     return result;
+                });
+
+                this.storeManager.derived(keys.NextLevelSupport, [keys.Base, keys.Support, ...nextLevelDependency], (data, [base, support, ...dependent]) => {
+                    const { talentDependency } = this.groupDependencyData(dependent);
+
+
+                    const talentLookup = toObjectKey(talentDependency, x => x.id);
+
+
+
+                    function calculateAbleitung(a: Ableitung_talent) {
+                        const x = a.Ableitung;
+
+                        const current = talentLookup[x.Id].Base.newValue;
+                        const currentEffective = talentLookup[x.Id].Effective.newValue;
+
+                        return Math.floor(Math.min(current, currentEffective) / x.Anzahl);
+                    }
+                    function calculateAbleitungNext(a: Ableitung_talent, min: number) {
+                        const x = a.Ableitung;
+                        const s = data.talentMap[x.Id];
+                        const current = talentLookup[x.Id].Base.newValue;
+                        const currentEffective = talentLookup[x.Id].Effective.newValue;
+
+                        const currentEP = talentLookup[x.Id].Fixed.newValue + talentLookup[x.Id].Purchased.newValue;
+
+                        if (currentEffective < current) {
+                            // caped
+                            return [];
+                        }
+                        const comp = s.Komplexität.toLocaleLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+
+                        const target = Math.max(min, Math.floor(current / x.Anzahl) + 1) * x.Anzahl;
+                        if (target > Data.MAX_TALENT) {
+                            return [];
+                        }
+                        const targetCostTotal = data.talentCostTabel[comp][target];
+                        const targetCost = targetCostTotal.Kosten.Wert - currentEP;
+                        return [
+                            {
+                                id: x.Id,
+                                increaseEP: targetCost,
+                                increaseTaB: target - current,
+                            } satisfies TalentSupportIncrease
+                        ];
+                    }
+
+                    function calculateMax(a: Max_talent): number[] {
+                        const x = a.Max;
+                        const s = (x.Ableitung?.map((y) => calculateAbleitung({ Ableitung: y })) ?? []).concat(
+                            x.Max?.map((y) => calculateMax({ Max: y }).reduce((p, c) => p + c, 0)) ?? []
+                        );
+                        return s.sort().reverse().slice(0, Math.min(s.length, x.Anzahl));
+                    }
+
+                    function calculateMaxNext(a: Max_talent, min: number): TalentSupportIncrease[] {
+                        const x = a.Max;
+                        const current = calculateMax(a);
+                        const currentMin = Math.max(
+                            current.length < a.Max.Anzahl ? 0 : current[current.length - 1] + 1,
+                            min
+                        );
+
+                        const s = (
+                            x.Ableitung?.flatMap((y) => calculateAbleitungNext({ Ableitung: y }, currentMin)) ?? []
+                        ).concat(x.Max?.flatMap((y) => calculateMaxNext({ Max: y }, currentMin)) ?? []);
+                        return s;
+                    }
+
+                    const nextDerivedLevelCost =
+                        (
+                            talent.Ableitungen?.Ableitung?.flatMap((x) =>
+                                calculateAbleitungNext({ Ableitung: x }, 1)
+                            ) ?? []
+                        )
+                            .concat(talent.Ableitungen?.Max?.flatMap((x) => calculateMaxNext({ Max: x }, 1)) ?? [])
+                            .sort((a, b) => a.increaseEP - b.increaseEP) ?? [];
+
+                    return nextDerivedLevelCost;
                 });
 
 
@@ -2049,8 +2243,35 @@ export class Charakter {
 
             }
 
+            if (typeof idOrPersisted == 'object') {
+                this.nameStore.set(idOrPersisted.name);
+                this.ageStore.set(idOrPersisted.age);
 
-            this.twin = new Charakter(stammdaten, id, this);
+                for (const [pfad, levelLookup] of Object.entries(idOrPersisted.pfad)) {
+                    for (const [levelId, value] of Object.entries(levelLookup)) {
+                        this.pfad[pfad]?.[levelId]?.purchased.set(value);
+                    }
+                }
+                for (const [id, value] of Object.entries(idOrPersisted.besonderheiten)) {
+                    this.besonderheiten[id].purchased.set(value);
+                }
+                for (const [id, value] of Object.entries(idOrPersisted.fertigkeiten)) {
+                    this.fertigkeiten[id].purchased.set(value);
+                }
+                for (const [id, value] of Object.entries(idOrPersisted.talente)) {
+                    this.talente[id].purchased.set(value);
+                }
+                for (const [id, value] of Object.entries(idOrPersisted.eigenschaften)) {
+                    this.eigenschaften[id].raw.set(value);
+                }
+                this.gattungsIdStore.set(idOrPersisted.gattung);
+                this.artIdStore.set(idOrPersisted.art);
+                this.morphIdStore.set(idOrPersisted.morph);
+
+            }
+
+
+            this.twin = new Charakter(stammdaten, idOrPersisted, this);
 
         }
 
@@ -2593,9 +2814,6 @@ export class Charakter {
                         return false;
                     }
 
-                    if (key == 'Gariches Reich' && key2 == 'Land') {
-                        console.info('onw')
-                    }
                     const newMissing = twinMissing.filter(x => !contains(currentMissing, x));
                     const removedMissing = currentMissing.filter(x => !contains(twinMissing, x));
 
@@ -2829,6 +3047,10 @@ function evaluateBerechnung(Berechnung: string, scope?: Record<string, number>, 
         scope = {};
     }
 
+    if (Object.values(scope).some(x => typeof x == 'object')) {
+        console.info('intserstins');
+    }
+
     function isOther(obj: any): obj is { newValue: unknown, key: Key<string, unknown> } {
         return ((obj as { key?: Key<string, unknown> }).key !== undefined);
 
@@ -2846,14 +3068,21 @@ function evaluateBerechnung(Berechnung: string, scope?: Record<string, number>, 
                 scope[element.id] = element.Effective.newValue;
         }
     }
+    try {
 
-    const result = mathjs.evaluate(Berechnung, scope);
-    if (isResultSet(result)) {
-        const entries = (result as { entries: any; }).entries;
-        return Array.isArray(entries) ? entries[entries.length - 1] : entries;
-    }
-    else {
-        return Array.isArray(result) ? result[result.length - 1] : result;
+        const result = mathjs.evaluate(Berechnung, scope);
+        if (isResultSet(result)) {
+            const entries = (result as { entries: any; }).entries;
+            return Array.isArray(entries) ? entries[entries.length - 1] : entries;
+        }
+        else {
+            return Array.isArray(result) ? result[result.length - 1] : result;
+        }
+    } catch (error) {
+
+        console.warn('scope was ', scope);
+
+        throw error;
     }
 
 }
