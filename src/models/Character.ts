@@ -41,7 +41,7 @@ type missingMapping = ({
         path: string;
     };
 }) & {
-    missing: MissingRequirements[];
+    missing: { wert: number, missing: MissingRequirements }[];
 };
 
 
@@ -937,6 +937,7 @@ export class Charakter {
 
 
             this.costStore = storeList[costKey.Key].store as Readable<Cost>;
+            this.missingStore = this.storeManager.readable(missingKey);
 
 
             for (const key of this.stammdaten.allEigenschaftKeys) {
@@ -1102,7 +1103,7 @@ export class Charakter {
                             else if (path.length == 2)
                                 return [{ missing: value, type: path[0], id: path[1] }] as missingMapping[];
                             else if (path.length == 3)
-                                return [{ missing: value, type: path[0], id: { path: path[1], level: path[2] } }] as missingMapping[];
+                                return [{ missing: value, type: 'level', id: { path: path[1], level: path[2] } }] as missingMapping[];
                             else
                                 throw '';
                         } else if (typeof value == 'object') {
@@ -2411,8 +2412,8 @@ export class Charakter {
                     // const timetag = `simulation-go-${type}-${key}-${key2 ?? ''}`;
                     // console.time(timetag);
 
-
                     const twin = this.twin;
+
                     if (twin === undefined) {
                         resolve({
                             changedCost: [],
@@ -2424,6 +2425,9 @@ export class Charakter {
                             requirements: { added: [], removed: [] }
                         } satisfies CharacterChange);
                         return;
+                    }
+                    if (twin.storeManager.checkClone()) {
+                        console.error('store maneger not reseted');
                     }
 
                     callback(twin);
@@ -2517,19 +2521,7 @@ export class Charakter {
                         .filter((x) => x.old != x.new || x.oldEp != x.newEp);
 
 
-                    for (const t of changedTalents) {
-                        if (t.newEp == -1 || t.oldEp == -1) {
-                            continue;
-                            console.log('test', {
-                                key: t.key,
-                                newEp: twin.talente[t.key].fixed.currentValue(),
-                                twinNewEp: twin.talente[t.key].purchased.currentValue(),
-                                oldEp: this.talente[t.key].fixed.currentValue(),
-                                twinOldEp: this.talente[t.key].purchased.currentValue()
-                            });
-                        }
 
-                    }
 
 
 
@@ -2600,6 +2592,10 @@ export class Charakter {
                         }
                         return false;
                     }
+
+                    if (key == 'Gariches Reich' && key2 == 'Land') {
+                        console.info('onw')
+                    }
                     const newMissing = twinMissing.filter(x => !contains(currentMissing, x));
                     const removedMissing = currentMissing.filter(x => !contains(twinMissing, x));
 
@@ -2635,14 +2631,14 @@ export class Charakter {
         const alweysStors = [this.costStore, this.missingStore];
         if (type == 'besonderheit') {
             if (this.besonderheiten[key] === undefined) {
-                throw new Error(`Unknown besondereit ${key}`);
+                throw new Error(`Unknown besonderheit ${key}`);
             }
             const xxx = this.getBesonterheitKeys(key);
             const stores = Object.values(xxx).map(x => this.storeManager.readable(x));
             return derived([...stores, ...alweysStors], handler);
         } else if (type == 'fertigkeit') {
             if (this.fertigkeiten[key] === undefined) {
-                throw new Error(`Unknown besondereit ${key}`);
+                throw new Error(`Unknown besonderheit ${key}`);
             }
             const xxx = this.getFertigkeitenKeys(key);
             const stores = Object.values(xxx).map(x => this.storeManager.readable(x));
@@ -2650,14 +2646,14 @@ export class Charakter {
             return derived([...stores, ...alweysStors], handler);
         } else if (type == 'talent') {
             if (this.talente[key] === undefined) {
-                throw new Error(`Unknown besondereit ${key}`);
+                throw new Error(`Unknown besonderheit ${key}`);
             }
             const xxx = this.getTalentKeys(key);
             const stores = Object.values(xxx).map(x => this.storeManager.readable(x));
             return derived([...stores, ...alweysStors], handler);
         } else if (type == 'level') {
             if (this.pfad[key][key2 ?? ''] === undefined) {
-                throw new Error(`Unknown besondereit ${key}`);
+                throw new Error(`Unknown besonderheit ${key}`);
             }
             const xxx = this.getLevelKeys(key, key2 ?? '');
             const stores = Object.values(xxx).map(x => this.storeManager.readable(x));
@@ -2696,8 +2692,6 @@ export class Charakter {
                         : a.missingOnId.level.localeCompare(b.missingOnId.level);
                     if (pathComp !== 0) {
                         return pathComp;
-                    } else {
-                        return -1;
                     }
 
                 }

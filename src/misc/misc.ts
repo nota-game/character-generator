@@ -180,21 +180,21 @@ export function renderRequirementMap(req: {
     wert: number;
     missing: MissingRequirements;
 }, data: Data, of:
-        { type: 'talent', value: TalentDefinition_talent| string }
+        { type: 'talent', value: TalentDefinition_talent | string }
 
     , options: (Charakter)): string;
 export function renderRequirementMap(req: {
     wert: number;
     missing: MissingRequirements;
 }, data: Data, of: { type: 'fertigkeit', value: FertigkeitDefinition_fertigkeit | string }
-    | { type: 'besondereit', value: BesonderheitDefinition_besonderheit | string }
+    | { type: 'besonderheit', value: BesonderheitDefinition_besonderheit | string }
     | { type: 'level', level: LevelDefinition_misc | string, pfad: PfadDefinition_pfad | string }
     , options?: ({ sex: Geschlecht_misc } | Charakter)): string;
 export function renderRequirementMap(req: {
     wert: number;
     missing: MissingRequirements;
 }, data: Data, of: { type: 'fertigkeit', value: FertigkeitDefinition_fertigkeit | string }
-    | { type: 'besondereit', value: BesonderheitDefinition_besonderheit | string }
+    | { type: 'besonderheit', value: BesonderheitDefinition_besonderheit | string }
     | { type: 'talent', value: TalentDefinition_talent | string }
     | { type: 'level', level: LevelDefinition_misc | string, pfad: PfadDefinition_pfad | string }
     , options?: ({ sex: Geschlecht_misc } | Charakter)) {
@@ -205,7 +205,7 @@ export function renderRequirementMap(req: {
 
         const fertigkeit = (typeof of.value == 'string') ? data?.fertigkeitenMap[of.value] : of.value;
         return `${text.substring(0, text.length - 1)}, um ${getTextFertigkeit(fertigkeit, req.wert, options)} zu Aktivieren.`
-    } else if (of.type == 'besondereit') {
+    } else if (of.type == 'besonderheit') {
         const besoderheit = (typeof of.value == 'string') ? data?.besonderheitenMap[of.value] : of.value;
         return `${text.substring(0, text.length - 1)}, um ${getTextBesonderheit(besoderheit, req.wert, options)} zu Aktivieren.`
     } else if (of.type == 'talent') {
@@ -246,7 +246,11 @@ export function renderRequirement(req: MissingRequirements, data: Data | undefin
         } else if (m.type === 'Level') {
             const d = data.pfadMap[m.pfad];
             const d2 = data.levelMap[m.pfad][m.id];
-            return `${getText(d.Name)} (${getText(d2.Name)})`;
+            if(m.Stufe==1){
+                return `${getText(d.Name)} (${getText(d2.Name)})`;
+            }else{
+                return `${getText(d.Name)} (${getText(d2.Name)}) auf ${m.Stufe}`;
+            }
         } else if (m.type === 'Talent') {
             const d = data.talentMap[m.id];
             return m.Kind === 'Effektiv'
@@ -332,8 +336,7 @@ export function renderRequirement(req: MissingRequirements, data: Data | undefin
                     } darf nicht vorhanden sein.`
                     : `${negNames[0]} darf nicht vorhanden sein.`;
             } else if (pos.length > 0) {
-
-                pos.length > 1
+                return pos.length > 1
                     ? `Es wird ${posNames
                         .slice(0, pos.length - 1)
                         .reduce((p, c) => (p == '' ? c : `${p}, ${c}`))} oder ${posNames[pos.length - 1]

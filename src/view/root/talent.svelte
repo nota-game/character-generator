@@ -28,7 +28,7 @@
 			addFuture = char.getSimulation(
 				'talent',
 				(other) => {
-					other.talente[key].purchased.update((n) => n + 1);
+					other.talente[key].purchased.update((n) => Math.max(0, n + 1));
 				},
 				key
 			);
@@ -36,7 +36,7 @@
 			removeFuture = char.getSimulation(
 				'talent',
 				(other) => {
-					other.talente[key].purchased.update((n) => n - 1);
+					other.talente[key].purchased.update((n) => Math.max(0, n - 1));
 				},
 				key
 			);

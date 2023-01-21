@@ -30,7 +30,9 @@
 			addFuture = char.getSimulation(
 				'besonderheit',
 				(other) => {
-					other.besonderheiten[key].purchased.update((n) => n + 1);
+					other.besonderheiten[key].purchased.update((n) =>
+						Math.max(0, Math.min(entry.Stufe.length, n + 1))
+					);
 				},
 				key
 			);
@@ -38,7 +40,9 @@
 			removeFuture = char.getSimulation(
 				'besonderheit',
 				(other) => {
-					other.besonderheiten[key].purchased.update((n) => n - 1);
+					other.besonderheiten[key].purchased.update((n) =>
+						Math.max(0, Math.min(entry.Stufe.length, n - 1))
+					);
 				},
 				key
 			);
@@ -54,7 +58,6 @@
 	{$effective}/{entry.Stufe.length}
 	<!-- <input type="number" bind:value={$purchased} min={0} max={entry.Stufe.length} /> -->
 	{JSON.stringify($cost)}
-
 
 	<button
 		on:click={() => purchased.update((x) => x + 1)}
@@ -84,12 +87,11 @@
 		<ul>
 			{#each $missing as m}
 				<li class="missing">
-					{renderRequirementMap(m, data, { type: 'besondereit', value: entry }, char)}
+					{renderRequirementMap(m, data, { type: 'besonderheit', value: entry }, char)}
 				</li>
 			{/each}
 		</ul>
 	{/if}
-
 </div>
 
 <!-- {/if} -->

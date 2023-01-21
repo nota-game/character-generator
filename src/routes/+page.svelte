@@ -10,6 +10,7 @@
 	import Tag from 'src/view/root/tag.svelte';
 	import { filter } from 'mathjs';
 	import PathLevel from 'src/view/root/pathLevel.svelte';
+	import { renderRequirementMap } from 'src/misc/misc';
 
 	let char: Charakter | undefined;
 
@@ -39,7 +40,6 @@
 
 <h1>Welcome to Nota Char-gen</h1>
 <p>Alles gelöscht und neu angefange😱</p>
-
 
 <hr />
 {#if char}
@@ -119,11 +119,56 @@
 		{/each}
 	{/if}
 
-	<div>
-		<pre class="missing">
-{JSON.stringify($missingStore, undefined, 1)}
-    </pre>
-	</div>
+	<ul>
+		{#if $missingStore && $data && char}
+			{#each $missingStore as m}
+				{#if m.type == 'besonderheit' || m.type == 'fertigkeit'}
+					{#each m.missing as mm}
+						<li>
+							{renderRequirementMap(
+								mm,
+								$data,
+								{
+									type: m.type,
+									value: m.id
+								},
+								char
+							)}
+						</li>
+					{/each}
+				{:else if m.type == 'talent'}
+					{#each m.missing as mm}
+						<li>
+							{renderRequirementMap(
+								mm,
+								$data,
+								{
+									type: m.type,
+									value: m.id
+								},
+								char
+							)}
+						</li>
+					{/each}
+				{:else if m.type == 'level'}
+					{#each m.missing as mm}
+						<li>
+							{renderRequirementMap(
+								mm,
+								$data,
+								{
+									type: 'level',
+									pfad: m.id.path,
+									level: m.id.level
+								},
+								char
+							)}
+						</li>
+					{/each}
+				{/if}
+			{/each}
+		{/if}
+	</ul>
 {:else}
 	loading…
 {/if}

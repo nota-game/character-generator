@@ -32,7 +32,9 @@
 			addFuture = char.getSimulation(
 				'fertigkeit',
 				(other) => {
-					other.fertigkeiten[key].purchased.update((n) => n + 1);
+					other.fertigkeiten[key].purchased.update((n) =>
+						Math.max(0, Math.min(entry.Stufe.length, n + 1))
+					);
 				},
 				key
 			);
@@ -40,7 +42,9 @@
 			removeFuture = char.getSimulation(
 				'fertigkeit',
 				(other) => {
-					other.fertigkeiten[key].purchased.update((n) => n - 1);
+					other.fertigkeiten[key].purchased.update((n) =>
+						Math.max(0, Math.min(entry.Stufe.length, n - 1))
+					);
 				},
 				key
 			);

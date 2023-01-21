@@ -7,6 +7,7 @@ import type structuredClone from "@ungap/structured-clone";
 import { deepEqual } from "ts-deep-equal";
 import type { Data } from "src/models/Data";
 import { filterNull } from "./misc";
+import { cosh } from "mathjs";
 
 export declare type Invalidator<T> = (value?: T) => void;
 
@@ -172,11 +173,34 @@ export default class StoreManager<Param> {
         }
     }
 
+    public checkClone() {
+        if (!window.debug) {
+            return;
+        }
+        if (this.clonedFrom == undefined) {
+            return;
+        }
+        let errors = false;
+        for (const key of Object.keys(this.data)) {
+            if (this.data[key].value != this.clonedFrom.data[key].value) {
+                console.warn('A value Changed', key);
+                errors = true;
+            }
+        }
+        return errors;
+    }
     public resetClone() {
         if (this.clonedFrom == undefined) {
             return;
         }
-        for (const key of Object.keys(this.data)) {
+        if (window.debug) {
+            for (const key of Object.keys(this.data)) {
+                if (this.data[key].value != this.clonedFrom.data[key].value && !this.changedValues.has(key)) {
+                    console.warn('A value Changed that was not marked as changed');
+                }
+            }
+        }
+        for (const key of this.changedValues) {
             this.data[key].value = this.clonedFrom.data[key].value;
             this.data[key].oldValues = this.clonedFrom.data[key].oldValues;
         }
@@ -321,8 +345,7 @@ export default class StoreManager<Param> {
 
             if ((typeof possibleNewValue !== "object") || Object.keys(possibleNewValue ?? {}).length > 0) {
 
-                current.value = possibleNewValue;
-                current.manager.changedValues.add(current.id);
+                this.setValue(current, possibleNewValue);
                 // current.needsUpdate.delete(key.Key);
 
             }
@@ -342,8 +365,7 @@ export default class StoreManager<Param> {
 
 
                         if (!(other.compare ?? deepEqual)(newValue, other.value)) {
-                            other.value = newValue;
-                            current.manager.changedValues.add(current.id);
+                            this.setValue<T>(other, newValue);
                             this.Notify(other);
                         }
                     }
@@ -368,8 +390,8 @@ export default class StoreManager<Param> {
                 options.configureData(current);
             }
             current.fn = set;
-            current.value = current.fn(this.staticData);
-            current.manager.changedValues.add(current.id);
+
+            this.setValue(current, current.fn(this.staticData))
             this.Notify(current);
             // current.needsUpdate.delete(key.Key);
             current.storeType = storeType;
@@ -383,6 +405,11 @@ export default class StoreManager<Param> {
         return current;
     }
 
+
+    private setValue<T>(dataHolder: SubscriberData<T, Param>, newValue: T | typeof UNINITILEZED) {
+        dataHolder.value = newValue;
+        dataHolder.manager.changedValues.add(dataHolder.id);
+    }
 
     private static mergeDeep(target: any, ...sources: any[]): any {
         function isObject(item: any) {
@@ -411,9 +438,10 @@ export default class StoreManager<Param> {
 
     private writableInternal<T, KeyString extends string>(key: Key<KeyString, T>, getCurrent: (key: Key<any, T>, set: (this: SubscriberData<T, Param>, data: Param) => (T | typeof UNINITILEZED)) => SubscriberData<T, Param>, value: T, compare?: (a: T, b: T) => boolean): Writable<T> {
 
-        let setValue = value;
-        const setFunction = () => setValue;
+        let dataValueStore: SubscriberData<T, Param> | undefined = undefined
+        const setFunction = () => dataValueStore?.value ?? value;
         const current = getCurrent(key, setFunction);
+        dataValueStore = current;
         current.changingDependent.delete(key.Key);
         current.compare = compare;
         // if (current.fn) {
@@ -435,10 +463,9 @@ export default class StoreManager<Param> {
         const set = (new_value: T): void => {
             if (current.value === UNINITILEZED || !(current.compare ?? deepEqual)(current.value, new_value)) {
                 this.invalidate(current);
-                setValue = new_value;
-                current.value = new_value;
-                current.manager.changedValues.add(current.id);
-                this.clonedTo.forEach(x => { x.data[current.id].value = new_value; x.changedValues.add(current.id); })
+                // storedValue = new_value;
+                this.setValue(current, new_value);
+                this.clonedTo.forEach(x => x.setValue(x.data[current.id], new_value))
                 this.Notify(current);
 
                 // Debug
@@ -457,10 +484,9 @@ export default class StoreManager<Param> {
             const new_value = updater(current.value);
             if (current.value == UNINITILEZED || !(current.compare ?? deepEqual)(current.value, new_value)) {
                 this.invalidate(current);
-                setValue = new_value;
-                current.value = new_value;
-                current.manager.changedValues.add(current.id);
-                this.clonedTo.forEach(x => { x.data[current.id].value = new_value; x.changedValues.add(current.id); })
+                // storedValue = new_value;
+                this.setValue(current, new_value);
+                this.clonedTo.forEach(x => x.setValue(x.data[current.id], new_value));
                 this.Notify(current);
             }
         }
@@ -470,7 +496,7 @@ export default class StoreManager<Param> {
         //     return x;
         // })
         return {
-            subscribe, set, update, key, currentValue: () => setValue
+            subscribe, set, update, key, currentValue: () => current.value
         };
     }
 
@@ -663,11 +689,11 @@ export default class StoreManager<Param> {
                 n.needUpdate = false;
                 const newValue = n.fn(this.staticData);
                 if (newValue !== UNINITILEZED && !(n.compare ?? deepEqual)(n.value, newValue)) {
-                    n.value = newValue;
-                    n.manager.changedValues.add(n.id);
+
+                    this.setValue(n, newValue);
                     subscribersToNotiyf.add(n.id);
 
-                    this.clonedTo.forEach(x => { x.data[n.id].value = newValue; x.changedValues.add(n.id); })
+                    this.clonedTo.forEach(x => x.setValue(x.data[n.id], newValue));
 
                     // we need to note the change before we notify
                     this.recordChange();

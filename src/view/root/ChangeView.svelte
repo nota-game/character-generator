@@ -40,8 +40,7 @@
 				<li>
 					{getTextTalent(data.talentMap[b.key], char, 'Name')} auf {b.new}
 					{#if b.newEp - b.oldEp !== 0}
-						({b.newEp - b.oldEp} EP)
-						({b.newEp} - {b.oldEp} EP)
+						(+{b.newEp - b.oldEp} EP)
 					{/if}
 				</li>
 			{/each}
@@ -52,10 +51,21 @@
 		<ul>
 			{#each change.changedTalents.filter((x) => x.old != 0 && x.new > x.old) as b}
 				<li>
-					{getTextTalent(data.talentMap[b.key], char)} auf {b.new}
+					{getTextTalent(data.talentMap[b.key], char, 'Name')} von {b.old} auf {b.new}
 					{#if b.newEp - b.oldEp !== 0}
-						({b.newEp - b.oldEp} EP)
+						(+{b.newEp - b.oldEp} EP)
 					{/if}
+				</li>
+			{/each}
+		</ul>
+	{/if}
+	{#if change.changedTalents.filter((x) => x.old === x.new && x.newEp > x.oldEp).length > 0}
+		<div>Zugewonnene EP für Talente</div>
+		<ul>
+			{#each change.changedTalents.filter((x) => x.old === x.new && x.newEp > x.oldEp) as b}
+				<li>
+					{getTextTalent(data.talentMap[b.key], char, 'Name')}
+					+{b.newEp - b.oldEp} EP
 				</li>
 			{/each}
 		</ul>
@@ -65,7 +75,7 @@
 		<ul>
 			{#each change.changedTalents.filter((x) => x.new != 0 && x.new < x.old) as b}
 				<li>
-					{getTextTalent(data.talentMap[b.key], char)} auf {b.new}
+					{getTextTalent(data.talentMap[b.key], char, 'Name')} von von {b.old} auf {b.new}
 					{#if b.newEp - b.oldEp !== 0}
 						({b.newEp - b.oldEp} EP)
 					{/if}
@@ -78,11 +88,22 @@
 		<ul>
 			{#each change.changedTalents.filter((x) => x.new == 0 && x.old != x.new) as b}
 				<li>
-					{getTextTalent(data.talentMap[b.key], char)}
+					{getTextTalent(data.talentMap[b.key], char, 'Name')}
 					{b.old}
 					{#if b.newEp - b.oldEp !== 0}
 						({b.newEp - b.oldEp} EP)
 					{/if}
+				</li>
+			{/each}
+		</ul>
+	{/if}
+	{#if change.changedTalents.filter((x) => x.old === x.new && x.newEp < x.oldEp).length > 0}
+		<div>Reduzierte EP für Talente</div>
+		<ul>
+			{#each change.changedTalents.filter((x) => x.old === x.new && x.newEp < x.oldEp) as b}
+				<li>
+					{getTextTalent(data.talentMap[b.key], char, 'Name')}
+					{b.newEp - b.oldEp} EP
 				</li>
 			{/each}
 		</ul>
@@ -183,7 +204,7 @@
 								data.pfadMap[r.missingOnId.path],
 								data.levelMap[r.missingOnId.path][r.missingOnId.level],
 								char
-							)}
+							)} {r.wert}
 						{:else if r.missingOnType == 'fertigkeit'}
 							{getTextFertigkeit(data.fertigkeitenMap[r.missingOnId], r.wert, char)}
 						{:else if r.missingOnType == 'besonderheit'}
@@ -202,7 +223,7 @@
 							{renderRequirementMap(
 								{ missing: r.missing, wert: r.wert },
 								data,
-								{ type: 'besondereit', value: r.missingOnId },
+								{ type: 'besonderheit', value: r.missingOnId },
 								char
 							)}
 						{:else if r.missingOnType == 'talent'}
@@ -243,7 +264,7 @@
 								data.pfadMap[r.missingOnId.path],
 								data.levelMap[r.missingOnId.path][r.missingOnId.level],
 								char
-							)}
+							)} {r.wert}
 						{:else if r.missingOnType == 'fertigkeit'}
 							{getTextFertigkeit(data.fertigkeitenMap[r.missingOnId], r.wert, char)}
 						{:else if r.missingOnType == 'besonderheit'}
@@ -262,7 +283,7 @@
 							{renderRequirementMap(
 								{ missing: r.missing, wert: r.wert },
 								data,
-								{ type: 'besondereit', value: r.missingOnId },
+								{ type: 'besonderheit', value: r.missingOnId },
 								char
 							)}
 						{:else if r.missingOnType == 'talent'}

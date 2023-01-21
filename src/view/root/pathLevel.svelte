@@ -27,7 +27,9 @@
 			addFuture = char.getSimulation(
 				'level',
 				(other) => {
-					other.pfad[pathId][levelId].purchased.update((n) => n + 1);
+					other.pfad[pathId][levelId].purchased.update((n) =>
+						Math.max(0, Math.min(entry.WiederhoteNutzung, n + 1))
+					);
 				},
 				pathId,
 				levelId
@@ -36,7 +38,9 @@
 			removeFuture = char.getSimulation(
 				'level',
 				(other) => {
-					other.pfad[pathId][levelId].purchased.update((n) => n - 1);
+					other.pfad[pathId][levelId].purchased.update((n) =>
+						Math.max(0, Math.min(entry.WiederhoteNutzung, n - 1))
+					);
 				},
 				pathId,
 				levelId
