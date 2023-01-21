@@ -176,8 +176,9 @@ export default class StoreManager<Param> {
         if (this.clonedFrom == undefined) {
             return;
         }
-        for (const key of this.changedValues) {
+        for (const key of Object.keys(this.data)) {
             this.data[key].value = this.clonedFrom.data[key].value;
+            this.data[key].oldValues = this.clonedFrom.data[key].oldValues;
         }
         this.changedValues.clear();
     }
@@ -321,6 +322,7 @@ export default class StoreManager<Param> {
             if ((typeof possibleNewValue !== "object") || Object.keys(possibleNewValue ?? {}).length > 0) {
 
                 current.value = possibleNewValue;
+                current.manager.changedValues.add(current.id);
                 // current.needsUpdate.delete(key.Key);
 
             }
@@ -341,6 +343,7 @@ export default class StoreManager<Param> {
 
                         if (!(other.compare ?? deepEqual)(newValue, other.value)) {
                             other.value = newValue;
+                            current.manager.changedValues.add(current.id);
                             this.Notify(other);
                         }
                     }
@@ -366,6 +369,7 @@ export default class StoreManager<Param> {
             }
             current.fn = set;
             current.value = current.fn(this.staticData);
+            current.manager.changedValues.add(current.id);
             this.Notify(current);
             // current.needsUpdate.delete(key.Key);
             current.storeType = storeType;

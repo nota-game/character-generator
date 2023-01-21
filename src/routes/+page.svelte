@@ -40,6 +40,7 @@
 <h1>Welcome to Nota Char-gen</h1>
 <p>Alles gelöscht und neu angefange😱</p>
 
+
 <hr />
 {#if char}
 	<!-- {#if $cost} -->
@@ -124,7 +125,7 @@
     </pre>
 	</div>
 {:else}
-	loding
+	loading…
 {/if}
 
 <style lang="scss">

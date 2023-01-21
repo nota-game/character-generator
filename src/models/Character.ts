@@ -1574,7 +1574,7 @@ export class Charakter {
                 });
                 this.storeManager.derived(keys.Unbeschränkt, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
                     return Math.min(besonderheit.Stufe.length, Math.max(purchased.newValue, fixed.newValue));
-                   
+
                 });
 
 
@@ -1824,7 +1824,7 @@ export class Charakter {
 
                 this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
                     const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, levelDependency } = this.groupDependencyData(dependent);
-                    const total = (levelDependency.flatMap(x => data.levelMap[x.path][x.id].Talent?.map(y => y.EP * x.Effective.newValue) ?? [])).reduce((p, c) => p + c, 0);
+                    const total = (levelDependency.flatMap(x => data.levelMap[x.path][x.id].Talent?.filter(x => x.Id == talent.Id)?.map(y => y.EP * x.Effective.newValue) ?? [])).reduce((p, c) => p + c, 0);
                     return total;
                 });
 
@@ -2517,6 +2517,19 @@ export class Charakter {
                         .filter((x) => x.old != x.new || x.oldEp != x.newEp);
 
 
+                    for (const t of changedTalents) {
+                        if (t.newEp == -1 || t.oldEp == -1) {
+                            continue;
+                            console.log('test', {
+                                key: t.key,
+                                newEp: twin.talente[t.key].fixed.currentValue(),
+                                twinNewEp: twin.talente[t.key].purchased.currentValue(),
+                                oldEp: this.talente[t.key].fixed.currentValue(),
+                                twinOldEp: this.talente[t.key].purchased.currentValue()
+                            });
+                        }
+
+                    }
 
 
 
