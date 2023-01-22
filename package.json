@@ -23,6 +23,7 @@
 		"@typescript-eslint/eslint-plugin": "^5.45.0",
 		"@typescript-eslint/parser": "^5.45.0",
 		"@ungap/structured-clone": "^1.0.1",
+		"d3-scale": "^4.0.2",
 		"base64-uint8": "^0.0.1",
 		"eslint": "^8.28.0",
 		"eslint-config-prettier": "^8.5.0",

@@ -3001,7 +3001,7 @@ export class Charakter {
 
 
 
-type Schwelle = {
+export type Schwelle = {
     Wert: number;
     Name: {
         Lokalisirung: _Lokalisirung[];
@@ -3037,7 +3037,7 @@ type Schwelle = {
     }) | undefined;
 };
 
-type Quantile = {
+export type Quantile = {
     Wert: number;
     Quantil: number;
 };

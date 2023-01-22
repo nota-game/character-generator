@@ -9,6 +9,7 @@
 	} from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
 	import type { Readable, Writable } from 'svelte/store';
+	import ReiheControle from './reiheControle.svelte';
 
 	export let data: Data;
 	export let char: Charakter;
@@ -21,11 +22,35 @@
 	export let raw: Writable<number | undefined>;
 	export let meta: Readable<TypeOfKey<EigenschaftMetaKey>>;
 	export let cost: Readable<TypeOfKey<CostKey<'eigenschaft'>>>;
+
+	if ($raw == undefined) {
+		if ($meta?.type == 'bereich') {
+			$raw = $meta.default;
+		}
+	}
 </script>
 
 {#if filterGruppe == $meta?.gruppe}
-<div>
-    {getText($meta.Name)}
-    
-</div>
+	<div>
+		<h4>
+			{getText($meta.Name)}
+			{#if $meta.Abkürzung}
+				<small> ({getText($meta.Abkürzung)})</small>
+			{/if}
+		</h4>
+
+		{#if $meta.type == 'berechnung'}
+			{Math.round(($effective ?? 0) * 100) / 100}
+			{$meta.einheit}
+		{:else if $meta.type == 'bereich'}
+        {$effective}
+        {#if $meta.diskret}
+        <input type="number" max={$meta.maxInklusiv} min={$meta.minInklusiv} bind:value={$raw} />
+        {:else}
+        <input type="range" max={$meta.maxInklusiv} min={$meta.minInklusiv} bind:value={$raw} />
+        {/if}
+		{:else if $meta.type == 'reihe'}
+        <ReiheControle  {effective} {type} {raw} {meta} {cost} {char} {data} />
+		{/if}
+	</div>
 {/if}
