@@ -15,6 +15,10 @@
 	import EigenschaftenSelect from './char/pages/eigenschaften/eigenschaftenSelect.svelte';
 	import Fallback from './root/fallback.svelte';
 	import { noop } from 'svelte/internal';
+	import PfadSelect from './char/pages/pfade/pfadSelect.svelte';
+	import BesonderheitenSelect from './char/pages/besonderheiten/besonderheitenSelect.svelte';
+	import FertigkeitenSelect from './char/pages/fertigkeiten/fertigkeitenSelect.svelte';
+	import TalenteSelect from './char/pages/talente/talenteSelect.svelte';
 
 	let data = writable<Data | undefined>(undefined);
 	let char = writable<Charakter | undefined>(undefined);
@@ -103,14 +107,22 @@
 		<TabPanel>
 			<EigenschaftenSelect char={$char} data={$data} />
 		</TabPanel>
-		{#each Object.entries($data.pfadCategoryMap) as [_, value]}
-			<TabPanel>{getText(value.Name)}</TabPanel>
+		{#each Object.entries($data.pfadCategoryMap) as [category]}
+			<TabPanel>
+				<PfadSelect char={$char} data={$data} {category} />
+			</TabPanel>
 		{/each}
-		{#each $data.Instance.Daten.Besonderheiten.map((x) => x.Kategorie) as value}
-			<TabPanel>{getText(value)}</TabPanel>
+		{#each $data.Instance.Daten.Besonderheiten.map((x) => x.KategorieId) as category}
+			<TabPanel>
+				<BesonderheitenSelect char={$char} data={$data} {category} />
+			</TabPanel>
 		{/each}
-		<TabPanel>Talente</TabPanel>
-		<TabPanel>Fertigkeiten</TabPanel>
+		<TabPanel>
+			<TalenteSelect char={$char} data={$data} />
+		</TabPanel>
+		<TabPanel>
+			<FertigkeitenSelect char={$char} data={$data} />
+		</TabPanel>
 		<TabPanel>
 			<Fallback char={$char} data={$data} />
 		</TabPanel>

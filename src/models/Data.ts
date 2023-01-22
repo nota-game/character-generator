@@ -7,7 +7,7 @@ import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
 import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, BedingungsAuswahl_besonderheit, LevelAuswahl_misc, BedingungsAuswahl_misc, Schutzwert_kampf_ausstattung, AbleitungsAuswahl_talent, LevelDefinition_misc } from 'src/data/nota.g';
-import { distinct } from 'src/misc/misc';
+import { distinct, toObjectKey } from 'src/misc/misc';
 
 // type lebensabschnittData =
 //     | {
@@ -40,7 +40,7 @@ export class Data {
     public static readonly MAX_TALENT = 130;
 
     public readonly talentMap: Record<string, Readonly<TalentDefinition_talent & { Kategorie: string }>>;
-    public readonly talentCategoryMap: Record<string, Record<string, Readonly<TalentDefinition_talent>>>;
+    public readonly talentCategoryMap: Record<string, { Name: Lokalisierungen_misc, talente: Record<string, Readonly<TalentDefinition_talent>> }>;
 
     public readonly talentCostTabel: readonly (readonly { readonly Kosten: { readonly Id: string; readonly Wert: number; }; }[])[];
 
@@ -49,12 +49,12 @@ export class Data {
 
     public readonly pfadMap: Record<string, Readonly<PfadDefinition_pfad & { Kategorie: string }>>;
     public readonly levelMap: Record<string, Record<string, Readonly<LevelDefinition_misc>>>;
-    public readonly pfadCategoryMap: Record<string, { Name: Lokalisierungen_misc, Beschreibung: Lokalisierungen_misc } & Record<string, Readonly<PfadDefinition_pfad>>>;
+    public readonly pfadCategoryMap: Record<string, { Name: Lokalisierungen_misc, Beschreibung: Lokalisierungen_misc, levels: Record<string, Readonly<PfadDefinition_pfad>> }>;
 
     public readonly tagMap: Record<string, Readonly<TagDefinition_misc>>;
 
     public readonly fertigkeitenMap: Record<string, Readonly<FertigkeitDefinition_fertigkeit & { Kategorie: string }>>;
-    public readonly fertigkeitenCategoryMap: Record<string, Record<string, Readonly<FertigkeitDefinition_fertigkeit>>>;
+    public readonly fertigkeitenCategoryMap: Record<string, { Name: Lokalisierungen_misc, fertigkeiten: Record<string, Readonly<FertigkeitDefinition_fertigkeit>> }>;
     public readonly StandardKosten: string;
     // public readonly lebensabschnittLookup: { [key: string]: lebensabschnittData };
     public readonly morphLookup: {
@@ -657,10 +657,11 @@ export class Data {
 
         this.StandardKosten = data.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten === true)[0].Id
         this.talentMap = data.Daten.Talente.flatMap(x => x.Talent.map(y => ({ ...y, Kategorie: x.KategorieId }))).reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, TalentDefinition_talent & { Kategorie: string }>);
-        this.talentCategoryMap = data.Daten.Talente.map(x => x.Talent
-            .map(y => ({ ...y, Kategorie: x.KategorieId })).reduce((p, c) => { p.t[c.Id] = c; return p; }, { id: x.KategorieId, t: {} } as { id: string, t: Record<string, TalentDefinition_talent> })
-        )
-            .reduce((p, c) => { p[c.id] = c.t; return p; }, {} as Record<string, Record<string, TalentDefinition_talent>>);
+        this.talentCategoryMap = toObjectKey(data.Daten.Talente.map(x => ({ id: x.KategorieId, Name: x.Kategorie, talente: toObjectKey(x.Talent, x => x.Id) })
+            // .map(y => ({ ...y }))
+            // .reduce((p, c) => { p.t[c.Id] = c; return p; }, { id: x.KategorieId, t: {} } as { id: string, t: Record<string, TalentDefinition_talent> })
+        ), x => x.id);
+        ;
 
 
         this.tagMap = data.Daten.Tags.Tag.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, TagDefinition_misc>)
@@ -670,13 +671,14 @@ export class Data {
 
 
         this.pfadCategoryMap = data.Daten.Pfade.map(x => ({
+            id: x.Id,
             Name: x.Name,
             Beschreibung: x.Beschreibung,
-            ...x.Pfad
-                .map(y => ({ ...y, Kategorie: x.Id })).reduce((p, c) => { p.t[c.Id] = c; return p; }, { id: x.Id, t: {} } as { id: string, t: Record<string, PfadDefinition_pfad> })
+            levels: x.Pfad
+            // .map(y => ({ ...y, Kategorie: x.Id })).reduce((p, c) => { p.t[c.Id] = c; return p; }, { id: x.Id, t: {} } as { id: string, t: Record<string, PfadDefinition_pfad> })
         })
         )
-            .reduce((p, c) => { p[c.id] = { ...c.t, Beschreibung: c.Beschreibung, Name: c.Name } as any; return p; }, {} as Record<string, { Name: Lokalisierungen_misc, Beschreibung: Lokalisierungen_misc } & Record<string, PfadDefinition_pfad>>);
+            .reduce((p, c) => { p[c.id] = { Beschreibung: c.Beschreibung, Name: c.Name, levels: c.levels } as any; return p; }, {} as Record<string, { Name: Lokalisierungen_misc, Beschreibung: Lokalisierungen_misc, levels: Record<string, PfadDefinition_pfad> }>);
 
 
         this.besonderheitenMap = data.Daten.Besonderheiten.flatMap(x => x.Besonderheit.map(y => ({ ...y, Kategorie: x.KategorieId }))).reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, BesonderheitDefinition_besonderheit & { Kategorie: string }>)
@@ -686,10 +688,13 @@ export class Data {
             .reduce((p, c) => { p[c.id] = c.t; return p; }, {} as Record<string, Record<string, BesonderheitDefinition_besonderheit>>);
 
         this.fertigkeitenMap = data.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit.map(y => ({ ...y, Kategorie: x.KategorieId }))).reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, FertigkeitDefinition_fertigkeit & { Kategorie: string }>)
-        this.fertigkeitenCategoryMap = data.Daten.Fertigkeiten.map(x => x.Fertigkeit
-            .map(y => ({ ...y, Kategorie: x.KategorieId })).reduce((p, c) => { p.t[c.Id] = c; return p; }, { id: x.KategorieId, t: {} } as { id: string, t: Record<string, FertigkeitDefinition_fertigkeit> })
+        this.fertigkeitenCategoryMap = data.Daten.Fertigkeiten.map(x => ({
+            id: x.KategorieId, Name: x.Kategorie, fertigketen: toObjectKey(x.Fertigkeit, y => y.Id)
+            // .map(y => ({ ...y }))
+            // .reduce((p, c) => { p.t[c.Id] = c; return p; }, { id: x.KategorieId, t: {} } as { id: string, t: Record<string, FertigkeitDefinition_fertigkeit> })
+        })
         )
-            .reduce((p, c) => { p[c.id] = c.t; return p; }, {} as Record<string, Record<string, FertigkeitDefinition_fertigkeit>>);
+            .reduce((p, c) => { p[c.id] = { Name: c.Name, fertigkeiten: c.fertigketen }; return p; }, {} as Record<string, { Name: Lokalisierungen_misc, fertigkeiten: Record<string, Readonly<FertigkeitDefinition_fertigkeit>> }>);
 
 
         const mappedTalentFunction = (() => {
