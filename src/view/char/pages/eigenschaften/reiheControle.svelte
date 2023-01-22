@@ -86,7 +86,7 @@
 		if (setAgePromise) {
 			return;
 		}
-		setAgePromise = dealay(150);
+		setAgePromise = dealay(10);
 		await setAgePromise;
 		setAgePromise = undefined;
 		raw.set(selectedArray[0]);

@@ -522,10 +522,14 @@ export default class StoreManager<Param> {
             const toAdd = this.prepareData(x, 'readable');
         });
         const current: SubscriberData<T, Param> = this.prepareData(key, 'aggregated', function (data) {
-            const missingStore = stores_array.map(x => this.manager.data[x.Key]).filter(x => !(x !== undefined && x.value !== UNINITILEZED && x.changingDependent.size == 0))
+            // const missingStore = stores_array.map(x => this.manager.data[x.Key]).filter(x => !(x !== undefined && x.value !== UNINITILEZED && x.changingDependent.size == 0))
+            // console.time(`check if ready derived store ${this.id}`);
             const everyThingReady = (this.changingDependent.size == 0) && stores_array.map(x => this.manager.data[x.Key]).every(x => x !== undefined && x.value !== UNINITILEZED && x.changingDependent.size == 0);
+            // console.timeEnd(`check if ready derived store ${this.id}`);
             if (everyThingReady || this.updateIncomplete) {
-                const changes = stores_array.map((x, i) => this.oldValues == undefined ? true : (this.manager.data[x.Key].compare ?? deepEqual)(this.manager.data[x.Key].value, this.oldValues[i]))
+                // console.time(`check changes derived store ${this.id}`);
+                const changes = stores_array.map((x, i) => this.oldValues == undefined ? true : !(this.manager.data[x.Key].compare ?? ((a, b) => a == b))(this.manager.data[x.Key].value, this.oldValues[i]))
+                // console.timeEnd(`check changes derived store ${this.id}`);
                 this.oldValues = stores_array.map(x => this.manager.data[x.Key].value);
                 const results = stores_array.map((x, i) => (
                     {
@@ -538,7 +542,11 @@ export default class StoreManager<Param> {
                     // we updated but not all values were present, so we need to update later again.
                     this.needUpdate = true;
                 }
-                return fn.call(this, data, single ? results[0] : results as any, this.value)
+                // console.time(`Update derived store ${this.id}`);
+                const result = fn.call(this, data, single ? results[0] : results as any, this.value);
+                // console.timeEnd(`Update derived store ${this.id}`);
+
+                return result;
             }
             return UNINITILEZED;
         }, {

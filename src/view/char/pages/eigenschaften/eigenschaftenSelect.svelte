@@ -54,7 +54,7 @@
 		if (setAgePromise) {
 			return;
 		}
-		setAgePromise = dealay(2000);
+		setAgePromise = dealay(10);
 		await setAgePromise;
 		setAgePromise = undefined;
 		char.ageStore.set(ageArray[0]);

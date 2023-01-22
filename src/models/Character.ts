@@ -1,4 +1,4 @@
-import type { MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1, Ableitung_talent, Max_talent } from "../data/nota.g";
+import type { ModWert_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1, Ableitung_talent, Max_talent } from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData, type Readable, type Writable } from "../misc/StoreManager2";
 import { derived, type Readable as ReadableOriginal, type Writable as WritableOriginal } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
@@ -1372,7 +1372,7 @@ export class Charakter {
                     }
 
 
-                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency, otherDependency } = this.groupDependencyData(dependent);
 
 
 
@@ -1478,6 +1478,23 @@ export class Charakter {
 
                     // check modifier
 
+                    function getMods(obj: any, property: string): ModWert_lebewesen[] {
+                        if (typeof obj !== 'object') {
+                            return [];
+                        }
+                        return Object.entries(obj).flatMap(([key, value]: [string, any]) => {
+                            if (key == 'Mods' && value['Eigenschaften'] != undefined && value['Eigenschaften']['Mod'] !== undefined && Array.isArray(value['Eigenschaften']['Mod'])) {
+                                const mods = value.Eigenschaften.Mod as Partial<ModWert_lebewesen>[];
+                                return mods.filter((x): x is ModWert_lebewesen => x.Eigenschaft == property && x.Mod != undefined && x.Type !== undefined)
+                            }
+                            return getMods(value, property);
+
+
+                        });
+
+
+                    }
+
                     const mods = [
                         ...fertigkeitDependency.flatMap(x => {
                             const instance = data.fertigkeitenMap[x.id];
@@ -1494,10 +1511,10 @@ export class Charakter {
                             )
                         }),
 
-                        ...dependent
-                            .filter((x): x is KeyData<LebensabschittGattungKey | LebensabschittArtKey | LebensabschittMorphKey> => x.key.Key.endsWith('/lebensabschnitt'))
-                            .flatMap(x =>
-                                notUndefined(x.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])),
+                        ...getMods(otherDependency.map(x=>x.newValue), key),
+                        // .filter((x): x is KeyData<LebensabschittGattungKey | LebensabschittArtKey | LebensabschittMorphKey> => x.key.Key.endsWith('/lebensabschnitt'))
+                        // .flatMap(x =>
+                        //     notUndefined(x.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])),
 
                         ...eigenschaftDependency
                             .flatMap((x) => {
