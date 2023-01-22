@@ -225,12 +225,12 @@
       <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="MU" gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
-            <![CDATA[MU]]>
+            <![CDATA[Mut]]>
           </misc:Lokalisirung>
         </misc:Name>
         <misc:Beschreibung>
           <misc:Lokalisirung Sprache="de">
-            <![CDATA[Wie MUig ein Charackter ist]]>
+            <![CDATA[Wie Muig ein Charackter ist]]>
           </misc:Lokalisirung>
         </misc:Beschreibung>
         <misc:Abkürzung>
@@ -277,7 +277,7 @@
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
-            <![CDATA[KL]]>
+            <![CDATA[Klugheit]]>
           </misc:Lokalisirung>
         </misc:Name>
         <misc:Beschreibung>
@@ -303,7 +303,7 @@
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
-            <![CDATA[IN]]>
+            <![CDATA[Intuition]]>
           </misc:Lokalisirung>
         </misc:Name>
         <misc:Beschreibung>
@@ -384,7 +384,7 @@
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
-            <![CDATA[SY]]>
+            <![CDATA[Sympathie]]>
           </misc:Lokalisirung>
         </misc:Name>
         <misc:Beschreibung>
@@ -411,7 +411,7 @@
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
-            <![CDATA[antipathie]]>
+            <![CDATA[Antipathie]]>
           </misc:Lokalisirung>
         </misc:Name>
         <misc:Beschreibung>

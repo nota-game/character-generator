@@ -362,7 +362,7 @@ export class Charakter {
 
 
     public readonly stammdaten: Data;
-    private readonly id: string;
+    public readonly id: string;
 
     private readonly storeManager: StoreManager<Data>;
 

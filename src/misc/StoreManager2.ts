@@ -350,7 +350,7 @@ export default class StoreManager<Param> {
 
             }
 
-            if (current.storeType == 'aggregated'||current.storeType == 'writable') {
+            if (current.storeType == 'aggregated' || current.storeType == 'writable') {
 
                 Object.values(this.data).forEach(other => {
                     const reg = generateRegex(other.id);
@@ -468,11 +468,13 @@ export default class StoreManager<Param> {
                 this.clonedTo.forEach(x => x.setValue(x.data[current.id], new_value))
                 this.Notify(current);
 
-                // Debug
-                for (const [key, value] of (Object.entries(this.data))) {
-                    if (value.changingDependent.size > 0) {
-                        console.warn(`Not everything notified when changing ${current.id}: ${value.id} has missing entrys, cleanup ${this.clonedFrom == undefined ? 'main' : 'clone'}…`, value.changingDependent);
-                        value.changingDependent.clear();
+                if (window.debug) {
+                    // Debug
+                    for (const [, value] of (Object.entries(this.data))) {
+                        if (value.changingDependent.size > 0) {
+                            console.warn(`Not everything notified when changing ${current.id}: ${value.id} has missing entrys, cleanup ${this.clonedFrom == undefined ? 'main' : 'clone'}…`, value.changingDependent);
+                            value.changingDependent.clear();
+                        }
                     }
                 }
             }

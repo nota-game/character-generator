@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { Charakter, type PersistanceData } from 'src/models/Character';
+	import { v4 as uuidv4 } from 'uuid';
 	import { Data } from 'src/models/Data';
-	import { get, writable } from 'svelte/store';
+	import { get, writable, type Unsubscriber } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import pako from 'pako';
 	import * as base64 from 'base64-uint8';
-	import { local } from 'src/misc/storage';
+	import { localStorageChar } from 'src/misc/storage';
 	import Overview from './char/pages/overview.svelte';
 	import { Tabs, Tab, TabList, TabPanel } from 'svelte-tabs';
 	import { getText } from 'src/misc/misc';
@@ -13,6 +14,7 @@
 	import OrganismSelect from './char/pages/organism/organismSelect.svelte';
 	import EigenschaftenSelect from './char/pages/eigenschaften/eigenschaftenSelect.svelte';
 	import Fallback from './root/fallback.svelte';
+	import { noop } from 'svelte/internal';
 
 	let data = writable<Data | undefined>(undefined);
 	let char = writable<Charakter | undefined>(undefined);
@@ -27,30 +29,25 @@
 		dev.set(!window.location.pathname.includes('character-generator'));
 		mounted = true;
 		updateChar(charId);
+		let unsubscriber: Unsubscriber = noop;
+		localStorageChar.subscribe(async (newCharData) => {
+			const oldChar = get(char);
+			if (newCharData?.id != oldChar?.id || newCharData?.stammdatenId != oldChar?.stammdaten.id) {
+				const newData = await Data.init(false, newCharData?.stammdatenId);
+				if (newData) {
+					unsubscriber();
+					const newChar = new Charakter(newData, newCharData ?? charId ?? uuidv4());
+					$data = newData;
+					$char = newChar;
+					unsubscriber = newChar.persistanceStore.subscribe((v) => localStorageChar.set(v));
+				}
+			}
+		});
 	});
 
 	async function updateChar(charId: string | undefined) {
 		if (mounted && charId) {
-			const currentChar = local<PersistanceData>('c' + charId);
-			const j = get(currentChar);
-			$data = await Data.init(false, j?.stammdatenId);
-			if ($data) {
-				$char = new Charakter($data, j ?? charId);
-
-				$char?.persistanceStore.subscribe((v) => currentChar.set(v));
-			}
-		}
-	}
-	async function refresh() {
-		if (mounted && charId) {
-			const currentChar = local<PersistanceData>('c' + charId);
-			const j = get(currentChar);
-			$data = await Data.init(false);
-			if ($data) {
-				$char = new Charakter($data, j ?? charId);
-
-				$char?.persistanceStore.subscribe((v) => currentChar.set(v));
-			}
+			localStorageChar.updateId('c'+charId);
 		}
 	}
 

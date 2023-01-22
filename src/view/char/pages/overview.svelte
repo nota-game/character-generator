@@ -1,13 +1,23 @@
 <script lang="ts">
 	import { renderRequirementMap } from 'src/misc/misc';
-	import type { Charakter } from 'src/models/Character';
-	import type { Data } from 'src/models/Data';
+	import { localStorageChar } from 'src/misc/storage';
+	import { Charakter, type PersistanceData } from 'src/models/Character';
+	import { Data } from 'src/models/Data';
+	import { get } from 'svelte/store';
 
 	export let data: Data;
 	export let char: Charakter;
 
 	const missing = char.missingStore;
 	const name = char.nameStore;
+
+	async function refresh() {
+		const newData = await Data.init(false);
+		if (newData) {
+			const newChar = new Charakter(newData, get(char.persistanceStore));
+			localStorageChar.set(get(newChar.persistanceStore));
+		}
+	}
 </script>
 
 <article>
@@ -20,7 +30,7 @@
 				data-tooltip="Stammdaten aktualisieren"
 				on:click={(e) => {
 					e.preventDefault();
-					// refresh();
+					refresh();
 				}}
 			>
 				&#128472;

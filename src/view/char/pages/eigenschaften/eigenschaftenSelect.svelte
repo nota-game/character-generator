@@ -14,7 +14,7 @@
 	import { derived, get, readable, writable, type Readable, type Writable } from 'svelte/store';
 	import type { choise } from 'xsd-ts/dist/xsd';
 
-	import { distinct, filterNull, getText } from 'src/misc/misc';
+	import { dealay, distinct, filterNull, getText } from 'src/misc/misc';
 	import type { Charakter } from 'src/models/Character';
 	import { Data } from 'src/models/Data';
 	// import KostenControl from './KostenControl.svelte';
@@ -46,47 +46,20 @@
 
 	$: organism = $morphStore ? data.morphLookup[$morphStore] : undefined;
 
-	// $: selectedL = selectedOrganism?.lebensabschnitt;
+	ageArray[0] = get(char.ageStore);
 
-	// // $: {
-	// // 	if (data && selectedL && char) {
-	// // 		const x = data.lebensabschnittLookup[selectedL.Id];
-	// // 		char.organismus = x;
-	// // 	}
-	// // }
-	$: {
-		if (char) {
-			ageArray[0] = initChar(char, ageArray[0]);
+	$: setAge(ageArray[0]);
+	let setAgePromise: Promise<void> | undefined;
+	async function setAge(age: number) {
+		if (setAgePromise) {
+			return;
 		}
-	}
-	function initChar(char: Charakter, age: number): number {
-		if (char) {
-			if (age == 0) {
-				age = get(char.ageStore);
-			} else {
-				char.ageStore.set(age);
-			}
-		}
-		return age;
+		setAgePromise = dealay(2000);
+		await setAgePromise;
+		setAgePromise = undefined;
+		char.ageStore.set(ageArray[0]);
 	}
 
-	// let w: Readable<selection>;
-	// let wc: Readable<KostenDefinition_misc[]>;
-	// $: {
-	// 	if (char) {
-	// 		w = readable();
-	// 		// const inputs = document.getElementsByTagName('input');
-	// 		// Array.from(inputs, (x, i) => inputs.item(i)).forEach((element) => {
-	// 		// 	if (element) element.checked = false;
-	// 		// });
-
-	// 		w = char?.organismusStore ?? readable();
-	// 		wc = derived(w, (x) => x?.lebensabschnitt?.flatMap((l) => l.Spielbar?.Kosten ?? []) ?? []);
-	// 	}
-	// }
-
-	// let propStore = char?.getPropertyStore();
-	// let propTypeStore = char?.getPropertyTypeStore();
 </script>
 
 {#if data && char}
@@ -142,7 +115,6 @@
 				{getText(gruppe.Name)}
 			</h2>
 			{#each Object.entries(char.eigenschaften) as [key, eigenschaft]}
-				
 				<EigenschaftView {data} {char} {...eigenschaft} {key} filterGruppe={gruppe.id} />
 			{/each}
 			<!-- svelte-ignore a11y-label-has-associated-control -->

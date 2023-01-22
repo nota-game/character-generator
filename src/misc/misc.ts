@@ -2,6 +2,7 @@
 // // import { type MissingRequirements, Charakter } from "../models/Character";
 // import type { Data } from "../models/Data";
 
+import { resolve } from "mathjs";
 import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigkeit, Geschlecht_misc, LevelDefinition_misc, Lokalisierungen_misc, PfadDefinition_pfad, TalentDefinition_talent } from "src/data/nota.g";
 import { Charakter, type MissingRequirements } from "src/models/Character";
 import type { Data } from "src/models/Data";
@@ -11,6 +12,9 @@ export function filterNull<T>(x: (T | null | undefined)[]): T[] {
     return x.filter(y => y !== null && y !== undefined) as T[];
 }
 
+export function dealay(ms: number) {
+    return new Promise<void>(resolve => setTimeout(resolve, ms));
+}
 
 export function handleUninitilized<T>(params: T | typeof UNINITILEZED): T | undefined;
 export function handleUninitilized<T>(params: T | typeof UNINITILEZED, d: T): T;
@@ -246,9 +250,9 @@ export function renderRequirement(req: MissingRequirements, data: Data | undefin
         } else if (m.type === 'Level') {
             const d = data.pfadMap[m.pfad];
             const d2 = data.levelMap[m.pfad][m.id];
-            if(m.Stufe==1){
+            if (m.Stufe == 1) {
                 return `${getText(d.Name)} (${getText(d2.Name)})`;
-            }else{
+            } else {
                 return `${getText(d.Name)} (${getText(d2.Name)}) auf ${m.Stufe}`;
             }
         } else if (m.type === 'Talent') {
