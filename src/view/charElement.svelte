@@ -26,13 +26,22 @@
 	let mounted = false;
 
 	onMount(async () => {
-		dev.set(!window.location.pathname.includes('character-generator'));
+		const isDev = !window.location.pathname.includes('character-generator');
+		dev.set(isDev);
+
 		mounted = true;
 		updateChar(charId);
 		let unsubscriber: Unsubscriber = noop;
 		localStorageChar.subscribe(async (newCharData) => {
+			if (localStorageChar.getId() == undefined) {
+				return;
+			}
 			const oldChar = get(char);
-			if (newCharData?.id != oldChar?.id || newCharData?.stammdatenId != oldChar?.stammdaten.id) {
+			if (
+				newCharData == undefined ||
+				newCharData?.id != oldChar?.id ||
+				newCharData?.stammdatenId != oldChar?.stammdaten.id
+			) {
 				const newData = await Data.init(false, newCharData?.stammdatenId);
 				if (newData) {
 					unsubscriber();
@@ -47,7 +56,7 @@
 
 	async function updateChar(charId: string | undefined) {
 		if (mounted && charId) {
-			localStorageChar.updateId('c'+charId);
+			localStorageChar.updateId('c' + charId);
 		}
 	}
 

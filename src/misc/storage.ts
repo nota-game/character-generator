@@ -5,7 +5,7 @@ import type { Subscriber, Writable } from "svelte/store";
 
 export const localStorageChar = local<PersistanceData>();
 
-function local<T>(): Writable<T | undefined> & { updateId: (id: string) => void } {
+function local<T>(): Writable<T | undefined> & { updateId: (id: string) => void, getId: () => string | undefined } {
     const callbacks: Subscriber<T | undefined>[] = [];
     let id: string | undefined = undefined;
     const notify = () => {
@@ -59,6 +59,7 @@ function local<T>(): Writable<T | undefined> & { updateId: (id: string) => void 
         set,
         update: (fn) => set(fn(get())),
         updateId,
+        getId: () => id,
         subscribe,
     }
 
