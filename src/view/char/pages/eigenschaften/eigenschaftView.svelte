@@ -43,14 +43,29 @@
 			{Math.round(($effective ?? 0) * 100) / 100}
 			{$meta.einheit}
 		{:else if $meta.type == 'bereich'}
-        {$effective}
-        {#if $meta.diskret}
-        <input type="number" max={$meta.maxInklusiv} min={$meta.minInklusiv} bind:value={$raw} />
-        {:else}
-        <input type="range" max={$meta.maxInklusiv} min={$meta.minInklusiv} bind:value={$raw} />
-        {/if}
+			{$effective}
+			{#if $meta.diskret}
+				<input type="number" max={$meta.maxInklusiv} min={$meta.minInklusiv} bind:value={$raw} />
+			{:else}
+				<input type="range" max={$meta.maxInklusiv} min={$meta.minInklusiv} bind:value={$raw} />
+			{/if}
 		{:else if $meta.type == 'reihe'}
-        <ReiheControle  {effective} {type} {raw} {meta} {cost} {char} {data} />
+			<ReiheControle {effective} {type} {raw} {meta} {cost} {char} {data} />
 		{/if}
 	</div>
 {/if}
+
+<style lang="scss">
+	h4 {
+		position: sticky;
+		top: 7rem;
+		background-color: var(--card-background-color);
+        z-index: 700;
+		margin-top: 2rem;
+		margin-bottom: 0.25rem;
+		small {
+			font-weight: normal;
+			font-style: normal;
+		}
+	}
+</style>

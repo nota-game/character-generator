@@ -66,7 +66,7 @@
 	<!-- svelte-ignore a11y-label-has-associated-control -->
 	<article>
 		<label>
-			<h3>Alter</h3>
+			<h2>Alter</h2>
 			<RangeSlider
 				all="label"
 				float
@@ -147,12 +147,11 @@
 	label {
 		padding: 1rem;
 	}
-	h4 {
-		margin-top: 2rem;
-		margin-bottom: 0.25rem;
-		small {
-			font-weight: normal;
-			font-style: normal;
-		}
-	}
+    h2{
+        position: sticky;
+        top: 4.5rem;
+        background-color: var(--card-background-color);
+        z-index: 800;
+    }
+
 </style>

@@ -86,11 +86,11 @@
 
 {#if $data && $char}
 	{#if pointStore && $pointStore}
-		<article class="hover">
+		<article class="hover" >
 			<header>Punkte</header>
 			<div>
 				<strong>Punkte</strong>
-				<KostenControl char={$char} data={$data} mode='points' />
+				<KostenControl char={$char} data={$data} mode="points" />
 			</div>
 		</article>
 	{/if}
@@ -155,3 +155,12 @@
 {:else}
 	<p>Loding…</p>
 {/if}
+
+<style lang="scss">
+	.hover {
+		position: sticky;
+		z-index: 1000;
+		top: 0px;
+		border: 1px solid var(--primary);
+	}
+</style>
