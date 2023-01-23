@@ -96,9 +96,7 @@
 </div>
 
 <style lang="scss">
-	.missing {
-		color: red;
-	}
+
 
 	.future {
 		color: blue;

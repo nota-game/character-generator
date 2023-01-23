@@ -149,7 +149,12 @@
 	:global(.svelte-tabs__tab:focus) {
 		color: var(--primary-focus) !important;
 	}
-	.missing {
-		color: red;
+
+	:global(.missing) {
+		color: var(--form-element-invalid-border-color);
 	}
+	:global(a.missing:hover) {
+		color: var(--form-element-invalid-active-border-color);
+	}
+
 </style>

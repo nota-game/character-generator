@@ -90,7 +90,7 @@
 			<header>Punkte</header>
 			<div>
 				<strong>Punkte</strong>
-				<KostenControl char={$char} data={$data} mode="points" />
+				<KostenControl char={$char} data={$data} mode="points" showZeroValues />
 			</div>
 		</article>
 	{/if}

@@ -74,23 +74,7 @@
 		{getTextBesonderheit(entry, $effective, char)}
 		<small style="float: right;"><KostenControl cost={$cost} {data} {char} inline /></small>
 	</h4>
-	<div>
-		<p>
-			{getText(entry.Stufe[$effective]?.Beschreibung)}
-		</p>
-		<details>
-			<summary> Details </summary>
-			{#each entry.Stufe.map((value, index) => index) as index}
-				{@const stufe = entry.Stufe[index]}
-				<h5>
-					{getTextBesonderheit(entry, index + 1)}
-				</h5>
-				<p>
-					{getText(stufe.Beschreibung)}
-				</p>
-			{/each}
-		</details>
-	</div>
+
 	<div>
 		{#if $purchased < entry.Stufe.length}
 			<span class="tooltip">
@@ -107,7 +91,14 @@
 					{:else}
 						Auf {getTextBesonderheit(entry, $purchased + 1, char)} verbessern
 					{/if}
-					(<KostenControl cost={substractCost($costNext, $cost)} {data} {char} mode="cost" />)
+					<small class="parenthised"
+						><KostenControl
+							cost={substractCost($costNext, $cost)}
+							{data}
+							{char}
+							mode="cost"
+						/></small
+					>
 				</a>
 
 				{#await $addFuture}
@@ -118,44 +109,82 @@
 
 				<div class="tooltiptext">
 					<ul>
-						{#await $addFuture}
-							{#each $missingNextLevel as m}
-								<li class="missing">
-									{renderRequirementMap(m, data, { type: 'besonderheit', value: entry }, char)}
-								</li>
-							{/each}
-							<span aria-busy="true" />
-						{:then f}
-							<ChangeView change={f} {data} {char} />
-						{/await}
-
-						<!-- {#each $missingNextLevel as m}
+						{#each $missingNextLevel as m}
 							<li class="missing">
 								{renderRequirementMap(m, data, { type: 'besonderheit', value: entry }, char)}
 							</li>
-						{/each} -->
+						{/each}
 					</ul>
+					{#await $addFuture}
+						<span aria-busy="true" />
+					{:then f}
+						<ChangeView
+							change={f}
+							{data}
+							{char}
+							exclude={{ type: 'besonderheit', id: entry.Id }}
+							excludeRequirments={$missingNextLevel}
+						/>
+					{/await}
 				</div>
 			</span>
 		{/if}
 		<br />
-		{#if $purchased > 0}
-			<a
-				href="#"
-				on:click={(e) => {
-					e.preventDefault();
-					purchased.update((x) => Math.max(0, x - 1));
-				}}
-			>
-				{#if $purchased == 1}
-					{getTextBesonderheit(entry, $purchased, char)} entfernen
-				{:else}
-					Auf {getTextBesonderheit(entry, $purchased - 1, char)} reduzieren
-				{/if}
-				(<KostenControl cost={substractCost($costPreview, $cost)} {data} {char} mode="cost" />)
-			</a>
+		{#if $purchased > 0 && $purchased > $fixed}
+			<span class="tooltip">
+				<a
+					href="#"
+					on:click={(e) => {
+						e.preventDefault();
+						purchased.update((x) => Math.max(0, x - 1));
+					}}
+				>
+					{#if $purchased == 1}
+						{getTextBesonderheit(entry, $purchased, char)} entfernen
+					{:else}
+						Auf {getTextBesonderheit(entry, $purchased - 1, char)} reduzieren
+					{/if}
+					<small class="parenthised"
+						><KostenControl
+							cost={substractCost($costPreview, $cost)}
+							{data}
+							{char}
+							mode="cost"
+						/></small
+					>
+				</a>
+				{#await $addFuture}
+					<span aria-busy="true" />
+				{:then f}
+					<!-- <ChangeView change={f} {data} {char} /> -->
+				{/await}
+
+				<div class="tooltiptext">
+					{#await $removeFuture}
+						<span aria-busy="true" />
+					{:then f}
+						<ChangeView change={f} {data} {char} exclude={{ type: 'besonderheit', id: entry.Id }} />
+					{/await}
+				</div>
+			</span>
 		{/if}
 	</div>
+
+	<p>
+		{getText(entry.Stufe[$effective]?.Beschreibung)}
+	</p>
+	<details>
+		<summary> Details </summary>
+		{#each entry.Stufe.map((value, index) => index) as index}
+			{@const stufe = entry.Stufe[index]}
+			<h5>
+				{getTextBesonderheit(entry, index + 1)}
+			</h5>
+			<p>
+				{getText(stufe.Beschreibung)}
+			</p>
+		{/each}
+	</details>
 
 	{#if addFuture}
 		<span class="future">
@@ -189,13 +218,6 @@
 
 <!-- {/if} -->
 <style lang="scss">
-	.missing {
-		color: var(--form-element-invalid-border-color);
-	}
-	a.missing:hover {
-		color: var(--form-element-invalid-active-border-color);
-	}
-
 	.future {
 		color: blue;
 		margin: 1em;
@@ -276,5 +298,13 @@
 	.tooltip:hover .tooltiptext {
 		visibility: visible;
 		opacity: 1;
+	}
+
+	.parenthised:not(:empty)::before {
+		content: '(';
+	}
+	.parenthised:not(:empty)::after {
+		margin-left: -0.2em;
+		content: ')';
 	}
 </style>

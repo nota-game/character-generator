@@ -13,7 +13,7 @@
 	export let data: Data;
 	export let char: Charakter | undefined = undefined;
 
-	export let cost: Cost = {};
+	export let cost: Cost | undefined = undefined;
 
 	export let mode: 'cost' | 'none' | 'points' = 'none';
 	export let showZeroValues = false;
@@ -22,6 +22,7 @@
 
 	let pointStore = char?.pointStore;
 
+	$: effectivePoints = mode == 'points' ? cost ?? $pointStore ?? {} : cost ?? {};
 
 	function isKostToHigh(key: string) {
 		if (mode == 'none') {
@@ -33,7 +34,7 @@
 		)[0];
 
 		if (mode == 'points') {
-			const start = $pointStore?.[key] ?? 0;
+			const start = effectivePoints?.[key] ?? 0;
 
 			if (def.type == 'epual zero') {
 				return start != 0;
@@ -44,13 +45,13 @@
 			}
 			return false;
 		}
-		if (pointStore == undefined) {
+		if (effectivePoints == undefined) {
 			console.log('pointstore was undefinde');
 			return false;
 		}
 		const start = $pointStore?.[key] ?? 0;
 
-		const after = start - (cost[key] ?? 0);
+		const after = start - (cost?.[key] ?? 0);
 
 		if (def === undefined) {
 			return false;
@@ -74,7 +75,7 @@
 	}
 </script>
 
-{#each Object.entries(mode == 'points' ? $pointStore ?? {} : cost) as [key, value]}
+{#each Object.entries(effectivePoints) as [key, value]}
 	{@const c = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter((x) => x.Id == key)[0]}
 
 	{#if c}
@@ -88,9 +89,3 @@
 		{JSON.stringify(data.Instance.Daten.KostenDefinitionen.KostenDefinition.map((x) => x.Id))}
 	{/if}
 {/each}
-
-<style lang="scss">
-	.missing {
-		color: red;
-	}
-</style>

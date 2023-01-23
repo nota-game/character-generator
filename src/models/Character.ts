@@ -3238,7 +3238,7 @@ function evaluateBerechnung(Berechnung: string, scope?: Record<string, number>, 
 
 
 
-function compareRequirement(a: MissingRequirements, b: MissingRequirements): 0 | -1 | 1 {
+export function compareRequirement(a: MissingRequirements, b: MissingRequirements): 0 | -1 | 1 {
     function typeOrder(type: 'tag' | 'Fertigkeit' | 'Besonderheit' | 'Talent' | 'Level' | 'Not' | 'And' | 'Or') {
         switch (type) {
             case 'Talent': return 1;

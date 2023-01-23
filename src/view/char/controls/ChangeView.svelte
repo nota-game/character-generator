@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { json } from '@sveltejs/kit';
-	import type { CharacterChange, Charakter } from 'src/models/Character';
+	import {
+		compareRequirement,
+		type CharacterChange,
+		type Charakter,
+		type MissingRequirements
+	} from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
 	import type { Readable, Writable } from 'svelte/store';
 	import { stringify } from 'uuid';
@@ -12,31 +17,83 @@
 		getTextPfad,
 		getTextTalent,
 		renderRequirement,
-		renderRequirementMap
+		renderRequirementMap,
+		toObjectKey
 	} from 'src/misc/misc';
+	import KostenControl from './KostenControl.svelte';
 
 	export let char: Charakter;
 	export let change: CharacterChange;
 	export let data: Data;
+
+	export let excludeRequirments:
+		| undefined
+		| {
+				wert: number;
+				missing: MissingRequirements;
+		  }[] = undefined;
+	export let exclude:
+		| { type: 'besonderheit' | 'fertigkeit' | 'talent' | 'tag'; id: string }
+		| undefined = undefined;
+
+	let removedRequirments = change.requirements.removed.filter((x) => {
+		return !(
+			excludeRequirments?.some(
+				(y) => x.wert == y.wert && compareRequirement(y.missing, x.missing) == 0
+			) &&
+			x.missingOnType == exclude?.type &&
+			x.missingOnId == exclude.id
+		);
+	});
+	let addedRequirments = change.requirements.added.filter((x) => {
+		return !(
+			excludeRequirments?.some(
+				(y) => x.wert == y.wert && compareRequirement(y.missing, x.missing) == 0
+			) &&
+			x.missingOnType == exclude?.type &&
+			x.missingOnId == exclude.id
+		);
+	});
+
+	let changedBestonderheiten = change.changedBestonderheiten.filter(
+		(x) => exclude?.type != 'besonderheit' || exclude.id != x.key
+	);
+	let changedFertigkeiten = change.changedFertigkeiten.filter(
+		(x) => exclude?.type != 'fertigkeit' || exclude.id != x.key
+	);
+
+	let changedTalents = change.changedTalents.filter(
+		(x) => exclude?.type != 'talent' || exclude.id != x.key
+	);
+	let changedTags = change.changedTags.filter((x) => exclude?.type != 'tag' || exclude.id != x.key);
 </script>
 
 <!-- {#if addFuture} -->
 <div>
 	{#if change.changedCost}
 		<div>
-			<strong>Kosten:</strong>
+			<strong>Neue Punktewerte:</strong>
 			{#if change.changedCost.length == 0}
 				keine
 			{:else}
-				{JSON.stringify(Object.fromEntries(change.changedCost.map((x) => [x.key, x.differece])))}
+				<KostenControl
+					{data}
+					{char}
+					mode="points"
+					cost={toObjectKey(
+						change.changedCost,
+						(x) => x.key,
+						(x) => x.new
+					)}
+				/>
 			{/if}
 		</div>
 	{/if}
 
-	{#if change.changedTalents.filter((x) => x.old == 0 && x.old != x.new).length > 0}
+	{#if changedTalents.filter((x) => x.old == 0 && x.old != x.new).length > 0}
 		<div>Neue Talente</div>
 		<ul>
-			{#each change.changedTalents.filter((x) => x.old == 0 && x.old != x.new) as b}
+			{#each changedTalents.filter((x) => x.old == 0 && x.old != x.new) as b}
 				<li>
 					{getTextTalent(data.talentMap[b.key], char, 'Name')} auf {b.new}
 					{#if b.newEp - b.oldEp !== 0}
@@ -46,10 +103,10 @@
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedTalents.filter((x) => x.old != 0 && x.new > x.old).length > 0}
+	{#if changedTalents.filter((x) => x.old != 0 && x.new > x.old).length > 0}
 		<div>Verbesserte Talente</div>
 		<ul>
-			{#each change.changedTalents.filter((x) => x.old != 0 && x.new > x.old) as b}
+			{#each changedTalents.filter((x) => x.old != 0 && x.new > x.old) as b}
 				<li>
 					{getTextTalent(data.talentMap[b.key], char, 'Name')} von {b.old} auf {b.new}
 					{#if b.newEp - b.oldEp !== 0}
@@ -59,10 +116,10 @@
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedTalents.filter((x) => x.old === x.new && x.newEp > x.oldEp).length > 0}
+	{#if changedTalents.filter((x) => x.old === x.new && x.newEp > x.oldEp).length > 0}
 		<div>Zugewonnene EP für Talente</div>
 		<ul>
-			{#each change.changedTalents.filter((x) => x.old === x.new && x.newEp > x.oldEp) as b}
+			{#each changedTalents.filter((x) => x.old === x.new && x.newEp > x.oldEp) as b}
 				<li>
 					{getTextTalent(data.talentMap[b.key], char, 'Name')}
 					+{b.newEp - b.oldEp} EP
@@ -70,10 +127,10 @@
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedTalents.filter((x) => x.new != 0 && x.new < x.old).length > 0}
+	{#if changedTalents.filter((x) => x.new != 0 && x.new < x.old).length > 0}
 		<div>Verschlechterte Talente</div>
 		<ul>
-			{#each change.changedTalents.filter((x) => x.new != 0 && x.new < x.old) as b}
+			{#each changedTalents.filter((x) => x.new != 0 && x.new < x.old) as b}
 				<li>
 					{getTextTalent(data.talentMap[b.key], char, 'Name')} von von {b.old} auf {b.new}
 					{#if b.newEp - b.oldEp !== 0}
@@ -83,10 +140,10 @@
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedTalents.filter((x) => x.new == 0 && x.old != x.new).length > 0}
+	{#if changedTalents.filter((x) => x.new == 0 && x.old != x.new).length > 0}
 		<div>Verlorene Talente</div>
 		<ul>
-			{#each change.changedTalents.filter((x) => x.new == 0 && x.old != x.new) as b}
+			{#each changedTalents.filter((x) => x.new == 0 && x.old != x.new) as b}
 				<li>
 					{getTextTalent(data.talentMap[b.key], char, 'Name')}
 					{b.old}
@@ -97,10 +154,10 @@
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedTalents.filter((x) => x.old === x.new && x.newEp < x.oldEp).length > 0}
+	{#if changedTalents.filter((x) => x.old === x.new && x.newEp < x.oldEp).length > 0}
 		<div>Reduzierte EP für Talente</div>
 		<ul>
-			{#each change.changedTalents.filter((x) => x.old === x.new && x.newEp < x.oldEp) as b}
+			{#each changedTalents.filter((x) => x.old === x.new && x.newEp < x.oldEp) as b}
 				<li>
 					{getTextTalent(data.talentMap[b.key], char, 'Name')}
 					{b.newEp - b.oldEp} EP
@@ -109,94 +166,98 @@
 		</ul>
 	{/if}
 
-	{#if change.changedBestonderheiten.filter((x) => x.old == 0).length > 0}
+	{#if changedBestonderheiten.filter((x) => x.old == 0).length > 0}
 		<div>Neue Besonderheiten</div>
 		<ul>
-			{#each change.changedBestonderheiten.filter((x) => x.old == 0) as b}
+			{#each changedBestonderheiten.filter((x) => x.old == 0) as b}
 				<li>{getTextBesonderheit(data.besonderheitenMap[b.key], b.new, char)}</li>
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedBestonderheiten.filter((x) => x.old != 0 && x.new > x.old).length > 0}
+	{#if changedBestonderheiten.filter((x) => x.old != 0 && x.new > x.old).length > 0}
 		<div>Verbesserte Besonderheiten</div>
 		<ul>
-			{#each change.changedBestonderheiten.filter((x) => x.old != 0 && x.new > x.old) as b}
+			{#each changedBestonderheiten.filter((x) => x.old != 0 && x.new > x.old) as b}
 				<li>{getTextBesonderheit(data.besonderheitenMap[b.key], b.new, char)}</li>
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedBestonderheiten.filter((x) => x.new != 0 && x.new < x.old).length > 0}
+	{#if changedBestonderheiten.filter((x) => x.new != 0 && x.new < x.old).length > 0}
 		<div>Verschlechterte Besonderheiten</div>
 		<ul>
-			{#each change.changedBestonderheiten.filter((x) => x.new != 0 && x.new < x.old) as b}
+			{#each changedBestonderheiten.filter((x) => x.new != 0 && x.new < x.old) as b}
 				<li>{getTextBesonderheit(data.besonderheitenMap[b.key], b.new, char)}</li>
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedBestonderheiten.filter((x) => x.new == 0).length > 0}
+	{#if changedBestonderheiten.filter((x) => x.new == 0).length > 0}
 		<div>Verlorene Besonderheiten</div>
 		<ul>
-			{#each change.changedBestonderheiten.filter((x) => x.new == 0) as b}
+			{#each changedBestonderheiten.filter((x) => x.new == 0) as b}
 				<li>{getTextBesonderheit(data.besonderheitenMap[b.key], b.old, char)}</li>
 			{/each}
 		</ul>
 	{/if}
 
-	{#if change.changedFertigkeiten.filter((x) => x.old == 0).length > 0}
+	{#if changedFertigkeiten.filter((x) => x.old == 0).length > 0}
 		<div>Neue Fertigkeiten</div>
 		<ul>
-			{#each change.changedFertigkeiten.filter((x) => x.old == 0) as b}
+			{#each changedFertigkeiten.filter((x) => x.old == 0) as b}
 				<li>{getTextFertigkeit(data.fertigkeitenMap[b.key], b.new, char)}</li>
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedFertigkeiten.filter((x) => x.old != 0 && x.new > x.old).length > 0}
+	{#if changedFertigkeiten.filter((x) => x.old != 0 && x.new > x.old).length > 0}
 		<div>Verbesserte Fertigkeiten</div>
 		<ul>
-			{#each change.changedFertigkeiten.filter((x) => x.old != 0 && x.new > x.old) as b}
+			{#each changedFertigkeiten.filter((x) => x.old != 0 && x.new > x.old) as b}
 				<li>{getTextFertigkeit(data.fertigkeitenMap[b.key], b.new, char)}</li>
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedFertigkeiten.filter((x) => x.new != 0 && x.new < x.old).length > 0}
+	{#if changedFertigkeiten.filter((x) => x.new != 0 && x.new < x.old).length > 0}
 		<div>Verschlechterte Fertigkeiten</div>
 		<ul>
-			{#each change.changedFertigkeiten.filter((x) => x.new != 0 && x.new < x.old) as b}
+			{#each changedFertigkeiten.filter((x) => x.new != 0 && x.new < x.old) as b}
 				<li>{getTextFertigkeit(data.fertigkeitenMap[b.key], b.new, char)}</li>
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedFertigkeiten.filter((x) => x.new == 0).length > 0}
+	{#if changedFertigkeiten.filter((x) => x.new == 0).length > 0}
 		<div>Verlorene Fertigkeiten</div>
 		<ul>
-			{#each change.changedFertigkeiten.filter((x) => x.new == 0) as b}
+			{#each changedFertigkeiten.filter((x) => x.new == 0) as b}
 				<li>{getTextFertigkeit(data.fertigkeitenMap[b.key], b.old, char)}</li>
 			{/each}
 		</ul>
 	{/if}
 
-	{#if change.changedTags.filter((x) => x.new > x.old).length > 0}
+	{#if changedTags.filter((x) => x.new > x.old).length > 0}
 		<div>Neue Tags</div>
 		<ul>
-			{#each change.changedTags.filter((x) => x.new > x.old) as b}
+			{#each changedTags.filter((x) => x.new > x.old) as b}
 				<li>{getText(data.tagMap[b.key].Name)}</li>
 			{/each}
 		</ul>
 	{/if}
-	{#if change.changedTags.filter((x) => x.new < x.old).length > 0}
+	{#if changedTags.filter((x) => x.new < x.old).length > 0}
 		<div>Verlorene Tags</div>
 		<ul>
-			{#each change.changedTags.filter((x) => x.new < x.old) as b}
+			{#each changedTags.filter((x) => x.new < x.old) as b}
 				<li>{getText(data.tagMap[b.key].Name)}</li>
 			{/each}
 		</ul>
 	{/if}
 
-	{#if change.requirements.added.length > 0}
+	{#if addedRequirments.length > 0}
 		<div class="probles">
-			Neue Probleme {change.requirements.added.length}
-			<ul>
-				{#each change.requirements.added as r}
+			{#if addedRequirments.length == 1}
+				Neues Problem
+			{:else}
+				Neue Probleme
+			{/if}
+			<ul class="missing">
+				{#each addedRequirments as r}
 					<li>
 						Für
 						{#if r.missingOnType == 'level'}
@@ -204,7 +265,8 @@
 								data.pfadMap[r.missingOnId.path],
 								data.levelMap[r.missingOnId.path][r.missingOnId.level],
 								char
-							)} {r.wert}
+							)}
+							{r.wert}
 						{:else if r.missingOnType == 'fertigkeit'}
 							{getTextFertigkeit(data.fertigkeitenMap[r.missingOnId], r.wert, char)}
 						{:else if r.missingOnType == 'besonderheit'}
@@ -248,15 +310,15 @@
 			</ul>
 		</div>
 	{/if}
-	{#if change.requirements.removed.length > 0}
+	{#if removedRequirments.length > 0}
 		<div class="probles">
-			{#if change.requirements.removed.length == 1}
+			{#if removedRequirments.length == 1}
 				Behobenes Problem
 			{:else}
 				Behobene Probleme
 			{/if}
-			<ul>
-				{#each change.requirements.removed as r}
+			<ul >
+				{#each removedRequirments as r}
 					<li>
 						Für
 						{#if r.missingOnType == 'level'}
@@ -264,7 +326,8 @@
 								data.pfadMap[r.missingOnId.path],
 								data.levelMap[r.missingOnId.path][r.missingOnId.level],
 								char
-							)} {r.wert}
+							)}
+							{r.wert}
 						{:else if r.missingOnType == 'fertigkeit'}
 							{getTextFertigkeit(data.fertigkeitenMap[r.missingOnId], r.wert, char)}
 						{:else if r.missingOnType == 'besonderheit'}
@@ -313,5 +376,8 @@
 <style lang="scss">
 	.probles {
 		margin: 1rem;
+	}
+	ul *{
+		list-style-type: none;
 	}
 </style>

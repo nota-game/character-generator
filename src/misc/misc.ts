@@ -45,13 +45,18 @@ export function groupBy<T, K extends keyof any>(list: T[], getKey: (item: T) => 
     }, {} as Record<K, T[]>)
 }
 
-export function toObjectKey<T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T> {
+export function toObjectKey<T, K extends keyof any, V>(list: T[], getKey: (item: T) => K, getValue: (item: T) => V): Record<K, V>;
+export function toObjectKey<T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T>;
+export function toObjectKey<T, K extends keyof any, V>(list: T[], getKey: (item: T) => K, getValue?: (item: T) => V): Record<K, T> | Record<K, V> {
+
+    const valueEvaluator = getValue ?? ((x) => x as unknown as V);
+
     return list.reduce((previous, currentItem) => {
         const group = getKey(currentItem);
 
-        previous[group] = currentItem;
+        previous[group] = valueEvaluator(currentItem);
         return previous;
-    }, {} as Record<K, T>)
+    }, {} as Record<K, V>)
 }
 
 export function distinct<T>(t: T[], keyFunction?: (a: T) => string) {
@@ -139,7 +144,7 @@ export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | und
     if (!p) {
         return '';
     }
-    if(stufe==0){
+    if (stufe == 0) {
         return getText(p.Name, options);
     }
     const numbers = ['Ⅰ', 'Ⅱ', "Ⅲ", 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ', 'Ⅺ', 'Ⅻ']
