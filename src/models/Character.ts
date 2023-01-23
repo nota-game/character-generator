@@ -1266,7 +1266,6 @@ export class Charakter {
                 artIdKey,
                 morphIdKey,
             ], (data, [name, age, pfad, besonderheiten, fertigkeiten, talente, eigenschaften, gattung, art, morph]) => {
-                console.log('persist');
                 return {
                     stammdatenId: this.stammdaten.id,
                     id: this.id,
