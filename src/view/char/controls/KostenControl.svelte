@@ -19,6 +19,7 @@
 	export let showZeroValues = false;
 
 	export let inline: boolean = false;
+	export let showOnlyHighCost: boolean = false;
 
 	let pointStore = char?.pointStore;
 
@@ -73,13 +74,15 @@
 			return `${value <= 0 ? '+' : '-'}${Math.abs(value)}`;
 		}
 	}
+
+
 </script>
 
 {#each Object.entries(effectivePoints) as [key, value]}
 	{@const c = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter((x) => x.Id == key)[0]}
 
 	{#if c}
-		{#if showZeroValues || value != 0}
+		{#if showZeroValues || value != 0 && !showOnlyHighCost || isKostToHigh(key)}
 			<span class:missing={isKostToHigh(key)}>
 				<abbr title={getText(c.Name)}> {getText(c.Abkürzung)}</abbr>: {renderValue(value)}
 			</span>

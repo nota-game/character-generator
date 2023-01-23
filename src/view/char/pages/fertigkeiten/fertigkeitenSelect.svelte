@@ -2,9 +2,9 @@
 	import { getText } from 'src/misc/misc';
 	import type { Charakter } from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
-	import Besonderheit from 'src/view/root/besonderheit.svelte';
-	import Fertigkeit from 'src/view/root/fertigkeit.svelte';
+	
 	import { Tabs, Tab, TabList, TabPanel } from 'svelte-tabs';
+	import FertigkeitenControl from './fertigkeitenControl.svelte';
 
 	export let data: Data;
 	export let char: Charakter;
@@ -24,7 +24,7 @@
 		{#each Object.values(data.fertigkeitenCategoryMap) as value}
 			<TabPanel>
 				{#each Object.keys(value.fertigkeiten) as key}
-					<Fertigkeit {data} {key} {char} {...char.fertigkeiten[key]} useFuture />
+					<FertigkeitenControl {data} {key} {char} {...char.fertigkeiten[key]} useFuture />
 				{/each}
 			</TabPanel>
 		{/each}

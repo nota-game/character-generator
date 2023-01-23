@@ -237,7 +237,10 @@ type FertigkeitKeys<id extends string = string> = {
     Fixed: FertigkeitFixedKey<id>,
     Purchased: FertigkeitPurchasedKey<id>,
     Missing: FertigkeitMissingKey<id>,
+    MissingNextLevel: FertigkeitMissingNextLevelKey<id>,
     Cost: CostKey<'fertigkeit', id>,
+    CostNext: CostKey<'fertigkeit', id, 'costNext'>,
+    CostPreview: CostKey<'fertigkeit', id, 'costPreview'>,
 }
 
 type FertigkeitEffectiveKey<id extends string = string> = Key<`/fertigkeit/${id}/Stufe`, number>;
@@ -245,6 +248,10 @@ type FertigkeitUnbeschränktKey<id extends string = string> = Key<`/fertigkeit/$
 type FertigkeitFixedKey<id extends string = string> = Key<`/fertigkeit/${id}/fixed`, number>;
 type FertigkeitPurchasedKey<id extends string = string> = Key<`/fertigkeit/${id}/purchased`, number>;
 type FertigkeitMissingKey<id extends string = string> = Key<`/fertigkeit/${id}/missing`, {
+    wert: number;
+    missing: MissingRequirements;
+}[]>;
+type FertigkeitMissingNextLevelKey<id extends string = string> = Key<`/fertigkeit/${id}/missingNextLevel`, {
     wert: number;
     missing: MissingRequirements;
 }[]>;
@@ -362,7 +369,10 @@ export class Charakter {
         purchased: Writable<number>,
         fixed: Readable<number>,
         missing: Readable<{ wert: number; missing: MissingRequirements; }[]>,
+        missingNextLevel: Readable<{ wert: number; missing: MissingRequirements; }[]>,
         cost: Readable<TypeOfKey<CostKey<'fertigkeit'>>>,
+        costNext: Readable<TypeOfKey<CostKey<'fertigkeit', string, 'costNext'>>>,
+        costPreview: Readable<TypeOfKey<CostKey<'fertigkeit', string, 'costPreview'>>>,
     }> = {};
 
 
@@ -825,12 +835,12 @@ export class Charakter {
     }
 
 
-    private getIdFromBesonterheitkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | 'cost' | 'costNext' | 'costPreview' } | undefined
+    private getIdFromBesonterheitkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'missingNextLevel' | 'Stufe' | 'cost' | 'costNext' | 'costPreview' } | undefined
     private getIdFromBesonterheitkeitKey<id extends string>(key: BesonderheitPurchasedKey<id> | BesonderheitFixedKey<id> | BesonderheitUnbeschränktKey<id> | BesonderheitMissingKey<id> | BesonderheitEffectiveKey<id>) {
         const reg = /\/besonderheit\/(?<name>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
         const erg = match?.groups?.['name'] as id | undefined;
-        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | 'cost' | 'costNext' | 'costPreview' | undefined;
+        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'missingNextLevel' | 'Stufe' | 'cost' | 'costNext' | 'costPreview' | undefined;
         return (erg == undefined || type == undefined)
             ? undefined
             : { id: erg, type: type };
@@ -843,17 +853,20 @@ export class Charakter {
             Effective: StoreManager.key(`/fertigkeit/${Id}/Stufe`).of<TypeOfKey<FertigkeitEffectiveKey<id>>>(),
             Fixed: StoreManager.key(`/fertigkeit/${Id}/fixed`).of<TypeOfKey<FertigkeitFixedKey<id>>>(),
             Missing: StoreManager.key(`/fertigkeit/${Id}/missing`).of<TypeOfKey<FertigkeitMissingKey>>(),
+            MissingNextLevel: StoreManager.key(`/fertigkeit/${Id}/missingNextLevel`).of<TypeOfKey<FertigkeitMissingKey>>(),
             Unbeschränkt: StoreManager.key(`/fertigkeit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<FertigkeitUnbeschränktKey<id>>>(),
             Cost: StoreManager.key(`/fertigkeit/${Id}/cost`).of<TypeOfKey<CostKey<'fertigkeit', id>>>(),
+            CostNext: StoreManager.key(`/fertigkeit/${Id}/costNext`).of<TypeOfKey<CostKey<'fertigkeit', id, 'costNext'>>>(),
+            CostPreview: StoreManager.key(`/fertigkeit/${Id}/costPreview`).of<TypeOfKey<CostKey<'fertigkeit', id, 'costPreview'>>>(),
         };
     }
 
-    private getIdFromFertigkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | 'cost' } | undefined
+    private getIdFromFertigkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'missingNextLevel' | 'Stufe' | 'cost' | 'costNext' | 'costPreview' } | undefined
     private getIdFromFertigkeitKey<id extends string>(key: FertigkeitPurchasedKey<id> | FertigkeitFixedKey<id> | FertigkeitUnbeschränktKey<id> | FertigkeitMissingKey<id> | FertigkeitEffectiveKey<id>) {
         const reg = /\/fertigkeit\/(?<name>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
         const erg = match?.groups?.['name'] as id | undefined;
-        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | undefined;
+        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'missingNextLevel' | 'Stufe' | 'costNext' | 'costPreview' | undefined;
         return (erg == undefined || type == undefined)
             ? undefined
             : { id: erg, type: type };
@@ -1065,7 +1078,10 @@ export class Charakter {
                     purchased: storeList[keys.Purchased.Key].store as Writable<number>,
                     fixed: storeList[keys.Fixed.Key].store as Readable<number>,
                     missing: storeList[keys.Missing.Key].store as Readable<TypeOfKey<FertigkeitMissingKey>>,
+                    missingNextLevel: storeList[keys.MissingNextLevel.Key].store as Readable<TypeOfKey<FertigkeitMissingNextLevelKey>>,
                     cost: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'fertigkeit'>>>,
+                    costNext: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'fertigkeit', string, 'costNext'>>>,
+                    costPreview: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'fertigkeit', string, 'costPreview'>>>,
                 };
             }
 
@@ -1912,7 +1928,10 @@ export class Charakter {
                     purchased: this.storeManager.writable(keys.Purchased, 0),
                     fixed: this.storeManager.readable(keys.Fixed),
                     missing: this.storeManager.readable(keys.Missing),
+                    missingNextLevel: this.storeManager.readable(keys.MissingNextLevel),
                     cost: this.storeManager.readable(keys.Cost),
+                    costNext: this.storeManager.readable(keys.CostNext),
+                    costPreview: this.storeManager.readable(keys.CostPreview),
                 };
 
                 const dependentData = this.stammdaten.fertigkeitDependencys.filter(x => x.Eigenschaft == fertigkeit.Id);
@@ -1959,6 +1978,26 @@ export class Charakter {
                     return result;
                 }, { evalueateUndefined: true });
 
+                this.storeManager.derived(keys.MissingNextLevel, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
+                    // todo get Missing stuff
+
+                    const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
+
+                    const result = filterNull(fertigkeit.Stufe
+                        .filter((x, i) => i < (effective.newValue == UNINITILEZED ? 0 : effective.newValue + 1))
+                        .map((x, i) => {
+                            const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
+                            if (missing == null) {
+                                return null;
+                            }
+                            return {
+                                wert: i + 1, missing: missing
+                            };
+                        }));
+
+                    return result;
+                }, { evalueateUndefined: true });
+
                 this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
 
                     const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
@@ -1969,6 +2008,40 @@ export class Charakter {
                     return transformToCost(
                         fertigkeit.Stufe.map((x, i) => ({ index: i, ...x }))
                             .filter(x => x.index < purchased.newValue)
+                            .filter(x => x.index >= fixed.newValue)
+                            .map(y => {
+
+                                return [defaultKostData.Id, y.Kosten] as const;
+                            }), x => x);
+
+                });
+                this.storeManager.derived(keys.CostNext, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+
+                    const defaultKostData = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten)[0];
+
+
+                    return transformToCost(
+                        fertigkeit.Stufe.map((x, i) => ({ index: i, ...x }))
+                            .filter(x => x.index < purchased.newValue + 1)
+                            .filter(x => x.index >= fixed.newValue)
+                            .map(y => {
+
+                                return [defaultKostData.Id, y.Kosten] as const;
+                            }), x => x);
+
+                });
+                this.storeManager.derived(keys.CostPreview, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+
+                    const defaultKostData = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten)[0];
+
+
+                    return transformToCost(
+                        fertigkeit.Stufe.map((x, i) => ({ index: i, ...x }))
+                            .filter(x => x.index < purchased.newValue - 1)
                             .filter(x => x.index >= fixed.newValue)
                             .map(y => {
 

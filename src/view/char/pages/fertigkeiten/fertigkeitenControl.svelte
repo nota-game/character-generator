@@ -2,6 +2,7 @@
 	import {
 		getText,
 		getTextBesonderheit,
+		getTextFertigkeit,
 		renderRequirementMap
 	} from 'src/misc/misc';
 	import {
@@ -14,7 +15,7 @@
 	import type { Data } from 'src/models/Data';
 	import type { Readable, Writable } from 'svelte/store';
 	import KostenControl from '../../controls/KostenControl.svelte';
-	import ChangeView from './../../controls/ChangeView.svelte';
+	import ChangeView from '../../controls/ChangeView.svelte';
 
 	export let key: string;
 	export let data: Data;
@@ -42,9 +43,9 @@
 	$: {
 		if (useFuture) {
 			addFuture = char.getSimulation(
-				'besonderheit',
+				'fertigkeit',
 				(other) => {
-					other.besonderheiten[key].purchased.update((n) =>
+					other.fertigkeiten[key].purchased.update((n) =>
 						Math.max(0, Math.min(entry.Stufe.length, n + 1))
 					);
 				},
@@ -52,9 +53,9 @@
 			);
 
 			removeFuture = char.getSimulation(
-				'besonderheit',
+				'fertigkeit',
 				(other) => {
-					other.besonderheiten[key].purchased.update((n) =>
+					other.fertigkeiten[key].purchased.update((n) =>
 						Math.max(0, Math.min(entry.Stufe.length, n - 1))
 					);
 				},
@@ -63,13 +64,13 @@
 		}
 	}
 
-	$: entry = data.besonderheitenMap[key];
+	$: entry = data.fertigkeitenMap[key];
 </script>
 
 <!-- {#if addFuture} -->
 <div>
 	<h4>
-		{getTextBesonderheit(entry, $effective, char)}
+		{getTextFertigkeit(entry, $effective, char)}
 		<small style="float: right;"><KostenControl cost={$cost} {data} {char} inline /></small>
 	</h4>
 
@@ -85,9 +86,9 @@
 					}}
 				>
 					{#if $purchased == 0}
-						{getTextBesonderheit(entry, $purchased + 1, char)} hinzufügen
+						{getTextFertigkeit(entry, $purchased + 1, char)} hinzufügen
 					{:else}
-						Auf {getTextBesonderheit(entry, $purchased + 1, char)} verbessern
+						Auf {getTextFertigkeit(entry, $purchased + 1, char)} verbessern
 					{/if}
 					<small class="parenthised"
 						><KostenControl
@@ -109,7 +110,7 @@
 					<ul>
 						{#each $missingNextLevel as m}
 							<li class="missing">
-								{renderRequirementMap(m, data, { type: 'besonderheit', value: entry }, char)}
+								{renderRequirementMap(m, data, { type: 'fertigkeit', value: entry }, char)}
 							</li>
 						{/each}
 					</ul>
@@ -120,7 +121,7 @@
 							change={f}
 							{data}
 							{char}
-							exclude={{ type: 'besonderheit', id: entry.Id }}
+							exclude={{ type: 'fertigkeit', id: entry.Id }}
 							excludeRequirments={$missingNextLevel}
 						/>
 					{/await}
@@ -138,9 +139,9 @@
 					}}
 				>
 					{#if $purchased == 1}
-						{getTextBesonderheit(entry, $purchased, char)} entfernen
+						{getTextFertigkeit(entry, $purchased, char)} entfernen
 					{:else}
-						Auf {getTextBesonderheit(entry, $purchased - 1, char)} reduzieren
+						Auf {getTextFertigkeit(entry, $purchased - 1, char)} reduzieren
 					{/if}
 					<small class="parenthised"
 						><KostenControl
@@ -161,7 +162,7 @@
 					{#await $removeFuture}
 						<span aria-busy="true" />
 					{:then f}
-						<ChangeView change={f} {data} {char} exclude={{ type: 'besonderheit', id: entry.Id }} />
+						<ChangeView change={f} {data} {char} exclude={{ type: 'fertigkeit', id: entry.Id }} />
 					{/await}
 				</div>
 			</span>
@@ -176,7 +177,7 @@
 		{#each entry.Stufe.map((value, index) => index) as index}
 			{@const stufe = entry.Stufe[index]}
 			<h5>
-				{getTextBesonderheit(entry, index + 1)}
+				{getTextFertigkeit(entry, index + 1)}
 			</h5>
 			<p>
 				{getText(stufe.Beschreibung)}
@@ -189,7 +190,7 @@
 		<ul>
 			{#each $missing as m}
 				<li class="missing">
-					{renderRequirementMap(m, data, { type: 'besonderheit', value: entry }, char)}
+					{renderRequirementMap(m, data, { type: 'fertigkeit', value: entry }, char)}
 				</li>
 			{/each}
 		</ul>

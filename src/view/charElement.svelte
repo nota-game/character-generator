@@ -160,7 +160,7 @@
 	.hover {
 		position: sticky;
 		z-index: 1000;
-		top: 0px;
+		top: -5rem;
 		border: 1px solid var(--primary);
 	}
 </style>

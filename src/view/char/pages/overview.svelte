@@ -4,9 +4,12 @@
 	import { Charakter, type PersistanceData } from 'src/models/Character';
 	import { Data } from 'src/models/Data';
 	import { get } from 'svelte/store';
+	import KostenControl from '../controls/KostenControl.svelte';
 
 	export let data: Data;
 	export let char: Charakter;
+
+	let hasNegativPoints: boolean = false;
 
 	const missing = char.missingStore;
 	const name = char.nameStore;
@@ -45,20 +48,15 @@
 		{#if $missing.length == 0}
 			<p>Der Charakter ist Gültig.</p>
 		{/if}
+		<!-- 
+		<p style={hasNegativPoints ? '' : 'display: none;'}>
+			Es wurden zu viele Punkte ausgegeben
 
-		<!-- <p style={hasNegativPoints ? '' : 'display: none;'}>
-            Es wurden zu viele Punkte ausgegeben
-
-            <PointControl
-                onlyNegatve
-                char={char}
-                data={$data}
-                bind:hasNegativ={hasNegativPoints}
-            />
-        </p> -->
+			<KostenControl {char} {data} bind:hasNegativ={hasNegativPoints} mode='points' showOnlyHighCost /> 
+		</p> -->
 
 		{#if $missing.length > 0}
-			<ul>
+			<ul class="missing">
 				{#each $missing as m}
 					{#if m.type == 'besonderheit' || m.type == 'fertigkeit'}
 						{#each m.missing as mm}

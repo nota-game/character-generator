@@ -112,7 +112,6 @@
 			}
 		}
 	}
-
 </script>
 
 {#if conflift}
@@ -120,16 +119,16 @@
 	<button on:click={() => override()}>overrde?</button>
 	<button on:click={() => reset()}>NO</button>
 {:else}
-	<div class="head">
-		<select id="charSelector" bind:value={selection}>
-			{#each list as e}
-				<option value={e}>{getName(e)}</option>
-			{/each}
-		</select>
-		<button id="newCharButton" on:click={() => add()}>Neuer Charackter</button>
-	</div>
 	<main class="container">
-		
+		<div class="head">
+			<select id="charSelector" bind:value={selection}>
+				{#each list as e}
+					<option value={e}>{getName(e)}</option>
+				{/each}
+			</select>
+			<button id="newCharButton" on:click={() => add()}>Neuer Charackter</button>
+		</div>
+
 		<CharElement charId={selection} />
 	</main>
 {/if}
@@ -141,7 +140,7 @@
 
 	:global(.svelte-tabs__selected) {
 		color: var(--primary) !important;
-		border-color:  var(--primary) !important;
+		border-color: var(--primary) !important;
 	}
 	:global(.svelte-tabs__tab:hover) {
 		color: var(--primary-hover) !important;
@@ -156,5 +155,7 @@
 	:global(a.missing:hover) {
 		color: var(--form-element-invalid-active-border-color);
 	}
-
+	:global(ul *) {
+		list-style: none !important;
+	}
 </style>
