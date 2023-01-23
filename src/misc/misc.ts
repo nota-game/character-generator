@@ -139,6 +139,9 @@ export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | und
     if (!p) {
         return '';
     }
+    if(stufe==0){
+        return getText(p.Name, options);
+    }
     const numbers = ['Ⅰ', 'Ⅱ', "Ⅲ", 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ', 'Ⅺ', 'Ⅻ']
     const list = [
         ...p.Stufe.filter((_, i) => i < stufe).map((x, i) => ({ name: x.Name, stufe: i + 1 })).reverse().filter(x => x.name),

@@ -24,7 +24,7 @@
 	$: ageStore = char?.ageStore;
 	$: lebensabschnitteStore = char?.lebensAbschnitteStore;
 	$: missingStore = char?.missingStore;
-	$: cost = char?.costStore;
+	$: cost = char?.pointStore;
 </script>
 
 

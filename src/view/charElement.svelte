@@ -19,9 +19,13 @@
 	import BesonderheitenSelect from './char/pages/besonderheiten/besonderheitenSelect.svelte';
 	import FertigkeitenSelect from './char/pages/fertigkeiten/fertigkeitenSelect.svelte';
 	import TalenteSelect from './char/pages/talente/talenteSelect.svelte';
+	import KostenControl from './char/controls/KostenControl.svelte';
 
 	let data = writable<Data | undefined>(undefined);
 	let char = writable<Charakter | undefined>(undefined);
+
+	$: pointStore = $char?.pointStore;
+	$: morph = $char?.morphStore;
 
 	let dev = writable(true);
 
@@ -81,20 +85,32 @@
 </script>
 
 {#if $data && $char}
+	{#if pointStore && $pointStore}
+		<article class="hover">
+			<header>Punkte</header>
+			<div>
+				<strong>Punkte</strong>
+				<KostenControl char={$char} data={$data} mode='points' />
+			</div>
+		</article>
+	{/if}
+
 	<Tabs>
 		<TabList>
 			<Tab>Übersicht</Tab>
 			<Tab>Gattung/Art</Tab>
-			<Tab>Eigenschaften</Tab>
-			{#each Object.entries($data.pfadCategoryMap) as [_, value]}
-				<Tab>{getText(value.Name)}</Tab>
-			{/each}
-			{#each $data.Instance.Daten.Besonderheiten.map((x) => x.Kategorie) as value}
-				<Tab>{getText(value)}</Tab>
-			{/each}
-			<Tab>Talente</Tab>
-			<Tab>Fertigkeiten</Tab>
-			<Tab>Fallback</Tab>
+			{#if morph && $morph}
+				<Tab>Eigenschaften</Tab>
+				{#each Object.entries($data.pfadCategoryMap) as [_, value]}
+					<Tab>{getText(value.Name)}</Tab>
+				{/each}
+				{#each $data.Instance.Daten.Besonderheiten.map((x) => x.Kategorie) as value}
+					<Tab>{getText(value)}</Tab>
+				{/each}
+				<Tab>Talente</Tab>
+				<Tab>Fertigkeiten</Tab>
+				<Tab>Fallback</Tab>
+			{/if}
 		</TabList>
 
 		<TabPanel>

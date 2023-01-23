@@ -1,4 +1,4 @@
-import type { ModWert_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1, Ableitung_talent, Max_talent } from "../data/nota.g";
+import type { ModWert_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1, Ableitung_talent, Max_talent, KostenDefinition_misc, KostenDefinitions_misc, KostenDefinitionen_misc } from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData, type Readable, type Writable } from "../misc/StoreManager2";
 import { derived, type Readable as ReadableOriginal, type Writable as WritableOriginal } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
@@ -20,6 +20,34 @@ export type MissingRequirements = { type: 'tag', id: string }
     | { type: 'And', sub: MissingRequirements[] }
     | { type: 'Or', sub: MissingRequirements[] }
     ;
+
+
+export type Cost = Record<string, number>;
+
+export function substractCost(a: Cost, b: Cost) {
+    const keys = distinct([...Object.keys(a), ...Object.keys(b)]);
+    const result = {} as Cost;
+    for (const key of keys) {
+        result[key] = (a[key] ?? 0) - (b[key] ?? 0);
+    }
+    return result;
+}
+export function addCost(a: Cost, b: Cost) {
+    const keys = distinct([...Object.keys(a), ...Object.keys(b)]);
+    const result = {} as Cost;
+    for (const key of keys) {
+        result[key] = (a[key] ?? 0) + (b[key] ?? 0);
+    }
+    return result;
+}
+export function negateCost(a: Cost) {
+    const keys = Object.keys(a);
+    const result = {} as Cost;
+    for (const key of keys) {
+        result[key] = -a[key];
+    }
+    return result;
+}
 
 
 export type PersistanceData = {
@@ -117,18 +145,17 @@ type typeWithMissing = {
     };
 };
 
-type Cost = Record<string, number>;
-export type CostKey<kind extends 'eigenschaft' | 'fertigkeit' | 'besonderheit' | 'talent' | 'pfad', id extends string = string, id2 extends string = string> =
+export type CostKey<kind extends 'eigenschaft' | 'fertigkeit' | 'besonderheit' | 'talent' | 'pfad', id extends string = string, cost extends 'cost' | 'costNext' | 'costPreview' = 'cost', id2 extends string = string> =
     kind extends 'eigenschaft'
-    ? Key<`/eigenschaften/${id}/cost`, Cost>
+    ? Key<`/eigenschaften/${id}/${cost}`, Cost>
     : kind extends 'fertigkeit'
-    ? Key<`/fertigkeit/${id}/cost`, Cost>
+    ? Key<`/fertigkeit/${id}/${cost}`, Cost>
     : kind extends 'besonderheit'
-    ? Key<`/besonderheit/${id}/cost`, Cost>
+    ? Key<`/besonderheit/${id}/${cost}`, Cost>
     : kind extends 'talent'
-    ? Key<`/talent/${id}/cost`, Cost>
+    ? Key<`/talent/${id}/${cost}`, Cost>
     : kind extends 'pfad'
-    ? Key<`/pfad/${id}/${id2}/cost`, Cost>
+    ? Key<`/pfad/${id}/${id2}/${cost}`, Cost>
     : never
     ;
 
@@ -167,7 +194,7 @@ type LevelKeys<pfadId extends string = string, levelId extends string = string> 
     Purchased: LevelPurchasedKey<pfadId, levelId>,
     Missing: LevelMissingKey<pfadId, levelId>,
 
-    Cost: CostKey<'pfad', pfadId, levelId>,
+    Cost: CostKey<'pfad', pfadId, 'cost', levelId>,
 }
 
 type LevelEffectiveKey<id extends string = string, levelId extends string = string> = Key<`/pfad/${id}/${levelId}/effective`, number>;
@@ -230,7 +257,10 @@ type BesonderheitKeys<id extends string = string> = {
     Fixed: BesonderheitFixedKey<id>,
     Purchased: BesonderheitPurchasedKey<id>,
     Missing: BesonderheitMissingKey<id>,
+    MissingNextLevel: BesonderheitMissingNextLevelKey<id>,
     Cost: CostKey<'besonderheit', id>,
+    CostNext: CostKey<'besonderheit', id, 'costNext'>,
+    CostPreview: CostKey<'besonderheit', id, 'costPreview'>,
 }
 
 type BesonderheitPurchasedKey<id extends string = string> = Key<`/besonderheit/${id}/purchased`, number>;
@@ -241,6 +271,10 @@ type BesonderheitMissingKey<id extends string = string> = Key<`/besonderheit/${i
     wert: number;
     missing: MissingRequirements;
 }[]>;
+type BesonderheitMissingNextLevelKey<id extends string = string> = Key<`/besonderheit/${id}/missingNextLevel`, {
+    wert: number;
+    missing: MissingRequirements;
+}[]>;
 
 
 
@@ -248,7 +282,8 @@ type LebensabschittGattungKey = Key<'/organism/gattung/lebensabschnitt', Lebensa
 type LebensabschittArtKey = Key<'/organism/art/lebensabschnitt', LebensabschnittDefinition_lebewesen | undefined>;
 type LebensabschittMorphKey = Key<'/organism/morph/lebensabschnitt', LebensabschnittDefinition_lebewesen | undefined>;
 
-function toCost<T>(entries: T[], fn: ((value: T) => ((readonly [string, number]) | undefined))): Cost {
+
+function transformToCost<T>(entries: T[], fn: ((value: T) => ((readonly [string, number]) | undefined))): Cost {
     return entriesToCost(notUndefined(entries.map(fn)));
 }
 function entriesToCost(entries?: (readonly [string, number])[]): Cost {
@@ -297,7 +332,7 @@ export class Charakter {
     public readonly morphIdStore: Writable<string | undefined>;
     public readonly morphStore: Readable<MorphDefinition_lebewesen | undefined>;
     public readonly possibleMorphStore: Readable<string[]>;
-    public readonly costStore: Readable<Cost>;
+    public readonly pointStore: Readable<Cost>;
     public readonly missingStore: Readable<missingMapping[]>;
 
 
@@ -315,7 +350,10 @@ export class Charakter {
         purchased: Writable<number>,
         fixed: Readable<number>,
         missing: Readable<{ wert: number; missing: MissingRequirements; }[]>,
+        missingNextLevel: Readable<{ wert: number; missing: MissingRequirements; }[]>,
         cost: Readable<TypeOfKey<CostKey<'besonderheit'>>>,
+        costNext: Readable<TypeOfKey<CostKey<'besonderheit', string, 'costNext'>>>,
+        costPreview: Readable<TypeOfKey<CostKey<'besonderheit', string, 'costPreview'>>>,
     }> = {};
 
     public readonly fertigkeiten: Record<string, {
@@ -778,18 +816,21 @@ export class Charakter {
             Effective: StoreManager.key(`/besonderheit/${Id}/Stufe`).of<TypeOfKey<BesonderheitEffectiveKey<id>>>(),
             Fixed: StoreManager.key(`/besonderheit/${Id}/fixed`).of<TypeOfKey<BesonderheitFixedKey<id>>>(),
             Missing: StoreManager.key(`/besonderheit/${Id}/missing`).of<TypeOfKey<BesonderheitMissingKey<id>>>(),
+            MissingNextLevel: StoreManager.key(`/besonderheit/${Id}/missingNextLevel`).of<TypeOfKey<BesonderheitMissingNextLevelKey<id>>>(),
             Unbeschränkt: StoreManager.key(`/besonderheit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<BesonderheitUnbeschränktKey<id>>>(),
             Cost: StoreManager.key(`/besonderheit/${Id}/cost`).of<TypeOfKey<CostKey<'besonderheit', id>>>(),
+            CostNext: StoreManager.key(`/besonderheit/${Id}/costNext`).of<TypeOfKey<CostKey<'besonderheit', id, 'costNext'>>>(),
+            CostPreview: StoreManager.key(`/besonderheit/${Id}/costPreview`).of<TypeOfKey<CostKey<'besonderheit', id, 'costPreview'>>>(),
         }
     }
 
 
-    private getIdFromBesonterheitkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | 'cost' } | undefined
+    private getIdFromBesonterheitkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | 'cost' | 'costNext' | 'costPreview' } | undefined
     private getIdFromBesonterheitkeitKey<id extends string>(key: BesonderheitPurchasedKey<id> | BesonderheitFixedKey<id> | BesonderheitUnbeschränktKey<id> | BesonderheitMissingKey<id> | BesonderheitEffectiveKey<id>) {
         const reg = /\/besonderheit\/(?<name>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
         const erg = match?.groups?.['name'] as id | undefined;
-        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | undefined;
+        const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'Stufe' | 'cost' | 'costNext' | 'costPreview' | undefined;
         return (erg == undefined || type == undefined)
             ? undefined
             : { id: erg, type: type };
@@ -868,12 +909,12 @@ export class Charakter {
             Effective: StoreManager.key(`/pfad/${pfadId}/${levelId}/effective`).of<TypeOfKey<LevelEffectiveKey<PfadId, LevelId>>>(),
             Purchased: StoreManager.key(`/pfad/${pfadId}/${levelId}/purchased`).of<TypeOfKey<LevelPurchasedKey<PfadId, LevelId>>>(),
             Missing: StoreManager.key(`/pfad/${pfadId}/${levelId}/missing`).of<TypeOfKey<LevelMissingKey<PfadId, LevelId>>>(),
-            Cost: StoreManager.key(`/pfad/${pfadId}/${levelId}/cost`).of<TypeOfKey<CostKey<'pfad', PfadId, LevelId>>>(),
+            Cost: StoreManager.key(`/pfad/${pfadId}/${levelId}/cost`).of<TypeOfKey<CostKey<'pfad', PfadId, 'cost', LevelId>>>(),
         };
     }
 
     private getIdFromLevelKey(key: Key<string, any>): { path: string, level: string, type: 'effective' | 'purchased' | 'missing' | 'cost' } | undefined
-    private getIdFromLevelKey<id extends string, levelId extends string>(key: LevelEffectiveKey<id, levelId> | LevelPurchasedKey<id, levelId> | LevelMissingKey<id, levelId> | CostKey<'pfad', id, levelId>) {
+    private getIdFromLevelKey<id extends string, levelId extends string>(key: LevelEffectiveKey<id, levelId> | LevelPurchasedKey<id, levelId> | LevelMissingKey<id, levelId> | CostKey<'pfad', id, 'cost', levelId>) {
         const reg = /\/pfad\/(?<name>[^/]+)\/(?<level>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
         const erg = match?.groups?.['name'] as id | undefined;
@@ -984,7 +1025,7 @@ export class Charakter {
             }>;
 
 
-            this.costStore = storeList[costKey.Key].store as Readable<Cost>;
+            this.pointStore = storeList[costKey.Key].store as Readable<Cost>;
             this.missingStore = this.storeManager.readable(missingKey);
 
 
@@ -1008,7 +1049,10 @@ export class Charakter {
                     purchased: storeList[keys.Purchased.Key].store as Writable<number>,
                     fixed: storeList[keys.Fixed.Key].store as Readable<number>,
                     missing: storeList[keys.Missing.Key].store as Readable<TypeOfKey<BesonderheitMissingKey>>,
+                    missingNextLevel: storeList[keys.MissingNextLevel.Key].store as Readable<TypeOfKey<BesonderheitMissingNextLevelKey>>,
                     cost: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'besonderheit'>>>,
+                    costNext: storeList[keys.CostNext.Key].store as Readable<TypeOfKey<CostKey<'besonderheit', string, 'costNext'>>>,
+                    costPreview: storeList[keys.CostPreview.Key].store as Readable<TypeOfKey<CostKey<'besonderheit', string, 'costPreview'>>>,
                 };
             }
 
@@ -1138,7 +1182,7 @@ export class Charakter {
                 return getLast(morph.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
             })
 
-            this.costStore = this.storeManager.readable(costKey);
+            this.pointStore = this.storeManager.readable(costKey);
             this.missingStore = this.storeManager.readable(missingKey);
 
 
@@ -1180,8 +1224,15 @@ export class Charakter {
                         }
                     })
                 }
+
+                const start = transformToCost(data.Instance.Daten.GenerierungsDaten.Kosten, value => [value.Id, parseFloat(value.Berechnung)]);
                 const costs = filterCost(cast.newValue);
-                return toCost(costs.flatMap(x => Object.entries(x)), ([v1, v2]) => [v1, v2] as const);
+
+                const cost = transformToCost(costs.flatMap(x => Object.entries(x)), ([v1, v2]) => [v1, v2] as const);
+
+
+                // return start;
+                return substractCost(start, cost);
             });
 
 
@@ -1511,7 +1562,7 @@ export class Charakter {
                             )
                         }),
 
-                        ...getMods(otherDependency.map(x=>x.newValue), key),
+                        ...getMods(otherDependency.map(x => x.newValue), key),
                         // .filter((x): x is KeyData<LebensabschittGattungKey | LebensabschittArtKey | LebensabschittMorphKey> => x.key.Key.endsWith('/lebensabschnitt'))
                         // .flatMap(x =>
                         //     notUndefined(x.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [])),
@@ -1597,7 +1648,7 @@ export class Charakter {
                     const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependent);
 
                     if (meta.newValue?.type == 'bereich') {
-                        return toCost(meta.newValue.Kosten, x => {
+                        return transformToCost(meta.newValue.Kosten, x => {
 
                             const _default = meta.newValue?.type == 'bereich' ? meta.newValue.default : 0;
 
@@ -1617,7 +1668,7 @@ export class Charakter {
                             }
                         })
                     } else if (meta.newValue?.type == 'reihe') {
-                        return toCost(meta.newValue.currentSchwelle?.Kosten ?? [],
+                        return transformToCost(meta.newValue.currentSchwelle?.Kosten ?? [],
                             x => {
                                 let resultreturn: number | undefined = undefined;
                                 const scope = {
@@ -1661,7 +1712,10 @@ export class Charakter {
                     purchased: this.storeManager.writable(keys.Purchased, 0),
                     fixed: this.storeManager.readable(keys.Fixed),
                     missing: this.storeManager.readable(keys.Missing),
+                    missingNextLevel: this.storeManager.readable(keys.MissingNextLevel),
                     cost: this.storeManager.readable(keys.Cost),
+                    costNext: this.storeManager.readable(keys.CostNext),
+                    costPreview: this.storeManager.readable(keys.CostPreview),
                 };
 
                 const dependentData = this.stammdaten.besonderheitDependencys.filter(x => x.Eigenschaft == besonderheit.Id);
@@ -1736,12 +1790,90 @@ export class Charakter {
                     return result;
                 }, { evalueateUndefined: true });
 
+                this.storeManager.derived(keys.MissingNextLevel, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
+                    // todo get Missing stuff
+
+                    const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
+
+                    const result = filterNull(besonderheit.Stufe
+                        .filter((x, i) => i <= (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
+                        .map((x, i) => {
+                            const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
+                            if (missing == null) {
+                                return null;
+                            }
+                            return {
+                                wert: i + 1, missing: missing
+                            };
+                        }));
+
+                    return result;
+                }, { evalueateUndefined: true });
+
+                this.storeManager.derived(keys.CostNext, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+
+
+                    return transformToCost(
+                        besonderheit.Stufe.map((x, i) => ({ index: i, ...x }))
+                            .filter(x => x.index < purchased.newValue + 1)
+                            .filter(x => x.index >= fixed.newValue)
+                            .flatMap(x => x.Kosten.map(y => {
+
+                                let resultreturn: number;
+
+                                try {
+                                    resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                                } catch (error) {
+                                    console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
+                                    resultreturn = 0;
+                                }
+
+
+                                return [y.Id, resultreturn] as const;
+                            })), x => x);
+
+                });
+
+
+
+
+                this.storeManager.derived(keys.CostPreview, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+
+
+                    return transformToCost(
+                        besonderheit.Stufe.map((x, i) => ({ index: i, ...x }))
+                            .filter(x => x.index < purchased.newValue - 1)
+                            .filter(x => x.index >= fixed.newValue)
+                            .flatMap(x => x.Kosten.map(y => {
+
+                                let resultreturn: number;
+
+                                try {
+                                    resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                                } catch (error) {
+                                    console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
+                                    resultreturn = 0;
+                                }
+
+
+                                return [y.Id, resultreturn] as const;
+                            })), x => x);
+
+                });
+
+
+
+
                 this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
 
                     const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
 
 
-                    return toCost(
+                    return transformToCost(
                         besonderheit.Stufe.map((x, i) => ({ index: i, ...x }))
                             .filter(x => x.index < purchased.newValue)
                             .filter(x => x.index >= fixed.newValue)
@@ -1834,7 +1966,7 @@ export class Charakter {
                     const defaultKostData = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter(x => x.StandardKosten)[0];
 
 
-                    return toCost(
+                    return transformToCost(
                         fertigkeit.Stufe.map((x, i) => ({ index: i, ...x }))
                             .filter(x => x.index < purchased.newValue)
                             .filter(x => x.index >= fixed.newValue)
@@ -2162,7 +2294,7 @@ export class Charakter {
 
 
 
-                        return toCost(level.Kosten.map(y => {
+                        return transformToCost(level.Kosten.map(y => {
 
                             let total = 0;
                             for (let index = 0; index < purchased.newValue; index++) {
@@ -2670,13 +2802,13 @@ export class Charakter {
 
                     callback(twin);
 
-                    const punkteKeys = distinct(Object.keys(twin.costStore.currentValue()).concat(Object.keys(this.costStore.currentValue())));
+                    const punkteKeys = distinct(Object.keys(twin.pointStore.currentValue()).concat(Object.keys(this.pointStore.currentValue())));
 
-                    const copyCostRaw = twin.costStore.currentValue();
+                    const copyCostRaw = twin.pointStore.currentValue();
                     const copyCost = copyCostRaw === UNINITILEZED ? {} : copyCostRaw;
 
 
-                    const originalCostRaw = this.costStore.currentValue();
+                    const originalCostRaw = this.pointStore.currentValue();
                     const originalCost = originalCostRaw === UNINITILEZED ? {} : originalCostRaw;
 
 
@@ -2863,7 +2995,7 @@ export class Charakter {
 
         };
 
-        const alweysStors = [this.costStore, this.missingStore];
+        const alweysStors = [this.pointStore, this.missingStore];
         if (type == 'besonderheit') {
             if (this.besonderheiten[key] === undefined) {
                 throw new Error(`Unknown besonderheit ${key}`);
