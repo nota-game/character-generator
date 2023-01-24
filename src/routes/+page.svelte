@@ -16,8 +16,9 @@
 	import * as base64 from 'base64-uint8';
 	import CharElement from 'src/view/charElement.svelte';
 	import {} from '@picocss/pico/css/pico.css';
+	import Nota from 'src/view/nota.svelte';
 
-	let char: Charakter | undefined;
+	// let char: Charakter | undefined;
 
 	const data = writable<undefined | Data>(undefined);
 
@@ -25,6 +26,10 @@
 	let selection: string | undefined;
 	let mounted = false;
 	let conflift = false;
+
+	 let char = writable<Charakter | undefined>(undefined);
+
+	 $: nameStore = char !== undefined ? $char?.nameStore : undefined;
 
 	onMount(async () => {
 		mounted = true;
@@ -111,7 +116,7 @@
 				conflift = false;
 			}
 		}
-	}
+	} 
 </script>
 
 {#if conflift}
@@ -120,16 +125,27 @@
 	<button on:click={() => reset()}>NO</button>
 {:else}
 	<main class="container">
-		<div class="head">
-			<select id="charSelector" bind:value={selection}>
-				{#each list as e}
-					<option value={e}>{getName(e)}</option>
-				{/each}
-			</select>
-			<button id="newCharButton" on:click={() => add()}>Neuer Charackter</button>
-		</div>
+		<div style="--primary-color: var(--muted-color)">
+			<div style="--secondary-color: var(--primary)">
+				<Nota />
+			</div>
+			<div class="head">
+				<select id="charSelector" bind:value={selection} >
+					{#each list as e}
+						<option value={e}>
+							{#if selection == e}
+								{$nameStore}
+							{:else}
+								{getName(e)}
+							{/if}
+						</option>
+					{/each}
+				</select>
+				<button id="newCharButton" on:click={() => add()}>Neuer Charackter</button>
+			</div>
 
-		<CharElement charId={selection} />
+			<CharElement charId={selection} bind:char />
+		</div>
 	</main>
 {/if}
 

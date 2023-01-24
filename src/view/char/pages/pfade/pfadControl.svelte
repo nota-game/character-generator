@@ -70,10 +70,10 @@
 
 <!-- {#if addFuture} -->
 <div>
-	<h4>
-		{getTextPfad(entryPfad, entry, char)}
+	<h5>
+		{getTextPfad(entryPfad, entry, char)} {$purchased}
 		<small style="float: right;"><KostenControl cost={$cost} {data} {char} inline /></small>
-	</h4>
+	</h5>
 	<div>
 		{#if $purchased < entry.WiederhoteNutzung}
 			<TooltipControl>

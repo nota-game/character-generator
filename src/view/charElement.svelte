@@ -22,7 +22,7 @@
 	import KostenControl from './char/controls/KostenControl.svelte';
 
 	let data = writable<Data | undefined>(undefined);
-	let char = writable<Charakter | undefined>(undefined);
+	export let char = writable<Charakter | undefined>(undefined);
 
 	$: pointStore = $char?.pointStore;
 	$: morph = $char?.morphStore;
@@ -86,7 +86,7 @@
 
 {#if $data && $char}
 	{#if pointStore && $pointStore}
-		<article class="hover" >
+		<article class="hover">
 			<header>Punkte</header>
 			<div>
 				<strong>Punkte</strong>
