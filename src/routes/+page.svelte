@@ -27,9 +27,9 @@
 	let mounted = false;
 	let conflift = false;
 
-	 let char = writable<Charakter | undefined>(undefined);
+	let char = writable<Charakter | undefined>(undefined);
 
-	 $: nameStore = char !== undefined ? $char?.nameStore : undefined;
+	$: nameStore = char !== undefined ? $char?.nameStore : undefined;
 
 	onMount(async () => {
 		mounted = true;
@@ -116,7 +116,7 @@
 				conflift = false;
 			}
 		}
-	} 
+	}
 </script>
 
 {#if conflift}
@@ -128,9 +128,10 @@
 		<div style="--primary-color: var(--muted-color)">
 			<div style="--secondary-color: var(--primary)">
 				<Nota />
+				<h1>Charakter Generator</h1>
 			</div>
 			<div class="head">
-				<select id="charSelector" bind:value={selection} >
+				<select id="charSelector" bind:value={selection}>
 					{#each list as e}
 						<option value={e}>
 							{#if selection == e}
