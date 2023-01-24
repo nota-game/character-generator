@@ -193,13 +193,20 @@ type LevelKeys<pfadId extends string = string, levelId extends string = string> 
     Effective: LevelEffectiveKey<pfadId, levelId>,
     Purchased: LevelPurchasedKey<pfadId, levelId>,
     Missing: LevelMissingKey<pfadId, levelId>,
+    MissingNext: LevelMissingNextKey<pfadId, levelId>,
 
     Cost: CostKey<'pfad', pfadId, 'cost', levelId>,
+    CostNext: CostKey<'pfad', pfadId, 'costNext', levelId>,
+    CostPreview: CostKey<'pfad', pfadId, 'costPreview', levelId>,
 }
 
 type LevelEffectiveKey<id extends string = string, levelId extends string = string> = Key<`/pfad/${id}/${levelId}/effective`, number>;
 type LevelPurchasedKey<id extends string = string, levelId extends string = string> = Key<`/pfad/${id}/${levelId}/purchased`, number>;
 type LevelMissingKey<id extends string = string, levelId extends string = string> = Key<`/pfad/${id}/${levelId}/missing`, {
+    wert: number;
+    missing: MissingRequirements;
+}[]>;
+type LevelMissingNextKey<id extends string = string, levelId extends string = string> = Key<`/pfad/${id}/${levelId}/missingNext`, {
     wert: number;
     missing: MissingRequirements;
 }[]>;
@@ -312,7 +319,7 @@ function entriesToCost(entries?: (readonly [string, number])[]): Cost {
 
 
 
-type TalentSupportIncrease = {
+export type TalentSupportIncrease = {
     id: string;
     increaseTaB: number;
     increaseEP: number;
@@ -399,7 +406,10 @@ export class Charakter {
         effective: Readable<number>,
         purchased: Writable<number>,
         missing: Readable<{ wert: number; missing: MissingRequirements; }[]>,
+        missingNext: Readable<{ wert: number; missing: MissingRequirements; }[]>,
         cost: Readable<TypeOfKey<CostKey<'pfad'>>>,
+        costNext: Readable<TypeOfKey<CostKey<'pfad', string, 'costNext'>>>,
+        costPreview: Readable<TypeOfKey<CostKey<'pfad', string, 'costPreview'>>>,
     }>> = {};
 
     public readonly lebensAbschnitteStore: Readable<{
@@ -922,17 +932,20 @@ export class Charakter {
             Effective: StoreManager.key(`/pfad/${pfadId}/${levelId}/effective`).of<TypeOfKey<LevelEffectiveKey<PfadId, LevelId>>>(),
             Purchased: StoreManager.key(`/pfad/${pfadId}/${levelId}/purchased`).of<TypeOfKey<LevelPurchasedKey<PfadId, LevelId>>>(),
             Missing: StoreManager.key(`/pfad/${pfadId}/${levelId}/missing`).of<TypeOfKey<LevelMissingKey<PfadId, LevelId>>>(),
+            MissingNext: StoreManager.key(`/pfad/${pfadId}/${levelId}/missingNext`).of<TypeOfKey<LevelMissingKey<PfadId, LevelId>>>(),
             Cost: StoreManager.key(`/pfad/${pfadId}/${levelId}/cost`).of<TypeOfKey<CostKey<'pfad', PfadId, 'cost', LevelId>>>(),
+            CostNext: StoreManager.key(`/pfad/${pfadId}/${levelId}/costNext`).of<TypeOfKey<CostKey<'pfad', PfadId, 'costNext', LevelId>>>(),
+            CostPreview: StoreManager.key(`/pfad/${pfadId}/${levelId}/costPreview`).of<TypeOfKey<CostKey<'pfad', PfadId, 'costPreview', LevelId>>>(),
         };
     }
 
-    private getIdFromLevelKey(key: Key<string, any>): { path: string, level: string, type: 'effective' | 'purchased' | 'missing' | 'cost' } | undefined
+    private getIdFromLevelKey(key: Key<string, any>): { path: string, level: string, type: 'effective' | 'purchased' | 'missing' | 'missingNext' | 'cost' | 'costNext' | 'costPreview' } | undefined
     private getIdFromLevelKey<id extends string, levelId extends string>(key: LevelEffectiveKey<id, levelId> | LevelPurchasedKey<id, levelId> | LevelMissingKey<id, levelId> | CostKey<'pfad', id, 'cost', levelId>) {
         const reg = /\/pfad\/(?<name>[^/]+)\/(?<level>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
         const erg = match?.groups?.['name'] as id | undefined;
         const erg2 = match?.groups?.['level'] as levelId | undefined;
-        const type = match?.groups?.['type'] as 'effective' | 'purchased' | 'missing' | 'cost' | undefined;
+        const type = match?.groups?.['type'] as 'effective' | 'purchased' | 'missing' | 'missingNext' | 'cost' | 'costNext' | 'costPreview' | undefined;
         return (erg == undefined || type == undefined)
             ? undefined
             : { path: erg, level: erg2, type: type };
@@ -1110,7 +1123,10 @@ export class Charakter {
                         effective: storeList[keys.Effective.Key].store as Readable<number>,
                         purchased: storeList[keys.Purchased.Key].store as Writable<number>,
                         missing: storeList[keys.Missing.Key].store as Readable<TypeOfKey<LevelMissingKey>>,
+                        missingNext: storeList[keys.MissingNext.Key].store as Readable<TypeOfKey<LevelMissingNextKey>>,
                         cost: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'pfad'>>>,
+                        costNext: storeList[keys.CostNext.Key].store as Readable<TypeOfKey<CostKey<'pfad', string, 'costNext'>>>,
+                        costPreview: storeList[keys.CostNext.Key].store as Readable<TypeOfKey<CostKey<'pfad', string, 'costPreview'>>>,
                     };
                 }
             }
@@ -1601,7 +1617,6 @@ export class Charakter {
                         })
 
                     ];
-                    //TODO: Talents are not yet handled
 
 
 
@@ -2290,7 +2305,10 @@ export class Charakter {
                         effective: this.storeManager.readable(keys.Effective),
                         purchased: this.storeManager.writable(keys.Purchased, 0),
                         missing: this.storeManager.readable(keys.Missing),
+                        missingNext: this.storeManager.readable(keys.MissingNext),
                         cost: this.storeManager.readable(keys.Cost),
+                        costNext: this.storeManager.readable(keys.CostNext),
+                        costPreview: this.storeManager.readable(keys.CostPreview),
                     };
 
                     const dependentData = this.stammdaten.levelDependencys.filter(x => x.Eigenschaft == `${path.Id}|${level.Id}`);
@@ -2358,16 +2376,59 @@ export class Charakter {
                         return [{ wert: 1, missing: mis }];
                     }, { evalueateUndefined: true });
 
+                    this.storeManager.derived(keys.MissingNext, [...requirementsDependency], (data, [...dependent]) => {
+                        const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency, levelDependency } = this.groupDependencyData(dependent);
+
+                        // if (purchased.newValue == UNINITILEZED || purchased.newValue == 0) {
+                        //     return [];
+                        // }
+                        const Voraussetzung = data.levelMap[path.Id][level.Id].Voraussetzung;
+
+
+                        const levelMap = Object.fromEntries(levelDependency.map(x => [x.id, (x.Effective.newValue as unknown === UNINITILEZED) ? 0 : x.Effective.newValue]))
+
+
+
+                        const misc = this.levelPrerequire(Voraussetzung?.LevelVoraussetzung, levelMap, path.Id);
+                        const missing = Charakter.getMissingInternal(Voraussetzung?.Zusätzlich, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
+                        let mis: MissingRequirements;
+                        if (misc?.type == 'And') {
+                            if (missing?.type == "And") {
+                                misc.sub.push(...missing.sub);
+                            } else if (missing != null) {
+                                misc.sub.push(missing);
+                            }
+                            mis = misc;
+                        } else if (missing?.type == 'And') {
+                            if (misc != null) {
+                                missing.sub.push(misc);
+                            }
+                            mis = missing;
+                        } else if (misc == null) {
+                            if (missing !== null)
+                                mis = missing;
+                            else {
+                                return [];
+                            }
+                        } else if (missing == null) {
+                            if (misc !== null) {
+                                mis = misc;
+                            } else {
+                                return [];
+                            }
+                        }
+                        else {
+                            mis = { type: 'And', sub: [misc, missing] };
+                        }
+
+                        return [{ wert: 1, missing: mis }];
+                    }, { evalueateUndefined: true });
+
 
 
                     this.storeManager.derived(keys.Cost, [keys.Purchased, ...costDependency], (data, [purchased, ...dependencys]) => {
-
                         const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
-
-
-
                         return transformToCost(level.Kosten.map(y => {
-
                             let total = 0;
                             for (let index = 0; index < purchased.newValue; index++) {
 
@@ -2381,19 +2442,47 @@ export class Charakter {
                                     console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
                                 }
                             }
-
                             return [y.Id, total] as const;
                         }), x => x);
-
-
-
-
                     });
+                    this.storeManager.derived(keys.CostNext, [keys.Purchased, ...costDependency], (data, [purchased, ...dependencys]) => {
+                        const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+                        return transformToCost(level.Kosten.map(y => {
+                            let total = 0;
+                            for (let index = 0; index < Math.min(purchased.newValue + 1, level.WiederhoteNutzung); index++) {
 
 
+                                const scope = {
+                                    value: index
+                                };
+                                try {
+                                    total += evaluateBerechnung(y.Berechnung, scope, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                                } catch (error) {
+                                    console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
+                                }
+                            }
+                            return [y.Id, total] as const;
+                        }), x => x);
+                    });
+                    this.storeManager.derived(keys.CostPreview, [keys.Purchased, ...costDependency], (data, [purchased, ...dependencys]) => {
+                        const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+                        return transformToCost(level.Kosten.map(y => {
+                            let total = 0;
+                            for (let index = 0; index < Math.max(purchased.newValue - 1, 0); index++) {
 
 
-
+                                const scope = {
+                                    value: index
+                                };
+                                try {
+                                    total += evaluateBerechnung(y.Berechnung, scope, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                                } catch (error) {
+                                    console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
+                                }
+                            }
+                            return [y.Id, total] as const;
+                        }), x => x);
+                    });
                 }
             }
 

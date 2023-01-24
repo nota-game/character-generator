@@ -158,4 +158,7 @@
 	:global(ul *) {
 		list-style: none !important;
 	}
+	:global(dialog) {
+		z-index: 1500;
+	}
 </style>

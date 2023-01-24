@@ -109,7 +109,7 @@
 				{/each}
 				<Tab>Talente</Tab>
 				<Tab>Fertigkeiten</Tab>
-				<Tab>Fallback</Tab>
+				<!-- <Tab>Fallback</Tab> -->
 			{/if}
 		</TabList>
 
@@ -139,9 +139,9 @@
 		<TabPanel>
 			<FertigkeitenSelect char={$char} data={$data} />
 		</TabPanel>
-		<TabPanel>
+		<!-- <TabPanel>
 			<Fallback char={$char} data={$data} />
-		</TabPanel>
+		</TabPanel> -->
 	</Tabs>
 {:else if !charId && mounted}
 	<main>

@@ -21,9 +21,19 @@
 	export let inline: boolean = false;
 	export let showOnlyHighCost: boolean = false;
 
+	export let alwaysShow: string | string[] = [];
+
 	let pointStore = char?.pointStore;
 
-	$: effectivePoints = mode == 'points' ? cost ?? $pointStore ?? {} : cost ?? {};
+	$: effectivePoints = { ...(mode == 'points' ? cost ?? $pointStore ?? {} : cost ?? {}) };
+	$: {
+		const toAdd = Array.isArray(alwaysShow) ? alwaysShow : [alwaysShow];
+		for (const a of toAdd) {
+			if (effectivePoints[a] === undefined) {
+				effectivePoints[a] = 0;
+			}
+		}
+	}
 
 	function isKostToHigh(key: string) {
 		if (mode == 'none') {
@@ -68,21 +78,19 @@
 	}
 
 	function renderValue(value: number) {
-		if (mode == 'points') {
-			return `${value >= 0 ? '+' : '-'}${Math.abs(value)}`;
+		if (mode == 'points' || mode == 'none') {
+			return `${value >= 0 ? '' : '-'}${Math.abs(value)}`;
 		} else {
 			return `${value <= 0 ? '+' : '-'}${Math.abs(value)}`;
 		}
 	}
-
-
 </script>
 
 {#each Object.entries(effectivePoints) as [key, value]}
 	{@const c = data.Instance.Daten.KostenDefinitionen.KostenDefinition.filter((x) => x.Id == key)[0]}
 
 	{#if c}
-		{#if showZeroValues || value != 0 && !showOnlyHighCost || isKostToHigh(key)}
+		{#if showZeroValues || (value != 0 && !showOnlyHighCost) || isKostToHigh(key)}
 			<span class:missing={isKostToHigh(key)}>
 				<abbr title={getText(c.Name)}> {getText(c.Abkürzung)}</abbr>: {renderValue(value)}
 			</span>

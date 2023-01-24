@@ -6,6 +6,7 @@
 	import Fertigkeit from 'src/view/root/fertigkeit.svelte';
 	import Talent from 'src/view/root/talent.svelte';
 	import { Tabs, Tab, TabList, TabPanel } from 'svelte-tabs';
+	import TalentControl from './talentControl.svelte';
 
 	export let data: Data;
 	export let char: Charakter;
@@ -24,9 +25,12 @@
 		</TabList>
 		{#each Object.values(data.talentCategoryMap) as value}
 			<TabPanel>
-				{#each Object.keys(value.talente) as key}
-					<Talent {data} {key} {char} {...char.talente[key]} useFuture />
-				{/each}
+                <table>
+
+                    {#each Object.keys(value.talente) as key}
+					<TalentControl {data} {key} {char} {...char.talente[key]} />
+                    {/each}
+                </table>
 			</TabPanel>
 		{/each}
 	</Tabs>
