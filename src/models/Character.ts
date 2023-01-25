@@ -1,4 +1,4 @@
-import type { ModWert_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1, Ableitung_talent, Max_talent, KostenDefinition_misc, KostenDefinitions_misc, KostenDefinitionen_misc } from "../data/nota.g";
+import type { ModWert_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1, Ableitung_talent, Max_talent, KostenDefinition_misc, KostenDefinitions_misc, KostenDefinitionen_misc, _Bereich } from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData, type Readable, type Writable } from "../misc/StoreManager2";
 import { derived, type Readable as ReadableOriginal, type Writable as WritableOriginal } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
@@ -167,7 +167,7 @@ export type EigenschaftKeys<id extends string = string> = {
     Cost: CostKey<'eigenschaft', id>,
 }
 
-export type EigenschaftMetaKey<id extends string = string> = Key<`/eigenschaften/${id}/meta`, StaticheDefinition_lebewesen & { type: 'bereich' } | (ReiheDefinition_lebewesen & {
+export type EigenschaftMetaKey<id extends string = string> = Key<`/eigenschaften/${id}/meta`, StaticheDefinition_lebewesen & { type: 'bereich', quantileForAge: Quantile[]; } | (ReiheDefinition_lebewesen & {
     quantileForAge: Quantile[];
     schwellenForAge: Schwelle[];
     currentSchwelle?: Schwelle;
@@ -1641,7 +1641,9 @@ export class Charakter {
                     }
                     if (base.type === 'bereich') {
                         const entry = base.entry as StaticheDefinition_lebewesen;
-                        return { type: base.type, ...entry };
+
+
+                        return { type: base.type, ...entry, ...Charakter.applyAge(age, entry) };
                     } else if (base.type == 'punkt') {
                         const punkt = base.entry as PunktDefintion_lebewesen;
                         return { type: base.type, ...punkt };
@@ -2862,9 +2864,13 @@ export class Charakter {
 
 
 
+    public static applyAge(age: number, reihe: _Bereich): { quantileForAge: Quantile[]; };
     public static applyAge(age: number, reihe: _Reihe): { schwellenForAge: Schwelle[]; quantileForAge: Quantile[]; };
     public static applyAge(age: number, reihe: _Reihe, currentValue: number): { schwellenForAge: Schwelle[]; quantileForAge: Quantile[]; currentSchwelle: Schwelle; };
-    public static applyAge(age: number, reihe: _Reihe, currentValue?: number): { schwellenForAge: Schwelle[]; quantileForAge: Quantile[]; currentSchwelle?: Schwelle; } {
+    public static applyAge(age: number, reihe: _Reihe & _Bereich & Partial<_Reihe> & Partial<_Bereich>, currentValue?: number): { schwellenForAge: Schwelle[]; quantileForAge: Quantile[]; currentSchwelle?: Schwelle; } {
+
+
+
         const a = age;
         const tempIndex = Math.round(
             (a - (reihe?.startAlter ?? 0)) / (reihe?.step ?? 1) + (reihe?.startAlter ?? 0)
