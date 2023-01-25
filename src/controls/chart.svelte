@@ -18,6 +18,7 @@
 
 	let width = 500;
 	let height = 200;
+	$:console.log({height,width})
 	type point = [number, number];
 	function line(pointA: point, pointB: point) {
 		const lengthX = pointB[0] - pointA[0];
@@ -28,7 +29,7 @@
 		};
 	}
 	// https://francoisromain.medium.com/smooth-a-svg-path-with-cubic-bezier-curves-e37b49d46c74
-	function svgPath(points: point[], command: (points: point[], index: number) => string) {
+	function svgPath(points: point[],width:number,height:number, command: (points: point[], index: number,width:number,height:number) => string) {
 		if (points == undefined) {
 			return '';
 		}
@@ -39,18 +40,18 @@
 					? // if first point
 					  `M ${xScale(point[0])},${yScale(point[1])}`
 					: // else
-					  `${acc} ${command(a, i)}`,
+					  `${acc} ${command(a, i,width,height)}`,
 			''
 		);
 		return d;
 	}
 
-	function bezierCommand(a: point[], i: number) {
+	function bezierCommand(a: point[], i: number,width:number,height:number) {
 		const point = a[i];
 		// start control point
-		const [cpsX, cpsY] = controlPoint(a[i - 1], a[i - 2], point, false);
+		const [cpsX, cpsY] = controlPoint(a[i - 1], a[i - 2], point, false,width,height);
 		// end control point
-		const [cpeX, cpeY] = controlPoint(point, a[i - 1], a[i + 1], true);
+		const [cpeX, cpeY] = controlPoint(point, a[i - 1], a[i + 1], true,width,height);
 		return `C ${xScale(cpsX)},${yScale(cpsY)} ${xScale(cpeX)},${yScale(cpeY)} ${xScale(
 			point[0]
 		)},${yScale(point[1])}`;
@@ -60,7 +61,7 @@
 		current: point,
 		previous: point | undefined,
 		next: point | undefined,
-		reverse: boolean
+		reverse: boolean,width:number,height:number
 	) {
 		// When 'current' is the first or last point of the array
 		// 'previous' or 'next' don't exist.
@@ -106,9 +107,12 @@
 	$: xTicks = [minX, maxX];
 	$: yTicks = [minS, maxS];
 
-	$: path = data ? svgPath(data.points, bezierCommand) : undefined;
+	$: path = data ? svgPath(data.points,width,height, bezierCommand) : undefined;
 
-	$: area = `${path}L${xScale(maxX)},${yScale(minS)}L${xScale(minX)},${yScale(minS)}Z`;
+	$: area = `${path}L${xScale(maxX,width,height)},${yScale(minS,width,height)}L${xScale(minX,width,height)},${yScale(minS,width,height)}Z`;
+
+
+	$:console.info(xScale(17,width,height));
 
 	function formatMobile(tick: number) {
 		return "'" + tick.toString().slice(-2);
@@ -121,7 +125,7 @@
 			<!-- y axis -->
 			<g class="axis y-axis" transform="translate(0, {padding.top})">
 				{#each yTicks as tick}
-					<g class="tick tick-{tick}" transform="translate(0, {yScale(tick) - padding.bottom})">
+					<g class="tick tick-{tick}" transform="translate(0, {yScale(tick,width,height) - padding.bottom})">
 						<line x2="100%" />
 						<!-- <text y="-4">{tick} {tick == maxS ? ` ${unit}` : ''}</text> -->
 					</g>
@@ -131,7 +135,7 @@
 			<!-- x axis -->
 			<g class="axis x-axis">
 				{#each xTicks as tick}
-					<g class="tick tick-{tick}" transform="translate({xScale(tick)},{height})">
+					<g class="tick tick-{tick}" transform="translate({xScale(tick,width,height)},{height})">
 						<line y1="-{height}" y2="-{padding.bottom}" x1="0" x2="0" />
 						<text y="-2">{width > 380 ? tick : formatMobile(tick)}</text>
 					</g>
@@ -150,7 +154,7 @@
 				<g >
 					{#if position}
 						
-					<g class="tick x-axis" transform="translate({xScale(position)},{height})">
+					<g class="tick x-axis" transform="translate({xScale(position,width,height)},{height})">
 						<line y1="-{height}" y2="-{padding.bottom}" x1="0" x2="0" />
 						<text y="-2">{width > 380 ? position : formatMobile(position)}</text>
 					</g>
@@ -161,7 +165,7 @@
 					</g> -->
 
 					<line
-						transform="translate({xScale(position)},{height})"
+						transform="translate({xScale(position,width,height)},{height})"
 						y1="-{height}"
 						y2="-{padding.bottom}"
 						x1="0"
