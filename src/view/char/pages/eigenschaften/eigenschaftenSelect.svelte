@@ -25,6 +25,7 @@
 	import { init } from 'svelte/internal';
 	// import EntwicklungReihe from './../../controls/organismus/EntwicklungReihe.svelte';
 	import EigenschaftView from './eigenschaftView.svelte';
+	import Hide from './hide.svelte';
 	// import Char from '../char.svelte';
 
 	export let data: Data;
@@ -59,7 +60,6 @@
 		setAgePromise = undefined;
 		char.ageStore.set(ageArray[0]);
 	}
-
 </script>
 
 {#if data && char}
@@ -114,44 +114,39 @@
 			<h2>
 				{getText(gruppe.Name)}
 			</h2>
-			{#each Object.entries(char.eigenschaften) as [key, eigenschaft]}
-				<EigenschaftView {data} {char} {...eigenschaft} {key} filterGruppe={gruppe.id} />
-			{/each}
-			<!-- svelte-ignore a11y-label-has-associated-control -->
-			<!-- <label> -->
-			<!-- {#if propStore && $propStore && propTypeStore && $propTypeStore} -->
-			<!-- {#if $propTypeStore[key]?.type == 'calc'} -->
-			<!-- {@const reihe = $propTypeStore[key]} -->
-			<!-- <label> -->
-			<!-- <h4> -->
-			<!-- {getText(reihe.Name)} -->
-			<!-- </h4> -->
-			<!-- </label> -->
-			<!-- {$propStore[key].toLocaleString()} -->
-			<!-- {reihe.einheit} -->
-			<!-- {:else if $propTypeStore[key]?.type == 'reihe'} -->
-			<!-- {@const reihe = $propTypeStore[key]} -->
-			<!-- <EntwicklungReihe {char} {data} {reihe} /> -->
-			<!-- {/if} -->
-			<!-- {/if} -->
-			<!-- </label> -->
+			<div class="propPanel">
+				{#each Object.entries(char.eigenschaften) as [key, eigenschaft]}
+					<Hide meta={eigenschaft.meta} filterGruppe={gruppe.id}>
+						<!--Stupid hack because css :empte dose not match whitespcae anymore…-->
+						<div>
+							<EigenschaftView {data} {char} {...eigenschaft} {key} filterGruppe={gruppe.id} />
+						</div>
+					</Hide>
+				{/each}
+			</div>
 		</article>
 	{/each}
-
-	<!-- {#each selectedMorph.Entwiklung.Reihe ?? [] as r}
-			<EntwicklungReihe {char} {data} reihe={r} />
-		{/each} -->
 {/if}
 
 <style lang="scss">
+	.propPanel {
+		display: flex;
+		flex-wrap: wrap;
+		& > * {
+			width: 50%;
+			@media (max-width: 990px ) {
+				width: 100%;
+			}
+		}
+	}
+
 	label {
 		padding: 1rem;
 	}
-    h2{
-        position: sticky;
-        top: 4.5rem;
-        background-color: var(--card-background-color);
-        z-index: 800;
-    }
-
+	h2 {
+		position: sticky;
+		top: 4.5rem;
+		background-color: var(--card-background-color);
+		z-index: 800;
+	}
 </style>

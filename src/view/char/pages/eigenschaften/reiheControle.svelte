@@ -16,11 +16,14 @@
 		Schwelle,
 		TypeOfKey
 	} from 'src/models/Character';
+	import KostenControl from 'src/view/char/controls/KostenControl.svelte';
+
 	import type { Data } from 'src/models/Data';
 	import RangeSlider from 'svelte-range-slider-pips';
 	import Chart from 'src/controls/chart.svelte';
 	import { number, round } from 'mathjs';
 	import type { Readable, Writable } from 'svelte/store';
+	import QuantileChart from '../../controls/QuantileChart.svelte';
 	// import KostenControl from './../../routes/controls/KostenControl.svelte';
 
 	export let data: Data;
@@ -59,26 +62,25 @@
 	function initChar(char: Charakter, reihe: _Reihe) {
 		const currentValue = $raw;
 		// if (selectedArray[0] == 0) {
-			if (!currentValue) {
-				// not yet set
-				console.log($meta);
-				const defaultValue =
-					quantile.sort((a, b) => 50 - a.Quantil - (50 - b.Quantil))[0]?.Wert ??
-					(Math.max(...schwellen.map((x) => x.Wert)) - Math.min(...schwellen.map((x) => x.Wert))) /
-						2 +
-						Math.min(...schwellen.map((x) => x.Wert)) ??
-					0;
+		if (!currentValue) {
+			// not yet set
+			console.log($meta);
+			const defaultValue =
+				quantile.sort((a, b) => 50 - a.Quantil - (50 - b.Quantil))[0]?.Wert ??
+				(Math.max(...schwellen.map((x) => x.Wert)) - Math.min(...schwellen.map((x) => x.Wert))) /
+					2 +
+					Math.min(...schwellen.map((x) => x.Wert)) ??
+				0;
 
-				$raw = defaultValue;
-				selectedArray[0] = defaultValue;
-			} else {
-				selectedArray[0] = currentValue;
-			}
+			$raw = defaultValue;
+			selectedArray[0] = defaultValue;
+		} else {
+			selectedArray[0] = currentValue;
+		}
 		// }
 	}
 
-
-    // ageArray[0] = get(char.ageStore);
+	// ageArray[0] = get(char.ageStore);
 
 	$: setAge(selectedArray[0]);
 	let setAgePromise: Promise<void> | undefined;
@@ -91,16 +93,6 @@
 		setAgePromise = undefined;
 		raw.set(selectedArray[0]);
 	}
-
-    // $: {
-	// 	if (char && reihe) {
-	// 		char.setPropertyScale(reihe.id, selectedArray[0]);
-	// 	}
-	// }
-
-	$: points = quantile
-		.map((x) => [x.Wert, 50 - Math.abs(50 - x.Quantil)])
-		.filter((x) => x[0] != undefined) as [number, number][];
 </script>
 
 {#if $meta?.type == 'reihe'}
@@ -109,7 +101,12 @@
 			{getText($meta.Name)}
 			{#if currentSchwelle}
 				{#if currentSchwelle.Name}
-					<small>({getText(currentSchwelle.Name)})</small>
+					<small
+						>({getText(currentSchwelle.Name)}
+						<KostenControl {char} {data} mode="points" cost={$cost} />)</small
+					>
+				{:else}
+					<KostenControl {char} {data} mode="points" cost={$cost} />
 				{/if}
 				<!-- <small><KostenControl oneLine cost={currentSchwelle.Kosten} {data} /></small> -->
 			{/if}
@@ -117,14 +114,15 @@
 		<input type="number" bind:value={selectedArray[0]} />
 		{#if char && data && quantile.length > 1}
 			{#if $meta.Verteilung && $meta.Verteilung.length > 0}
-				<Chart
+				<!-- <Chart
 					unit="%"
 					position={selectedArray[0]}
 					data={{
 						points: points,
 						lable: 't'
 					}}
-				/>
+				/> -->
+				<QuantileChart position={selectedArray[0]} {quantile} />
 			{/if}
 			<div style="margin: 2rem;">
 				<RangeSlider
