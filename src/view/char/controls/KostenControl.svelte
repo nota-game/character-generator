@@ -23,7 +23,7 @@
 
 	export let alwaysShow: string | string[] = [];
 
-	let pointStore = char?.pointStore;
+	$: pointStore = char?.pointStore;
 
 	$: effectivePoints = { ...(mode == 'points' ? cost ?? $pointStore ?? {} : cost ?? {}) };
 	$: {
