@@ -178,4 +178,5 @@
 	:global(dialog) {
 		z-index: 1500;
 	}
+
 </style>

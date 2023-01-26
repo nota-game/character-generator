@@ -43,7 +43,7 @@
 		z-index: 1;
 		bottom: 100%;
 		left: 50%;
-		margin-left: -110px;
+		margin-left: -50%;
 
 		/* Fade in tooltip */
 		opacity: 0;

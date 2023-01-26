@@ -1,9 +1,5 @@
 <script lang="ts">
-	import {
-		getText,
-		getTextBesonderheit,
-		renderRequirementMap
-	} from 'src/misc/misc';
+	import { getText, getTextBesonderheit, renderRequirementMap } from 'src/misc/misc';
 	import {
 		substractCost,
 		type CharacterChange,
@@ -14,6 +10,7 @@
 	import type { Data } from 'src/models/Data';
 	import type { Readable, Writable } from 'svelte/store';
 	import KostenControl from '../../controls/KostenControl.svelte';
+	import TooltipControl from '../../controls/tooltipControl.svelte';
 	import ChangeView from './../../controls/ChangeView.svelte';
 
 	export let key: string;
@@ -129,7 +126,7 @@
 		{/if}
 		<br />
 		{#if $purchased > 0 && $purchased > $fixed}
-			<span class="tooltip">
+			<TooltipControl>
 				<a
 					href="#"
 					on:click={(e) => {
@@ -157,14 +154,14 @@
 					<!-- <ChangeView change={f} {data} {char} /> -->
 				{/await}
 
-				<div class="tooltiptext">
+				<div slot="tooltip">
 					{#await $removeFuture}
 						<span aria-busy="true" />
 					{:then f}
 						<ChangeView change={f} {data} {char} exclude={{ type: 'besonderheit', id: entry.Id }} />
 					{/await}
 				</div>
-			</span>
+			</TooltipControl>
 		{/if}
 	</div>
 
@@ -184,7 +181,6 @@
 		{/each}
 	</details>
 
-	
 	{#if Object.values($missing).length > 0}
 		<ul>
 			{#each $missing as m}

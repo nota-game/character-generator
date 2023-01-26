@@ -4,8 +4,6 @@
 	import {
 		getText,
 		getTextTalent,
-		handleUninitilized,
-		renderRequirement,
 		renderRequirementMap
 	} from 'src/misc/misc';
 
@@ -78,15 +76,8 @@
 		<strong>{$effective} TaW</strong>
 	</td>
 	<td>
-		(<KostenControl
-			showZeroValues
-			alwaysShow="EP"
-			cost={$cost}
-			{data}
-			{char}
-			mode="none"
-			inline
-		/>, {$base} TaB +
+		(<KostenControl showZeroValues alwaysShow="EP" cost={$cost} {data} {char} mode="none" inline />, {$base}
+		TaB +
 		{$support}
 		TaA{#if $missing.length > 0},
 			<TooltipControl>
@@ -113,7 +104,7 @@
 			/ <a href="#" on:click={(e) => buy(e, $nextLevelSupport[0])}
 				>+ ({getTextTalent(data.talentMap[$nextLevelSupport[0].id], char, 'Name')}
 				auf {$nextLevelSupport[0].increaseTaB +
-					handleUninitilized(char.talente[$nextLevelSupport[0].id].base.currentValue(), 0)} für
+					char.talente[$nextLevelSupport[0].id].base.currentValue({ defaultValue: 0 })} für
 				<KostenControl
 					cost={toCost($nextLevelSupport[0].increaseEP)}
 					mode="cost"
@@ -139,7 +130,7 @@
 					<li>
 						<a href="#" on:click={(e) => buy(e, a)}
 							>+ ({getTextTalent(data.talentMap[a.id], char, 'Name')} auf {a.increaseTaB +
-								handleUninitilized(char.talente[a.id].base.currentValue(), 0)} für <KostenControl
+								char.talente[a.id].base.currentValue({ defaultValue: 0 })} für <KostenControl
 								mode="cost"
 								{data}
 								{char}
