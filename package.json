@@ -33,6 +33,7 @@
 		"node-sass": "^8.0.0",
 		"pako": "^2.1.0",
 		"prettier": "^2.8.0",
+		"pagedjs": "^0.4.0",
 		"prettier-plugin-svelte": "^2.8.1",
 		"svelte-range-slider-pips": "^2.1.1",
 		"sass": "^1.57.1",

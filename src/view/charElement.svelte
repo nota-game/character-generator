@@ -9,7 +9,7 @@
 	import { localStorageChar } from 'src/misc/storage';
 	import Overview from './char/pages/overview.svelte';
 	import { Tabs, Tab, TabList, TabPanel } from 'svelte-tabs';
-	import { getText } from 'src/misc/misc';
+	import { dealay, getText } from 'src/misc/misc';
 	import { map } from 'mathjs';
 	import OrganismSelect from './char/pages/organism/organismSelect.svelte';
 	import EigenschaftenSelect from './char/pages/eigenschaften/eigenschaftenSelect.svelte';
@@ -32,6 +32,7 @@
 	export let charId: string | undefined;
 
 	let mounted = false;
+	let loding = false;
 
 	onMount(async () => {
 		const isDev = !window.location.pathname.includes('character-generator');
@@ -41,6 +42,7 @@
 		updateChar(charId);
 		let unsubscriber: Unsubscriber = noop;
 		localStorageChar.subscribe(async (newCharData) => {
+			loding = true;
 			if (localStorageChar.getId() == undefined) {
 				return;
 			}
@@ -59,6 +61,7 @@
 					unsubscriber = newChar.persistanceStore.subscribe((v) => localStorageChar.set(v));
 				}
 			}
+			loding = false;
 		});
 	});
 
@@ -84,13 +87,16 @@
 	}
 </script>
 
-{#if $data && $char}
+{#if loding}
+	<span aria-busy="true">Loding</span>
+{:else if $data && $char}
 	{#if pointStore && $pointStore}
 		<article class="hover">
 			<header>Punkte</header>
 			<div>
 				<strong>Punkte</strong>
 				<KostenControl char={$char} data={$data} mode="points" showZeroValues />
+				<a href={pageLink} rel="external">Charakterbogen</a>
 			</div>
 		</article>
 	{/if}

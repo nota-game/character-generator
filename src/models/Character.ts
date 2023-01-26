@@ -214,6 +214,7 @@ type LevelMissingNextKey<id extends string = string, levelId extends string = st
 
 type TalentKeys<id extends string = string> = {
     Effective: TalentEffectiveKey<id>,
+    Unconditionally: TalentUnbeschränktKey<id>,
     Base: TalentBaseKey<id>,
     Support: TalentSupportKey<id>,
     Fixed: TalentFixedKey<id>,
@@ -226,6 +227,7 @@ type TalentKeys<id extends string = string> = {
 }
 
 type TalentEffectiveKey<id extends string = string> = Key<`/talent/${id}/effective`, number>;
+type TalentUnbeschränktKey<id extends string = string> = Key<`/talent/${id}/unbeschränkt`, number>;
 type TalentBaseKey<id extends string = string> = Key<`/talent/${id}/base`, number>;
 type TalentSupportKey<id extends string = string> = Key<`/talent/${id}/support`, number>;
 type TalentFixedKey<id extends string = string> = Key<`/talent/${id}/fixed`, number>;
@@ -386,6 +388,7 @@ export class Charakter {
 
     public readonly talente: Record<string, {
         effective: Readable<number>,
+        unconditionally: Readable<number>,
         base: Readable<number>,
         support: Readable<number>,
         purchased: Writable<number>,
@@ -904,6 +907,7 @@ export class Charakter {
     private getTalentKeys<id extends string>(Id: id): TalentKeys<id> {
         return {
             Effective: StoreManager.key(`/talent/${Id}/effective`).of<TypeOfKey<TalentEffectiveKey<id>>>(),
+            Unconditionally: StoreManager.key(`/talent/${Id}/unbeschränkt`).of<TypeOfKey<TalentUnbeschränktKey<id>>>(),
             Base: StoreManager.key(`/talent/${Id}/base`).of<TypeOfKey<TalentBaseKey<id>>>(),
             Support: StoreManager.key(`/talent/${Id}/support`).of<TypeOfKey<TalentSupportKey<id>>>(),
             Purchased: StoreManager.key(`/talent/${Id}/purchased`).of<TypeOfKey<TalentPurchasedKey<id>>>(),
@@ -1103,6 +1107,7 @@ export class Charakter {
                 const keys = this.getTalentKeys(talent.Id);
                 this.talente[talent.Id] = {
                     effective: storeList[keys.Effective.Key].store as Readable<number>,
+                    unconditionally: storeList[keys.Unconditionally.Key].store as Readable<number>,
                     base: storeList[keys.Base.Key].store as Readable<number>,
                     support: storeList[keys.Support.Key].store as Readable<number>,
                     purchased: storeList[keys.Purchased.Key].store as Writable<number>,
@@ -2080,6 +2085,7 @@ export class Charakter {
 
                 this.talente[talent.Id] = {
                     effective: this.storeManager.readable(keys.Effective),
+                    unconditionally: this.storeManager.readable(keys.Unconditionally),
                     base: this.storeManager.readable(keys.Base),
                     support: this.storeManager.readable(keys.Support),
                     purchased: this.storeManager.writable(keys.Purchased, 0),
@@ -2100,8 +2106,12 @@ export class Charakter {
 
 
 
-                this.storeManager.derived(keys.Effective, [keys.Base, keys.Support, keys.Missing], (data, [base, support, missing]) => {
-                    return Math.min(base.newValue + support.newValue, ...missing.newValue.map(x => x.wert - 1));
+                this.storeManager.derived(keys.Effective, [keys.Unconditionally, keys.Missing], (data, [unconditionally, missing]) => {
+                    return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
+                });
+
+                this.storeManager.derived(keys.Unconditionally, [keys.Base, keys.Support], (data, [base, support]) => {
+                    return base.newValue + support.newValue;
                 });
                 this.storeManager.derived(keys.Base, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
 

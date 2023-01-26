@@ -674,7 +674,7 @@ export class Data {
             id: x.Id,
             Name: x.Name,
             Beschreibung: x.Beschreibung,
-            levels: x.Pfad
+            levels: toObjectKey(x.Pfad, y => y.Id)
             // .map(y => ({ ...y, Kategorie: x.Id })).reduce((p, c) => { p.t[c.Id] = c; return p; }, { id: x.Id, t: {} } as { id: string, t: Record<string, PfadDefinition_pfad> })
         })
         )

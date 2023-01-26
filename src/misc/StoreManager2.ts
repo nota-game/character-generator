@@ -6,7 +6,7 @@ import * as internal from "svelte/internal";
 import type structuredClone from "@ungap/structured-clone";
 import { deepEqual } from "ts-deep-equal";
 import type { Data } from "src/models/Data";
-import { filterNull } from "./misc";
+import { filterNull, handleUninitilized } from "./misc";
 import { cosh } from "mathjs";
 
 export declare type Invalidator<T> = (value?: T) => void;
@@ -18,7 +18,14 @@ function identity(p: any) {
 
 export interface Readable<T, KeyString extends string = string> extends ReadableOriginal<T> {
     key: Key<KeyString, T>;
-    currentValue: () => T | typeof UNINITILEZED
+    // currentValue: () => T | typeof UNINITILEZED;
+
+    /**
+     * currentValue
+     */
+    currentValue<V>(options: { defaultValue: V }): T|V;
+    currentValue(): T | typeof UNINITILEZED;
+
 }
 
 export interface Writable<T, KeyString extends string = string> extends WritableOriginal<T> {
@@ -232,7 +239,14 @@ export default class StoreManager<Param> {
         return {
             subscribe,
             key,
-            currentValue: () => current.value
+            currentValue: (options?: { defaultValue: T }) => {
+                if (options !== undefined) {
+                    return handleUninitilized(current.value, options.defaultValue);
+                }
+                else {
+                    return current.value as T; // overloading makes porblems with types here ¬_¬
+                }
+            }
         };
     }
 
