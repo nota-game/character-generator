@@ -30,7 +30,9 @@ export interface Readable<T, KeyString extends string = string> extends Readable
 
 export interface Writable<T, KeyString extends string = string> extends WritableOriginal<T> {
     key: Key<KeyString, T>;
-    currentValue: () => T | typeof UNINITILEZED
+    currentValue: () => T 
+    
+
 }
 // eslint-disable-next-line @typescript-eslint/ban-types
 

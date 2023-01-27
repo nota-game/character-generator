@@ -3,15 +3,15 @@
 	import { derived, readable, writable, type Readable, type Writable } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import type { RüstungDefinition_kampf_ausstattung } from 'src/data/nota.g';
-	import { getText } from 'src/misc/misc';
+	import { filterNull, filterObjectKeys, getText } from 'src/misc/misc';
 	import AusrustungList from './AusrustungList.svelte';
 	import type { Data } from '../models/Data';
 
 	export let input: Charakter | string | undefined;
-	export let data: Data | undefined = undefined;
+	export let data: Data;
 
 	let char = input instanceof Charakter ? input : undefined;
-	// let armorStore = char instanceof Charakter ? char.armorStore : undefined;
+	let armorStore = char instanceof Charakter ? char.equipment : undefined;
 
 	$: {
 		char = input instanceof Charakter ? input : undefined;
@@ -23,25 +23,24 @@
 		return Object.keys(t) as any;
 	}
 	let d: Readable<armor[]>;
-	$: d =
-		// armorStore
-		// 	? derived(
-		// 			armorStore,
-		// 			(a) => {
-		// 				return Object.entries(a)
-		// 					.filter(([key, value]) => value)
-		// 					.map(([key]) => (char?.stammdaten ?? data)?.RüstungMap[key])
-		// 					.map((a) => {
-		// 						const result: armor = transformArmor(a!);
-		// 						return result;
-		// 					});
-		// 			},
-		// 			[]
-		// 	  )
-		// :
-		typeof input === 'string' && data
-			? readable([transformArmor(data.RüstungMap[input])])
-			: readable([]);
+	$: d = armorStore
+		? readable(
+				[
+					...Object.keys(
+						filterObjectKeys(
+							armorStore,
+							(x) => x.type == 'armor' && x.equiped.currentValue() == true
+						)
+					)
+				].map((a) => {
+					const xx = data.RüstungMap[a];
+					console.log('armor -1', xx, a, data.RüstungMap);
+					return transformArmor(xx);
+				})
+		  )
+		: typeof input === 'string' && data
+		? readable([transformArmor(data.RüstungMap[input])])
+		: readable([]);
 
 	type armor = {
 		titel: string;
@@ -64,6 +63,7 @@
 		dämpfung: number;
 		range: (readonly [number, number])[];
 	} {
+		console.log('armor', a);
 		return {
 			härte: a?.Schutz.Härte?.Wert ?? 0,
 			dämpfung: a?.Schutz.Dämpfung?.Wert ?? 0,

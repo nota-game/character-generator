@@ -222,7 +222,7 @@
         <lebewesen:Formel>21 - GL</lebewesen:Formel>
       </lebewesen:Berechnung>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="MU" gruppe="primär" default="13">
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="MU" gruppe="primär" default="13" Reihenfolge="1">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
             <![CDATA[Mut]]>
@@ -247,8 +247,8 @@
         </lebewesen:Verteilung>
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="GL" Reihenfolge="-12"
-        gruppe="primär" default="13">
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="GL"
+        gruppe="primär" default="13"  Reihenfolge="2">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
             <![CDATA[Glück]]>
@@ -273,7 +273,7 @@
         </lebewesen:Verteilung>
 
       </lebewesen:Bereich>
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="KL" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="KL" Reihenfolge="3"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -299,7 +299,7 @@
         </lebewesen:Verteilung>
 
       </lebewesen:Bereich>
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="IN" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="IN" Reihenfolge="4"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -326,7 +326,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="GE" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="GE" Reihenfolge="5"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -353,7 +353,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="FM" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="FM" Reihenfolge="6"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -380,7 +380,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="SY" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="SY" Reihenfolge="7"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -407,7 +407,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="AN" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="AN" Reihenfolge="8"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -435,7 +435,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="ST" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="ST" Reihenfolge="9"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -463,7 +463,7 @@
       </lebewesen:Bereich>
 
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="KO" Reihenfolge="-12" 
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="KO" Reihenfolge="10" 
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -492,7 +492,7 @@
       </lebewesen:Bereich>
 
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="FO" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="FO" Reihenfolge="11"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">
@@ -519,7 +519,7 @@
 
       </lebewesen:Bereich>
 
-      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="EI" Reihenfolge="-12"
+      <lebewesen:Bereich minInklusiv="7" maxInklusiv="13" id="EI" Reihenfolge="12"
         gruppe="primär" default="13">
         <misc:Name>
           <misc:Lokalisirung Sprache="de">

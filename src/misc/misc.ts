@@ -2,7 +2,7 @@
 // // import { type MissingRequirements, Charakter } from "../models/Character";
 // import type { Data } from "../models/Data";
 
-import { resolve } from "mathjs";
+import { boolean, ParenthesisNodeDependencies, resolve } from "mathjs";
 import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigkeit, Geschlecht_misc, LevelDefinition_misc, Lokalisierungen_misc, PfadDefinition_pfad, TalentDefinition_talent } from "src/data/nota.g";
 import { Charakter, type MissingRequirements } from "src/models/Character";
 import type { Data } from "src/models/Data";
@@ -10,6 +10,10 @@ import { UNINITILEZED } from "./StoreManager2";
 
 export function filterNull<T>(x: (T | null | undefined)[]): T[] {
     return x.filter(y => y !== null && y !== undefined) as T[];
+}
+
+export function filterObjectKeys<T extends object>(obj: T, selector: (key: T[keyof T]) => boolean): Partial<T> {
+    return Object.fromEntries(Object.entries(obj).filter(([key, value]) => selector(value))) as any;
 }
 
 export function dealay(ms: number) {
@@ -125,7 +129,7 @@ export function getTextTalent(p: TalentDefinition_talent | undefined, character:
     else if (format == 'Name')
         return getText(p.Name)
     else if (format == 'Probe')
-        return `${probe[0]}•${probe[1]}•${probe[2]}`
+        return probe.map(x => getText(x)).reduce((p, c) => `${p}•${c}`);
     throw Error('Unbekantes Format')
 }
 export function getTextPfad(p: PfadDefinition_pfad | undefined, level?: LevelDefinition_misc, options?: { sex: Geschlecht_misc } | Charakter): string {

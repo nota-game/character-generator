@@ -5,7 +5,7 @@ import { derived, type Readable as ReadableOriginal, type Writable as WritableOr
 import * as mathjs from 'mathjs'
 
 import { Data, type DependencyData } from "./Data";
-import { distinct, filterNull, getLast, groupBy, notUndefined, toObjectKey } from "../misc/misc";
+import { distinct, filterNull, filterObjectKeys, getLast, groupBy, notUndefined, toObjectKey } from "../misc/misc";
 import { cos, fix, index, isResultSet, meanTransformDependencies, xgcd } from "mathjs";
 
 export type EigenschaftTypes = 'bereich' | 'reihe' | 'punkt' | 'berechnung';
@@ -60,6 +60,7 @@ export type PersistanceData = {
     fertigkeiten: Record<string, number>,
     talente: Record<string, number>,
     eigenschaften: Record<string, number>,
+    ausstattung: string[],
     gattung?: string,
     art?: string,
     morph?: string,
@@ -293,6 +294,12 @@ type BesonderheitMissingNextLevelKey<id extends string = string> = Key<`/besonde
 }[]>;
 
 
+type EquipmentKeys<id extends string = string> = {
+    equiped: EquipmentKey<id>,
+};
+type EquipmentKey<id extends string = string> = Key<`/equipment/${id}/equiped`, true | undefined>;
+
+
 
 type LebensabschittGattungKey = Key<'/organism/gattung/lebensabschnitt', LebensabschnittDefinition_lebewesen | undefined>;
 type LebensabschittArtKey = Key<'/organism/art/lebensabschnitt', LebensabschnittDefinition_lebewesen | undefined>;
@@ -420,6 +427,12 @@ export class Charakter {
         art: LebensabschnittDefinition_lebewesen | undefined;
         morph: LebensabschnittDefinition_lebewesen | undefined;
     }>;
+
+
+    public readonly equipment: Record<string, {
+        type: 'armor' | 'longRangeWeapon' | 'closeCombatWeapon' | 'misc',
+        equiped: Writable<true | undefined>,
+    }> = {};
 
 
     public readonly stammdaten: Data;
@@ -830,7 +843,12 @@ export class Charakter {
         return { fertigkeitDependency, besonderheitDependency, eigenschaftDependency, talentDependency, otherDependency, tagDependency, levelDependency };
     }
 
+    private getEquipmentKeys<id extends string>(Id: id): EquipmentKeys<id> {
+        return {
+            equiped: StoreManager.key(`/equipment/${Id}/equiped`).of<true | undefined>(),
+        }
 
+    }
 
 
     private getBesonterheitKeys<id extends string>(Id: id): BesonderheitKeys {
@@ -1059,6 +1077,17 @@ export class Charakter {
             this.missingStore = this.storeManager.readable(missingKey);
 
 
+            for (const { key, type } of [
+                ...Object.keys(this.stammdaten.RüstungMap).map(key => ({ key, type: 'armor' as const })),
+                ...Object.keys(this.stammdaten.fernkampfMap).map(key => ({ key, type: 'longRangeWeapon' as const })),
+                ...Object.keys(this.stammdaten.nahkampfMap).map(key => ({ key, type: 'closeCombatWeapon' as const })),
+            ]) {
+                this.equipment[key] = {
+                    equiped: storeList[this.getEquipmentKeys(key).equiped.Key].store as Writable<true | undefined>,
+                    type
+                }
+            }
+
             for (const key of this.stammdaten.allEigenschaftKeys) {
                 const { Raw: rawKey, Effective: effectiveKey, Type: typeKey, Meta: metaKey, Cost: costKey } = this.getPropertieKeys(key);
                 this.eigenschaften[key] = {
@@ -1286,7 +1315,9 @@ export class Charakter {
                 gattungsIdKey,
                 artIdKey,
                 morphIdKey,
-            ], (data, [name, age, pfad, besonderheiten, fertigkeiten, talente, eigenschaften, gattung, art, morph]) => {
+                StoreManager.key('/equipment/*/equiped').of<Record<string, { equiped: true | undefined }>>(),
+
+            ], (data, [name, age, pfad, besonderheiten, fertigkeiten, talente, eigenschaften, gattung, art, morph, ausstattung]) => {
                 return {
                     stammdatenId: this.stammdaten.id,
                     id: this.id,
@@ -1299,7 +1330,8 @@ export class Charakter {
                     eigenschaften: Object.fromEntries(Object.entries(eigenschaften.newValue).filter(([, { raw: value }]) => value > 0).map(([key, { raw: value }]) => [key, value])),
                     gattung: gattung.newValue,
                     art: art.newValue,
-                    morph: morph.newValue
+                    morph: morph.newValue,
+                    ausstattung: Object.keys(filterObjectKeys(ausstattung.newValue, x => x.equiped == true)),
                 };
             })
 
@@ -1392,6 +1424,18 @@ export class Charakter {
                     ...dependentLebensabschnittMorph,
                 ];
                 return dep;
+            }
+
+
+            for (const { key, type } of [
+                ...Object.keys(this.stammdaten.RüstungMap).map(key => ({ key, type: 'armor' as const })),
+                ...Object.keys(this.stammdaten.fernkampfMap).map(key => ({ key, type: 'longRangeWeapon' as const })),
+                ...Object.keys(this.stammdaten.nahkampfMap).map(key => ({ key, type: 'closeCombatWeapon' as const })),
+            ]) {
+                this.equipment[key] = {
+                    equiped: this.storeManager.writable(this.getEquipmentKeys(key).equiped, undefined),
+                    type
+                };
             }
 
 
@@ -2589,6 +2633,10 @@ export class Charakter {
                 this.gattungsIdStore.set(idOrPersisted.gattung);
                 this.artIdStore.set(idOrPersisted.art);
                 this.morphIdStore.set(idOrPersisted.morph);
+
+                for (const a of idOrPersisted.ausstattung) {
+                    this.equipment[a]?.equiped.set(true);
+                }
 
             }
 

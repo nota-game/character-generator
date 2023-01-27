@@ -3,6 +3,7 @@
 	import { Data } from 'src/models/Data';
 	import { Charakter } from 'src/models/Character';
 	import {
+		filterObjectKeys,
 		getText,
 		getTextBesonderheit,
 		getTextFertigkeit,
@@ -19,6 +20,7 @@
 	import CloseCombatWeapon from 'src/controls/CloseCombatWeapon.svelte';
 	import { localStorageChar } from 'src/misc/storage';
 	import { filterNull } from 'src/misc/misc';
+	import Nota from 'src/view/nota.svelte';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -28,7 +30,6 @@
 	onMount(async () => {
 		ready = true;
 		localStorageChar.subscribe(async (currentChar) => {
-			console.log('loding current Char ', currentChar);
 			if (currentChar) {
 				data = await Data.init(false, currentChar?.stammdatenId);
 				if (data) {
@@ -41,7 +42,6 @@
 			id.set(char?.id ?? '');
 		});
 		localStorageChar.updateId('c' + window.location.hash.slice(1));
-		console.log('after Updeas');
 		// const currentChar = local<CharakterData>('c' + window.location.hash.slice(1));
 	});
 
@@ -51,7 +51,6 @@
 
 	let renderPromise: undefined | Promise<void>;
 	function render() {
-		
 		if (!ready) return;
 
 		renderPromise = new Promise<void>(async (r) => {
@@ -84,14 +83,19 @@
 
 <div id="source" style="display: none;">
 	{#if data && char}
-		<!-- <div class="header">
-		<table style="margin: auto; height: 100%; ">
-			<tr>
-				<td> <h1>Nota</h1></td>
-			</tr>
-			<tr />
-		</table>
-	</div> -->
+		<div class="header">
+			<div style="height: 200xp; width: 200px;">
+
+				<Nota />
+			</div>
+			<!-- <table style="margin: auto; height: 100%; ">
+				<tr>
+					<td>
+					</td>
+				</tr>
+				<tr />
+			</table> -->
+		</div>
 
 		<table class="stammdaten">
 			<tr><td>Name </td><td>{char?.nameStore.currentValue()}</td></tr>
@@ -121,11 +125,10 @@
 					><td>{getText(data.pfadCategoryMap[p].Name)}</td><td>
 						{join(
 							Object.entries(char?.pfad)
-								.filter(([key,value])=> {
-									console.log(key)
-									console.log(data?.pfadCategoryMap[p].levels)
-									return data?.pfadCategoryMap[p].levels[key]!=undefined;} )
-									.filter(([key, value]) => {
+								.filter(([key, value]) => {
+									return data?.pfadCategoryMap[p].levels[key] != undefined;
+								})
+								.filter(([key, value]) => {
 									return Object.values(value).some(
 										(x) => (x.effective.currentValue({ defaultValue: 0 }) ?? 0) > 0
 									);
@@ -269,7 +272,7 @@
 						.sort((a, b) => {
 							return (a.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0) - (b.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0);
 						})
-						.filter((_, i) => i % 2 == 1) as eigenschaft}
+						.filter((_, i) => i % 2 == 0) as eigenschaft}
 						<td
 							>{getText(eigenschaft.meta.currentValue({ defaultValue: undefined })?.Abkürzung)}
 							{eigenschaft.effective.currentValue({ defaultValue: undefined }) ?? 21}</td
@@ -282,7 +285,7 @@
 						.sort((a, b) => {
 							return (a.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0) - (b.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0);
 						})
-						.filter((_, i) => i % 2 == 0) as eigenschaft}
+						.filter((_, i) => i % 2 == 1) as eigenschaft}
 						<td
 							>{getText(eigenschaft.meta.currentValue({ defaultValue: undefined })?.Abkürzung)}
 							{eigenschaft.effective.currentValue({ defaultValue: undefined }) ?? 21}</td
@@ -356,21 +359,8 @@
 				{/if}
 			{/each}
 		</div>
-		<div class="header">
+		<!-- <div class="header">
 			<table style="margin: auto; border-spacing: 0.8rem ; font-size: 14pt;">
-				<tr>
-					{#each Object.values(char?.eigenschaften)
-						.filter((key) => key.meta.currentValue({ defaultValue: undefined })?.gruppe == 'primär')
-						.sort((a, b) => {
-							return (a.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0) - (b.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0);
-						})
-						.filter((_, i) => i % 2 == 1) as eigenschaft}
-						<td
-							>{getText(eigenschaft.meta.currentValue({ defaultValue: undefined })?.Abkürzung)}
-							{eigenschaft.effective.currentValue({ defaultValue: undefined }) ?? 21}</td
-						>
-					{/each}
-				</tr>
 				<tr>
 					{#each Object.values(char?.eigenschaften)
 						.filter((key) => key.meta.currentValue({ defaultValue: undefined })?.gruppe == 'primär')
@@ -384,9 +374,23 @@
 						>
 					{/each}
 				</tr>
+				<tr>
+					{#each Object.values(char?.eigenschaften)
+						.filter((key) => key.meta.currentValue({ defaultValue: undefined })?.gruppe == 'primär')
+						.sort((a, b) => {
+							return (a.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0) - (b.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0);
+						})
+						.filter((_, i) => i % 2 == 1) as eigenschaft}
+						<td
+							>{getText(eigenschaft.meta.currentValue({ defaultValue: undefined })?.Abkürzung)}
+							{eigenschaft.effective.currentValue({ defaultValue: undefined }) ?? 21}</td
+						>
+					{/each}
+				</tr>
 			</table>
-		</div>
-		<h1>Kampf</h1>
+		</div> -->
+		
+		<h1 class="pagebreak">Kampf</h1>
 		{@const Kampfwert = Math.floor(
 			(char?.talente['Kampfgespür'].effective.currentValue({ defaultValue: 0 }) ?? 0) / 2 + 3
 		)}
@@ -520,7 +524,7 @@
 		</table>
 		<div class="kampf-right">
 			<div style="grid-column: 1; grid-row: 1;">
-				<Armor input={char} />
+				<Armor input={char} {data} />
 			</div>
 			<div style="grid-column: 3; grid-row: 1;">
 				<h6>Ausdauer & Wunden</h6>
@@ -607,12 +611,10 @@
 					</div>
 				{/if}
 
-				<!-- {#each Object.entries(char?.closeConbatWeapons) -->
-				{#each Object.entries({})
-					.filter(([k, v]) => v)
-					.map(([k]) => k) as x}
+				{#each Object.keys(filterObjectKeys(char.equipment, (x) => x.type == 'closeCombatWeapon' && (x.equiped.currentValue() ?? false))) as x}
 					{@const p = data?.nahkampfMap[x]}
 					<div class="list">
+						{x}
 						<CloseCombatWeapon {char} weapon={p} />
 					</div>
 				{/each}
@@ -634,70 +636,68 @@
 	}
 
 	@page {
-		
-			size: A4;
-			margin-top: 35mm;
-			margin-right: 15mm;
-			margin-bottom: 25mm;
-			margin-left: 15mm;
-			// @top-center {
-			// 	content: element(titleRunning);
-			// }
-		
+		size: A4;
+		margin-top: 35mm;
+		margin-right: 15mm;
+		margin-bottom: 25mm;
+		margin-left: 15mm;
+		@top-center {
+			content: element(titleRunning);
+		}
 	}
 
 	// @media screen {
-		:global(nav) {
-			display: block !important;
-			position: sticky;
-			top: 0px;
-			width: fit-content;
-			padding: 2rem;
-			border-bottom-right-radius: 99rem;
-			z-index: 999;
+	:global(nav) {
+		display: block !important;
+		position: sticky;
+		top: 0px;
+		width: fit-content;
+		padding: 2rem;
+		border-bottom-right-radius: 99rem;
+		z-index: 999;
 
-			background-color: cadetblue;
-			border: 1px solid blueviolet;
+		background-color: cadetblue;
+		border: 1px solid blueviolet;
 
-			a {
-				color: #fff;
-				font-family: Verdana, Geneva, Tahoma, sans-serif;
-				text-decoration: none;
-				transition: all 1000ms;
-			}
-			a:hover {
-				color: #00f;
-				font-family: Verdana, Geneva, Tahoma, sans-serif;
-				text-decoration: none;
-			}
+		a {
+			color: #fff;
+			font-family: Verdana, Geneva, Tahoma, sans-serif;
+			text-decoration: none;
+			transition: all 1000ms;
 		}
-		:global(:root) {
-			--screen-pages-spacing: 10rem;
-			--color-paper: white;
-			--background: lightgray;
-			--muted-color: #dfdfdf;
-			--background-color: white;
-			--color: black;
+		a:hover {
+			color: #00f;
+			font-family: Verdana, Geneva, Tahoma, sans-serif;
+			text-decoration: none;
 		}
-		:global(body) {
-			background-color: var(--background);
-			margin: 0 auto 0 auto;
-		}
-		:global(.pagedjs_pages) {
-			display: flex;
-			// max-width: var(--pagedjs-width);
-			flex: 0;
-			flex-wrap: wrap;
-			margin: 0 auto;
-			margin-top: var(--screen-pages-spacing);
-		}
-		:global(.pagedjs_page) {
-			background: var(--color-paper);
-			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), inset 0 0 3px rgba(0, 0, 0, 0.6);
-			flex-shrink: 0;
-			flex-grow: 0;
-			margin: auto auto var(--screen-pages-spacing) auto;
-		}
+	}
+	:global(:root) {
+		--screen-pages-spacing: 10rem;
+		--color-paper: white;
+		--background: lightgray;
+		--muted-color: #dfdfdf;
+		--background-color: white;
+		--color: black;
+	}
+	:global(body) {
+		background-color: var(--background);
+		margin: 0 auto 0 auto;
+	}
+	:global(.pagedjs_pages) {
+		display: flex;
+		// max-width: var(--pagedjs-width);
+		flex: 0;
+		flex-wrap: wrap;
+		margin: 0 auto;
+		margin-top: var(--screen-pages-spacing);
+	}
+	:global(.pagedjs_page) {
+		background: var(--color-paper);
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), inset 0 0 3px rgba(0, 0, 0, 0.6);
+		flex-shrink: 0;
+		flex-grow: 0;
+		margin: auto auto var(--screen-pages-spacing) auto;
+	}
 	// }
 	:global(nav) {
 		display: none;
@@ -879,6 +879,9 @@
 		width: 99%;
 	}
 
+	.pagebreak {
+		break-before: page;
+	}
 	.header {
 		break-before: page;
 		position: running(titleRunning);

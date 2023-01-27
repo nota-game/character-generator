@@ -18,7 +18,7 @@
 
 	let width = 500;
 	let height = 200;
-	$:console.log({height,width})
+
 	type point = [number, number];
 	function line(pointA: point, pointB: point) {
 		const lengthX = pointB[0] - pointA[0];
@@ -112,7 +112,6 @@
 	$: area = `${path}L${xScale(maxX,width,height)},${yScale(minS,width,height)}L${xScale(minX,width,height)},${yScale(minS,width,height)}Z`;
 
 
-	$:console.info(xScale(17,width,height));
 
 	function formatMobile(tick: number) {
 		return "'" + tick.toString().slice(-2);

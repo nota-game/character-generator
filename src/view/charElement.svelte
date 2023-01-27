@@ -20,6 +20,7 @@
 	import FertigkeitenSelect from './char/pages/fertigkeiten/fertigkeitenSelect.svelte';
 	import TalenteSelect from './char/pages/talente/talenteSelect.svelte';
 	import KostenControl from './char/controls/KostenControl.svelte';
+	import AusrustungList from 'src/controls/AusrustungList.svelte';
 
 	let data = writable<Data | undefined>(undefined);
 	export let char = writable<Charakter | undefined>(undefined);
@@ -44,6 +45,7 @@
 		localStorageChar.subscribe(async (newCharData) => {
 			loding = true;
 			if (localStorageChar.getId() == undefined) {
+			loding = false;
 				return;
 			}
 			const oldChar = get(char);
@@ -115,6 +117,7 @@
 				{/each}
 				<Tab>Talente</Tab>
 				<Tab>Fertigkeiten</Tab>
+				<Tab>Ausrüstung</Tab>
 				<!-- <Tab>Fallback</Tab> -->
 			{/if}
 		</TabList>
@@ -144,6 +147,9 @@
 		</TabPanel>
 		<TabPanel>
 			<FertigkeitenSelect char={$char} data={$data} />
+		</TabPanel>
+		<TabPanel>
+			<AusrustungList char={$char} data={$data} />
 		</TabPanel>
 		<!-- <TabPanel>
 			<Fallback char={$char} data={$data} />
