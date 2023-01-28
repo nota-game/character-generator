@@ -120,15 +120,15 @@
 		color: var(--muted-color);
 		font-size: smaller;
 		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-		text-shadow: -1px -1px 0 var(--color), 1px -1px 0 var(--color), -1px 1px 0 var(--color),
-			1px 1px 0 var(--color);
+		text-shadow: -0.5px -0.5px 0 var(--color), 0.5px -0.5px 0 var(--color), -0.5px 0.5px 0 var(--color),
+		0.5px 0.5px 0 var(--color);
 	}
 	.center > *:not(:first-child) {
 		z-index: 2;
 		font-size: x-large;
 		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-		text-shadow: -1px -1px 0 var(--background-color), 1px -1px 0 var(--background-color),
-			-1px 1px 0 var(--background-color), 1px 1px 0 var(--background-color);
+		text-shadow: -0.5px -0.5px 0 var(--background-color), 0.5px -0.5px 0 var(--background-color),
+			-0.5px 0.5px 0 var(--background-color), 0.5px 0.5px 0 var(--background-color);
 	}
 	table {
 		table-layout: fixed;

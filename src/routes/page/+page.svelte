@@ -21,6 +21,7 @@
 	import { localStorageChar } from 'src/misc/storage';
 	import { filterNull } from 'src/misc/misc';
 	import Nota from 'src/view/nota.svelte';
+	import {} from 'src/css/theme.css';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
@@ -46,7 +47,7 @@
 	});
 
 	afterUpdate(() => {
-		render();
+		 render();
 	});
 
 	let renderPromise: undefined | Promise<void>;
@@ -79,13 +80,12 @@
 	<a href={pageLink} role="button" rel="external">Zum Editor</a>
 </nav>
 
-<div id="target" />
+<div data-theme="light" id="target" />
 
 <div id="source" style="display: none;">
 	{#if data && char}
 		<div class="header">
 			<div style="height: 200xp; width: 200px;">
-
 				<Nota />
 			</div>
 			<!-- <table style="margin: auto; height: 100%; ">
@@ -143,31 +143,61 @@
 			{/each}
 		</table>
 
-		<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-			<table class="eigenschaften" style="grid-column: 1;">
-				<thead>
-					<th>Eigenschaften</th>
-					<!-- <th style="text-align: center;">Grund</th> -->
-					<!-- <th style="text-align: center;">Mod</th> -->
-					<th>Aktuell</th>
-				</thead>
-				{#each Object.values(char?.eigenschaften)
-					.filter((key) => key.meta.currentValue({ defaultValue: undefined })?.gruppe == 'primär')
-					.sort((a, b) => {
-						return (a.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0) - (b.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0);
-					}) as eigenschaft}
-					<tr
-						><td>{getText(eigenschaft.meta.currentValue({ defaultValue: undefined })?.Name)}</td><td
-						>
-							{eigenschaft.effective.currentValue({ defaultValue: undefined }) ?? 21}</td
-						>
-						<!-- <td
-							>{char?.eigenschaftenData.Konstitution.modified
-								? char?.eigenschaftenData.Konstitution.modified
-								: ''}</td
-						><td> {char?.eigenschaftenData.Konstitution.current}</td></tr> -->
-					</tr>{/each}
-			</table>
+		<div style="column-count: 2;		column-gap: 1em;">
+			<!-- <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;"> -->
+
+			{#each data.Instance.Daten.Organismen.EigenschaftenGruppen.Gruppe as gg}
+				<table class="eigenschaften">
+					<thead>
+						<th>{getText(gg.Name)}</th>
+						<!-- <th style="text-align: center;">Grund</th> -->
+						<!-- <th style="text-align: center;">Mod</th> -->
+						<th>Aktuell</th>
+					</thead>
+					{#each Object.values(char?.eigenschaften)
+						.filter((key) => key.meta.currentValue({ defaultValue: undefined })?.gruppe == gg.id)
+						.sort((a, b) => {
+							return (a.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0) - (b.meta.currentValue( { defaultValue: undefined } )?.Reihenfolge ?? 0);
+						}) as eigenschaft}
+						{@const meta = eigenschaft.meta.currentValue({ defaultValue: undefined })}
+						{@const effective = eigenschaft.effective.currentValue({ defaultValue: undefined })}
+						{#if meta && meta.type == 'bereich'}
+							<tr
+								><td>{getText(eigenschaft.meta.currentValue({ defaultValue: undefined })?.Name)}</td
+								><td>
+									{#if meta.diskret}
+										{effective ?? meta.default}
+									{:else}
+										{Math.round((effective ?? meta.default) * 100) / 100}
+									{/if}
+									{meta.einheit ?? ''}
+								</td>
+							</tr>
+						{:else if meta && meta.type == 'berechnung' && effective}
+							<tr
+								><td>{getText(meta.Name)}</td><td>
+									{Math.round(effective * 100) / 100}
+									{meta.einheit ?? ''}
+								</td>
+							</tr>
+						{:else if meta && meta.type == 'reihe' && effective}
+							<tr
+								><td>{getText(eigenschaft.meta.currentValue({ defaultValue: undefined })?.Name)}</td
+								><td>
+									{Math.round(effective * 100) / 100}
+									{meta.einheit ?? ''}
+								</td>
+							</tr>
+						{:else if meta && meta.type == 'punkt' && effective == 1}
+							<tr
+								><td colspan="2"
+									>{getText(eigenschaft.meta.currentValue({ defaultValue: undefined })?.Name)}</td
+								>
+							</tr>
+						{/if}
+					{/each}
+				</table>
+			{/each}
 		</div>
 		<div class="extra">
 			{#each Object.keys(data.besonderheitenCategoryMap) as bKey}
@@ -389,7 +419,7 @@
 				</tr>
 			</table>
 		</div> -->
-		
+
 		<h1 class="pagebreak">Kampf</h1>
 		{@const Kampfwert = Math.floor(
 			(char?.talente['Kampfgespür'].effective.currentValue({ defaultValue: 0 }) ?? 0) / 2 + 3
@@ -646,59 +676,64 @@
 		}
 	}
 
-	// @media screen {
-	:global(nav) {
-		display: block !important;
-		position: sticky;
-		top: 0px;
-		width: fit-content;
-		padding: 2rem;
-		border-bottom-right-radius: 99rem;
-		z-index: 999;
+	@media screen {
+		// @media screen {
+		:global(nav) {
+			display: block !important;
+			position: sticky;
+			top: 0px;
+			width: fit-content;
+			padding: 2rem;
+			border-bottom-right-radius: 2rem;
+			z-index: 999;
 
-		background-color: cadetblue;
-		border: 1px solid blueviolet;
-
-		a {
-			color: #fff;
-			font-family: Verdana, Geneva, Tahoma, sans-serif;
-			text-decoration: none;
-			transition: all 1000ms;
+			margin: var(--block-spacing-vertical) 0;
+			// padding: var(--block-spacing-vertical) var(--block-spacing-horizontal);
+			// border-radius: var(--border-radius);
+			background: var(--card-background-color);
+			box-shadow: var(--card-box-shadow);
+			
+			a {
+				color: var(--color);
+				font-family: Verdana, Geneva, Tahoma, sans-serif;
+				text-decoration: none;
+				transition: all 1000ms;
+			}
+			a:hover {
+				color: var(--primary);
+				font-family: Verdana, Geneva, Tahoma, sans-serif;
+				text-decoration: none;
+			}
 		}
-		a:hover {
-			color: #00f;
-			font-family: Verdana, Geneva, Tahoma, sans-serif;
-			text-decoration: none;
+		:global(:root) {
+			--screen-pages-spacing: 10rem;
+			--color-paper: white;
+			--background: lightgray;
+			--muted-color: #dfdfdf;
+			--background-color: white;
+			// --color: black;
 		}
+		:global(body) {
+			background-color: var(--background);
+			margin: 0 auto 0 auto;
+		}
+		:global(.pagedjs_pages) {
+			display: flex;
+			// max-width: var(--pagedjs-width);
+			flex: 0;
+			flex-wrap: wrap;
+			margin: 0 auto;
+			margin-top: var(--screen-pages-spacing);
+		}
+		:global(.pagedjs_page) {
+			background: var(--color-paper);
+			box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), inset 0 0 3px rgba(0, 0, 0, 0.6);
+			flex-shrink: 0;
+			flex-grow: 0;
+			margin: auto auto var(--screen-pages-spacing) auto;
+		}
+		// }
 	}
-	:global(:root) {
-		--screen-pages-spacing: 10rem;
-		--color-paper: white;
-		--background: lightgray;
-		--muted-color: #dfdfdf;
-		--background-color: white;
-		--color: black;
-	}
-	:global(body) {
-		background-color: var(--background);
-		margin: 0 auto 0 auto;
-	}
-	:global(.pagedjs_pages) {
-		display: flex;
-		// max-width: var(--pagedjs-width);
-		flex: 0;
-		flex-wrap: wrap;
-		margin: 0 auto;
-		margin-top: var(--screen-pages-spacing);
-	}
-	:global(.pagedjs_page) {
-		background: var(--color-paper);
-		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), inset 0 0 3px rgba(0, 0, 0, 0.6);
-		flex-shrink: 0;
-		flex-grow: 0;
-		margin: auto auto var(--screen-pages-spacing) auto;
-	}
-	// }
 	:global(nav) {
 		display: none;
 	}
@@ -730,7 +765,7 @@
 			width: 30px;
 			height: 30px;
 			border: 2px solid;
-			border-color: red;
+			border-color: var(--primary);
 			border-radius: 100%;
 		}
 		td {
@@ -773,6 +808,9 @@
 		}
 	}
 	.eigenschaften {
+		width: 100%;
+		break-inside: avoid;
+		margin-bottom: 1rem;
 		border: 1px solid black;
 		padding: 8px;
 		th,
@@ -844,7 +882,7 @@
 			width: 30px;
 			height: 30px;
 			border: 2px solid;
-			border-color: red;
+			border-color: var(--primary);
 			border-radius: 100%;
 		}
 		td {

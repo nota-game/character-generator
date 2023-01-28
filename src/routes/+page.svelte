@@ -17,6 +17,7 @@
 	import CharElement from 'src/view/charElement.svelte';
 	import {} from '@picocss/pico/css/pico.css';
 	import Nota from 'src/view/nota.svelte';
+	import {} from 'src/css/theme.css';
 
 	// let char: Charakter | undefined;
 
@@ -125,8 +126,8 @@
 	<button on:click={() => reset()}>NO</button>
 {:else}
 	<main class="container">
-		<div style="--primary-color: var(--muted-color)">
-			<div style="--secondary-color: var(--primary)">
+		<div>
+			<div>
 				<Nota />
 				<h1>Charakter Generator</h1>
 			</div>
@@ -178,5 +179,4 @@
 	:global(dialog) {
 		z-index: 1500;
 	}
-
 </style>

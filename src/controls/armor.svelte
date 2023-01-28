@@ -34,7 +34,6 @@
 					)
 				].map((a) => {
 					const xx = data.RüstungMap[a];
-					console.log('armor -1', xx, a, data.RüstungMap);
 					return transformArmor(xx);
 				})
 		  )
@@ -63,7 +62,6 @@
 		dämpfung: number;
 		range: (readonly [number, number])[];
 	} {
-		console.log('armor', a);
 		return {
 			härte: a?.Schutz.Härte?.Wert ?? 0,
 			dämpfung: a?.Schutz.Dämpfung?.Wert ?? 0,

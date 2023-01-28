@@ -15,8 +15,9 @@ export function doPaged(source, target) {
 
     const paged = new Paged.Previewer();
     Paged.registerHandlers(RepeatingTableHeadersHandler);
-    if(!style)
-    style = removeStyles()
+    if (!style)
+        style = removeStyles()
+
     return paged.preview(source, style, target);
 }
 
@@ -39,16 +40,18 @@ function removeStyles() {
             }
             return 0;
         })
+        .filter(element=> !element.attributes.getNamedItem('data-vite-dev-id').value.endsWith('src/css/theme.css'))
         // extract the href
         .map((element) => {
             if (element.nodeName === "STYLE") {
                 const obj = {};
                 obj[window.location.href] = element.textContent;
-                element.remove();
+                console.log("style", obj[window.location.href], window.location.href)
+                // element.remove();
                 return obj;
             }
             if (element.nodeName === "LINK") {
-                element.remove();
+                // element.remove();
                 return element.href;
             }
             // ignore

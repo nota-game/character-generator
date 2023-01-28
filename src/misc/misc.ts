@@ -2,7 +2,6 @@
 // // import { type MissingRequirements, Charakter } from "../models/Character";
 // import type { Data } from "../models/Data";
 
-import { boolean, ParenthesisNodeDependencies, resolve } from "mathjs";
 import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigkeit, Geschlecht_misc, LevelDefinition_misc, Lokalisierungen_misc, PfadDefinition_pfad, TalentDefinition_talent } from "src/data/nota.g";
 import { Charakter, type MissingRequirements } from "src/models/Character";
 import type { Data } from "src/models/Data";
