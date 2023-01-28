@@ -66,7 +66,7 @@
 <style lang="scss">
 	h4 {
 		position: sticky;
-		top: 7rem;
+		top: 8.5rem;
 		background-color: var(--card-background-color);
 		z-index: 700;
 		margin-top: 2rem;

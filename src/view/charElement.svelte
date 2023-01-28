@@ -45,7 +45,7 @@
 		localStorageChar.subscribe(async (newCharData) => {
 			loding = true;
 			if (localStorageChar.getId() == undefined) {
-			loding = false;
+				loding = false;
 				return;
 			}
 			const oldChar = get(char);
@@ -54,6 +54,7 @@
 				newCharData?.id != oldChar?.id ||
 				newCharData?.stammdatenId != oldChar?.stammdaten.id
 			) {
+				await dealay(1); // HACK let the loading animation start
 				const newData = await Data.init(false, newCharData?.stammdatenId);
 				if (newData) {
 					unsubscriber();
@@ -98,7 +99,8 @@
 			<div>
 				<strong>Punkte</strong>
 				<KostenControl char={$char} data={$data} mode="points" showZeroValues />
-				<a href={pageLink} rel="external">Charakterbogen</a>
+				<br />
+				<a href={pageLink} rel="external">Charakterbogen anzeigen</a>
 			</div>
 		</article>
 	{/if}

@@ -145,7 +145,7 @@
 	}
 	h2 {
 		position: sticky;
-		top: 4.5rem;
+		top: 6rem;
 		background-color: var(--card-background-color);
 		z-index: 800;
 	}

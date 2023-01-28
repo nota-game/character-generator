@@ -46,7 +46,6 @@ function removeStyles() {
             if (element.nodeName === "STYLE") {
                 const obj = {};
                 obj[window.location.href] = element.textContent;
-                console.log("style", obj[window.location.href], window.location.href)
                 // element.remove();
                 return obj;
             }

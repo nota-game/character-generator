@@ -815,7 +815,7 @@ export class Data {
             //     : await (await fetch('https://nota-game.github.io/Content/vNext/data/nota.xml')).text()
             let data: string;
             try {
-                throw "err";
+                // throw "err";
                 data = await (await fetch('https://nota-game.github.io/Content/vNext/data/nota.xml')).text();
 
             } catch (error) {
