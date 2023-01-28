@@ -42,7 +42,7 @@
 				'besonderheit',
 				(other) => {
 					other.besonderheiten[key].purchased.update((n) =>
-						Math.max(0, Math.min(entry.Stufe.length, n + 1))
+						Math.max(0, Math.min(entry.Stufe.length, Math.max(n + 1, $fixed + 1)))
 					);
 				},
 				key
@@ -71,20 +71,20 @@
 	</h4>
 
 	<div>
-		{#if $purchased < entry.Stufe.length}
+		{#if $purchased < entry.Stufe.length && $fixed < entry.Stufe.length}
 			<span class="tooltip">
 				<a
 					href="#"
 					class:missing={$missingNextLevel.length > 0}
 					on:click={(e) => {
 						e.preventDefault();
-						purchased.update((x) => Math.min(entry.Stufe.length, x + 1));
+						purchased.update((x) => Math.min(entry.Stufe.length, Math.max(x + 1, $fixed + 1)));
 					}}
 				>
-					{#if $purchased == 0}
+					{#if $purchased == 0 && $fixed == 0}
 						{getTextBesonderheit(entry, $purchased + 1, char)} hinzufügen
 					{:else}
-						Auf {getTextBesonderheit(entry, $purchased + 1, char)} verbessern
+						Auf {getTextBesonderheit(entry, Math.max($purchased + 1, $fixed + 1), char)} verbessern
 					{/if}
 					<small class="parenthised"
 						><KostenControl

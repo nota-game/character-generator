@@ -47,7 +47,7 @@
 				'fertigkeit',
 				(other) => {
 					other.fertigkeiten[key].purchased.update((n) =>
-						Math.max(0, Math.min(entry.Stufe.length, n + 1))
+						Math.max(0, Math.min(entry.Stufe.length, Math.max(n + 1, $fixed + 1)))
 					);
 				},
 				key
@@ -83,13 +83,13 @@
 					class:missing={$missingNextLevel.length > 0}
 					on:click={(e) => {
 						e.preventDefault();
-						purchased.update((x) => Math.min(entry.Stufe.length, x + 1));
+						purchased.update((x) => Math.min(entry.Stufe.length, Math.max(x + 1, $fixed + 1)));
 					}}
 				>
-					{#if $purchased == 0}
+					{#if $purchased == 0 && $fixed == 0}
 						{getTextFertigkeit(entry, $purchased + 1, char)} hinzufügen
 					{:else}
-						Auf {getTextFertigkeit(entry, $purchased + 1, char)} verbessern
+						Auf {getTextFertigkeit(entry, Math.max($purchased + 1, $fixed + 1), char)} verbessern
 					{/if}
 					<small class="parenthised"
 						><KostenControl
@@ -199,7 +199,6 @@
 
 <!-- {/if} -->
 <style lang="scss">
-
 	.parenthised:not(:empty)::before {
 		content: '(';
 	}
