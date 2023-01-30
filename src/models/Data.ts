@@ -831,7 +831,9 @@ export class Data {
             const deserialized = deserialize(notaStructure as SerializedRecord) as Array<element>;
             const dat = deserialized.filter((x) => x.name.local === 'Daten')[0];
             const parser = new Parser<Daten>(dat);
-            const notaData = parser.parse(data);
+            const notaData = await parser.parse(data, async path =>{
+                return await (await fetch(`https://nota-game.github.io/Content/vNext/data/${path}`)).text();
+            });
 
             const enc = new TextEncoder(); // always utf-8
             const digest = base64.encode(new Uint8Array((await window.crypto.subtle.digest('SHA-256', enc.encode(JSON.stringify(notaData))))));

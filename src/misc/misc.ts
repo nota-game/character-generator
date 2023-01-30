@@ -7,6 +7,14 @@ import { Charakter, type MissingRequirements } from "src/models/Character";
 import type { Data } from "src/models/Data";
 import { UNINITILEZED } from "./StoreManager2";
 
+
+
+export type RemoveTag<T, K extends string, V> =
+    Exclude<T, Record<K, V>>
+export type RemoveFromUnion<T, K> =
+    Exclude<T, Record<keyof K, any>>
+
+
 export function filterNull<T>(x: (T | null | undefined)[]): T[] {
     return x.filter(y => y !== null && y !== undefined) as T[];
 }
