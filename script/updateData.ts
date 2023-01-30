@@ -15,7 +15,7 @@ async function main() {
     console.log('download xml');
     const data = await (await fetch('https://nota-game.github.io/Content/vNext/data/nota.xml')).text();
     console.log('download schema');
-    const x = await xml.parseSchemas('https://nota-game.github.io/schema/vNext/nota.xsd');
+    const x = await xml.parseSchemas('https://nota-game.github.io/schema/vNext/nota.xsd', undefined);
     const types = await xml.generateTypes(x,(name)=>`${name.local}_${name.namespace.replace(/https:\/\/nota-game.github.io\/schema\/vNext\//g,'').replace(/\//g,'_').replace(/\.xsd/g,'')}`);
     const txt = xml.toTsTypes(types);
 
