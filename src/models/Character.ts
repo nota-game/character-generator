@@ -999,7 +999,7 @@ export class Charakter {
     /**
      *
      */
-    constructor(stammdaten: Data, idOrPersisted: string | PersistanceData, cloneFrom?: Charakter) {
+    constructor(stammdaten: Data, idOrPersisted: string | Partial<PersistanceData>, cloneFrom?: Charakter) {
         this.stammdaten = stammdaten;
 
 
@@ -2610,31 +2610,33 @@ export class Charakter {
             }
 
             if (typeof idOrPersisted == 'object') {
-                this.nameStore.set(idOrPersisted.name);
-                this.ageStore.set(idOrPersisted.age);
+                this.nameStore.set(idOrPersisted.name ?? '');
+                if (idOrPersisted.age) {
+                    this.ageStore.set(idOrPersisted.age);
+                }
 
-                for (const [pfad, levelLookup] of Object.entries(idOrPersisted.pfad)) {
+                for (const [pfad, levelLookup] of Object.entries(idOrPersisted.pfad ?? {})) {
                     for (const [levelId, value] of Object.entries(levelLookup)) {
                         this.pfad[pfad]?.[levelId]?.purchased.set(value);
                     }
                 }
-                for (const [id, value] of Object.entries(idOrPersisted.besonderheiten)) {
+                for (const [id, value] of Object.entries(idOrPersisted.besonderheiten ?? {})) {
                     this.besonderheiten[id].purchased.set(value);
                 }
-                for (const [id, value] of Object.entries(idOrPersisted.fertigkeiten)) {
+                for (const [id, value] of Object.entries(idOrPersisted.fertigkeiten ?? {})) {
                     this.fertigkeiten[id].purchased.set(value);
                 }
-                for (const [id, value] of Object.entries(idOrPersisted.talente)) {
+                for (const [id, value] of Object.entries(idOrPersisted.talente ?? {})) {
                     this.talente[id].purchased.set(value);
                 }
-                for (const [id, value] of Object.entries(idOrPersisted.eigenschaften)) {
+                for (const [id, value] of Object.entries(idOrPersisted.eigenschaften ?? {})) {
                     this.eigenschaften[id].raw.set(value);
                 }
                 this.gattungsIdStore.set(idOrPersisted.gattung);
                 this.artIdStore.set(idOrPersisted.art);
                 this.morphIdStore.set(idOrPersisted.morph);
 
-                for (const a of idOrPersisted.ausstattung) {
+                for (const a of idOrPersisted?.ausstattung ?? []) {
                     this.equipment[a]?.equiped.set(true);
                 }
 
