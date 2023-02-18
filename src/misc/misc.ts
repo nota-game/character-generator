@@ -14,6 +14,23 @@ export type RemoveTag<T, K extends string, V> =
 export type RemoveFromUnion<T, K> =
     Exclude<T, Record<keyof K, any>>
 
+export function intersect<T>(a: ArrayLike<T>, b: ArrayLike<T>, equals?: (a: T, b: T) => boolean) {
+    if (equals == undefined) {
+        equals = (a, b) => a == b;
+    }
+    const result = [];
+    for (let i = 0; i < a.length; i++) {
+        const element = a[i];
+        for (let j = 0; j < b.length; j++) {
+            const other = b[j];
+            if (equals(element, other)) {
+                result.push(element);
+                break;
+            }
+        }
+    }
+    return result;
+}
 
 export function filterNull<T>(x: (T | null | undefined)[]): T[] {
     return x.filter(y => y !== null && y !== undefined) as T[];

@@ -77,7 +77,7 @@
 
 	<div>
 		{#if $purchased < entry.Stufe.length}
-			<span class="tooltip">
+			<TooltipControl>
 				<a
 					href="#"
 					class:missing={$missingNextLevel.length > 0}
@@ -107,7 +107,7 @@
 					<!-- <ChangeView change={f} {data} {char} /> -->
 				{/await}
 
-				<div class="tooltiptext">
+				<div slot="tooltip">
 					<ul>
 						{#each $missingNextLevel as m}
 							<li class="missing">
@@ -127,7 +127,7 @@
 						/>
 					{/await}
 				</div>
-			</span>
+			</TooltipControl>
 		{/if}
 		<br />
 		{#if $purchased > 0 && $purchased > $fixed}

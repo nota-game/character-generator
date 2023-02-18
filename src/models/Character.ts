@@ -301,10 +301,6 @@ type EquipmentKey<id extends string = string> = Key<`/equipment/${id}/equiped`, 
 
 
 
-type LebensabschittGattungKey = Key<'/organism/gattung/lebensabschnitt', LebensabschnittDefinition_lebewesen | undefined>;
-type LebensabschittArtKey = Key<'/organism/art/lebensabschnitt', LebensabschnittDefinition_lebewesen | undefined>;
-type LebensabschittMorphKey = Key<'/organism/morph/lebensabschnitt', LebensabschnittDefinition_lebewesen | undefined>;
-
 
 function transformToCost<T>(entries: T[], fn: ((value: T) => ((readonly [string, number]) | undefined))): Cost {
     return entriesToCost(notUndefined(entries.map(fn)));
@@ -333,6 +329,51 @@ export type TalentSupportIncrease = {
     increaseTaB: number;
     increaseEP: number;
 };
+function isBesonderheitenHolder(obj: any): obj is BesonderheitenHolder {
+    const test = obj as Partial<BesonderheitenHolder> | undefined;
+    return test != undefined
+        && typeof test.effective == "object"
+        && typeof test.unconditionally == "object"
+        && typeof test.fixed == "object"
+        && typeof test.missing == "object"
+        && typeof test.missingNextLevel == "object"
+        && typeof test.cost == "object"
+        && typeof test.costNext == "object"
+        && typeof test.costPreview == "object"
+        ;
+}
+type HiracicRecord<T> = Record<string, T> | HiracicRecord2<T>;
+
+// HACK: since otherwise we have a circular dependecy in the type mapping. It is still there, but the compiler no longe sees it ¬_¬
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface HiracicRecord2<T> extends Record<string, HiracicRecord<T>> { };
+
+type BesonderheitenHolder = {
+    effective: Readable<number>;
+    unconditionally: Readable<number>;
+    purchased: Writable<number>;
+    fixed: Readable<number>;
+    missing: Readable<{
+        wert: number;
+        missing: MissingRequirements;
+    }[]>;
+    missingNextLevel: Readable<{
+        wert: number;
+        missing: MissingRequirements;
+    }[]>;
+    cost: Readable<TypeOfKey<CostKey<'besonderheit'>>>;
+    costNext: Readable<TypeOfKey<CostKey<'besonderheit', string, 'costNext'>>>;
+    costPreview: Readable<TypeOfKey<CostKey<'besonderheit', string, 'costPreview'>>>;
+};
+
+type AgeKey = Key<"/organism/age", number>;
+type GattungKey = Key<"/organism/gattung/instance", GattungDefinition_lebewesen | undefined>;
+
+type ArtKey = Key<"/organism/art/instance", ArtDefinition_lebewesen | undefined>;
+
+type MorphKey = Key<"/organism/morph/instance", MorphDefinition_lebewesen | undefined>;
+
+type LebensabschnittKey<type extends 'gattung' | 'art' | 'morph'> = Key<`/organism/${type}/lebensabschnitt`, LebensabschnittDefinition_lebewesen | undefined>;
 
 export class Charakter {
 
@@ -367,17 +408,30 @@ export class Charakter {
         cost: Readable<TypeOfKey<CostKey<'eigenschaft'>>>,
     }> = {};
 
-    public readonly besonderheiten: Record<string, {
-        effective: Readable<number>,
-        unconditionally: Readable<number>,
-        purchased: Writable<number>,
-        fixed: Readable<number>,
-        missing: Readable<{ wert: number; missing: MissingRequirements; }[]>,
-        missingNextLevel: Readable<{ wert: number; missing: MissingRequirements; }[]>,
-        cost: Readable<TypeOfKey<CostKey<'besonderheit'>>>,
-        costNext: Readable<TypeOfKey<CostKey<'besonderheit', string, 'costNext'>>>,
-        costPreview: Readable<TypeOfKey<CostKey<'besonderheit', string, 'costPreview'>>>,
-    }> = {};
+
+    public besonderheiten(...ids: string[]): BesonderheitenHolder | string[] | undefined {
+        let current = this.besonderheitenField;
+        for (let i = 0; i < ids.length; i++) {
+            const element = ids[i];
+            const t = current[element]
+            if (isBesonderheitenHolder(t)) {
+                return t;
+            }
+            if (t === undefined) {
+                return undefined;
+            }
+            current = t;
+        }
+        return Object.keys(current).filter(x => {
+            const next = this.besonderheiten(...ids, x);
+            if (isBesonderheitenHolder(next)) {
+                return next.purchased.currentValue() > 0 || next.effective.currentValue({ defaultValue: 0 }) > 0;
+            } else {
+                return (next?.length ?? 0) > 0;
+            }
+        });
+    }
+    private readonly besonderheitenField: HiracicRecord<BesonderheitenHolder> = {};
 
     public readonly fertigkeiten: Record<string, {
         effective: Readable<number>,
@@ -446,6 +500,59 @@ export class Charakter {
 
     private groupDependencyData(dependent: KeyData<Key<any, any>>[]) {
         const enrich = Object.entries(groupBy(dependent.map(e => {
+
+            if (e.key.Key == this.gattungsInstanceKey.Key) {
+                return {
+                    kind: 'organism' as const,
+                    type: 'gattung' as const,
+                    entry: e as KeyData<GattungKey>
+                }
+            }
+            if (e.key.Key == this.artInstanceKey.Key) {
+                return {
+                    kind: 'organism' as const,
+                    type: 'art' as const,
+                    entry: e as KeyData<ArtKey>
+                }
+            }
+            if (e.key.Key == this.morphInstanceKey.Key) {
+                return {
+                    kind: 'organism' as const,
+                    type: 'morph' as const,
+                    entry: e as KeyData<MorphKey>
+                }
+            }
+            if (e.key.Key == '/organism/age') {
+                return {
+                    kind: 'organism' as const,
+                    type: 'age' as const,
+                    entry: e as KeyData<number>
+                }
+            }
+
+
+            if (e.key.Key == this.lebensabschnittGattungKey.Key) {
+                return {
+                    kind: 'lebensabschnitt' as const,
+                    type: 'gattung' as const,
+                    entry: e as KeyData<LebensabschnittKey<'gattung'>>
+                }
+            }
+            if (e.key.Key == this.lebensabschnittArtKey.Key) {
+                return {
+                    kind: 'lebensabschnitt' as const,
+                    type: 'art' as const,
+                    entry: e as KeyData<LebensabschnittKey<'art'>>
+                }
+            }
+            if (e.key.Key == this.lebensabschnittMorphKey.Key) {
+                return {
+                    kind: 'lebensabschnitt' as const,
+                    type: 'morph' as const,
+                    entry: e as KeyData<LebensabschnittKey<'morph'>>
+                }
+            }
+
             const prop = this.getIdFromPropertieKeys(e.key);
             if (prop) {
 
@@ -474,6 +581,13 @@ export class Charakter {
                     return {
                         kind: 'property' as const,
                         entry: e as KeyData<EigenschaftTypeKey>,
+                        id: prop.id,
+                        type: prop.type,
+                    }
+                } else if (prop.type == 'cost') {
+                    return {
+                        kind: 'property' as const,
+                        entry: e as KeyData<CostKey<'eigenschaft'>>,
                         id: prop.id,
                         type: prop.type,
                     }
@@ -518,6 +632,34 @@ export class Charakter {
                         id: fertigkeit.id,
                         type: fertigkeit.type
                     }
+                } else if (fertigkeit.type == 'cost') {
+                    return {
+                        kind: 'fertigkeit' as const,
+                        entry: e as KeyData<CostKey<'fertigkeit'>>,
+                        id: fertigkeit.id,
+                        type: fertigkeit.type
+                    }
+                } else if (fertigkeit.type == 'costNext') {
+                    return {
+                        kind: 'fertigkeit' as const,
+                        entry: e as KeyData<CostKey<'fertigkeit', string, 'costNext'>>,
+                        id: fertigkeit.id,
+                        type: fertigkeit.type
+                    }
+                } else if (fertigkeit.type == 'costPreview') {
+                    return {
+                        kind: 'fertigkeit' as const,
+                        entry: e as KeyData<CostKey<'fertigkeit', string, 'costPreview'>>,
+                        id: fertigkeit.id,
+                        type: fertigkeit.type
+                    }
+                } else if (fertigkeit.type == 'missingNextLevel') {
+                    return {
+                        kind: 'fertigkeit' as const,
+                        entry: e as KeyData<FertigkeitMissingNextLevelKey>,
+                        id: fertigkeit.id,
+                        type: fertigkeit.type
+                    }
                 }
             }
             const besonderheit = this.getIdFromBesonterheitkeitKey(e.key);
@@ -556,8 +698,34 @@ export class Charakter {
                         entry: e as KeyData<BesonderheitPurchasedKey>,
                         id: besonderheit.id,
                         type: besonderheit.type,
-
-
+                    }
+                } else if (besonderheit.type == 'cost') {
+                    return {
+                        kind: 'besonderheit' as const,
+                        entry: e as KeyData<CostKey<'besonderheit'>>,
+                        id: besonderheit.id,
+                        type: besonderheit.type,
+                    }
+                } else if (besonderheit.type == 'costNext') {
+                    return {
+                        kind: 'besonderheit' as const,
+                        entry: e as KeyData<CostKey<'besonderheit', string, 'costNext'>>,
+                        id: besonderheit.id,
+                        type: besonderheit.type,
+                    }
+                } else if (besonderheit.type == 'costPreview') {
+                    return {
+                        kind: 'besonderheit' as const,
+                        entry: e as KeyData<CostKey<'besonderheit', string, 'costPreview'>>,
+                        id: besonderheit.id,
+                        type: besonderheit.type,
+                    }
+                } else if (besonderheit.type == 'missingNextLevel') {
+                    return {
+                        kind: 'besonderheit' as const,
+                        entry: e as KeyData<BesonderheitMissingNextLevelKey>,
+                        id: besonderheit.id,
+                        type: besonderheit.type,
                     }
                 }
             }
@@ -604,8 +772,13 @@ export class Charakter {
                         entry: e as KeyData<TalentPurchasedKey>,
                         id: talent.id,
                         type: talent.type,
-
-
+                    }
+                } else if (talent.type == 'cost') {
+                    return {
+                        kind: 'talent' as const,
+                        entry: e as KeyData<CostKey<'talent'>>,
+                        id: talent.id,
+                        type: talent.type,
                     }
                 }
             }
@@ -639,6 +812,42 @@ export class Charakter {
                         id: `${level.path}|${level.level}`,
                         type: level.type,
                     }
+                } else if (level.type == 'cost') {
+                    return {
+                        kind: 'level' as const,
+                        entry: e as KeyData<CostKey<'pfad'>>,
+                        levelId: level.level,
+                        pathId: level.path,
+                        id: `${level.path}|${level.level}`,
+                        type: level.type,
+                    }
+                } else if (level.type == 'costNext') {
+                    return {
+                        kind: 'level' as const,
+                        entry: e as KeyData<CostKey<'pfad', string, 'costNext'>>,
+                        levelId: level.level,
+                        pathId: level.path,
+                        id: `${level.path}|${level.level}`,
+                        type: level.type,
+                    }
+                } else if (level.type == 'costPreview') {
+                    return {
+                        kind: 'level' as const,
+                        entry: e as KeyData<CostKey<'pfad', string, 'costPreview'>>,
+                        levelId: level.level,
+                        pathId: level.path,
+                        id: `${level.path}|${level.level}`,
+                        type: level.type,
+                    }
+                } else if (level.type == 'missingNext') {
+                    return {
+                        kind: 'level' as const,
+                        entry: e as KeyData<LevelMissingNextKey>,
+                        levelId: level.level,
+                        pathId: level.path,
+                        id: `${level.path}|${level.level}`,
+                        type: level.type,
+                    }
                 }
             }
             const tag = this.getIdFromTagKey(e.key);
@@ -650,7 +859,6 @@ export class Charakter {
                         id: tag.id,
                         type: tag.type,
                     }
-
                 }
             }
 
@@ -668,6 +876,53 @@ export class Charakter {
         type MapKeyData<K> = {
             [e in keyof K]: KeyData<K[e]>;
         }
+
+        const organismDependency = notUndefined(enrich
+            .map(([key, value]) => {
+                const erg = {
+                    kind: 'organism',
+                    id: key,
+                } as Partial<{ Age: KeyData<AgeKey>, Gattung: KeyData<GattungKey>, Art: KeyData<ArtKey>, Morph: KeyData<MorphKey> }> & { kind: 'organism', id: string };
+                if (value[0]?.kind != erg.kind) {
+                    return undefined;
+                }
+                for (const v of value) {
+                    if (v.kind === erg.kind) {
+                        if (v.type == 'gattung') {
+                            erg.Gattung = v.entry;
+                        } else if (v.type == 'art') {
+                            erg.Art = v.entry;
+                        } else if (v.type == 'morph') {
+                            erg.Morph = v.entry;
+                        } else if (v.type == 'age') {
+                            erg.Age = v.entry;
+                        }
+                    }
+                }
+                return erg as { Age: KeyData<AgeKey>, Gattung: KeyData<GattungKey>, Art: KeyData<ArtKey>, Morph: KeyData<MorphKey> } & { kind: 'organism', id: string };
+            }));
+        const lebensabschnittDependency = notUndefined(enrich
+            .map(([key, value]) => {
+                const erg = {
+                    kind: 'lebensabschnitt',
+                    id: key,
+                } as Partial<{ Gattung: KeyData<LebensabschnittKey<'gattung'>>, Art: KeyData<LebensabschnittKey<'art'>>, Morph: KeyData<LebensabschnittKey<'morph'>> }> & { kind: 'lebensabschnitt', id: string };
+                if (value[0]?.kind != erg.kind) {
+                    return undefined;
+                }
+                for (const v of value) {
+                    if (v.kind === erg.kind) {
+                        if (v.type == 'gattung') {
+                            erg.Gattung = v.entry;
+                        } else if (v.type == 'art') {
+                            erg.Art = v.entry;
+                        } else if (v.type == 'morph') {
+                            erg.Morph = v.entry;
+                        }
+                    }
+                }
+                return erg as { Gattung: KeyData<LebensabschnittKey<'gattung'>>, Art: KeyData<LebensabschnittKey<'art'>>, Morph: KeyData<LebensabschnittKey<'morph'>> } & { kind: 'lebensabschnitt', id: string };
+            }));
 
         const talentDependency = notUndefined(enrich
             .map(([key, value]) => {
@@ -840,7 +1095,7 @@ export class Charakter {
                     return undefined;
                 }
             }));
-        return { fertigkeitDependency, besonderheitDependency, eigenschaftDependency, talentDependency, otherDependency, tagDependency, levelDependency };
+        return { lebensabschnittDependency, organismDependency, fertigkeitDependency, besonderheitDependency, eigenschaftDependency, talentDependency, otherDependency, tagDependency, levelDependency };
     }
 
     private getEquipmentKeys<id extends string>(Id: id): EquipmentKeys<id> {
@@ -995,11 +1250,19 @@ export class Charakter {
             : { id: erg, type: type };
     }
 
+    private readonly ageKey: AgeKey;
+    private readonly gattungsInstanceKey: GattungKey;
+    private readonly artInstanceKey: ArtKey;
+    private readonly morphInstanceKey: MorphKey;
+
+    private readonly lebensabschnittGattungKey: LebensabschnittKey<'gattung'>;
+    private readonly lebensabschnittArtKey: LebensabschnittKey<'art'>;
+    private readonly lebensabschnittMorphKey: LebensabschnittKey<'morph'>;
 
     /**
      *
      */
-    constructor(stammdaten: Data, idOrPersisted: string | Partial<PersistanceData>, cloneFrom?: Charakter) {
+    constructor(stammdaten: Data, idOrPersisted: string | Partial<PersistanceData> & { id: string }, cloneFrom?: Charakter) {
         this.stammdaten = stammdaten;
 
 
@@ -1012,15 +1275,15 @@ export class Charakter {
         const artIdKey = StoreManager.key('/organism/art/selected').of<string | undefined>();
         const morphIdKey = StoreManager.key('/organism/morph/selected').of<string | undefined>();
 
-        const gattungsInstanceKey = StoreManager.key('/organism/gattung/instance').of<GattungDefinition_lebewesen | undefined>();
-        const artInstanceKey = StoreManager.key('/organism/art/instance').of<ArtDefinition_lebewesen | undefined>();
-        const morphInstanceKey = StoreManager.key('/organism/morph/instance').of<MorphDefinition_lebewesen | undefined>();
+        this.gattungsInstanceKey = StoreManager.key('/organism/gattung/instance').of<GattungDefinition_lebewesen | undefined>();
+        this.artInstanceKey = StoreManager.key('/organism/art/instance').of<ArtDefinition_lebewesen | undefined>();
+        this.morphInstanceKey = StoreManager.key('/organism/morph/instance').of<MorphDefinition_lebewesen | undefined>();
 
         const gattungPossibleKey = StoreManager.key('/organism/gattung/possible').of<string[]>();
         const artPossibleKey = StoreManager.key('/organism/art/possible').of<string[]>();
         const morphPossibleKey = StoreManager.key('/organism/morph/possible').of<string[]>();
 
-        const ageKey = StoreManager.key('/organism/age').of<number>();
+        this.ageKey = StoreManager.key('/organism/age').of<number>();
         const nameKey = StoreManager.key('/name').of<string>();
 
         const dataStoreKey = StoreManager.key('/persistance').of<PersistanceData>();
@@ -1029,9 +1292,9 @@ export class Charakter {
         const costKey = StoreManager.key('/points/total').of<Cost>();
         const missingKey = StoreManager.key('/totalMissing').of<missingMapping[]>();
 
-        const lebensabschnittGattungKey = StoreManager.key('/organism/gattung/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
-        const lebensabschnittArtKey = StoreManager.key('/organism/art/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
-        const lebensabschnittMorphKey = StoreManager.key('/organism/morph/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
+        this.lebensabschnittGattungKey = StoreManager.key('/organism/gattung/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
+        this.lebensabschnittArtKey = StoreManager.key('/organism/art/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
+        this.lebensabschnittMorphKey = StoreManager.key('/organism/morph/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
         const lebensabschnittKey = StoreManager.key('/organism/*/lebensabschnitt').of<{ gattung: LebensabschnittDefinition_lebewesen | undefined, art: LebensabschnittDefinition_lebewesen | undefined, morph: LebensabschnittDefinition_lebewesen | undefined }>()
 
         const sumCost = StoreManager.key('/**/cost').of<Record<string, Record<string, Record<string, Cost>>>>();
@@ -1048,21 +1311,21 @@ export class Charakter {
             });
 
 
-            this.ageStore = storeList[ageKey.Key].store as Writable<number>;
+            this.ageStore = storeList[this.ageKey.Key].store as Writable<number>;
             this.nameStore = storeList[nameKey.Key].store as Writable<string>;
 
 
             this.gattungsIdStore = storeList[gattungsIdKey.Key].store as Writable<string>;
             this.possibleGattungStore = storeList[gattungPossibleKey.Key].store as Readable<string[]>;
-            this.gattungsStore = storeList[gattungsInstanceKey.Key].store as Readable<GattungDefinition_lebewesen>;
+            this.gattungsStore = storeList[this.gattungsInstanceKey.Key].store as Readable<GattungDefinition_lebewesen>;
 
             this.artIdStore = storeList[artIdKey.Key].store as Writable<string>;;
             this.possibleArtStore = storeList[artPossibleKey.Key].store as Readable<string[]>;
-            this.artStore = storeList[artInstanceKey.Key].store as Readable<ArtDefinition_lebewesen>;
+            this.artStore = storeList[this.artInstanceKey.Key].store as Readable<ArtDefinition_lebewesen>;
 
             this.morphIdStore = storeList[morphIdKey.Key].store as Writable<string>;
             this.possibleMorphStore = storeList[morphPossibleKey.Key].store as Readable<string[]>;
-            this.morphStore = storeList[morphInstanceKey.Key].store as Readable<MorphDefinition_lebewesen>;
+            this.morphStore = storeList[this.morphInstanceKey.Key].store as Readable<MorphDefinition_lebewesen>;
 
             this.persistanceStore = storeList[dataStoreKey.Key].store as Readable<PersistanceData>;
 
@@ -1102,7 +1365,7 @@ export class Charakter {
 
             for (const besonderheit of this.stammdaten.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit)) {
                 const keys = this.getBesonterheitKeys(besonderheit.Id);
-                this.besonderheiten[besonderheit.Id] = {
+                this.besonderheitenField[besonderheit.Id] = {
                     effective: storeList[keys.Effective.Key].store as Readable<number>,
                     unconditionally: storeList[keys.Unbeschränkt.Key].store as Readable<number>,
                     purchased: storeList[keys.Purchased.Key].store as Writable<number>,
@@ -1190,14 +1453,14 @@ export class Charakter {
 
 
 
-            this.ageStore = this.storeManager.writable(ageKey, 1);
+            this.ageStore = this.storeManager.writable(this.ageKey, 1);
             this.nameStore = this.storeManager.writable(nameKey, '');
 
             this.gattungsIdStore = this.storeManager.writable(gattungsIdKey, undefined);
             this.possibleGattungStore = this.storeManager.derived(gattungPossibleKey, [], function (data) {
                 return data.Instance.Daten.Organismen.Gattung.map(x => x.Id);
             });
-            this.gattungsStore = this.storeManager.derived(gattungsInstanceKey, gattungsIdKey, function (data, gattungsId) {
+            this.gattungsStore = this.storeManager.derived(this.gattungsInstanceKey, gattungsIdKey, function (data, gattungsId) {
                 if (gattungsId === undefined) {
                     return undefined;
                 }
@@ -1206,13 +1469,13 @@ export class Charakter {
             });
 
             this.artIdStore = this.storeManager.writable(artIdKey, undefined);
-            this.possibleArtStore = this.storeManager.derived(artPossibleKey, gattungsInstanceKey, function (_data, selectedGattung) {
+            this.possibleArtStore = this.storeManager.derived(artPossibleKey, this.gattungsInstanceKey, function (_data, selectedGattung) {
                 if (selectedGattung === undefined) {
                     return [];
                 }
                 return selectedGattung.newValue?.Art.map(x => x.Id) ?? [];
             });
-            this.artStore = this.storeManager.derived(artInstanceKey, [artIdKey, gattungsInstanceKey], function (data, [artId, gattung]) {
+            this.artStore = this.storeManager.derived(this.artInstanceKey, [artIdKey, this.gattungsInstanceKey], function (data, [artId, gattung]) {
                 if (gattung.newValue === undefined || artId.newValue === undefined) {
                     return undefined;
                 }
@@ -1221,13 +1484,13 @@ export class Charakter {
             });
 
             this.morphIdStore = this.storeManager.writable(morphIdKey, undefined);
-            this.possibleMorphStore = this.storeManager.derived(morphPossibleKey, artInstanceKey, function (_data, selectedArt) {
+            this.possibleMorphStore = this.storeManager.derived(morphPossibleKey, this.artInstanceKey, function (_data, selectedArt) {
                 if (selectedArt === undefined) {
                     return [];
                 }
                 return selectedArt.newValue?.Morphe.Morph.map(x => x.Id) ?? [];
             });
-            this.morphStore = this.storeManager.derived(morphInstanceKey, [morphIdKey, artInstanceKey], function (data, [artId, art]) {
+            this.morphStore = this.storeManager.derived(this.morphInstanceKey, [morphIdKey, this.artInstanceKey], function (data, [artId, art]) {
                 if (art.newValue === undefined || artId.newValue === undefined) {
                     return undefined;
                 }
@@ -1238,13 +1501,13 @@ export class Charakter {
 
             this.lebensAbschnitteStore = this.storeManager.readable(lebensabschnittKey);
 
-            this.storeManager.derived(lebensabschnittGattungKey, [ageKey, gattungsInstanceKey], (data, [age, gattung]) => {
+            this.storeManager.derived(this.lebensabschnittGattungKey, [this.ageKey, this.gattungsInstanceKey], (data, [age, gattung]) => {
                 return getLast(gattung.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
             })
-            this.storeManager.derived(lebensabschnittArtKey, [ageKey, artInstanceKey], (data, [age, art]) => {
+            this.storeManager.derived(this.lebensabschnittArtKey, [this.ageKey, this.artInstanceKey], (data, [age, art]) => {
                 return getLast(art.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
             })
-            this.storeManager.derived(lebensabschnittMorphKey, [ageKey, morphInstanceKey], (data, [age, morph],) => {
+            this.storeManager.derived(this.lebensabschnittMorphKey, [this.ageKey, this.morphInstanceKey], (data, [age, morph],) => {
                 return getLast(morph.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
             })
 
@@ -1306,7 +1569,7 @@ export class Charakter {
 
             this.persistanceStore = this.storeManager.derived(dataStoreKey, [
                 nameKey,
-                ageKey,
+                this.ageKey,
                 StoreManager.key('/pfad/**/purchased').of<Record<string, Record<string, { purchased: number }>>>(),
                 StoreManager.key('/besonderheit/*/purchased').of<Record<string, { purchased: number }>>(),
                 StoreManager.key('/fertigkeit/*/purchased').of<Record<string, { purchased: number }>>(),
@@ -1395,18 +1658,18 @@ export class Charakter {
                     });
 
                 const dependentAge = dependentData.filter(x => x == 'other-alter')
-                    .map(() => ageKey);
+                    .map(() => this.ageKey);
 
                 const dependentGattung = dependentData.filter(x => x.startsWith('Gattung'))
-                    .map(() => gattungsInstanceKey);
+                    .map(() => this.gattungsInstanceKey);
                 const dependentArt = dependentData.filter(x => x.startsWith('Art'))
-                    .map(() => artInstanceKey);
+                    .map(() => this.artInstanceKey);
                 const dependentMorph = dependentData.filter(x => x.startsWith('Morph'))
-                    .map(() => morphInstanceKey);
+                    .map(() => this.morphInstanceKey);
 
-                const dependentLebensabschnittGattung = dependentData.filter(x => x.startsWith('Lebensabschnitt-Gattung')).map(() => lebensabschnittGattungKey);
-                const dependentLebensabschnittArt = dependentData.filter(x => x.startsWith('Lebensabschnitt-Art')).map(() => lebensabschnittArtKey);
-                const dependentLebensabschnittMorph = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(() => lebensabschnittMorphKey);
+                const dependentLebensabschnittGattung = dependentData.filter(x => x.startsWith('Lebensabschnitt-Gattung')).map(() => this.lebensabschnittGattungKey);
+                const dependentLebensabschnittArt = dependentData.filter(x => x.startsWith('Lebensabschnitt-Art')).map(() => this.lebensabschnittArtKey);
+                const dependentLebensabschnittMorph = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(() => this.lebensabschnittMorphKey);
 
                 const dep = [
                     ...dependentGattung,
@@ -1459,7 +1722,7 @@ export class Charakter {
                 const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
                 const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
 
-                this.storeManager.derived(tmpKey, [morphInstanceKey, artInstanceKey, gattungsInstanceKey], (data, [{ newValue: morph }, { newValue: art }, { newValue: gattung }]) => {
+                this.storeManager.derived(tmpKey, [this.morphInstanceKey, this.artInstanceKey, this.gattungsInstanceKey], (data, [{ newValue: morph }, { newValue: art }, { newValue: gattung }]) => {
                     const base = morph?.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'morph' as const }))[0]
                         ?? morph?.Entwiklung?.Bereich?.filter(x => x.id == key).map(x => ({ entry: x, type: 'bereich' as const, level: 'morph' as const }))[0]
                         ?? morph?.Entwiklung?.Punkt?.filter(x => x.id == key).map(x => ({ entry: x, type: 'punkt' as const, level: 'morph' as const }))[0]
@@ -1496,14 +1759,14 @@ export class Charakter {
                 });
 
 
-                this.storeManager.derived(effectiveKey, [ageKey, tmpKey, rawKey, metaKey, ...valueDependency], (data, [{ newValue: age }, { newValue: base }, { newValue: setValue }, { newValue: meta }, ...dependent]) => {
+                this.storeManager.derived(effectiveKey, [this.ageKey, tmpKey, rawKey, metaKey, ...valueDependency], (data, [{ newValue: age }, { newValue: base }, { newValue: setValue }, { newValue: meta }, ...dependent]) => {
                     let resultreturn: number;
                     if (base === undefined) {
                         return undefined;
                     }
 
 
-                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency, otherDependency } = this.groupDependencyData(dependent);
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency, otherDependency, lebensabschnittDependency, levelDependency, organismDependency } = this.groupDependencyData(dependent);
 
 
 
@@ -1627,6 +1890,20 @@ export class Charakter {
                     }
 
                     const mods = [
+
+
+                        ...organismDependency.flatMap(x => [
+                            ...x.Gattung?.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [],
+                            ...x.Art?.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [],
+                            ...x.Morph?.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [],
+                        ]),
+
+                        ...lebensabschnittDependency.flatMap(x => [
+                            ...x.Gattung?.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [],
+                            ...x.Art?.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [],
+                            ...x.Morph?.newValue?.Mods?.Eigenschaften?.Mod.filter(z => z.Eigenschaft == key) ?? [],
+                        ]),
+
                         ...fertigkeitDependency.flatMap(x => {
                             const instance = data.fertigkeitenMap[x.id];
                             return instance.Stufe.filter((y, i) => x.Effective.newValue > i).flatMap(y =>
@@ -1684,7 +1961,7 @@ export class Charakter {
                 })
 
 
-                this.storeManager.derived(metaKey, [ageKey, tmpKey, rawKey], (data, [{ newValue: age }, { newValue: base }, { newValue: raw }]) => {
+                this.storeManager.derived(metaKey, [this.ageKey, tmpKey, rawKey], (data, [{ newValue: age }, { newValue: base }, { newValue: raw }]) => {
                     if (base === undefined) {
                         return undefined;
                     }
@@ -1787,7 +2064,7 @@ export class Charakter {
 
                 const keys = this.getBesonterheitKeys(besonderheit.Id);
 
-                this.besonderheiten[besonderheit.Id] = {
+                this.besonderheitenField[besonderheit.Id] = {
                     effective: this.storeManager.readable(keys.Effective),
                     unconditionally: this.storeManager.readable(keys.Unbeschränkt),
                     purchased: this.storeManager.writable(keys.Purchased, 0),
@@ -1820,7 +2097,7 @@ export class Charakter {
                 this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
                     // todo get fixed besonderheiten
 
-                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, tagDependency, levelDependency } = this.groupDependencyData(dependent);
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, tagDependency, levelDependency, lebensabschnittDependency, organismDependency } = this.groupDependencyData(dependent);
 
                     const besonderheitMax = Math.max(...besonderheitDependency.map(x =>
                         Math.max(...data.besonderheitenMap[x.id].Stufe.filter((_, i) => i < x.Effective.newValue)
@@ -1843,12 +2120,26 @@ export class Charakter {
 
                     }));
 
+
+                    const organismMax = Math.max(...organismDependency.flatMap(x => [
+                        ...x.Gattung?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+                        ...x.Art?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+                        ...x.Morph?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+                    ]));
+
+                    const lebensabschnittMax = Math.max(...lebensabschnittDependency.flatMap(x => [
+                        ...x.Gattung?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+                        ...x.Art?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+                        ...x.Morph?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+                    ]));
+
+
                     const levelMax = Math.max(
                         ...(levelDependency.filter(x => x.Effective.newValue > 0).flatMap(x => data.levelMap[x.path][x.id].Besonderheit?.filter(y => y.Id == besonderheit.Id).map(y => y.Stufe) ?? []))
                     );
 
 
-                    return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax, levelMax);
+                    return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax, levelMax, organismMax, lebensabschnittMax);
                 });
 
                 this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
@@ -2561,7 +2852,7 @@ export class Charakter {
 
 
                 this.storeManager.derived(keys.Effective, valueDependency, (data, dependent) => {
-                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency } = this.groupDependencyData(dependent);
+                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, talentDependency, lebensabschnittDependency, levelDependency, organismDependency } = this.groupDependencyData(dependent);
 
                     for (const b of besonderheitDependency) {
                         const besonderheit = data.besonderheitenMap[b.id];
@@ -2600,6 +2891,31 @@ export class Charakter {
                     }
 
 
+
+                    for (const b of organismDependency) {
+                        if (b.Gattung?.newValue?.Mods?.Tags?.Tag.filter(x => x.Id == tag.Id)) {
+                            return 1;
+                        }
+                        if (b.Art?.newValue?.Mods?.Tags?.Tag.filter(x => x.Id == tag.Id)) {
+                            return 1;
+                        }
+                        if (b.Morph?.newValue?.Mods?.Tags?.Tag.filter(x => x.Id == tag.Id)) {
+                            return 1;
+                        }
+                    }
+                    for (const b of lebensabschnittDependency) {
+                        if (b.Gattung?.newValue?.Mods?.Tags?.Tag.filter(x => x.Id == tag.Id)) {
+                            return 1;
+                        }
+                        if (b.Art?.newValue?.Mods?.Tags?.Tag.filter(x => x.Id == tag.Id)) {
+                            return 1;
+                        }
+                        if (b.Morph?.newValue?.Mods?.Tags?.Tag.filter(x => x.Id == tag.Id)) {
+                            return 1;
+                        }
+                    }
+
+
                     return 0;
                 });
 
@@ -2621,7 +2937,7 @@ export class Charakter {
                     }
                 }
                 for (const [id, value] of Object.entries(idOrPersisted.besonderheiten ?? {})) {
-                    this.besonderheiten[id].purchased.set(value);
+                    this.besonderheitenField[id].purchased.set(value);
                 }
                 for (const [id, value] of Object.entries(idOrPersisted.fertigkeiten ?? {})) {
                     this.fertigkeiten[id].purchased.set(value);
@@ -3055,15 +3371,15 @@ export class Charakter {
                     }
 
                     const besonderheitenKeys = distinct(
-                        Object.keys(twin.besonderheiten)
-                            .concat(Object.keys(this.besonderheiten))
+                        Object.keys(twin.besonderheitenField)
+                            .concat(Object.keys(this.besonderheitenField))
                     );
                     const changedBestonderheiten = besonderheitenKeys
                         .map((key) => {
                             return {
                                 key: key,
-                                new: removeUninitilized(twin.besonderheiten[key].effective.currentValue(), 0),
-                                old: removeUninitilized(this.besonderheiten[key].effective.currentValue(), 0),
+                                new: removeUninitilized(twin.besonderheitenField[key].effective.currentValue(), 0),
+                                old: removeUninitilized(this.besonderheitenField[key].effective.currentValue(), 0),
                                 // newIgnored: removeUninitilized(twin.besonderheiten[key].unconditionally.currentValue(), 0),
                                 // oldIgnored: removeUninitilized(this.besonderheiten[key].unconditionally.currentValue(), 0)
                             };
@@ -3152,7 +3468,7 @@ export class Charakter {
 
                     const currentMissing =
                         [
-                            ...besonderheitenKeys.flatMap(x => removeUninitilized(this.besonderheiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
+                            ...besonderheitenKeys.flatMap(x => removeUninitilized(this.besonderheitenField[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
                             ...talentKeys.flatMap(x => removeUninitilized(this.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
                             ...fertigkeitenKeys.flatMap(x => removeUninitilized(this.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
                             ...levelKeys.flatMap(({ path, level }) => removeUninitilized(this.pfad[path][level].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'level' as const, missingOnId: { path, level }, ...missing }))),
@@ -3160,7 +3476,7 @@ export class Charakter {
                         ].sort(compaleInternal);
                     const twinMissing =
                         [
-                            ...besonderheitenKeys.flatMap(x => removeUninitilized(twin.besonderheiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
+                            ...besonderheitenKeys.flatMap(x => removeUninitilized(twin.besonderheitenField[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
                             ...talentKeys.flatMap(x => removeUninitilized(twin.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
                             ...fertigkeitenKeys.flatMap(x => removeUninitilized(twin.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
                             ...levelKeys.flatMap(({ path, level }) => {
@@ -3224,7 +3540,7 @@ export class Charakter {
 
         const alweysStors = [this.pointStore, this.missingStore];
         if (type == 'besonderheit') {
-            if (this.besonderheiten[key] === undefined) {
+            if (this.besonderheitenField[key] === undefined) {
                 throw new Error(`Unknown besonderheit ${key}`);
             }
             const xxx = this.getBesonterheitKeys(key);

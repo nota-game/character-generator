@@ -1,1373 +1,1391 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
 
- export type _Abkürzung = ((ιδ42ε))
+ export type _Abkürzung = ((ιδ47ε))
 
- export type _Abkürzung1 = ιδ134ε
+ export type _Abkürzung1 = ιδ198ε
 
- export type _Abkürzung10 = ((ιδ42ε))
+ export type _Abkürzung10 = ((ιδ47ε))
 
  export type _Abkürzung11 = ιδ10ε
 
- export type _Abkürzung2 = ((ιδ42ε))
+ export type _Abkürzung2 = ((ιδ47ε))
 
- export type _Abkürzung3 = ιδ302ε
+ export type _Abkürzung3 = ιδ136ε
 
- export type _Abkürzung4 = ((ιδ42ε))
+ export type _Abkürzung4 = ((ιδ47ε))
 
- export type _Abkürzung5 = ιδ305ε
+ export type _Abkürzung5 = ιδ139ε
 
- export type _Abkürzung6 = ((ιδ42ε))
+ export type _Abkürzung6 = ((ιδ47ε))
 
- export type _Abkürzung7 = ιδ328ε
+ export type _Abkürzung7 = ιδ174ε
 
- export type _Abkürzung8 = ((ιδ42ε))
+ export type _Abkürzung8 = ((ιδ47ε))
 
- export type _Abkürzung9 = ιδ309ε
+ export type _Abkürzung9 = ιδ143ε
 
- export type _Ableitung = ({} & (ιδ64ε) & (ιδ77ε))
+ export type _Ableitung = ({} & (ιδ98ε) & (ιδ111ε))
 
- export type _Ableitung1 = ιδ21ε
+ export type _Ableitung1 = ιδ26ε
 
- export type _Ableitungen = ((ιδ182ε))
+ export type _Ableitungen = ((ιδ257ε))
 
- export type _Ableitungen1 = ιδ153ε
+ export type _Ableitungen1 = ιδ226ε
 
- export type _AbleitungsAuswahl = ιδ182ε
+ export type _AbleitungsAuswahl = ιδ257ε
 
- export type _ActionType = ιδ169ε
+ export type _ActionType = ιδ242ε
 
- export type _AddModValueType = ((SubArray<(ιδ29ε)> & SubArray<(ιδ30ε)> & SubArray<(ιδ32ε)> & SubArray<(ιδ31ε)> & SubArray<(ιδ33ε)>))
+ export type _AddModValueType = ((SubArray<(ιδ34ε)> & SubArray<(ιδ35ε)> & SubArray<(ιδ37ε)> & SubArray<(ιδ36ε)> & SubArray<(ιδ38ε)>))
 
- export type _AddModValueType1 = ιδ31ε
+ export type _AddModValueType1 = ιδ36ε
 
- export type _alter = ιδ386ε
+ export type _alter = ιδ183ε
 
- export type _alter1 = ιδ387ε
+ export type _alter1 = ιδ184ε
 
- export type _And = ((ιδ300ε))
+ export type _And = ((ιδ358ε))
 
- export type _And1 = ιδ361ε
+ export type _And1 = ιδ404ε
 
- export type _And10 = ((ιδ392ε))
+ export type _And10 = ((ιδ430ε))
 
- export type _And11 = ιδ355ε
+ export type _And11 = ιδ398ε
 
- export type _And2 = ((ιδ300ε))
+ export type _And2 = ((ιδ358ε))
 
- export type _And3 = ιδ252ε
+ export type _And3 = ιδ333ε
 
- export type _And4 = ((ιδ385ε))
+ export type _And4 = ((ιδ428ε))
 
- export type _And5 = ιδ438ε
+ export type _And5 = ιδ471ε
 
- export type _And6 = ((ιδ385ε))
+ export type _And6 = ((ιδ428ε))
 
- export type _And7 = ιδ324ε
+ export type _And7 = ιδ378ε
 
- export type _And8 = ((ιδ392ε))
+ export type _And8 = ((ιδ430ε))
 
- export type _And9 = ιδ458ε
+ export type _And9 = ιδ480ε
 
- export type _Anzahl = ιδ64ε
+ export type _Anzahl = ιδ98ε
 
- export type _Anzahl1 = ιδ66ε
+ export type _Anzahl1 = ιδ100ε
 
- export type _Art = ((ιδ42ε))
+ export type _Art = ((ιδ47ε))
 
- export type _Art1 = ιδ221ε
+ export type _Art1 = ιδ128ε
 
- export type _Art2 = ((ιδ179ε))
+ export type _Art2 = ((ιδ48ε))
 
- export type _Art3 = ιδ148ε
+ export type _Art3 = ιδ212ε
 
- export type _Art4 = ((ιδ47ε))
+ export type _Art4 = ((ιδ48ε))
 
- export type _Art5 = ιδ13ε
+ export type _Art5 = ιδ12ε
 
- export type _ArtDefinition = ιδ179ε
+ export type _ArtDefinition = ιδ48ε
 
- export type _AusrüstungEigengchaftDefinition = ιδ189ε
+ export type _ArtRef = ((ιδ57ε))
 
- export type _Ausstattung = ((ιδ106ε) & (ιδ107ε) & (ιδ108ε))
+ export type _ArtRef1 = ιδ14ε
 
- export type _Ausstattung1 = ιδ34ε
+ export type _AusrüstungEigengchaftDefinition = ιδ264ε
 
- export type _Auswahl = ((ιδ353ε))
+ export type _Ausstattung = ((ιδ159ε) & (ιδ160ε) & (ιδ161ε))
 
- export type _Auswahl1 = ιδ245ε
+ export type _Ausstattung1 = ιδ39ε
+
+ export type _Auswahl = ((ιδ396ε))
+
+ export type _Auswahl1 = ιδ326ε
 
  export type _Bedingung = (string)
 
- export type _Bedingung1 = ιδ161ε
+ export type _Bedingung1 = ιδ234ε
 
- export type _BedingungsAuswahl = ιδ185ε
+ export type _BedingungsAuswahl = ιδ260ε
 
- export type _BedingungsAuswahl1 = ιδ298ε
+ export type _BedingungsAuswahl1 = ιδ356ε
 
- export type _BedingungsAuswahlen = ιδ300ε
+ export type _BedingungsAuswahlen = ιδ358ε
 
- export type _BedingungsAuswahlen1 = ιδ392ε
+ export type _BedingungsAuswahlen1 = ιδ430ε
 
- export type _Belastung = ιδ127ε
+ export type _Belastung = ιδ191ε
 
- export type _Berechnung = ιδ52ε
+ export type _Berechnung = ιδ62ε
 
- export type _Berechnung1 = ((ιδ196ε))
+ export type _Berechnung1 = ((ιδ53ε))
 
- export type _Berechnung2 = ιδ191ε
+ export type _Berechnung2 = ιδ18ε
 
- export type _Bereich = ((ιδ197ε))
+ export type _Bereich = ((ιδ54ε))
 
- export type _Bereich1 = ιδ192ε
+ export type _Bereich1 = ιδ19ε
 
- export type _Beschreibung = ((ιδ42ε))
+ export type _Beschreibung = ((ιδ47ε))
 
  export type _Beschreibung1 = ιδ9ε
 
- export type _Beschreibung10 = ((ιδ42ε))
+ export type _Beschreibung10 = ((ιδ47ε))
 
- export type _Beschreibung11 = ιδ308ε
+ export type _Beschreibung11 = ιδ142ε
 
- export type _Beschreibung12 = ((ιδ42ε))
+ export type _Beschreibung12 = ((ιδ47ε))
 
- export type _Beschreibung13 = ιδ336ε
+ export type _Beschreibung13 = ιδ298ε
 
- export type _Beschreibung14 = ((ιδ42ε))
+ export type _Beschreibung14 = ((ιδ47ε))
 
- export type _Beschreibung15 = ιδ132ε
+ export type _Beschreibung15 = ιδ196ε
 
  export type _Beschreibung16 = (string)
 
- export type _Beschreibung17 = ιδ160ε
+ export type _Beschreibung17 = ιδ233ε
 
- export type _Beschreibung2 = ((ιδ42ε))
+ export type _Beschreibung2 = ((ιδ47ε))
 
- export type _Beschreibung3 = ιδ301ε
+ export type _Beschreibung3 = ιδ135ε
 
- export type _Beschreibung4 = ((ιδ42ε))
+ export type _Beschreibung4 = ((ιδ47ε))
 
- export type _Beschreibung5 = ιδ304ε
+ export type _Beschreibung5 = ιδ138ε
 
- export type _Beschreibung6 = ((ιδ42ε))
+ export type _Beschreibung6 = ((ιδ47ε))
 
- export type _Beschreibung7 = ιδ327ε
+ export type _Beschreibung7 = ιδ173ε
 
- export type _Beschreibung8 = ((ιδ42ε))
+ export type _Beschreibung8 = ((ιδ47ε))
 
- export type _Beschreibung9 = ιδ443ε
+ export type _Beschreibung9 = ιδ268ε
 
- export type _Besonderheit = ({} & (ιδ71ε) & (ιδ77ε))
+ export type _Besonderheit = ({} & (ιδ105ε) & (ιδ111ε))
 
- export type _Besonderheit1 = ιδ332ε
+ export type _Besonderheit1 = ιδ306ε
 
- export type _Besonderheit2 = ({} & (ιδ71ε) & (ιδ77ε))
+ export type _Besonderheit2 = ({} & (ιδ105ε) & (ιδ111ε))
 
- export type _Besonderheit3 = ιδ26ε
+ export type _Besonderheit3 = ιδ31ε
 
- export type _Besonderheit4 = ((ιδ116ε))
+ export type _Besonderheit4 = ((ιδ172ε))
 
- export type _Besonderheit5 = ιδ102ε
+ export type _Besonderheit5 = ιδ155ε
 
- export type _BesonderheitDefinition = ιδ116ε
+ export type _BesonderheitDefinition = ιδ172ε
 
- export type _Besonderheiten = ((ιδ332ε))
+ export type _Besonderheiten = ((ιδ306ε))
 
- export type _Besonderheiten1 = ιδ218ε
+ export type _Besonderheiten1 = ιδ220ε
 
- export type _Besonderheiten2 = ((ιδ101ε) & (ιδ102ε) & (ιδ70ε))
+ export type _Besonderheiten2 = ((ιδ154ε) & (ιδ155ε) & (ιδ104ε))
 
- export type _Besonderheiten3 = ιδ82ε
+ export type _Besonderheiten3 = ιδ116ε
 
- export type _Besonderheiten4 = ((ιδ101ε) & (ιδ102ε) & (ιδ70ε))
+ export type _Besonderheiten4 = ((ιδ154ε) & (ιδ155ε) & (ιδ104ε))
 
- export type _Besonderheiten5 = ιδ25ε
+ export type _Besonderheiten5 = ιδ30ε
 
- export type _Bis = ιδ487ε
+ export type _Bis = ιδ507ε
 
- export type _Brust = ((ιδ406ε))
+ export type _Brust = ((ιδ444ε))
 
- export type _Brust1 = ιδ377ε
+ export type _Brust1 = ιδ420ε
 
- export type _ConcreteModValueType = ({} & (ιδ74ε) & (ιδ75ε))
+ export type _ConcreteModValueType = ({} & (ιδ108ε) & (ιδ109ε))
 
- export type _ConcreteModValueType1 = ιδ29ε
+ export type _ConcreteModValueType1 = ιδ34ε
 
- export type _Dämpfung = ((ιδ399ε))
+ export type _Dämpfung = ((ιδ437ε))
 
- export type _Dämpfung1 = ιδ375ε
+ export type _Dämpfung1 = ιδ418ε
 
- export type _Daten = ((ιδ7ε) & (ιδ78ε) & (ιδ11ε) & (ιδ79ε) & (ιδ80ε) & (ιδ81ε) & (ιδ82ε) & (ιδ27ε) & (ιδ34ε) & (ιδ5ε) & (ιδ49ε))
+ export type _Daten = ((ιδ7ε) & (ιδ112ε) & (ιδ11ε) & (ιδ113ε) & (ιδ114ε) & (ιδ115ε) & (ιδ116ε) & (ιδ32ε) & (ιδ39ε) & (ιδ5ε) & (ιδ59ε))
 
  export type _Daten1 = ιδ1ε
 
- export type _default = ιδ277ε
+ export type _default = ιδ75ε
 
- export type _DefensivModifizierer = ιδ207ε
+ export type _DefensivModifizierer = ιδ282ε
 
- export type _DefensivModifizierer1 = ιδ211ε
+ export type _DefensivModifizierer1 = ιδ286ε
 
- export type _diskret = ιδ280ε
+ export type _diskret = ιδ78ε
 
- export type _Distanz = ιδ427ε
+ export type _Distanz = ιδ460ε
 
- export type _Distanzklasse = ιδ209ε
+ export type _Distanzklasse = ιδ284ε
 
- export type _Eigenschaft = ιδ409ε
+ export type _Eigenschaft = ιδ364ε
 
- export type _Eigenschaft1 = ({} & (ιδ317ε))
+ export type _Eigenschaft1 = ({} & (ιδ367ε))
 
- export type _Eigenschaft10 = ιδ371ε
+ export type _Eigenschaft10 = ιδ414ε
 
- export type _Eigenschaft11 = ({} & (ιδ77ε))
+ export type _Eigenschaft11 = ({} & (ιδ111ε))
 
- export type _Eigenschaft12 = ιδ383ε
+ export type _Eigenschaft12 = ιδ426ε
 
- export type _Eigenschaft13 = ((ιδ189ε))
+ export type _Eigenschaft13 = ((ιδ264ε))
 
- export type _Eigenschaft14 = ιδ174ε
+ export type _Eigenschaft14 = ιδ247ε
 
- export type _Eigenschaft15 = ({} & (ιδ77ε))
+ export type _Eigenschaft15 = ({} & (ιδ111ε))
 
- export type _Eigenschaft16 = ιδ28ε
+ export type _Eigenschaft16 = ιδ33ε
 
- export type _Eigenschaft17 = ({} & (ιδ77ε))
+ export type _Eigenschaft17 = ({} & (ιδ111ε))
 
- export type _Eigenschaft18 = ιδ35ε
+ export type _Eigenschaft18 = ιδ40ε
 
- export type _Eigenschaft2 = ιδ230ε
+ export type _Eigenschaft2 = ιδ311ε
 
- export type _Eigenschaft3 = ({} & (ιδ77ε))
+ export type _Eigenschaft3 = ({} & (ιδ111ε))
 
- export type _Eigenschaft4 = ιδ254ε
+ export type _Eigenschaft4 = ιδ335ε
 
- export type _Eigenschaft5 = ((ιδ8ε) & (ιδ9ε) & (ιδ205ε))
+ export type _Eigenschaft5 = ((ιδ8ε) & (ιδ9ε) & (ιδ280ε))
 
- export type _Eigenschaft6 = ιδ170ε
+ export type _Eigenschaft6 = ιδ243ε
 
- export type _Eigenschaft7 = ({} & (ιδ77ε))
+ export type _Eigenschaft7 = ({} & (ιδ111ε))
 
- export type _Eigenschaft8 = ιδ365ε
+ export type _Eigenschaft8 = ιδ408ε
 
- export type _Eigenschaft9 = ({} & (ιδ77ε))
+ export type _Eigenschaft9 = ({} & (ιδ111ε))
 
- export type _Eigenschaften = ((ιδ294ε))
+ export type _Eigenschaften = ((ιδ254ε))
 
- export type _Eigenschaften1 = ιδ217ε
+ export type _Eigenschaften1 = ιδ219ε
 
- export type _Eigenschaften10 = ((ιδ383ε))
+ export type _Eigenschaften10 = ((ιδ426ε))
 
- export type _Eigenschaften11 = ιδ268ε
+ export type _Eigenschaften11 = ιδ349ε
 
- export type _Eigenschaften12 = ((ιδ174ε))
+ export type _Eigenschaften12 = ((ιδ247ε))
 
- export type _Eigenschaften13 = ιδ108ε
+ export type _Eigenschaften13 = ιδ161ε
 
- export type _Eigenschaften2 = ((ιδ254ε))
+ export type _Eigenschaften2 = ((ιδ335ε))
 
- export type _Eigenschaften3 = ιδ168ε
+ export type _Eigenschaften3 = ιδ241ε
 
- export type _Eigenschaften4 = ((ιδ170ε))
+ export type _Eigenschaften4 = ((ιδ243ε))
 
- export type _Eigenschaften5 = ιδ104ε
+ export type _Eigenschaften5 = ιδ157ε
 
- export type _Eigenschaften6 = ((ιδ365ε))
+ export type _Eigenschaften6 = ((ιδ408ε))
 
- export type _Eigenschaften7 = ιδ256ε
+ export type _Eigenschaften7 = ιδ337ε
 
- export type _Eigenschaften8 = ((ιδ371ε))
+ export type _Eigenschaften8 = ((ιδ414ε))
 
- export type _Eigenschaften9 = ιδ263ε
+ export type _Eigenschaften9 = ιδ344ε
 
- export type _EigenschaftenGruppen = ((ιδ144ε))
+ export type _EigenschaftenGruppen = ((ιδ208ε))
 
- export type _EigenschaftenGruppen1 = ιδ91ε
+ export type _EigenschaftenGruppen1 = ιδ125ε
 
- export type _EigenschaftsMods = ιδ294ε
+ export type _EigenschaftsMods = ιδ254ε
 
- export type _einheit = ιδ271ε
+ export type _einheit = ιδ69ε
 
- export type _Einheit = ιδ322ε
+ export type _Einheit = ιδ376ε
 
- export type _einheit1 = ιδ282ε
+ export type _einheit1 = ιδ80ε
 
- export type _einheit2 = ιδ287ε
+ export type _einheit2 = ιδ85ε
 
- export type _endAlter = ιδ315ε
+ export type _endAlter = ιδ274ε
 
- export type _EntwicklungDefinition = ιδ111ε
+ export type _EntwicklungDefinition = ιδ167ε
 
- export type _Entwiklung = ((ιδ111ε))
+ export type _Entwiklung = ((ιδ167ε))
 
- export type _Entwiklung1 = ιδ92ε
+ export type _Entwiklung1 = ιδ126ε
 
- export type _Entwiklung2 = ((ιδ111ε))
+ export type _Entwiklung2 = ((ιδ167ε))
 
- export type _Entwiklung3 = ιδ146ε
+ export type _Entwiklung3 = ιδ210ε
 
- export type _Entwiklung4 = ((ιδ111ε))
+ export type _Entwiklung4 = ((ιδ167ε))
 
- export type _Entwiklung5 = ιδ223ε
+ export type _Entwiklung5 = ιδ130ε
 
- export type _Entwiklung6 = ((ιδ111ε))
+ export type _Entwiklung6 = ((ιδ167ε))
 
- export type _Entwiklung7 = ιδ450ε
+ export type _Entwiklung7 = ιδ302ε
 
- export type _EP = ιδ270ε
+ export type _EP = ιδ351ε
 
  export type _Erfolg = (string)
 
- export type _Erfolg1 = ιδ164ε
+ export type _Erfolg1 = ιδ237ε
 
- export type _Erschwernis = ιδ213ε
+ export type _Erschwernis = ιδ288ε
 
- export type _Fernkampfwaffe = ((ιδ187ε))
+ export type _Fernkampfwaffe = ((ιδ262ε))
 
- export type _Fernkampfwaffe1 = ιδ172ε
+ export type _Fernkampfwaffe1 = ιδ245ε
 
- export type _FernkampfwaffenDafinition = ιδ187ε
+ export type _FernkampfwaffenDafinition = ιδ262ε
 
- export type _Fertigkeit = ({} & (ιδ68ε) & (ιδ77ε))
+ export type _Fertigkeit = ({} & (ιδ102ε) & (ιδ111ε))
 
- export type _Fertigkeit1 = ιδ24ε
+ export type _Fertigkeit1 = ιδ29ε
 
- export type _Fertigkeit2 = ((ιδ115ε))
+ export type _Fertigkeit2 = ((ιδ171ε))
 
- export type _Fertigkeit3 = ιδ100ε
+ export type _Fertigkeit3 = ιδ153ε
 
- export type _FertigkeitDefinition = ιδ115ε
+ export type _FertigkeitDefinition = ιδ171ε
 
- export type _Fertigkeiten = ((ιδ99ε) & (ιδ100ε) & (ιδ67ε))
+ export type _Fertigkeiten = ((ιδ152ε) & (ιδ153ε) & (ιδ101ε))
 
- export type _Fertigkeiten1 = ιδ81ε
+ export type _Fertigkeiten1 = ιδ115ε
 
- export type _Fertigkeiten2 = ((ιδ99ε) & (ιδ100ε) & (ιδ67ε))
+ export type _Fertigkeiten2 = ((ιδ152ε) & (ιδ153ε) & (ιδ101ε))
 
- export type _Fertigkeiten3 = ιδ23ε
+ export type _Fertigkeiten3 = ιδ28ε
 
- export type _Flexibilität = ((ιδ399ε))
+ export type _Flexibilität = ((ιδ437ε))
 
- export type _Flexibilität1 = ιδ373ε
+ export type _Flexibilität1 = ιδ416ε
 
  export type _Formel = (string)
 
- export type _Formel1 = ιδ303ε
+ export type _Formel1 = ιδ137ε
 
- export type _FormelDefintion = ιδ196ε
+ export type _FormelDefintion = ιδ53ε
 
  export type _GarantierterEffekt = (string)
 
- export type _GarantierterEffekt1 = ιδ163ε
+ export type _GarantierterEffekt1 = ιδ236ε
 
- export type _Gattung = ((ιδ112ε))
+ export type _Gattung = ((ιδ165ε))
 
- export type _Gattung1 = ιδ93ε
+ export type _Gattung1 = ιδ127ε
 
- export type _Gattung2 = ((ιδ47ε))
+ export type _GattungDefinition = ιδ165ε
 
- export type _Gattung3 = ιδ12ε
+ export type _GattungRef = ((ιδ57ε))
 
- export type _GattungDefinition = ιδ112ε
+ export type _GattungRef1 = ιδ13ε
 
- export type _Gebunden = ιδ125ε
+ export type _Gebunden = ιδ189ε
 
- export type _GenerierungsDaten = ((ιδ129ε) & (ιδ117ε))
+ export type _GenerierungsDaten = ((ιδ193ε) & (ιδ177ε))
 
- export type _GenerierungsDaten1 = ιδ78ε
+ export type _GenerierungsDaten1 = ιδ112ε
 
- export type _Geschlecht = ιδ177ε
+ export type _Geschlecht = ιδ250ε
 
- export type _Geschlecht1 = ιδ143ε
+ export type _Geschlecht1 = ιδ207ε
 
- export type _Geschlecht2 = ιδ412ε
+ export type _Geschlecht2 = ιδ275ε
 
- export type _gruppe = ιδ273ε
+ export type _gruppe = ιδ71ε
 
- export type _Gruppe = ((ιδ8ε) & (ιδ9ε) & (ιδ195ε))
+ export type _Gruppe = ((ιδ8ε) & (ιδ9ε) & (ιδ272ε))
 
- export type _gruppe1 = ιδ278ε
+ export type _gruppe1 = ιδ76ε
 
- export type _Gruppe1 = ιδ144ε
+ export type _Gruppe1 = ιδ208ε
 
- export type _gruppe2 = ιδ289ε
+ export type _gruppe2 = ιδ87ε
 
- export type _gruppe3 = ιδ293ε
+ export type _gruppe3 = ιδ91ε
 
- export type _Härte = ((ιδ399ε))
+ export type _Härte = ((ιδ437ε))
 
- export type _Härte1 = ιδ374ε
+ export type _Härte1 = ιδ417ε
 
- export type _Hüfte = ((ιδ406ε))
+ export type _Hüfte = ((ιδ444ε))
 
- export type _Hüfte1 = ιδ378ε
+ export type _Hüfte1 = ιδ421ε
 
- export type _id = ιδ195ε
+ export type _id = ιδ272ε
 
- export type _Id = ιδ77ε
+ export type _Id = ιδ111ε
 
- export type _id1 = ιδ274ε
+ export type _id1 = ιδ72ε
 
- export type _Id1 = ιδ200ε
+ export type _Id1 = ιδ64ε
 
- export type _id2 = ιδ284ε
+ export type _id2 = ιδ82ε
 
- export type _Id2 = ιδ119ε
+ export type _Id2 = ιδ179ε
 
- export type _id3 = ιδ290ε
+ export type _id3 = ιδ88ε
 
- export type _Id3 = ιδ122ε
+ export type _Id3 = ιδ186ε
 
- export type _id4 = ιδ291ε
+ export type _id4 = ιδ89ε
 
- export type _Id4 = ιδ124ε
+ export type _Id4 = ιδ493ε
 
- export type _Id5 = ιδ205ε
+ export type _Id5 = ιδ188ε
 
- export type _Id6 = ιδ214ε
+ export type _Id6 = ιδ280ε
 
- export type _identifier = ιδ418ε
+ export type _Id7 = ιδ289ε
 
- export type _identifier1 = ιδ420ε
+ export type _identifier = ιδ451ε
 
- export type _identifier2 = ιδ421ε
+ export type _identifier1 = ιδ453ε
 
- export type _identifier3 = ιδ422ε
+ export type _identifier2 = ιδ454ε
 
- export type _IgnoriereHöhere = ιδ316ε
+ export type _identifier3 = ιδ455ε
 
- export type _IgnoriereHöhere1 = ιδ471ε
+ export type _IgnoriereHöhere = ιδ182ε
 
- export type _Input = ({} & (ιδ418ε) & (ιδ419ε))
+ export type _IgnoriereHöhere1 = ιδ363ε
 
- export type _Input1 = ιδ350ε
+ export type _Input = ({} & (ιδ451ε) & (ιδ452ε))
 
- export type _Input2 = ({} & (ιδ420ε))
+ export type _Input1 = ιδ393ε
 
- export type _Input3 = ιδ351ε
+ export type _Input2 = ({} & (ιδ453ε))
 
- export type _Input4 = ({} & (ιδ421ε))
+ export type _Input3 = ιδ394ε
 
- export type _Input5 = ιδ352ε
+ export type _Input4 = ({} & (ιδ454ε))
 
- export type _Input6 = ((ιδ453ε) & (ιδ422ε))
+ export type _Input5 = ιδ395ε
 
- export type _Input7 = ιδ353ε
+ export type _Input6 = ((ιδ475ε) & (ιδ455ε))
 
- export type _Kategorie = ((ιδ42ε))
+ export type _Input7 = ιδ396ε
 
- export type _Kategorie1 = ιδ96ε
+ export type _Kategorie = ((ιδ47ε))
 
- export type _Kategorie2 = ((ιδ42ε))
+ export type _Kategorie1 = ιδ149ε
 
- export type _Kategorie3 = ιδ99ε
+ export type _Kategorie2 = ((ιδ47ε))
 
- export type _Kategorie4 = ((ιδ42ε))
+ export type _Kategorie3 = ιδ152ε
 
- export type _Kategorie5 = ιδ101ε
+ export type _Kategorie4 = ((ιδ47ε))
 
- export type _KategorieId = ιδ60ε
+ export type _Kategorie5 = ιδ154ε
 
- export type _KategorieId1 = ιδ67ε
+ export type _KategorieId = ιδ94ε
 
- export type _KategorieId2 = ιδ70ε
+ export type _KategorieId1 = ιδ101ε
 
- export type _Komplexität = ιδ154ε
+ export type _KategorieId2 = ιδ104ε
 
- export type _Komplexität1 = ιδ123ε
+ export type _Komplexität = ιδ227ε
 
- export type _Kopf = ((ιδ406ε))
+ export type _Komplexität1 = ιδ187ε
 
- export type _Kopf1 = ιδ376ε
+ export type _Kopf = ((ιδ444ε))
 
- export type _Kosten = ((ιδ38ε))
+ export type _Kopf1 = ιδ419ε
 
- export type _Kosten1 = ιδ129ε
+ export type _Kosten = ((ιδ43ε))
 
- export type _Kosten10 = ((ιδ38ε))
+ export type _Kosten1 = ιδ193ε
 
- export type _Kosten11 = ιδ130ε
+ export type _Kosten10 = ((ιδ43ε))
 
- export type _Kosten12 = ιδ203ε
+ export type _Kosten11 = ιδ194ε
 
- export type _Kosten13 = ((ιδ38ε))
+ export type _Kosten12 = ιδ278ε
 
- export type _Kosten14 = ιδ247ε
+ export type _Kosten13 = ((ιδ43ε))
 
- export type _Kosten15 = ιδ126ε
+ export type _Kosten14 = ιδ328ε
 
- export type _Kosten16 = ((ιδ38ε))
+ export type _Kosten15 = ιδ190ε
+
+ export type _Kosten16 = ((ιδ43ε))
 
  export type _Kosten17 = ιδ6ε
 
- export type _Kosten2 = ((ιδ38ε))
+ export type _Kosten2 = ((ιδ43ε))
 
- export type _Kosten3 = ιδ306ε
+ export type _Kosten3 = ιδ140ε
 
- export type _Kosten4 = ((ιδ38ε))
+ export type _Kosten4 = ((ιδ43ε))
 
- export type _Kosten5 = ιδ444ε
+ export type _Kosten5 = ιδ269ε
 
- export type _Kosten6 = ((ιδ38ε))
+ export type _Kosten6 = ((ιδ43ε))
 
- export type _Kosten7 = ιδ310ε
+ export type _Kosten7 = ιδ144ε
 
- export type _Kosten8 = ((ιδ38ε))
+ export type _Kosten8 = ((ιδ43ε))
 
- export type _Kosten9 = ιδ447ε
+ export type _Kosten9 = ιδ381ε
 
- export type _KostenArt = ιδ136ε
+ export type _KostenArt = ιδ200ε
 
- export type _KostenDefinition = ((ιδ8ε) & (ιδ134ε) & (ιδ9ε) & (ιδ120ε) & (ιδ121ε) & (ιδ77ε))
+ export type _KostenDefinition = ((ιδ8ε) & (ιδ198ε) & (ιδ9ε) & (ιδ180ε) & (ιδ181ε) & (ιδ111ε))
 
- export type _KostenDefinition1 = ιδ86ε
+ export type _KostenDefinition1 = ιδ120ε
 
- export type _KostenDefinition2 = ιδ38ε
+ export type _KostenDefinition2 = ιδ43ε
 
- export type _KostenDefinitionen = ((ιδ39ε))
+ export type _KostenDefinitionen = ((ιδ44ε))
 
  export type _KostenDefinitionen1 = ιδ7ε
 
- export type _KostenDefinitions = ιδ39ε
+ export type _KostenDefinitions = ιδ44ε
 
- export type _kostenType = ιδ135ε
+ export type _kostenType = ιδ199ε
 
- export type _Lebensabschnitt = ((ιδ295ε))
+ export type _Lebensabschnitt = ((ιδ252ε))
 
- export type _Lebensabschnitt1 = ιδ220ε
+ export type _Lebensabschnitt1 = ιδ292ε
 
- export type _Lebensabschnitt2 = ((ιδ295ε))
+ export type _Lebensabschnitt2 = ((ιδ252ε))
 
- export type _Lebensabschnitt3 = ιδ338ε
+ export type _Lebensabschnitt3 = ιδ216ε
 
- export type _Lebensabschnitt4 = ((ιδ295ε))
+ export type _Lebensabschnitt4 = ((ιδ252ε))
 
- export type _Lebensabschnitt5 = ιδ489ε
+ export type _Lebensabschnitt5 = ιδ382ε
 
- export type _Lebensabschnitt6 = ((ιδ47ε))
+ export type _LebensabschnittDefinition = ιδ252ε
 
- export type _Lebensabschnitt7 = ιδ15ε
+ export type _Lebensabschnitte = ((ιδ292ε))
 
- export type _LebensabschnittDefinition = ιδ295ε
+ export type _Lebensabschnitte1 = ιδ211ε
 
- export type _Lebensabschnitte = ((ιδ220ε))
+ export type _Lebensabschnitte2 = ((ιδ216ε) & (ιδ182ε))
 
- export type _Lebensabschnitte1 = ιδ147ε
+ export type _Lebensabschnitte3 = ιδ132ε
 
- export type _Lebensabschnitte2 = ((ιδ338ε) & (ιδ316ε))
+ export type _Lebensabschnitte4 = ((ιδ382ε) & (ιδ363ε))
 
- export type _Lebensabschnitte3 = ιδ225ε
+ export type _Lebensabschnitte5 = ιδ303ε
 
- export type _Lebensabschnitte4 = ((ιδ489ε) & (ιδ471ε))
+ export type _LebensabschnittRef = ((ιδ57ε))
 
- export type _Lebensabschnitte5 = ιδ451ε
+ export type _LebensabschnittRef1 = ιδ16ε
 
- export type _Level = ιδ62ε
+ export type _Level = ιδ96ε
 
- export type _Level1 = ({} & (ιδ470ε) & (ιδ77ε))
+ export type _Level1 = ({} & (ιδ491ε) & (ιδ111ε))
 
  export type _Level10 = ιδ4ε
 
- export type _Level2 = ιδ440ε
+ export type _Level2 = ιδ473ε
 
- export type _Level3 = ({} & (ιδ408ε) & (ιδ77ε))
+ export type _Level3 = ({} & (ιδ445ε) & (ιδ111ε))
 
- export type _Level4 = ιδ326ε
+ export type _Level4 = ιδ380ε
 
- export type _Level5 = ((ιδ109ε))
+ export type _Level5 = ((ιδ162ε))
 
- export type _Level6 = ιδ84ε
+ export type _Level6 = ιδ118ε
 
- export type _Level7 = ((ιδ232ε) & (ιδ233ε) & (ιδ202ε))
+ export type _Level7 = ((ιδ313ε) & (ιδ314ε) & (ιδ277ε))
 
- export type _Level8 = ιδ152ε
+ export type _Level8 = ιδ225ε
 
- export type _Level9 = ((ιδ47ε))
+ export type _Level9 = ((ιδ57ε))
 
- export type _LevelAuswahl = ιδ269ε
+ export type _LevelAuswahl = ιδ350ε
 
- export type _LevelAuswahlen = ιδ385ε
+ export type _LevelAuswahlen = ιδ428ε
 
- export type _LevelBedingungsTyp = ιδ98ε
+ export type _LevelBedingungsTyp = ιδ151ε
 
- export type _LevelDefinition = ιδ109ε
+ export type _LevelDefinition = ιδ162ε
 
- export type _Levels = ((ιδ84ε))
+ export type _Levels = ((ιδ118ε))
 
  export type _Levels1 = ιδ3ε
 
- export type _LevelTyp = ιδ61ε
+ export type _LevelTyp = ιδ95ε
 
- export type _LevelVoraussetzung = ((ιδ269ε))
+ export type _LevelVoraussetzung = ((ιδ350ε))
 
- export type _LevelVoraussetzung1 = ιδ215ε
+ export type _LevelVoraussetzung1 = ιδ290ε
 
- export type _LinkerArm = ((ιδ406ε))
+ export type _LinkerArm = ((ιδ444ε))
 
- export type _LinkerArm1 = ιδ379ε
+ export type _LinkerArm1 = ιδ422ε
 
- export type _LinkesBein = ((ιδ406ε))
+ export type _LinkesBein = ((ιδ444ε))
 
- export type _LinkesBein1 = ιδ381ε
+ export type _LinkesBein1 = ιδ424ε
 
- export type _Lokalisierungen = ιδ42ε
+ export type _Lokalisierungen = ιδ47ε
 
- export type _Lokalisirung = ({meta:(ιδ142ε) & (ιδ143ε), value :string})
+ export type _Lokalisirung = ({meta:(ιδ206ε) & (ιδ207ε), value :string})
 
- export type _Lokalisirung1 = ιδ90ε
+ export type _Lokalisirung1 = ιδ124ε
 
- export type _Magazingröße = ιδ320ε
+ export type _Magazingröße = ιδ374ε
 
- export type _Max = ((SubArray<(ιδ21ε)> & SubArray<(ιδ22ε)>) & (ιδ66ε))
+ export type _max = ιδ372ε
 
- export type _Max1 = ιδ22ε
+ export type _Max = ((SubArray<(ιδ26ε)> & SubArray<(ιδ27ε)>) & (ιδ100ε))
 
- export type _maxInklusiv = ιδ276ε
+ export type _Max1 = ιδ27ε
 
- export type _mindestVorkommen = ιδ470ε
+ export type _maxInklusiv = ιδ74ε
 
- export type _mindestVorkommen1 = ιδ408ε
+ export type _min = ιδ371ε
 
- export type _MinimumVerbreitung = ιδ117ε
+ export type _mindestVorkommen = ιδ491ε
 
- export type _minInklusiv = ιδ275ε
+ export type _mindestVorkommen1 = ιδ445ε
+
+ export type _MinimumVerbreitung = ιδ177ε
+
+ export type _minInklusiv = ιδ73ε
 
  export type _Misserfolg = (string)
 
- export type _Misserfolg1 = ιδ165ε
+ export type _Misserfolg1 = ιδ238ε
 
- export type _Mod = ιδ410ε
+ export type _Mod = ιδ365ε
 
- export type _Mod1 = ((ιδ389ε))
+ export type _Mod1 = ((ιδ353ε))
 
- export type _Mod2 = ιδ331ε
+ export type _Mod2 = ιδ305ε
 
- export type _Mod3 = ((ιδ29ε& {"#": "ConcreteModValueType"}) | (ιδ30ε& {"#": "VariableModValueType"}) | (ιδ32ε& {"#": "SubstractModValueType"}) | (ιδ31ε& {"#": "AddModValueType"}) | (ιδ33ε& {"#": "MultiplyModValueType"}) & (ιδ204ε))
+ export type _Mod3 = ((ιδ34ε& {"#": "ConcreteModValueType"}) | (ιδ35ε& {"#": "VariableModValueType"}) | (ιδ37ε& {"#": "SubstractModValueType"}) | (ιδ36ε& {"#": "AddModValueType"}) | (ιδ38ε& {"#": "MultiplyModValueType"}) & (ιδ279ε))
 
- export type _Mod4 = ιδ166ε
+ export type _Mod4 = ιδ239ε
 
- export type _ModifierType = ιδ250ε
+ export type _ModifierType = ιδ331ε
 
- export type _ModifierType1 = ιδ204ε
+ export type _ModifierType1 = ιδ279ε
 
- export type _Modifikator = ιδ428ε
+ export type _Modifikator = ιδ461ε
 
- export type _Mods = ιδ178ε
+ export type _Mods = ιδ168ε
 
- export type _Mods1 = ((ιδ178ε))
+ export type _Mods1 = ((ιδ168ε))
 
- export type _Mods10 = ιδ222ε
+ export type _Mods10 = ιδ129ε
 
- export type _Mods11 = ((ιδ178ε))
+ export type _Mods11 = ((ιδ168ε))
 
- export type _Mods12 = ιδ449ε
+ export type _Mods12 = ιδ301ε
 
- export type _Mods13 = ((ιδ178ε))
+ export type _Mods13 = ((ιδ168ε))
 
- export type _Mods14 = ιδ233ε
+ export type _Mods14 = ιδ314ε
 
- export type _Mods15 = ((ιδ178ε))
+ export type _Mods15 = ((ιδ168ε))
 
- export type _Mods16 = ιδ240ε
+ export type _Mods16 = ιδ321ε
 
- export type _Mods17 = ((ιδ178ε))
+ export type _Mods17 = ((ιδ168ε))
 
- export type _Mods18 = ιδ249ε
+ export type _Mods18 = ιδ330ε
 
- export type _Mods2 = ιδ445ε
+ export type _Mods2 = ιδ270ε
 
- export type _Mods3 = ((ιδ178ε))
+ export type _Mods3 = ((ιδ168ε))
 
- export type _Mods4 = ιδ311ε
+ export type _Mods4 = ιδ145ε
 
- export type _Mods5 = ((ιδ178ε))
+ export type _Mods5 = ((ιδ168ε))
 
- export type _Mods6 = ιδ145ε
+ export type _Mods6 = ιδ209ε
 
- export type _Mods7 = ((ιδ178ε))
+ export type _Mods7 = ((ιδ168ε))
 
- export type _Mods8 = ιδ337ε
+ export type _Mods8 = ιδ299ε
 
- export type _Mods9 = ((ιδ178ε))
+ export type _Mods9 = ((ιδ168ε))
 
- export type _ModType = ιδ105ε
+ export type _ModType = ιδ158ε
 
- export type _ModWert = ιδ389ε
+ export type _ModWert = ιδ353ε
 
- export type _Morph = ((ιδ390ε))
+ export type _Morph = ((ιδ253ε))
 
- export type _Morph1 = ιδ339ε
+ export type _Morph1 = ιδ217ε
 
- export type _Morph2 = ((ιδ47ε))
+ export type _MorphDefinition = ιδ253ε
 
- export type _Morph3 = ιδ14ε
+ export type _Morphe = ((ιδ217ε& {"#": "Morph"}))
 
- export type _MorphDefinition = ιδ390ε
+ export type _Morphe1 = ιδ133ε
 
- export type _Morphe = ((ιδ339ε& {"#": "Morph"}))
+ export type _MorphRef = ((ιδ57ε))
 
- export type _Morphe1 = ιδ226ε
+ export type _MorphRef1 = ιδ15ε
 
- export type _MultiplyModValueType = ((SubArray<(ιδ29ε)> & SubArray<(ιδ30ε)> & SubArray<(ιδ32ε)> & SubArray<(ιδ31ε)> & SubArray<(ιδ33ε)>))
+ export type _MultiplyModValueType = ((SubArray<(ιδ34ε)> & SubArray<(ιδ35ε)> & SubArray<(ιδ37ε)> & SubArray<(ιδ36ε)> & SubArray<(ιδ38ε)>))
 
- export type _MultiplyModValueType1 = ιδ33ε
+ export type _MultiplyModValueType1 = ιδ38ε
 
- export type _Nachladeeinheit = ιδ370ε
+ export type _Nachladeeinheit = ιδ413ε
 
- export type _Nachladezeit = ({} & (ιδ321ε) & (ιδ322ε))
+ export type _Nachladezeit = ({} & (ιδ375ε) & (ιδ376ε))
 
- export type _Nachladezeit1 = ιδ262ε
+ export type _Nachladezeit1 = ιδ343ε
 
- export type _Nahkampfwaffe = ((ιδ186ε))
+ export type _Nahkampfwaffe = ((ιδ261ε))
 
- export type _Nahkampfwaffe1 = ιδ171ε
+ export type _Nahkampfwaffe1 = ιδ244ε
 
- export type _NahkampfWaffenDefinition = ιδ186ε
+ export type _NahkampfWaffenDefinition = ιδ261ε
 
- export type _Name = ((ιδ42ε))
+ export type _Name = ((ιδ47ε))
 
  export type _Name1 = ιδ8ε
 
- export type _Name10 = ιδ238ε
+ export type _Name10 = ιδ319ε
 
- export type _Name11 = ((ιδ42ε))
+ export type _Name11 = ((ιδ47ε))
 
- export type _Name12 = ιδ246ε
+ export type _Name12 = ιδ327ε
 
- export type _Name2 = ((ιδ42ε))
+ export type _Name2 = ((ιδ47ε))
 
- export type _Name3 = ιδ442ε
+ export type _Name3 = ιδ267ε
 
- export type _Name4 = ((ιδ42ε))
+ export type _Name4 = ((ιδ47ε))
 
- export type _Name5 = ιδ335ε
+ export type _Name5 = ιδ297ε
 
- export type _Name6 = ((ιδ42ε))
+ export type _Name6 = ((ιδ47ε))
 
- export type _Name7 = ιδ131ε
+ export type _Name7 = ιδ195ε
 
- export type _Name8 = ιδ317ε
+ export type _Name8 = ιδ367ε
 
- export type _Name9 = ((ιδ42ε))
+ export type _Name9 = ((ιδ47ε))
 
- export type _NamedType = ιδ47ε
+ export type _NamedType = ιδ57ε
 
- export type _Not = ((ιδ185ε))
+ export type _Not = ((ιδ260ε))
 
- export type _Not1 = ιδ362ε
+ export type _Not1 = ιδ405ε
 
- export type _Not10 = ((ιδ298ε))
+ export type _Not10 = ((ιδ356ε))
 
- export type _Not11 = ιδ356ε
+ export type _Not11 = ιδ399ε
 
- export type _Not2 = ((ιδ185ε))
+ export type _Not2 = ((ιδ260ε))
 
- export type _Not3 = ιδ253ε
+ export type _Not3 = ιδ334ε
 
- export type _Not4 = ((ιδ269ε))
+ export type _Not4 = ((ιδ350ε))
 
- export type _Not5 = ιδ439ε
+ export type _Not5 = ιδ472ε
 
- export type _Not6 = ((ιδ269ε))
+ export type _Not6 = ((ιδ350ε))
 
- export type _Not7 = ιδ325ε
+ export type _Not7 = ιδ379ε
 
- export type _Not8 = ((ιδ298ε))
+ export type _Not8 = ((ιδ356ε))
 
- export type _Not9 = ιδ459ε
+ export type _Not9 = ιδ481ε
 
- export type _OffensivModifizierer = ιδ208ε
+ export type _OffensivModifizierer = ιδ283ε
 
- export type _OffensivModifizierer1 = ιδ212ε
+ export type _OffensivModifizierer1 = ιδ287ε
 
- export type _Or = ((ιδ300ε))
+ export type _Or = ((ιδ358ε))
 
- export type _Or1 = ιδ360ε
+ export type _Or1 = ιδ403ε
 
- export type _Or10 = ((ιδ392ε))
+ export type _Or10 = ((ιδ430ε))
 
- export type _Or11 = ιδ354ε
+ export type _Or11 = ιδ397ε
 
- export type _Or2 = ((ιδ300ε))
+ export type _Or2 = ((ιδ358ε))
 
- export type _Or3 = ιδ251ε
+ export type _Or3 = ιδ332ε
 
- export type _Or4 = ((ιδ385ε))
+ export type _Or4 = ((ιδ428ε))
 
- export type _Or5 = ιδ437ε
+ export type _Or5 = ιδ470ε
 
- export type _Or6 = ((ιδ385ε))
+ export type _Or6 = ((ιδ428ε))
 
- export type _Or7 = ιδ323ε
+ export type _Or7 = ιδ377ε
 
- export type _Or8 = ((ιδ392ε))
+ export type _Or8 = ((ιδ430ε))
 
- export type _Or9 = ιδ457ε
+ export type _Or9 = ιδ479ε
 
- export type _Organismen = ((ιδ91ε) & (ιδ92ε) & (ιδ93ε))
+ export type _Organismen = ((ιδ125ε) & (ιδ126ε) & (ιδ127ε))
 
  export type _Organismen1 = ιδ11ε
 
- export type _Parameter = ((ιδ184ε))
+ export type _Parameter = ((ιδ259ε))
 
- export type _Parameter1 = ιδ155ε
+ export type _Parameter1 = ιδ228ε
 
- export type _Parameter2 = ((ιδ184ε))
+ export type _Parameter2 = ((ιδ259ε))
 
- export type _Parameter3 = ιδ158ε
+ export type _Parameter3 = ιδ231ε
 
- export type _ParameterDefinition = ιδ184ε
+ export type _ParameterDefinition = ιδ259ε
 
- export type _Pfad = ((ιδ47ε))
+ export type _Pfad = ((ιδ57ε))
 
- export type _Pfad1 = ιδ94ε
+ export type _Pfad1 = ιδ134ε
 
- export type _Pfad2 = ((ιδ113ε))
+ export type _Pfad2 = ((ιδ169ε))
 
- export type _Pfad3 = ιδ95ε
+ export type _Pfad3 = ιδ148ε
 
- export type _Pfad4 = ({} & (ιδ318ε) & (ιδ77ε))
+ export type _Pfad4 = ({} & (ιδ368ε) & (ιδ111ε))
 
- export type _Pfad5 = ιδ231ε
+ export type _Pfad5 = ιδ312ε
 
- export type _Pfad6 = ((ιδ47ε))
+ export type _Pfad6 = ((ιδ57ε))
 
- export type _Pfad7 = ιδ17ε
+ export type _Pfad7 = ιδ22ε
 
- export type _PfadDefinition = ιδ113ε
+ export type _PfadDefinition = ιδ169ε
 
- export type _Pfade = ((ιδ48ε))
+ export type _Pfade = ((ιδ58ε))
 
- export type _Pfade1 = ιδ79ε
+ export type _Pfade1 = ιδ113ε
 
- export type _Pfade2 = ((ιδ48ε))
+ export type _Pfade2 = ((ιδ58ε))
 
- export type _Pfade3 = ιδ18ε
+ export type _Pfade3 = ιδ23ε
 
- export type _PfadeDefinition = ιδ48ε
+ export type _PfadeDefinition = ιδ58ε
 
- export type _positiveInt = ιδ83ε
+ export type _positiveInt = ιδ117ε
 
- export type _Probe = ((ιδ230ε))
+ export type _Probe = ((ιδ311ε))
 
- export type _Probe1 = ιδ150ε
+ export type _Probe1 = ιδ223ε
 
- export type _Punkt = ((ιδ199ε))
+ export type _Punkt = ((ιδ56ε))
 
- export type _Punkt1 = ιδ194ε
+ export type _Punkt1 = ιδ21ε
 
- export type _PunktDefintion = ιδ199ε
+ export type _PunktDefintion = ιδ56ε
 
- export type _Quantil = ιδ468ε
+ export type _Quantil = ιδ304ε
 
- export type _Quantil1 = ιδ488ε
+ export type _Quantil1 = ιδ359ε
 
- export type _Quantil2 = ιδ388ε
+ export type _Quantil2 = ιδ185ε
 
- export type _RechterArm = ((ιδ406ε))
+ export type _RechterArm = ((ιδ444ε))
 
- export type _RechterArm1 = ιδ380ε
+ export type _RechterArm1 = ιδ423ε
 
- export type _RechtesBein = ((ιδ406ε))
+ export type _RechtesBein = ((ιδ444ε))
 
- export type _RechtesBein1 = ιδ382ε
+ export type _RechtesBein1 = ιδ425ε
 
- export type _Reichweite = ({} & (ιδ427ε) & (ιδ428ε) & (ιδ429ε))
+ export type _Reichweite = ({} & (ιδ460ε) & (ιδ461ε) & (ιδ462ε))
 
- export type _Reichweite1 = ιδ369ε
+ export type _Reichweite1 = ιδ412ε
 
- export type _Reichweiten = ((ιδ369ε))
+ export type _Reichweiten = ((ιδ412ε))
 
- export type _Reichweiten1 = ιδ261ε
+ export type _Reichweiten1 = ιδ342ε
 
- export type _Reihe = ((ιδ198ε))
+ export type _Reihe = ((ιδ55ε))
 
- export type _Reihe1 = ιδ193ε
+ export type _Reihe1 = ιδ20ε
 
- export type _ReiheDefinition = ιδ198ε
+ export type _ReiheDefinition = ιδ55ε
 
- export type _Reihenfolge = ιδ272ε
+ export type _Reihenfolge = ιδ70ε
 
- export type _Reihenfolge1 = ιδ283ε
+ export type _Reihenfolge1 = ιδ81ε
 
- export type _Reihenfolge2 = ιδ288ε
+ export type _Reihenfolge2 = ιδ86ε
 
- export type _Reihenfolge3 = ιδ292ε
+ export type _Reihenfolge3 = ιδ90ε
 
- export type _ResultType = ιδ137ε
+ export type _ResultType = ιδ201ε
 
- export type _Rüstung = ((ιδ188ε))
+ export type _Rüstung = ((ιδ263ε))
 
- export type _Rüstung1 = ιδ173ε
+ export type _Rüstung1 = ιδ246ε
 
- export type _RüstungDefinition = ιδ188ε
+ export type _RüstungDefinition = ιδ263ε
 
- export type _Rüstungen = ((ιδ173ε))
+ export type _Rüstungen = ((ιδ246ε))
 
- export type _Rüstungen1 = ιδ107ε
+ export type _Rüstungen1 = ιδ160ε
 
- export type _Rüstwert = ιδ399ε
+ export type _Rüstwert = ιδ437ε
 
- export type _Schaden = ιδ426ε
+ export type _Schaden = ιδ459ε
 
- export type _Schaden1 = ιδ396ε
+ export type _Schaden1 = ιδ434ε
 
- export type _Schaden2 = ((ιδ363ε) & (ιδ364ε))
+ export type _Schaden2 = ((ιδ406ε) & (ιδ407ε))
 
- export type _Schaden3 = ιδ255ε
+ export type _Schaden3 = ιδ336ε
 
- export type _Schaden4 = ((ιδ367ε) & (ιδ368ε))
+ export type _Schaden4 = ((ιδ410ε) & (ιδ411ε))
 
- export type _Schaden5 = ιδ259ε
+ export type _Schaden5 = ιδ340ε
 
- export type _Schadensreduktion = ιδ429ε
+ export type _Schadensreduktion = ιδ462ε
 
- export type _Schnitt = ((ιδ396ε))
+ export type _Schnitt = ((ιδ434ε))
 
- export type _Schnitt1 = ιδ364ε
+ export type _Schnitt1 = ιδ407ε
 
- export type _Schnitt2 = ((ιδ396ε))
+ export type _Schnitt2 = ((ιδ434ε))
 
- export type _Schnitt3 = ιδ368ε
+ export type _Schnitt3 = ιδ411ε
 
- export type _Schusseigenschaften = ({} & (ιδ319ε) & (ιδ320ε))
+ export type _Schusseigenschaften = ({} & (ιδ373ε) & (ιδ374ε))
 
- export type _Schusseigenschaften1 = ιδ260ε
+ export type _Schusseigenschaften1 = ιδ341ε
 
- export type _Schussfrequenz = ιδ319ε
+ export type _Schussfrequenz = ιδ373ε
 
- export type _Schussreichweite = ιδ460ε
+ export type _Schussreichweite = ιδ482ε
 
- export type _Schutz = ((ιδ373ε) & (ιδ374ε) & (ιδ375ε))
+ export type _Schutz = ((ιδ416ε) & (ιδ417ε) & (ιδ418ε))
 
- export type _Schutz1 = ιδ266ε
+ export type _Schutz1 = ιδ347ε
 
- export type _Schutz2 = ({} & (ιδ486ε) & (ιδ487ε))
+ export type _Schutz2 = ({} & (ιδ506ε) & (ιδ507ε))
 
- export type _Schutz3 = ιδ467ε
+ export type _Schutz3 = ιδ489ε
 
- export type _Schutzwert = ιδ406ε
+ export type _Schutzwert = ιδ444ε
 
- export type _Schwelle = ((ιδ442ε) & (ιδ443ε) & (ιδ444ε) & (ιδ445ε) & (ιδ446ε))
+ export type _Schwelle = ((ιδ267ε) & (ιδ268ε) & (ιδ269ε) & (ιδ270ε) & (ιδ271ε))
 
- export type _Schwelle1 = ιδ330ε
+ export type _Schwelle1 = ιδ176ε
 
  export type _SofortigerEffekt = (string)
 
- export type _SofortigerEffekt1 = ιδ162ε
+ export type _SofortigerEffekt1 = ιδ235ε
 
- export type _Spielbar = ((ιδ447ε))
+ export type _Spielbar = ((ιδ381ε))
 
- export type _Spielbar1 = ιδ334ε
+ export type _Spielbar1 = ιδ296ε
 
- export type _Sprache = ιδ142ε
+ export type _Sprache = ιδ206ε
 
- export type _StandardKosten = ιδ120ε
+ export type _StandardKosten = ιδ180ε
 
- export type _StandardPfade = ((ιδ94ε))
+ export type _StandardPfade = ((ιδ134ε))
 
- export type _StandardPfade1 = ιδ224ε
+ export type _StandardPfade1 = ιδ131ε
 
- export type _StandardPfade2 = ((ιδ94ε))
+ export type _StandardPfade2 = ((ιδ134ε))
 
- export type _StandardPfade3 = ιδ448ε
+ export type _StandardPfade3 = ιδ300ε
 
- export type _StandardPfade4 = ((ιδ94ε))
+ export type _StandardPfade4 = ((ιδ134ε))
 
- export type _StandardPfade5 = ιδ16ε
+ export type _StandardPfade5 = ιδ17ε
 
- export type _startAlter = ιδ281ε
+ export type _startAlter = ιδ79ε
 
- export type _startAlter1 = ιδ286ε
+ export type _startAlter1 = ιδ84ε
 
- export type _startAlter2 = ιδ314ε
+ export type _startAlter2 = ιδ273ε
 
- export type _StaticheDefinition = ιδ197ε
+ export type _StaticheDefinition = ιδ54ε
 
- export type _step = ιδ279ε
+ export type _step = ιδ77ε
 
- export type _step1 = ιδ285ε
+ export type _step1 = ιδ83ε
 
- export type _Stufe = ιδ71ε
+ export type _Stufe = ιδ105ε
 
- export type _Stufe1 = ιδ68ε
+ export type _Stufe1 = ιδ102ε
 
- export type _Stufe2 = ((ιδ238ε) & (ιδ9ε) & (ιδ239ε) & (ιδ240ε) & (ιδ241ε) & (ιδ203ε))
+ export type _Stufe2 = ((ιδ319ε) & (ιδ9ε) & (ιδ320ε) & (ιδ321ε) & (ιδ322ε) & (ιδ278ε))
 
- export type _Stufe3 = ιδ156ε
+ export type _Stufe3 = ιδ229ε
 
- export type _Stufe4 = ((ιδ246ε) & (ιδ9ε) & (ιδ247ε) & (ιδ248ε) & (ιδ249ε))
+ export type _Stufe4 = ((ιδ327ε) & (ιδ9ε) & (ιδ328ε) & (ιδ329ε) & (ιδ330ε))
 
- export type _Stufe5 = ιδ159ε
+ export type _Stufe5 = ιδ232ε
 
  export type _SubKategorie = (string)
 
- export type _SubKategorie1 = ιδ157ε
+ export type _SubKategorie1 = ιδ230ε
 
- export type _SubstractModValueType = ((SubArray<(ιδ29ε)> & SubArray<(ιδ30ε)> & SubArray<(ιδ31ε)> & SubArray<(ιδ32ε)> & SubArray<(ιδ33ε)>))
+ export type _SubstractModValueType = ((SubArray<(ιδ34ε)> & SubArray<(ιδ35ε)> & SubArray<(ιδ36ε)> & SubArray<(ιδ37ε)> & SubArray<(ιδ38ε)>))
 
- export type _SubstractModValueType1 = ιδ32ε
+ export type _SubstractModValueType1 = ιδ37ε
 
- export type _Tag = ((ιδ47ε))
+ export type _Tag = ((ιδ57ε))
 
- export type _Tag1 = ιδ333ε
+ export type _Tag1 = ιδ307ε
 
- export type _Tag2 = ((ιδ47ε))
+ export type _Tag2 = ((ιδ57ε))
 
  export type _Tag3 = ιδ2ε
 
- export type _Tag4 = ((ιδ110ε))
+ export type _Tag4 = ((ιδ163ε))
 
- export type _Tag5 = ιδ85ε
+ export type _Tag5 = ιδ119ε
 
- export type _TagDefinition = ιδ110ε
+ export type _TagDefinition = ιδ163ε
 
- export type _Tags = ((ιδ333ε))
+ export type _Tags = ((ιδ307ε))
 
- export type _Tags1 = ιδ219ε
+ export type _Tags1 = ιδ221ε
 
- export type _Tags2 = ((ιδ85ε))
+ export type _Tags2 = ((ιδ119ε))
 
  export type _Tags3 = ιδ5ε
 
- export type _Taktik = ((ιδ160ε) & (ιδ161ε) & (ιδ162ε) & (ιδ163ε) & (ιδ164ε) & (ιδ165ε) & (ιδ166ε) & (ιδ167ε) & (ιδ168ε) & (ιδ126ε) & (ιδ127ε) & (ιδ128ε) & (ιδ77ε))
+ export type _Taktik = ((ιδ233ε) & (ιδ234ε) & (ιδ235ε) & (ιδ236ε) & (ιδ237ε) & (ιδ238ε) & (ιδ239ε) & (ιδ240ε) & (ιδ241ε) & (ιδ190ε) & (ιδ191ε) & (ιδ192ε) & (ιδ111ε))
 
- export type _Taktik1 = ιδ103ε
+ export type _Taktik1 = ιδ156ε
 
- export type _Taktiken = ((ιδ103ε) & (ιδ104ε))
+ export type _Taktiken = ((ιδ156ε) & (ιδ157ε))
 
- export type _Taktiken1 = ιδ27ε
+ export type _Taktiken1 = ιδ32ε
 
- export type _Talent = ({} & (ιδ61ε) & (ιδ62ε) & (ιδ77ε))
+ export type _Talent = ({} & (ιδ95ε) & (ιδ96ε) & (ιδ111ε))
 
- export type _Talent1 = ιδ20ε
+ export type _Talent1 = ιδ25ε
 
- export type _Talent10 = ({} & (ιδ77ε))
+ export type _Talent10 = ({} & (ιδ111ε))
 
- export type _Talent11 = ιδ372ε
+ export type _Talent11 = ιδ415ε
 
- export type _Talent2 = ({} & (ιδ270ε) & (ιδ77ε))
+ export type _Talent2 = ({} & (ιδ351ε) & (ιδ111ε))
 
- export type _Talent3 = ιδ190ε
+ export type _Talent3 = ιδ265ε
 
- export type _Talent4 = ((ιδ114ε))
+ export type _Talent4 = ((ιδ170ε))
 
- export type _Talent5 = ιδ97ε
+ export type _Talent5 = ιδ150ε
 
- export type _Talent6 = ((ιδ350ε))
+ export type _Talent6 = ((ιδ393ε))
 
- export type _Talent7 = ιδ242ε
+ export type _Talent7 = ιδ323ε
 
- export type _Talent8 = ({} & (ιδ77ε))
+ export type _Talent8 = ({} & (ιδ111ε))
 
- export type _Talent9 = ιδ366ε
+ export type _Talent9 = ιδ409ε
 
- export type _TalentDefinition = ιδ114ε
+ export type _TalentDefinition = ιδ170ε
 
- export type _Talente = ((ιδ96ε) & (ιδ97ε) & (ιδ60ε))
+ export type _Talente = ((ιδ149ε) & (ιδ150ε) & (ιδ94ε))
 
- export type _Talente1 = ιδ80ε
+ export type _Talente1 = ιδ114ε
 
- export type _Talente2 = ((ιδ366ε))
+ export type _Talente2 = ((ιδ409ε))
 
- export type _Talente3 = ιδ257ε
+ export type _Talente3 = ιδ338ε
 
- export type _Talente4 = ((ιδ372ε))
+ export type _Talente4 = ((ιδ415ε))
 
- export type _Talente5 = ιδ264ε
+ export type _Talente5 = ιδ345ε
 
- export type _Talente6 = ((ιδ96ε) & (ιδ97ε) & (ιδ60ε))
+ export type _Talente6 = ((ιδ149ε) & (ιδ150ε) & (ιδ94ε))
 
- export type _Talente7 = ιδ19ε
+ export type _Talente7 = ιδ24ε
 
- export type _TalentKostenFunktion = ({meta:(ιδ136ε) & (ιδ137ε), value :string})
+ export type _TalentKostenFunktion = ({meta:(ιδ200ε) & (ιδ201ε), value :string})
 
- export type _TalentKostenFunktion1 = ιδ87ε
+ export type _TalentKostenFunktion1 = ιδ121ε
 
- export type _Text = ((ιδ351ε))
+ export type _Text = ((ιδ394ε))
 
- export type _Text1 = ιδ243ε
+ export type _Text1 = ιδ324ε
 
- export type _Trefferzonen = ((ιδ376ε) & (ιδ377ε) & (ιδ378ε) & (ιδ379ε) & (ιδ380ε) & (ιδ381ε) & (ιδ382ε))
+ export type _Trefferzonen = ((ιδ419ε) & (ιδ420ε) & (ιδ421ε) & (ιδ422ε) & (ιδ423ε) & (ιδ424ε) & (ιδ425ε))
 
- export type _Trefferzonen1 = ιδ267ε
+ export type _Trefferzonen1 = ιδ348ε
 
- export type _Typ = ιδ128ε
+ export type _Typ = ιδ192ε
 
- export type _type = ιδ121ε
+ export type _type = ιδ181ε
 
- export type _Type = ιδ411ε
+ export type _Type = ιδ366ε
 
- export type _type1 = ιδ419ε
+ export type _type1 = ιδ452ε
 
- export type _Type1 = ιδ75ε
+ export type _Type1 = ιδ109ε
 
- export type _Value = ιδ74ε
+ export type _Value = ιδ108ε
 
- export type _Value1 = ιδ76ε
+ export type _Value1 = ιδ110ε
 
- export type _VariableModValueType = ({} & (ιδ76ε))
+ export type _VariableModValueType = ({} & (ιδ110ε))
 
- export type _VariableModValueType1 = ιδ30ε
+ export type _VariableModValueType1 = ιδ35ε
 
- export type _Verbreitung = ιδ318ε
+ export type _Verbreitung = ιδ368ε
 
- export type _Verbreitung1 = ιδ181ε
+ export type _Verbreitung1 = ιδ256ε
 
- export type _Verbreitung2 = ((ιδ181ε))
+ export type _Verbreitung2 = ((ιδ256ε))
 
- export type _Verbreitung3 = ιδ151ε
+ export type _Verbreitung3 = ιδ224ε
 
- export type _Verbreitung4 = ((ιδ181ε))
+ export type _Verbreitung4 = ((ιδ256ε))
 
- export type _Verbreitung5 = ιδ239ε
+ export type _Verbreitung5 = ιδ320ε
 
- export type _Version = ιδ49ε
+ export type _Version = ιδ59ε
 
- export type _Verteilung = ((ιδ407ε))
+ export type _Verteilung = ((ιδ218ε))
 
- export type _Verteilung1 = ιδ307ε
+ export type _Verteilung1 = ιδ141ε
 
- export type _Verteilung2 = ((ιδ441ε))
+ export type _Verteilung2 = ((ιδ266ε))
 
- export type _Verteilung3 = ιδ329ε
+ export type _Verteilung3 = ιδ175ε
 
- export type _Verteilung4 = ({} & (ιδ387ε) & (ιδ388ε))
+ export type _Verteilung4 = ({} & (ιδ184ε) & (ιδ185ε))
 
- export type _Verteilung5 = ιδ313ε
+ export type _Verteilung5 = ιδ147ε
 
- export type _Von = ιδ486ε
+ export type _Von = ιδ506ε
 
- export type _Voraussetzung = ((ιδ185ε))
+ export type _Voraussetzung = ((ιδ260ε))
 
- export type _Voraussetzung1 = ιδ149ε
+ export type _Voraussetzung1 = ιδ222ε
 
- export type _Voraussetzung10 = ((ιδ185ε))
+ export type _Voraussetzung10 = ((ιδ260ε))
 
- export type _Voraussetzung11 = ιδ167ε
+ export type _Voraussetzung11 = ιδ240ε
 
- export type _Voraussetzung2 = ((ιδ215ε) & (ιδ216ε))
+ export type _Voraussetzung2 = ((ιδ290ε) & (ιδ291ε))
 
- export type _Voraussetzung3 = ιδ133ε
+ export type _Voraussetzung3 = ιδ197ε
 
- export type _Voraussetzung4 = ((ιδ185ε))
+ export type _Voraussetzung4 = ((ιδ260ε))
 
- export type _Voraussetzung5 = ιδ232ε
+ export type _Voraussetzung5 = ιδ313ε
 
- export type _Voraussetzung6 = ((ιδ185ε))
+ export type _Voraussetzung6 = ((ιδ260ε))
 
- export type _Voraussetzung7 = ιδ241ε
+ export type _Voraussetzung7 = ιδ322ε
 
- export type _Voraussetzung8 = ((ιδ298ε))
+ export type _Voraussetzung8 = ((ιδ356ε))
 
- export type _Voraussetzung9 = ιδ248ε
+ export type _Voraussetzung9 = ιδ329ε
 
- export type _Waffen = ((ιδ171ε) & (ιδ172ε))
+ export type _Waffen = ((ιδ244ε) & (ιδ245ε))
 
- export type _Waffen1 = ιδ106ε
+ export type _Waffen1 = ιδ159ε
 
- export type _WaffenTyp = ιδ265ε
+ export type _WaffenTyp = ιδ346ε
 
- export type _WaffenTyp1 = ιδ206ε
+ export type _WaffenTyp1 = ιδ281ε
 
- export type _WaffenTyp2 = ιδ210ε
+ export type _WaffenTyp2 = ιδ285ε
 
- export type _Wahl = ({} & (ιδ473ε))
+ export type _Wahl = ((ιδ8ε) & (ιδ493ε))
 
- export type _Wahl1 = ιδ453ε
+ export type _Wahl1 = ιδ475ε
 
- export type _Wert = ({meta:(ιδ468ε), value :number})
+ export type _Wert = ({meta:(ιδ304ε), value :number})
 
- export type _Wert1 = ιδ407ε
+ export type _Wert1 = ιδ218ε
 
- export type _Wert10 = ιδ432ε
+ export type _Wert2 = ({meta:(ιδ359ε), value :number})
 
- export type _Wert2 = ({meta:(ιδ488ε), value :number})
-
- export type _Wert3 = ιδ441ε
+ export type _Wert3 = ιδ266ε
 
  export type _Wert4 = (number)
 
- export type _Wert5 = ιδ446ε
+ export type _Wert5 = ιδ271ε
 
- export type _Wert6 = ιδ201ε
+ export type _Wert6 = ιδ276ε
 
- export type _Wert7 = ιδ202ε
+ export type _Wert7 = ιδ277ε
 
- export type _Wert8 = ιδ473ε
+ export type _Wert8 = ιδ375ε
 
- export type _Wert9 = ιδ321ε
+ export type _Wert9 = ιδ465ε
 
- export type _WiederhoteNutzung = ιδ118ε
+ export type _WiederhoteNutzung = ιδ178ε
 
- export type _Wucht = ((ιδ396ε))
+ export type _Wucht = ((ιδ434ε))
 
- export type _Wucht1 = ιδ363ε
+ export type _Wucht1 = ιδ406ε
 
- export type _Wucht2 = ((ιδ396ε))
+ export type _Wucht2 = ((ιδ434ε))
 
- export type _Wucht3 = ιδ367ε
+ export type _Wucht3 = ιδ410ε
 
- export type _Zahl = ((ιδ352ε))
+ export type _Zahl = ((ιδ395ε) & (ιδ371ε) & (ιδ372ε))
 
- export type _Zahl1 = ιδ244ε
+ export type _Zahl1 = ιδ325ε
 
- export type _Zeitpunkt = ({} & (ιδ386ε))
+ export type _Zeitpunkt = ({} & (ιδ183ε))
 
- export type _Zeitpunkt1 = ιδ312ε
+ export type _Zeitpunkt1 = ιδ146ε
 
- export type _Zusätzlich = ((ιδ185ε))
+ export type _Zusätzlich = ((ιδ260ε))
 
- export type _Zusätzlich1 = ιδ216ε
+ export type _Zusätzlich1 = ιδ291ε
 
  export type Abkürzung_misc = ιδ10ε
 
- export type Ableitung_talent = ιδ21ε
+ export type Ableitung_talent = ιδ26ε
 
- export type AbleitungsAuswahl_talent = ιδ182ε
+ export type AbleitungsAuswahl_talent = ιδ257ε
 
- export type ActionType_kampf_aktionen = ιδ169ε
+ export type ActionType_kampf_aktionen = ιδ242ε
 
- export type AddModValueType_kampf_aktionen = ιδ31ε
+ export type AddModValueType_kampf_aktionen = ιδ36ε
 
- export type Art_lebewesen = ιδ13ε
+ export type Art_lebewesen = ιδ12ε
 
- export type ArtDefinition_lebewesen = ιδ179ε
+ export type ArtDefinition_lebewesen = ιδ48ε
 
- export type AusrüstungEigengchaftDefinition_kampf_ausstattung = ιδ189ε
+ export type ArtRef_lebewesen = ιδ14ε
 
- export type Ausstattung_kampf_ausstattung = ιδ34ε
+ export type AusrüstungEigengchaftDefinition_kampf_ausstattung = ιδ264ε
 
- export type BedingungsAuswahl_besonderheit = ιδ298ε
+ export type Ausstattung_kampf_ausstattung = ιδ39ε
 
- export type BedingungsAuswahl_misc = ιδ185ε
+ export type BedingungsAuswahl_besonderheit = ιδ356ε
 
- export type BedingungsAuswahlen_besonderheit = ιδ392ε
+ export type BedingungsAuswahl_misc = ιδ260ε
 
- export type BedingungsAuswahlen_misc = ιδ300ε
+ export type BedingungsAuswahlen_besonderheit = ιδ430ε
+
+ export type BedingungsAuswahlen_misc = ιδ358ε
+
+ export type Berechnung_lebewesen = ιδ18ε
+
+ export type Bereich_lebewesen = ιδ19ε
 
  export type Beschreibung_misc = ιδ9ε
 
- export type Besonderheit_besonderheit = ιδ26ε
+ export type Besonderheit_besonderheit = ιδ31ε
 
- export type BesonderheitDefinition_besonderheit = ιδ116ε
+ export type BesonderheitDefinition_besonderheit = ιδ172ε
 
- export type Besonderheiten_besonderheit = ιδ25ε
+ export type Besonderheiten_besonderheit = ιδ30ε
 
- export type ConcreteModValueType_kampf_aktionen = ιδ29ε
+ export type ConcreteModValueType_kampf_aktionen = ιδ34ε
 
  export type Daten_nota = ιδ1ε
 
- export type Eigenschaft_kampf_aktionen = ιδ28ε
+ export type Eigenschaft_kampf_aktionen = ιδ33ε
 
- export type Eigenschaft_kampf_ausstattung = ιδ35ε
+ export type Eigenschaft_kampf_ausstattung = ιδ40ε
 
- export type EigenschaftsMods_lebewesen = ιδ294ε
+ export type EigenschaftsMods_lebewesen = ιδ254ε
 
- export type EntwicklungDefinition_lebewesen = ιδ111ε
+ export type EntwicklungDefinition_lebewesen = ιδ167ε
 
- export type FernkampfwaffenDafinition_kampf_ausstattung = ιδ187ε
+ export type FernkampfwaffenDafinition_kampf_ausstattung = ιδ262ε
 
- export type Fertigkeit_fertigkeit = ιδ24ε
+ export type Fertigkeit_fertigkeit = ιδ29ε
 
- export type FertigkeitDefinition_fertigkeit = ιδ115ε
+ export type FertigkeitDefinition_fertigkeit = ιδ171ε
 
- export type Fertigkeiten_fertigkeit = ιδ23ε
+ export type Fertigkeiten_fertigkeit = ιδ28ε
 
- export type FormelDefintion_lebewesen = ιδ196ε
+ export type FormelDefintion_lebewesen = ιδ53ε
 
- export type Gattung_lebewesen = ιδ12ε
+ export type GattungDefinition_lebewesen = ιδ165ε
 
- export type GattungDefinition_lebewesen = ιδ112ε
+ export type GattungRef_lebewesen = ιδ13ε
 
- export type Geschlecht_misc = ιδ177ε
+ export type Geschlecht_misc = ιδ250ε
 
- export type Id_misc = ιδ77ε
+ export type Id_misc = ιδ111ε
 
- export type Komplexität_talent = ιδ154ε
+ export type Komplexität_talent = ιδ227ε
 
  export type Kosten_misc = ιδ6ε
 
- export type KostenDefinition_misc = ιδ38ε
+ export type KostenDefinition_misc = ιδ43ε
 
  export type KostenDefinitionen_misc = ιδ7ε
 
- export type KostenDefinitions_misc = ιδ39ε
+ export type KostenDefinitions_misc = ιδ44ε
 
- export type kostenType_misc = ιδ135ε
+ export type kostenType_misc = ιδ199ε
 
- export type Lebensabschnitt_lebewesen = ιδ15ε
+ export type LebensabschnittDefinition_lebewesen = ιδ252ε
 
- export type LebensabschnittDefinition_lebewesen = ιδ295ε
+ export type LebensabschnittRef_lebewesen = ιδ16ε
 
  export type Level_misc = ιδ4ε
 
- export type LevelAuswahl_misc = ιδ269ε
+ export type LevelAuswahl_misc = ιδ350ε
 
- export type LevelAuswahlen_misc = ιδ385ε
+ export type LevelAuswahlen_misc = ιδ428ε
 
- export type LevelBedingungsTyp_talent = ιδ98ε
+ export type LevelBedingungsTyp_talent = ιδ151ε
 
- export type LevelDefinition_misc = ιδ109ε
+ export type LevelDefinition_misc = ιδ162ε
 
  export type Levels_misc = ιδ3ε
 
- export type Lokalisierungen_misc = ιδ42ε
+ export type Lokalisierungen_misc = ιδ47ε
 
- export type Max_talent = ιδ22ε
+ export type Max_talent = ιδ27ε
 
- export type ModifierType_kampf_aktionen = ιδ250ε
+ export type ModifierType_kampf_aktionen = ιδ331ε
 
- export type Mods_misc = ιδ178ε
+ export type Mods_misc = ιδ168ε
 
- export type ModType_kampf_aktionen = ιδ105ε
+ export type ModType_kampf_aktionen = ιδ158ε
 
- export type ModWert_lebewesen = ιδ389ε
+ export type ModWert_lebewesen = ιδ353ε
 
- export type Morph_lebewesen = ιδ14ε
+ export type MorphDefinition_lebewesen = ιδ253ε
 
- export type MorphDefinition_lebewesen = ιδ390ε
+ export type MorphRef_lebewesen = ιδ15ε
 
- export type MultiplyModValueType_kampf_aktionen = ιδ33ε
+ export type MultiplyModValueType_kampf_aktionen = ιδ38ε
 
- export type Nachladeeinheit_kampf_ausstattung = ιδ370ε
+ export type Nachladeeinheit_kampf_ausstattung = ιδ413ε
 
- export type NahkampfWaffenDefinition_kampf_ausstattung = ιδ186ε
+ export type NahkampfWaffenDefinition_kampf_ausstattung = ιδ261ε
 
  export type Name_misc = ιδ8ε
 
- export type NamedType_misc = ιδ47ε
+ export type NamedType_misc = ιδ57ε
 
  export type Organismen_lebewesen = ιδ11ε
 
- export type ParameterDefinition_misc = ιδ184ε
+ export type ParameterDefinition_misc = ιδ259ε
 
- export type Pfad_pfad = ιδ17ε
+ export type Pfad_pfad = ιδ22ε
 
- export type PfadDefinition_pfad = ιδ113ε
+ export type PfadDefinition_pfad = ιδ169ε
 
- export type Pfade_pfad = ιδ18ε
+ export type Pfade_pfad = ιδ23ε
 
- export type PfadeDefinition_pfad = ιδ48ε
+ export type PfadeDefinition_pfad = ιδ58ε
 
- export type positiveInt_misc = ιδ83ε
+ export type positiveInt_misc = ιδ117ε
 
- export type PunktDefintion_lebewesen = ιδ199ε
+ export type Punkt_lebewesen = ιδ21ε
 
- export type ReiheDefinition_lebewesen = ιδ198ε
+ export type PunktDefintion_lebewesen = ιδ56ε
 
- export type RüstungDefinition_kampf_ausstattung = ιδ188ε
+ export type Reihe_lebewesen = ιδ20ε
 
- export type Rüstwert_kampf_ausstattung = ιδ399ε
+ export type ReiheDefinition_lebewesen = ιδ55ε
 
- export type Schaden_kampf_ausstattung = ιδ396ε
+ export type RüstungDefinition_kampf_ausstattung = ιδ263ε
 
- export type Schussreichweite_kampf_ausstattung = ιδ460ε
+ export type Rüstwert_kampf_ausstattung = ιδ437ε
 
- export type Schutzwert_kampf_ausstattung = ιδ406ε
+ export type Schaden_kampf_ausstattung = ιδ434ε
 
- export type StandardPfade_lebewesen = ιδ16ε
+ export type Schussreichweite_kampf_ausstattung = ιδ482ε
 
- export type StaticheDefinition_lebewesen = ιδ197ε
+ export type Schutzwert_kampf_ausstattung = ιδ444ε
+
+ export type StandardPfade_lebewesen = ιδ17ε
+
+ export type StaticheDefinition_lebewesen = ιδ54ε
 
  export type SubArray<T> = 
     {
@@ -1377,788 +1395,794 @@
     }
 
 
- export type SubstractModValueType_kampf_aktionen = ιδ32ε
+ export type SubstractModValueType_kampf_aktionen = ιδ37ε
 
  export type Tag_misc = ιδ2ε
 
- export type TagDefinition_misc = ιδ110ε
+ export type TagDefinition_misc = ιδ163ε
 
  export type Tags_misc = ιδ5ε
 
- export type Taktiken_kampf_aktionen = ιδ27ε
+ export type Taktiken_kampf_aktionen = ιδ32ε
 
- export type Talent_talent = ιδ20ε
+ export type Talent_talent = ιδ25ε
 
- export type TalentDefinition_talent = ιδ114ε
+ export type TalentDefinition_talent = ιδ170ε
 
- export type Talente_talent = ιδ19ε
+ export type Talente_talent = ιδ24ε
 
- export type VariableModValueType_kampf_aktionen = ιδ30ε
+ export type VariableModValueType_kampf_aktionen = ιδ35ε
 
- export type Verbreitung_misc = ιδ181ε
+ export type Verbreitung_misc = ιδ256ε
 
- export type WaffenTyp_kampf_ausstattung = ιδ265ε
+ export type WaffenTyp_kampf_ausstattung = ιδ346ε
 
-  type ιδ100ε = ({ Fertigkeit: _Fertigkeit2[]})
+  type ιδ100ε = {Anzahl: (number)}
 
-  type ιδ101ε = ({ Kategorie: _Kategorie4})
+  type ιδ101ε = {KategorieId: (string)}
 
-  type ιδ102ε = ({ Besonderheit: _Besonderheit4[]})
+  type ιδ102ε = {Stufe: (number)}
 
-  type ιδ103ε = ({ Taktik: _Taktik[]})
+  type ιδ104ε = {KategorieId: (string)}
 
-  type ιδ104ε = ({ Eigenschaften: _Eigenschaften4[]})
+  type ιδ105ε = {Stufe: (number)}
 
-  type ιδ105ε = 'Percent' | 'Absolute' 
+  type ιδ108ε = {Value: (number)}
 
-  type ιδ106ε = ({ Waffen: _Waffen})
-
-  type ιδ107ε = ({ Rüstungen: _Rüstungen})
-
-  type ιδ108ε = ({ Eigenschaften: _Eigenschaften12})
-
-  type ιδ109ε = (ιδ130ε) & (ιδ131ε) & (ιδ132ε) & (ιδ133ε) & (SubArray<(ιδ24ε)> & SubArray<(ιδ190ε)> & SubArray<(ιδ26ε)> & SubArray<(ιδ2ε)>) & (ιδ118ε) & (ιδ119ε)
+  type ιδ109ε = {Type: ((ιδ158ε))}
 
   type ιδ10ε = ({ Abkürzung: _Abkürzung10})
 
-  type ιδ110ε = (ιδ47ε) & (ιδ8ε) & (ιδ9ε)
+  type ιδ110ε = {Value: (string) | undefined}
 
-  type ιδ111ε = (SubArray<(ιδ191ε)> & SubArray<(ιδ192ε)> & SubArray<(ιδ193ε)> & SubArray<(ιδ194ε)>)
+  type ιδ111ε = {Id: (string)}
 
-  type ιδ112ε = (ιδ8ε) & (ιδ9ε) & (ιδ145ε) & (ιδ146ε) & (ιδ147ε) & (ιδ148ε) & (ιδ77ε)
+  type ιδ112ε = ({ GenerierungsDaten: _GenerierungsDaten})
 
-  type ιδ113ε = (ιδ8ε) & (ιδ9ε) & (ιδ149ε) & (ιδ3ε) & (ιδ77ε)
+  type ιδ113ε = ({ Pfade: _Pfade[]})
 
-  type ιδ114ε = (ιδ150ε) & (ιδ8ε) & (ιδ9ε) & (ιδ151ε) & (ιδ152ε) & (ιδ153ε) & (ιδ122ε) & (ιδ123ε)
+  type ιδ114ε = ({ Talente: _Talente[]})
 
-  type ιδ115ε = (ιδ8ε) & (ιδ155ε) & (ιδ156ε) & (ιδ124ε)
+  type ιδ115ε = ({ Fertigkeiten: _Fertigkeiten[]})
 
-  type ιδ116ε = (ιδ8ε) & (ιδ157ε) & (ιδ158ε) & (ιδ159ε) & (ιδ125ε) & (ιδ77ε)
+  type ιδ116ε = ({ Besonderheiten: _Besonderheiten2[]})
 
-  type ιδ117ε = {MinimumVerbreitung: (number)}
+  type ιδ117ε = number
 
-  type ιδ118ε = {WiederhoteNutzung: (number)}
+  type ιδ118ε = ({ Level: _Level5[]})
 
-  type ιδ119ε = {Id: (string)}
+  type ιδ119ε = ({ Tag: _Tag4[]})
 
   type ιδ11ε = ({ Organismen: _Organismen})
 
-  type ιδ120ε = {StandardKosten: (boolean)}
+  type ιδ120ε = ({ KostenDefinition: _KostenDefinition[]})
 
-  type ιδ121ε = {type: ((ιδ135ε))}
+  type ιδ121ε = ({ TalentKostenFunktion: _TalentKostenFunktion})
 
-  type ιδ122ε = {Id: (string)}
+  type ιδ124ε = ({ Lokalisirung: _Lokalisirung[]})
 
-  type ιδ123ε = {Komplexität: ((ιδ154ε))}
+  type ιδ125ε = ({ EigenschaftenGruppen: _EigenschaftenGruppen})
 
-  type ιδ124ε = {Id: (string)}
+  type ιδ126ε = ({ Entwiklung: _Entwiklung | undefined})
 
-  type ιδ125ε = {Gebunden: (boolean)}
+  type ιδ127ε = ({ Gattung: _Gattung[]})
 
-  type ιδ126ε = {Kosten: (number)}
+  type ιδ128ε = ({ Art: _Art})
 
-  type ιδ127ε = {Belastung: ('0' | '0.5'  | '1'  | '1.5'  | '2' )}
+  type ιδ129ε = ({ Mods: _Mods9 | undefined})
 
-  type ιδ128ε = {Typ: ((ιδ169ε))}
+  type ιδ12ε = ({ Art: _Art4})
 
-  type ιδ129ε = ({ Kosten: _Kosten[]})
+  type ιδ130ε = ({ Entwiklung: _Entwiklung4 | undefined})
 
-  type ιδ12ε = ({ Gattung: _Gattung2})
+  type ιδ131ε = ({ StandardPfade: _StandardPfade | undefined})
 
-  type ιδ130ε = ({ Kosten: _Kosten10[]})
+  type ιδ132ε = ({ Lebensabschnitte: _Lebensabschnitte2 | undefined})
 
-  type ιδ131ε = ({ Name: _Name6 | undefined})
+  type ιδ133ε = ({ Morphe: _Morphe})
 
-  type ιδ132ε = ({ Beschreibung: _Beschreibung14 | undefined})
+  type ιδ134ε = ({ Pfad: _Pfad[]})
 
-  type ιδ133ε = ({ Voraussetzung: _Voraussetzung2 | undefined})
+  type ιδ135ε = ({ Beschreibung: _Beschreibung2 | undefined})
 
-  type ιδ134ε = ({ Abkürzung: _Abkürzung})
+  type ιδ136ε = ({ Abkürzung: _Abkürzung2 | undefined})
 
-  type ιδ135ε = 'over zero' | 'epual zero'  | 'below zero' 
+  type ιδ137ε = ({ Formel: _Formel})
 
-  type ιδ136ε = {KostenArt: (string)}
+  type ιδ138ε = ({ Beschreibung: _Beschreibung4 | undefined})
 
-  type ιδ137ε = {ResultType: ('differenz' | 'total' )}
+  type ιδ139ε = ({ Abkürzung: _Abkürzung4 | undefined})
 
-  type ιδ13ε = ({ Art: _Art4})
+  type ιδ13ε = ({ GattungRef: _GattungRef})
 
-  type ιδ142ε = {Sprache: (string)}
+  type ιδ140ε = ({ Kosten: _Kosten2[]})
 
-  type ιδ143ε = {Geschlecht: ((ιδ177ε))}
+  type ιδ141ε = ({ Verteilung: _Verteilung[]})
 
-  type ιδ144ε = ({ Gruppe: _Gruppe[]})
+  type ιδ142ε = ({ Beschreibung: _Beschreibung10 | undefined})
 
-  type ιδ145ε = ({ Mods: _Mods5 | undefined})
+  type ιδ143ε = ({ Abkürzung: _Abkürzung8 | undefined})
 
-  type ιδ146ε = ({ Entwiklung: _Entwiklung2 | undefined})
+  type ιδ144ε = ({ Kosten: _Kosten6[]})
 
-  type ιδ147ε = ({ Lebensabschnitte: _Lebensabschnitte | undefined})
+  type ιδ145ε = ({ Mods: _Mods3 | undefined})
 
-  type ιδ148ε = ({ Art: _Art2[]})
+  type ιδ146ε = ({ Zeitpunkt: _Zeitpunkt[]})
 
-  type ιδ149ε = ({ Voraussetzung: _Voraussetzung | undefined})
+  type ιδ147ε = ({ Verteilung: _Verteilung4[]})
 
-  type ιδ14ε = ({ Morph: _Morph2})
+  type ιδ148ε = ({ Pfad: _Pfad2[]})
 
-  type ιδ150ε = ({ Probe: _Probe[]})
+  type ιδ149ε = ({ Kategorie: _Kategorie})
 
-  type ιδ151ε = ({ Verbreitung: _Verbreitung2})
+  type ιδ14ε = ({ ArtRef: _ArtRef})
 
-  type ιδ152ε = ({ Level: _Level7[]})
+  type ιδ150ε = ({ Talent: _Talent4[]})
 
-  type ιδ153ε = ({ Ableitungen: _Ableitungen | undefined})
+  type ιδ151ε = 'Basis' | 'Effektiv'  | 'Unterstützung' 
 
-  type ιδ154ε = string
+  type ιδ152ε = ({ Kategorie: _Kategorie2})
 
-  type ιδ155ε = ({ Parameter: _Parameter[]})
+  type ιδ153ε = ({ Fertigkeit: _Fertigkeit2[]})
 
-  type ιδ156ε = ({ Stufe: _Stufe2[]})
+  type ιδ154ε = ({ Kategorie: _Kategorie4})
 
-  type ιδ157ε = ({ SubKategorie: _SubKategorie[]})
+  type ιδ155ε = ({ Besonderheit: _Besonderheit4[]})
 
-  type ιδ158ε = ({ Parameter: _Parameter2[]})
+  type ιδ156ε = ({ Taktik: _Taktik[]})
 
-  type ιδ159ε = ({ Stufe: _Stufe4[]})
+  type ιδ157ε = ({ Eigenschaften: _Eigenschaften4[]})
 
-  type ιδ15ε = ({ Lebensabschnitt: _Lebensabschnitt6})
+  type ιδ158ε = 'Percent' | 'Absolute' 
 
-  type ιδ160ε = ({ Beschreibung: _Beschreibung16})
+  type ιδ159ε = ({ Waffen: _Waffen})
 
-  type ιδ161ε = ({ Bedingung: _Bedingung | undefined})
+  type ιδ15ε = ({ MorphRef: _MorphRef})
 
-  type ιδ162ε = ({ SofortigerEffekt: _SofortigerEffekt | undefined})
+  type ιδ160ε = ({ Rüstungen: _Rüstungen})
 
-  type ιδ163ε = ({ GarantierterEffekt: _GarantierterEffekt | undefined})
+  type ιδ161ε = ({ Eigenschaften: _Eigenschaften12})
 
-  type ιδ164ε = ({ Erfolg: _Erfolg | undefined})
+  type ιδ162ε = (ιδ194ε) & (ιδ195ε) & (ιδ196ε) & (ιδ197ε) & (SubArray<(ιδ29ε)> & SubArray<(ιδ265ε)> & SubArray<(ιδ31ε)> & SubArray<(ιδ2ε)>) & (ιδ178ε) & (ιδ179ε)
 
-  type ιδ165ε = ({ Misserfolg: _Misserfolg | undefined})
+  type ιδ163ε = (ιδ57ε) & (ιδ8ε) & (ιδ9ε)
 
-  type ιδ166ε = ({ Mod: _Mod3 | undefined})
+  type ιδ165ε = (ιδ8ε) & (ιδ9ε) & (ιδ209ε) & (ιδ210ε) & (ιδ211ε) & (ιδ212ε) & (ιδ111ε)
 
-  type ιδ167ε = ({ Voraussetzung: _Voraussetzung10 | undefined})
+  type ιδ167ε = (SubArray<(ιδ18ε)> & SubArray<(ιδ19ε)> & SubArray<(ιδ20ε)> & SubArray<(ιδ21ε)>)
 
-  type ιδ168ε = ({ Eigenschaften: _Eigenschaften2 | undefined})
+  type ιδ168ε = (ιδ219ε) & (ιδ220ε) & (ιδ221ε)
 
-  type ιδ169ε = 'Offensiv' | 'Defensiv'  | 'Unterstützend'  | 'Neutral' 
+  type ιδ169ε = (ιδ8ε) & (ιδ9ε) & (ιδ222ε) & (ιδ3ε) & (ιδ111ε)
 
-  type ιδ16ε = ({ StandardPfade: _StandardPfade4})
+  type ιδ16ε = ({ LebensabschnittRef: _LebensabschnittRef})
 
-  type ιδ170ε = ({ Eigenschaft: _Eigenschaft5[]})
+  type ιδ170ε = (ιδ223ε) & (ιδ8ε) & (ιδ9ε) & (ιδ224ε) & (ιδ225ε) & (ιδ226ε) & (ιδ186ε) & (ιδ187ε)
 
-  type ιδ171ε = ({ Nahkampfwaffe: _Nahkampfwaffe[]})
+  type ιδ171ε = (ιδ8ε) & (ιδ228ε) & (ιδ229ε) & (ιδ188ε)
 
-  type ιδ172ε = ({ Fernkampfwaffe: _Fernkampfwaffe[]})
+  type ιδ172ε = (ιδ8ε) & (ιδ230ε) & (ιδ231ε) & (ιδ232ε) & (ιδ189ε) & (ιδ111ε)
 
-  type ιδ173ε = ({ Rüstung: _Rüstung[]})
+  type ιδ173ε = ({ Beschreibung: _Beschreibung6 | undefined})
 
-  type ιδ174ε = ({ Eigenschaft: _Eigenschaft13[]})
+  type ιδ174ε = ({ Abkürzung: _Abkürzung6 | undefined})
 
-  type ιδ177ε = 'Neutral' | 'Männlich'  | 'Weiblich'  | 'Unspezifiziert' 
+  type ιδ175ε = ({ Verteilung: _Verteilung2[]})
 
-  type ιδ178ε = (ιδ217ε) & (ιδ218ε) & (ιδ219ε)
+  type ιδ176ε = ({ Schwelle: _Schwelle[]})
 
-  type ιδ179ε = (ιδ8ε) & (ιδ221ε) & (ιδ9ε) & (ιδ222ε) & (ιδ223ε) & (ιδ224ε) & (ιδ225ε) & (ιδ226ε) & (ιδ200ε)
+  type ιδ177ε = {MinimumVerbreitung: (number)}
 
-  type ιδ17ε = ({ Pfad: _Pfad6})
+  type ιδ178ε = {WiederhoteNutzung: (number)}
 
-  type ιδ181ε = (ιδ231ε) & (ιδ201ε)
+  type ιδ179ε = {Id: (string)}
 
-  type ιδ182ε = (SubArray<(ιδ21ε)> & SubArray<(ιδ22ε)>)
+  type ιδ17ε = ({ StandardPfade: _StandardPfade4})
 
-  type ιδ184ε = (ιδ242ε& {"#": "Talent"}) | (ιδ243ε& {"#": "Text"}) | (ιδ244ε& {"#": "Zahl"}) | (ιδ245ε& {"#": "Auswahl"})
+  type ιδ180ε = {StandardKosten: (boolean)}
 
-  type ιδ185ε = (ιδ251ε& {"#": "Or"}) | (ιδ252ε& {"#": "And"}) | (ιδ253ε& {"#": "Not"}) | (ιδ24ε& {"#": "Fertigkeit"}) | (ιδ20ε& {"#": "Talent"}) | (ιδ26ε& {"#": "Besonderheit"}) | (ιδ2ε& {"#": "Tag"})
+  type ιδ181ε = {type: ((ιδ199ε))}
 
-  type ιδ186ε = (ιδ8ε) & (ιδ9ε) & (ιδ255ε) & (ιδ256ε) & (ιδ257ε) & (ιδ206ε) & (ιδ207ε) & (ιδ208ε) & (ιδ209ε) & (ιδ77ε)
+  type ιδ182ε = {IgnoriereHöhere: (boolean)}
 
-  type ιδ187ε = (ιδ8ε) & (ιδ9ε) & (ιδ259ε) & (ιδ260ε) & (ιδ261ε) & (ιδ262ε) & (ιδ263ε) & (ιδ264ε) & (ιδ210ε) & (ιδ211ε) & (ιδ212ε) & (ιδ77ε)
+  type ιδ183ε = {alter: (number) | undefined}
 
-  type ιδ188ε = (ιδ8ε) & (ιδ9ε) & (ιδ266ε) & (ιδ267ε) & (ιδ268ε) & (ιδ213ε) & (ιδ77ε)
+  type ιδ184ε = {alter: (number) | undefined}
 
-  type ιδ189ε = (ιδ8ε) & (ιδ9ε) & (ιδ214ε)
+  type ιδ185ε = {Quantil: (number)}
 
-  type ιδ18ε = ({ Pfade: _Pfade2})
+  type ιδ186ε = {Id: (string)}
 
-  type ιδ190ε = ({ Talent: _Talent2})
+  type ιδ187ε = {Komplexität: ((ιδ227ε))}
 
-  type ιδ191ε = ({ Berechnung: _Berechnung1})
+  type ιδ188ε = {Id: (string)}
 
-  type ιδ192ε = ({ Bereich: _Bereich})
+  type ιδ189ε = {Gebunden: (boolean)}
 
-  type ιδ193ε = ({ Reihe: _Reihe})
+  type ιδ18ε = ({ Berechnung: _Berechnung1})
 
-  type ιδ194ε = ({ Punkt: _Punkt})
+  type ιδ190ε = {Kosten: (number)}
 
-  type ιδ195ε = {id: (string)}
+  type ιδ191ε = {Belastung: ('0' | '0.5'  | '1'  | '1.5'  | '2' )}
 
-  type ιδ196ε = (ιδ8ε) & (ιδ301ε) & (ιδ302ε) & (ιδ303ε) & (ιδ271ε) & (ιδ272ε) & (ιδ273ε) & (ιδ274ε)
+  type ιδ192ε = {Typ: ((ιδ242ε))}
 
-  type ιδ197ε = (ιδ8ε) & (ιδ304ε) & (ιδ305ε) & (ιδ306ε) & (ιδ307ε) & (ιδ275ε) & (ιδ276ε) & (ιδ277ε) & (ιδ278ε) & (ιδ279ε) & (ιδ280ε) & (ιδ281ε) & (ιδ282ε) & (ιδ283ε) & (ιδ284ε)
+  type ιδ193ε = ({ Kosten: _Kosten[]})
 
-  type ιδ198ε = (ιδ8ε) & (ιδ327ε) & (ιδ328ε) & (ιδ329ε) & (ιδ330ε) & (ιδ285ε) & (ιδ286ε) & (ιδ287ε) & (ιδ288ε) & (ιδ289ε) & (ιδ290ε)
+  type ιδ194ε = ({ Kosten: _Kosten10[]})
 
-  type ιδ199ε = (ιδ8ε) & (ιδ308ε) & (ιδ309ε) & (ιδ310ε) & (ιδ311ε) & (ιδ312ε) & (ιδ313ε) & (ιδ291ε) & (ιδ292ε) & (ιδ293ε)
+  type ιδ195ε = ({ Name: _Name6 | undefined})
 
-  type ιδ19ε = ({ Talente: _Talente6})
+  type ιδ196ε = ({ Beschreibung: _Beschreibung14 | undefined})
+
+  type ιδ197ε = ({ Voraussetzung: _Voraussetzung2 | undefined})
+
+  type ιδ198ε = ({ Abkürzung: _Abkürzung})
+
+  type ιδ199ε = 'over zero' | 'epual zero'  | 'below zero' 
+
+  type ιδ19ε = ({ Bereich: _Bereich})
 
   type ιδ1ε = ({ Daten: _Daten})
 
-  type ιδ200ε = {Id: (string)}
+  type ιδ200ε = {KostenArt: (string)}
 
-  type ιδ201ε = {Wert: (number)}
+  type ιδ201ε = {ResultType: ('differenz' | 'total' )}
 
-  type ιδ202ε = {Wert: (number)}
+  type ιδ206ε = {Sprache: (string)}
 
-  type ιδ203ε = {Kosten: (number)}
+  type ιδ207ε = {Geschlecht: ((ιδ250ε))}
 
-  type ιδ204ε = {ModifierType: ((ιδ250ε))}
+  type ιδ208ε = ({ Gruppe: _Gruppe[]})
 
-  type ιδ205ε = {Id: (string)}
+  type ιδ209ε = ({ Mods: _Mods5 | undefined})
 
-  type ιδ206ε = {WaffenTyp: ((ιδ265ε))}
+  type ιδ20ε = ({ Reihe: _Reihe})
 
-  type ιδ207ε = {DefensivModifizierer: (number)}
+  type ιδ210ε = ({ Entwiklung: _Entwiklung2 | undefined})
 
-  type ιδ208ε = {OffensivModifizierer: (number)}
+  type ιδ211ε = ({ Lebensabschnitte: _Lebensabschnitte | undefined})
 
-  type ιδ209ε = {Distanzklasse: (number)}
+  type ιδ212ε = ({ Art: _Art2[]})
 
-  type ιδ20ε = ({ Talent: _Talent})
+  type ιδ216ε = ({ Lebensabschnitt: _Lebensabschnitt2[]})
 
-  type ιδ210ε = {WaffenTyp: ((ιδ265ε))}
+  type ιδ217ε = ({ Morph: _Morph[]})
 
-  type ιδ211ε = {DefensivModifizierer: (number)}
+  type ιδ218ε = ({ Wert: _Wert[]})
 
-  type ιδ212ε = {OffensivModifizierer: (number)}
+  type ιδ219ε = ({ Eigenschaften: _Eigenschaften | undefined})
 
-  type ιδ213ε = {Erschwernis: (number)}
+  type ιδ21ε = ({ Punkt: _Punkt})
 
-  type ιδ214ε = {Id: (string)}
+  type ιδ220ε = ({ Besonderheiten: _Besonderheiten | undefined})
 
-  type ιδ215ε = ({ LevelVoraussetzung: _LevelVoraussetzung | undefined})
+  type ιδ221ε = ({ Tags: _Tags | undefined})
 
-  type ιδ216ε = ({ Zusätzlich: _Zusätzlich | undefined})
+  type ιδ222ε = ({ Voraussetzung: _Voraussetzung | undefined})
 
-  type ιδ217ε = ({ Eigenschaften: _Eigenschaften | undefined})
+  type ιδ223ε = ({ Probe: _Probe[]})
 
-  type ιδ218ε = ({ Besonderheiten: _Besonderheiten | undefined})
+  type ιδ224ε = ({ Verbreitung: _Verbreitung2})
 
-  type ιδ219ε = ({ Tags: _Tags | undefined})
+  type ιδ225ε = ({ Level: _Level7[]})
 
-  type ιδ21ε = ({ Ableitung: _Ableitung})
+  type ιδ226ε = ({ Ableitungen: _Ableitungen | undefined})
 
-  type ιδ220ε = ({ Lebensabschnitt: _Lebensabschnitt[]})
+  type ιδ227ε = string
 
-  type ιδ221ε = ({ Art: _Art})
+  type ιδ228ε = ({ Parameter: _Parameter[]})
 
-  type ιδ222ε = ({ Mods: _Mods9 | undefined})
+  type ιδ229ε = ({ Stufe: _Stufe2[]})
 
-  type ιδ223ε = ({ Entwiklung: _Entwiklung4 | undefined})
+  type ιδ22ε = ({ Pfad: _Pfad6})
 
-  type ιδ224ε = ({ StandardPfade: _StandardPfade | undefined})
+  type ιδ230ε = ({ SubKategorie: _SubKategorie[]})
 
-  type ιδ225ε = ({ Lebensabschnitte: _Lebensabschnitte2 | undefined})
+  type ιδ231ε = ({ Parameter: _Parameter2[]})
 
-  type ιδ226ε = ({ Morphe: _Morphe})
+  type ιδ232ε = ({ Stufe: _Stufe4[]})
 
-  type ιδ22ε = ({ Max: _Max})
+  type ιδ233ε = ({ Beschreibung: _Beschreibung16})
 
-  type ιδ230ε = ({ Eigenschaft: _Eigenschaft1[]})
+  type ιδ234ε = ({ Bedingung: _Bedingung | undefined})
 
-  type ιδ231ε = ({ Pfad: _Pfad4[]})
+  type ιδ235ε = ({ SofortigerEffekt: _SofortigerEffekt | undefined})
 
-  type ιδ232ε = ({ Voraussetzung: _Voraussetzung4 | undefined})
+  type ιδ236ε = ({ GarantierterEffekt: _GarantierterEffekt | undefined})
 
-  type ιδ233ε = ({ Mods: _Mods13 | undefined})
+  type ιδ237ε = ({ Erfolg: _Erfolg | undefined})
 
-  type ιδ238ε = ({ Name: _Name9 | undefined})
+  type ιδ238ε = ({ Misserfolg: _Misserfolg | undefined})
 
-  type ιδ239ε = ({ Verbreitung: _Verbreitung4})
+  type ιδ239ε = ({ Mod: _Mod3 | undefined})
 
-  type ιδ23ε = ({ Fertigkeiten: _Fertigkeiten2})
+  type ιδ23ε = ({ Pfade: _Pfade2})
 
-  type ιδ240ε = ({ Mods: _Mods15 | undefined})
+  type ιδ240ε = ({ Voraussetzung: _Voraussetzung10 | undefined})
 
-  type ιδ241ε = ({ Voraussetzung: _Voraussetzung6 | undefined})
+  type ιδ241ε = ({ Eigenschaften: _Eigenschaften2 | undefined})
 
-  type ιδ242ε = ({ Talent: _Talent6})
+  type ιδ242ε = 'Offensiv' | 'Defensiv'  | 'Unterstützend'  | 'Neutral' 
 
-  type ιδ243ε = ({ Text: _Text})
+  type ιδ243ε = ({ Eigenschaft: _Eigenschaft5[]})
 
-  type ιδ244ε = ({ Zahl: _Zahl})
+  type ιδ244ε = ({ Nahkampfwaffe: _Nahkampfwaffe[]})
 
-  type ιδ245ε = ({ Auswahl: _Auswahl})
+  type ιδ245ε = ({ Fernkampfwaffe: _Fernkampfwaffe[]})
 
-  type ιδ246ε = ({ Name: _Name11 | undefined})
+  type ιδ246ε = ({ Rüstung: _Rüstung[]})
 
-  type ιδ247ε = ({ Kosten: _Kosten13[]})
+  type ιδ247ε = ({ Eigenschaft: _Eigenschaft13[]})
 
-  type ιδ248ε = ({ Voraussetzung: _Voraussetzung8 | undefined})
+  type ιδ24ε = ({ Talente: _Talente6})
 
-  type ιδ249ε = ({ Mods: _Mods17 | undefined})
+  type ιδ250ε = 'Neutral' | 'Männlich'  | 'Weiblich'  | 'Unspezifiziert' 
 
-  type ιδ24ε = ({ Fertigkeit: _Fertigkeit})
+  type ιδ252ε = (ιδ296ε) & (ιδ297ε) & (ιδ298ε) & (ιδ299ε) & (ιδ273ε) & (ιδ274ε)
 
-  type ιδ250ε = 'Malus' | 'Bonus' 
+  type ιδ253ε = (ιδ8ε) & (ιδ9ε) & (ιδ300ε) & (ιδ301ε) & (ιδ302ε) & (ιδ303ε) & (ιδ275ε) & (ιδ111ε)
 
-  type ιδ251ε = ({ Or: _Or2})
+  type ιδ254ε = (ιδ305ε)
 
-  type ιδ252ε = ({ And: _And2})
+  type ιδ256ε = (ιδ312ε) & (ιδ276ε)
 
-  type ιδ253ε = ({ Not: _Not2})
+  type ιδ257ε = (SubArray<(ιδ26ε)> & SubArray<(ιδ27ε)>)
 
-  type ιδ254ε = ({ Eigenschaft: _Eigenschaft3[]})
+  type ιδ259ε = (ιδ323ε& {"#": "Talent"}) | (ιδ324ε& {"#": "Text"}) | (ιδ325ε& {"#": "Zahl"}) | (ιδ326ε& {"#": "Auswahl"})
 
-  type ιδ255ε = ({ Schaden: _Schaden2})
+  type ιδ25ε = ({ Talent: _Talent})
 
-  type ιδ256ε = ({ Eigenschaften: _Eigenschaften6 | undefined})
+  type ιδ260ε = (ιδ332ε& {"#": "Or"}) | (ιδ333ε& {"#": "And"}) | (ιδ334ε& {"#": "Not"}) | (ιδ29ε& {"#": "Fertigkeit"}) | (ιδ25ε& {"#": "Talent"}) | (ιδ31ε& {"#": "Besonderheit"}) | (ιδ2ε& {"#": "Tag"})
 
-  type ιδ257ε = ({ Talente: _Talente2 | undefined})
+  type ιδ261ε = (ιδ8ε) & (ιδ9ε) & (ιδ336ε) & (ιδ337ε) & (ιδ338ε) & (ιδ281ε) & (ιδ282ε) & (ιδ283ε) & (ιδ284ε) & (ιδ111ε)
 
-  type ιδ259ε = ({ Schaden: _Schaden4})
+  type ιδ262ε = (ιδ8ε) & (ιδ9ε) & (ιδ340ε) & (ιδ341ε) & (ιδ342ε) & (ιδ343ε) & (ιδ344ε) & (ιδ345ε) & (ιδ285ε) & (ιδ286ε) & (ιδ287ε) & (ιδ111ε)
 
-  type ιδ25ε = ({ Besonderheiten: _Besonderheiten4})
+  type ιδ263ε = (ιδ8ε) & (ιδ9ε) & (ιδ347ε) & (ιδ348ε) & (ιδ349ε) & (ιδ288ε) & (ιδ111ε)
 
-  type ιδ260ε = ({ Schusseigenschaften: _Schusseigenschaften})
+  type ιδ264ε = (ιδ8ε) & (ιδ9ε) & (ιδ289ε)
 
-  type ιδ261ε = ({ Reichweiten: _Reichweiten})
+  type ιδ265ε = ({ Talent: _Talent2})
 
-  type ιδ262ε = ({ Nachladezeit: _Nachladezeit})
+  type ιδ266ε = ({ Wert: _Wert2[]})
 
-  type ιδ263ε = ({ Eigenschaften: _Eigenschaften8 | undefined})
+  type ιδ267ε = ({ Name: _Name2 | undefined})
 
-  type ιδ264ε = ({ Talente: _Talente4 | undefined})
+  type ιδ268ε = ({ Beschreibung: _Beschreibung8 | undefined})
 
-  type ιδ265ε = 'Offensiv' | 'Defensiv'  | 'Offensiv|Defensiv' 
+  type ιδ269ε = ({ Kosten: _Kosten4[]})
 
-  type ιδ266ε = ({ Schutz: _Schutz})
+  type ιδ26ε = ({ Ableitung: _Ableitung})
 
-  type ιδ267ε = ({ Trefferzonen: _Trefferzonen})
+  type ιδ270ε = ({ Mods: _Mods1 | undefined})
 
-  type ιδ268ε = ({ Eigenschaften: _Eigenschaften10 | undefined})
+  type ιδ271ε = ({ Wert: _Wert4[]})
 
-  type ιδ269ε = (ιδ323ε& {"#": "Or"}) | (ιδ324ε& {"#": "And"}) | (ιδ325ε& {"#": "Not"}) | (ιδ326ε& {"#": "Level"})
+  type ιδ272ε = {id: (string)}
 
-  type ιδ26ε = ({ Besonderheit: _Besonderheit2})
+  type ιδ273ε = {startAlter: (number)}
 
-  type ιδ270ε = {EP: (number)}
+  type ιδ274ε = {endAlter: (number) | undefined}
 
-  type ιδ271ε = {einheit: (string)}
+  type ιδ275ε = {Geschlecht: ((ιδ250ε))}
 
-  type ιδ272ε = {Reihenfolge: (number)}
+  type ιδ276ε = {Wert: (number)}
 
-  type ιδ273ε = {gruppe: (string) | undefined}
+  type ιδ277ε = {Wert: (number)}
 
-  type ιδ274ε = {id: (string)}
+  type ιδ278ε = {Kosten: (number)}
 
-  type ιδ275ε = {minInklusiv: (number)}
+  type ιδ279ε = {ModifierType: ((ιδ331ε))}
 
-  type ιδ276ε = {maxInklusiv: (number)}
+  type ιδ27ε = ({ Max: _Max})
 
-  type ιδ277ε = {default: (number)}
+  type ιδ280ε = {Id: (string)}
 
-  type ιδ278ε = {gruppe: (string) | undefined}
+  type ιδ281ε = {WaffenTyp: ((ιδ346ε))}
 
-  type ιδ279ε = {step: (number)}
+  type ιδ282ε = {DefensivModifizierer: (number)}
 
-  type ιδ27ε = ({ Taktiken: _Taktiken})
+  type ιδ283ε = {OffensivModifizierer: (number)}
 
-  type ιδ280ε = {diskret: (boolean)}
+  type ιδ284ε = {Distanzklasse: (number)}
 
-  type ιδ281ε = {startAlter: (number)}
+  type ιδ285ε = {WaffenTyp: ((ιδ346ε))}
 
-  type ιδ282ε = {einheit: (string)}
+  type ιδ286ε = {DefensivModifizierer: (number)}
 
-  type ιδ283ε = {Reihenfolge: (number)}
+  type ιδ287ε = {OffensivModifizierer: (number)}
 
-  type ιδ284ε = {id: (string)}
+  type ιδ288ε = {Erschwernis: (number)}
 
-  type ιδ285ε = {step: (number)}
+  type ιδ289ε = {Id: (string)}
 
-  type ιδ286ε = {startAlter: (number)}
+  type ιδ28ε = ({ Fertigkeiten: _Fertigkeiten2})
 
-  type ιδ287ε = {einheit: (string)}
+  type ιδ290ε = ({ LevelVoraussetzung: _LevelVoraussetzung | undefined})
 
-  type ιδ288ε = {Reihenfolge: (number)}
+  type ιδ291ε = ({ Zusätzlich: _Zusätzlich | undefined})
 
-  type ιδ289ε = {gruppe: (string) | undefined}
+  type ιδ292ε = ({ Lebensabschnitt: _Lebensabschnitt[]})
 
-  type ιδ28ε = ({ Eigenschaft: _Eigenschaft15})
+  type ιδ296ε = ({ Spielbar: _Spielbar | undefined})
 
-  type ιδ290ε = {id: (string)}
+  type ιδ297ε = ({ Name: _Name4 | undefined})
 
-  type ιδ291ε = {id: (string)}
+  type ιδ298ε = ({ Beschreibung: _Beschreibung12 | undefined})
 
-  type ιδ292ε = {Reihenfolge: (number)}
+  type ιδ299ε = ({ Mods: _Mods7 | undefined})
 
-  type ιδ293ε = {gruppe: (string) | undefined}
-
-  type ιδ294ε = (ιδ331ε)
-
-  type ιδ295ε = (ιδ334ε) & (ιδ335ε) & (ιδ336ε) & (ιδ337ε) & (ιδ314ε) & (ιδ315ε)
-
-  type ιδ298ε = (ιδ354ε& {"#": "Or"}) | (ιδ355ε& {"#": "And"}) | (ιδ356ε& {"#": "Not"}) | (ιδ26ε& {"#": "Besonderheit"}) | (ιδ2ε& {"#": "Tag"})
-
-  type ιδ29ε = ({ ConcreteModValueType: _ConcreteModValueType})
+  type ιδ29ε = ({ Fertigkeit: _Fertigkeit})
 
   type ιδ2ε = ({ Tag: _Tag2})
 
-  type ιδ300ε = (SubArray<(ιδ360ε)> & SubArray<(ιδ361ε)> & SubArray<(ιδ362ε)> & SubArray<(ιδ24ε)> & SubArray<(ιδ20ε)> & SubArray<(ιδ26ε)> & SubArray<(ιδ2ε)>)
+  type ιδ300ε = ({ StandardPfade: _StandardPfade2 | undefined})
 
-  type ιδ301ε = ({ Beschreibung: _Beschreibung2 | undefined})
+  type ιδ301ε = ({ Mods: _Mods11 | undefined})
 
-  type ιδ302ε = ({ Abkürzung: _Abkürzung2 | undefined})
+  type ιδ302ε = ({ Entwiklung: _Entwiklung6 | undefined})
 
-  type ιδ303ε = ({ Formel: _Formel})
+  type ιδ303ε = ({ Lebensabschnitte: _Lebensabschnitte4})
 
-  type ιδ304ε = ({ Beschreibung: _Beschreibung4 | undefined})
+  type ιδ304ε = {Quantil: (number)}
 
-  type ιδ305ε = ({ Abkürzung: _Abkürzung4 | undefined})
+  type ιδ305ε = ({ Mod: _Mod1[]})
 
-  type ιδ306ε = ({ Kosten: _Kosten2[]})
+  type ιδ306ε = ({ Besonderheit: _Besonderheit[]})
 
-  type ιδ307ε = ({ Verteilung: _Verteilung[]})
+  type ιδ307ε = ({ Tag: _Tag[]})
 
-  type ιδ308ε = ({ Beschreibung: _Beschreibung10 | undefined})
+  type ιδ30ε = ({ Besonderheiten: _Besonderheiten4})
 
-  type ιδ309ε = ({ Abkürzung: _Abkürzung8 | undefined})
+  type ιδ311ε = ({ Eigenschaft: _Eigenschaft1[]})
 
-  type ιδ30ε = ({ VariableModValueType: _VariableModValueType})
+  type ιδ312ε = ({ Pfad: _Pfad4[]})
 
-  type ιδ310ε = ({ Kosten: _Kosten6[]})
+  type ιδ313ε = ({ Voraussetzung: _Voraussetzung4 | undefined})
 
-  type ιδ311ε = ({ Mods: _Mods3 | undefined})
+  type ιδ314ε = ({ Mods: _Mods13 | undefined})
 
-  type ιδ312ε = ({ Zeitpunkt: _Zeitpunkt[]})
+  type ιδ319ε = ({ Name: _Name9 | undefined})
 
-  type ιδ313ε = ({ Verteilung: _Verteilung4[]})
+  type ιδ31ε = ({ Besonderheit: _Besonderheit2})
 
-  type ιδ314ε = {startAlter: (number)}
+  type ιδ320ε = ({ Verbreitung: _Verbreitung4})
 
-  type ιδ315ε = {endAlter: (number) | undefined}
+  type ιδ321ε = ({ Mods: _Mods15 | undefined})
 
-  type ιδ316ε = {IgnoriereHöhere: (boolean)}
+  type ιδ322ε = ({ Voraussetzung: _Voraussetzung6 | undefined})
 
-  type ιδ317ε = {Name: (string) | undefined}
+  type ιδ323ε = ({ Talent: _Talent6})
 
-  type ιδ318ε = {Verbreitung: (number)}
+  type ιδ324ε = ({ Text: _Text})
 
-  type ιδ319ε = {Schussfrequenz: (number)}
+  type ιδ325ε = ({ Zahl: _Zahl})
 
-  type ιδ31ε = ({ AddModValueType: _AddModValueType})
+  type ιδ326ε = ({ Auswahl: _Auswahl})
 
-  type ιδ320ε = {Magazingröße: (number)}
+  type ιδ327ε = ({ Name: _Name11 | undefined})
 
-  type ιδ321ε = {Wert: (number)}
+  type ιδ328ε = ({ Kosten: _Kosten13[]})
 
-  type ιδ322ε = {Einheit: ((ιδ370ε))}
+  type ιδ329ε = ({ Voraussetzung: _Voraussetzung8 | undefined})
 
-  type ιδ323ε = ({ Or: _Or6})
+  type ιδ32ε = ({ Taktiken: _Taktiken})
 
-  type ιδ324ε = ({ And: _And6})
+  type ιδ330ε = ({ Mods: _Mods17 | undefined})
 
-  type ιδ325ε = ({ Not: _Not6})
+  type ιδ331ε = 'Malus' | 'Bonus' 
 
-  type ιδ326ε = ({ Level: _Level3})
+  type ιδ332ε = ({ Or: _Or2})
 
-  type ιδ327ε = ({ Beschreibung: _Beschreibung6 | undefined})
+  type ιδ333ε = ({ And: _And2})
 
-  type ιδ328ε = ({ Abkürzung: _Abkürzung6 | undefined})
+  type ιδ334ε = ({ Not: _Not2})
 
-  type ιδ329ε = ({ Verteilung: _Verteilung2[]})
+  type ιδ335ε = ({ Eigenschaft: _Eigenschaft3[]})
 
-  type ιδ32ε = ({ SubstractModValueType: _SubstractModValueType})
+  type ιδ336ε = ({ Schaden: _Schaden2})
 
-  type ιδ330ε = ({ Schwelle: _Schwelle[]})
+  type ιδ337ε = ({ Eigenschaften: _Eigenschaften6 | undefined})
 
-  type ιδ331ε = ({ Mod: _Mod1[]})
+  type ιδ338ε = ({ Talente: _Talente2 | undefined})
 
-  type ιδ332ε = ({ Besonderheit: _Besonderheit[]})
+  type ιδ33ε = ({ Eigenschaft: _Eigenschaft15})
 
-  type ιδ333ε = ({ Tag: _Tag[]})
+  type ιδ340ε = ({ Schaden: _Schaden4})
 
-  type ιδ334ε = ({ Spielbar: _Spielbar | undefined})
+  type ιδ341ε = ({ Schusseigenschaften: _Schusseigenschaften})
 
-  type ιδ335ε = ({ Name: _Name4 | undefined})
+  type ιδ342ε = ({ Reichweiten: _Reichweiten})
 
-  type ιδ336ε = ({ Beschreibung: _Beschreibung12 | undefined})
+  type ιδ343ε = ({ Nachladezeit: _Nachladezeit})
 
-  type ιδ337ε = ({ Mods: _Mods7 | undefined})
+  type ιδ344ε = ({ Eigenschaften: _Eigenschaften8 | undefined})
 
-  type ιδ338ε = ({ Lebensabschnitt: _Lebensabschnitt2[]})
+  type ιδ345ε = ({ Talente: _Talente4 | undefined})
 
-  type ιδ339ε = ({ Morph: _Morph[]})
+  type ιδ346ε = 'Offensiv' | 'Defensiv'  | 'Offensiv|Defensiv' 
 
-  type ιδ33ε = ({ MultiplyModValueType: _MultiplyModValueType})
+  type ιδ347ε = ({ Schutz: _Schutz})
 
-  type ιδ34ε = ({ Ausstattung: _Ausstattung})
+  type ιδ348ε = ({ Trefferzonen: _Trefferzonen})
 
-  type ιδ350ε = ({ Input: _Input[]})
+  type ιδ349ε = ({ Eigenschaften: _Eigenschaften10 | undefined})
 
-  type ιδ351ε = ({ Input: _Input2 | undefined})
+  type ιδ34ε = ({ ConcreteModValueType: _ConcreteModValueType})
 
-  type ιδ352ε = ({ Input: _Input4 | undefined})
+  type ιδ350ε = (ιδ377ε& {"#": "Or"}) | (ιδ378ε& {"#": "And"}) | (ιδ379ε& {"#": "Not"}) | (ιδ380ε& {"#": "Level"})
 
-  type ιδ353ε = ({ Input: _Input6})
+  type ιδ351ε = {EP: (number)}
 
-  type ιδ354ε = ({ Or: _Or10})
+  type ιδ353ε = {} & (ιδ364ε) & (ιδ365ε) & (ιδ366ε)
 
-  type ιδ355ε = ({ And: _And10})
+  type ιδ356ε = (ιδ397ε& {"#": "Or"}) | (ιδ398ε& {"#": "And"}) | (ιδ399ε& {"#": "Not"}) | (ιδ31ε& {"#": "Besonderheit"}) | (ιδ2ε& {"#": "Tag"})
 
-  type ιδ356ε = ({ Not: _Not10})
+  type ιδ358ε = (SubArray<(ιδ403ε)> & SubArray<(ιδ404ε)> & SubArray<(ιδ405ε)> & SubArray<(ιδ29ε)> & SubArray<(ιδ25ε)> & SubArray<(ιδ31ε)> & SubArray<(ιδ2ε)>)
 
-  type ιδ35ε = ({ Eigenschaft: _Eigenschaft17})
+  type ιδ359ε = {Quantil: (number)}
 
-  type ιδ360ε = ({ Or: _Or})
+  type ιδ35ε = ({ VariableModValueType: _VariableModValueType})
 
-  type ιδ361ε = ({ And: _And})
+  type ιδ363ε = {IgnoriereHöhere: (boolean)}
 
-  type ιδ362ε = ({ Not: _Not})
+  type ιδ364ε = {Eigenschaft: (string)}
 
-  type ιδ363ε = ({ Wucht: _Wucht | undefined})
+  type ιδ365ε = {Mod: (number)}
 
-  type ιδ364ε = ({ Schnitt: _Schnitt | undefined})
+  type ιδ366ε = {Type: ('additiv' | 'multiplikativ' )}
 
-  type ιδ365ε = ({ Eigenschaft: _Eigenschaft7[]})
+  type ιδ367ε = {Name: (string) | undefined}
 
-  type ιδ366ε = ({ Talent: _Talent8[]})
+  type ιδ368ε = {Verbreitung: (number)}
 
-  type ιδ367ε = ({ Wucht: _Wucht2 | undefined})
+  type ιδ36ε = ({ AddModValueType: _AddModValueType})
 
-  type ιδ368ε = ({ Schnitt: _Schnitt2 | undefined})
+  type ιδ371ε = {min: (number)}
 
-  type ιδ369ε = ({ Reichweite: _Reichweite[]})
+  type ιδ372ε = {max: (number)}
 
-  type ιδ370ε = 'KR' | 'S' 
+  type ιδ373ε = {Schussfrequenz: (number)}
 
-  type ιδ371ε = ({ Eigenschaft: _Eigenschaft9[]})
+  type ιδ374ε = {Magazingröße: (number)}
 
-  type ιδ372ε = ({ Talent: _Talent10[]})
+  type ιδ375ε = {Wert: (number)}
 
-  type ιδ373ε = ({ Flexibilität: _Flexibilität | undefined})
+  type ιδ376ε = {Einheit: ((ιδ413ε))}
 
-  type ιδ374ε = ({ Härte: _Härte | undefined})
+  type ιδ377ε = ({ Or: _Or6})
 
-  type ιδ375ε = ({ Dämpfung: _Dämpfung | undefined})
+  type ιδ378ε = ({ And: _And6})
 
-  type ιδ376ε = ({ Kopf: _Kopf | undefined})
+  type ιδ379ε = ({ Not: _Not6})
 
-  type ιδ377ε = ({ Brust: _Brust | undefined})
+  type ιδ37ε = ({ SubstractModValueType: _SubstractModValueType})
 
-  type ιδ378ε = ({ Hüfte: _Hüfte | undefined})
+  type ιδ380ε = ({ Level: _Level3})
 
-  type ιδ379ε = ({ LinkerArm: _LinkerArm | undefined})
+  type ιδ381ε = ({ Kosten: _Kosten8[]})
 
-  type ιδ380ε = ({ RechterArm: _RechterArm | undefined})
+  type ιδ382ε = ({ Lebensabschnitt: _Lebensabschnitt4[]})
 
-  type ιδ381ε = ({ LinkesBein: _LinkesBein | undefined})
+  type ιδ38ε = ({ MultiplyModValueType: _MultiplyModValueType})
 
-  type ιδ382ε = ({ RechtesBein: _RechtesBein | undefined})
+  type ιδ393ε = ({ Input: _Input[]})
 
-  type ιδ383ε = ({ Eigenschaft: _Eigenschaft11[]})
+  type ιδ394ε = ({ Input: _Input2 | undefined})
 
-  type ιδ385ε = (SubArray<(ιδ437ε)> & SubArray<(ιδ438ε)> & SubArray<(ιδ439ε)> & SubArray<(ιδ440ε)>)
+  type ιδ395ε = ({ Input: _Input4 | undefined})
 
-  type ιδ386ε = {alter: (number) | undefined}
+  type ιδ396ε = ({ Input: _Input6})
 
-  type ιδ387ε = {alter: (number) | undefined}
+  type ιδ397ε = ({ Or: _Or10})
 
-  type ιδ388ε = {Quantil: (number)}
+  type ιδ398ε = ({ And: _And10})
 
-  type ιδ389ε = {} & (ιδ409ε) & (ιδ410ε) & (ιδ411ε)
+  type ιδ399ε = ({ Not: _Not10})
 
-  type ιδ38ε = {} & (ιδ52ε) & (ιδ77ε)
-
-  type ιδ390ε = (ιδ8ε) & (ιδ9ε) & (ιδ448ε) & (ιδ449ε) & (ιδ450ε) & (ιδ451ε) & (ιδ412ε) & (ιδ77ε)
-
-  type ιδ392ε = (SubArray<(ιδ457ε)> & SubArray<(ιδ458ε)> & SubArray<(ιδ459ε)> & SubArray<(ιδ26ε)> & SubArray<(ιδ2ε)>)
-
-  type ιδ396ε = {} & (ιδ426ε)
-
-  type ιδ399ε = {} & (ιδ432ε)
-
-  type ιδ39ε = (ιδ86ε) & (ιδ87ε)
+  type ιδ39ε = ({ Ausstattung: _Ausstattung})
 
   type ιδ3ε = ({ Levels: _Levels})
 
-  type ιδ406ε = (ιδ467ε)
+  type ιδ403ε = ({ Or: _Or})
 
-  type ιδ407ε = ({ Wert: _Wert[]})
+  type ιδ404ε = ({ And: _And})
 
-  type ιδ408ε = {mindestVorkommen: (number)}
+  type ιδ405ε = ({ Not: _Not})
 
-  type ιδ409ε = {Eigenschaft: (string)}
+  type ιδ406ε = ({ Wucht: _Wucht | undefined})
 
-  type ιδ410ε = {Mod: (number)}
+  type ιδ407ε = ({ Schnitt: _Schnitt | undefined})
 
-  type ιδ411ε = {Type: ('additiv' | 'multiplikativ' )}
+  type ιδ408ε = ({ Eigenschaft: _Eigenschaft7[]})
 
-  type ιδ412ε = {Geschlecht: ((ιδ177ε))}
+  type ιδ409ε = ({ Talent: _Talent8[]})
 
-  type ιδ418ε = {identifier: (string)}
+  type ιδ40ε = ({ Eigenschaft: _Eigenschaft17})
 
-  type ιδ419ε = {type: ('TaB' | 'TaA'  | 'TaW'  | 'Komplexität' ) | undefined}
+  type ιδ410ε = ({ Wucht: _Wucht2 | undefined})
 
-  type ιδ420ε = {identifier: (string)}
+  type ιδ411ε = ({ Schnitt: _Schnitt2 | undefined})
 
-  type ιδ421ε = {identifier: (string)}
+  type ιδ412ε = ({ Reichweite: _Reichweite[]})
 
-  type ιδ422ε = {identifier: (string)}
+  type ιδ413ε = 'KR' | 'S' 
 
-  type ιδ426ε = {Schaden: (number) | undefined}
+  type ιδ414ε = ({ Eigenschaft: _Eigenschaft9[]})
 
-  type ιδ427ε = {Distanz: ((ιδ460ε))}
+  type ιδ415ε = ({ Talent: _Talent10[]})
 
-  type ιδ428ε = {Modifikator: (number)}
+  type ιδ416ε = ({ Flexibilität: _Flexibilität | undefined})
 
-  type ιδ429ε = {Schadensreduktion: (number) | undefined}
+  type ιδ417ε = ({ Härte: _Härte | undefined})
 
-  type ιδ42ε = (ιδ90ε)
+  type ιδ418ε = ({ Dämpfung: _Dämpfung | undefined})
 
-  type ιδ432ε = {Wert: (number) | undefined}
+  type ιδ419ε = ({ Kopf: _Kopf | undefined})
 
-  type ιδ437ε = ({ Or: _Or4})
+  type ιδ420ε = ({ Brust: _Brust | undefined})
 
-  type ιδ438ε = ({ And: _And4})
+  type ιδ421ε = ({ Hüfte: _Hüfte | undefined})
 
-  type ιδ439ε = ({ Not: _Not4})
+  type ιδ422ε = ({ LinkerArm: _LinkerArm | undefined})
 
-  type ιδ440ε = ({ Level: _Level1})
+  type ιδ423ε = ({ RechterArm: _RechterArm | undefined})
 
-  type ιδ441ε = ({ Wert: _Wert2[]})
+  type ιδ424ε = ({ LinkesBein: _LinkesBein | undefined})
 
-  type ιδ442ε = ({ Name: _Name2 | undefined})
+  type ιδ425ε = ({ RechtesBein: _RechtesBein | undefined})
 
-  type ιδ443ε = ({ Beschreibung: _Beschreibung8 | undefined})
+  type ιδ426ε = ({ Eigenschaft: _Eigenschaft11[]})
 
-  type ιδ444ε = ({ Kosten: _Kosten4[]})
+  type ιδ428ε = (SubArray<(ιδ470ε)> & SubArray<(ιδ471ε)> & SubArray<(ιδ472ε)> & SubArray<(ιδ473ε)>)
 
-  type ιδ445ε = ({ Mods: _Mods1 | undefined})
+  type ιδ430ε = (SubArray<(ιδ479ε)> & SubArray<(ιδ480ε)> & SubArray<(ιδ481ε)> & SubArray<(ιδ31ε)> & SubArray<(ιδ2ε)>)
 
-  type ιδ446ε = ({ Wert: _Wert4[]})
+  type ιδ434ε = {} & (ιδ459ε)
 
-  type ιδ447ε = ({ Kosten: _Kosten8[]})
+  type ιδ437ε = {} & (ιδ465ε)
 
-  type ιδ448ε = ({ StandardPfade: _StandardPfade2 | undefined})
+  type ιδ43ε = {} & (ιδ62ε) & (ιδ111ε)
 
-  type ιδ449ε = ({ Mods: _Mods11 | undefined})
+  type ιδ444ε = (ιδ489ε)
 
-  type ιδ450ε = ({ Entwiklung: _Entwiklung6 | undefined})
+  type ιδ445ε = {mindestVorkommen: (number)}
 
-  type ιδ451ε = ({ Lebensabschnitte: _Lebensabschnitte4})
+  type ιδ44ε = (ιδ120ε) & (ιδ121ε)
 
-  type ιδ453ε = ({ Wahl: _Wahl})
+  type ιδ451ε = {identifier: (string)}
 
-  type ιδ457ε = ({ Or: _Or8})
+  type ιδ452ε = {type: ('TaB' | 'TaA'  | 'TaW'  | 'Komplexität' ) | undefined}
 
-  type ιδ458ε = ({ And: _And8})
+  type ιδ453ε = {identifier: (string)}
 
-  type ιδ459ε = ({ Not: _Not8})
+  type ιδ454ε = {identifier: (string)}
 
-  type ιδ460ε = 'Nahkampf' | number 
+  type ιδ455ε = {identifier: (string)}
 
-  type ιδ467ε = ({ Schutz: _Schutz2[]})
+  type ιδ459ε = {Schaden: (number) | undefined}
 
-  type ιδ468ε = {Quantil: (number)}
+  type ιδ460ε = {Distanz: ((ιδ482ε))}
 
-  type ιδ470ε = {mindestVorkommen: (number)}
+  type ιδ461ε = {Modifikator: (number)}
 
-  type ιδ471ε = {IgnoriereHöhere: (boolean)}
+  type ιδ462ε = {Schadensreduktion: (number) | undefined}
 
-  type ιδ473ε = {Wert: (string) | undefined}
+  type ιδ465ε = {Wert: (number) | undefined}
 
-  type ιδ47ε = {} & (ιδ77ε)
+  type ιδ470ε = ({ Or: _Or4})
 
-  type ιδ486ε = {Von: (number)}
+  type ιδ471ε = ({ And: _And4})
 
-  type ιδ487ε = {Bis: (number)}
+  type ιδ472ε = ({ Not: _Not4})
 
-  type ιδ488ε = {Quantil: (number)}
+  type ιδ473ε = ({ Level: _Level1})
 
-  type ιδ489ε = ({ Lebensabschnitt: _Lebensabschnitt4[]})
+  type ιδ475ε = ({ Wahl: _Wahl[]})
 
-  type ιδ48ε = (ιδ8ε) & (ιδ9ε) & (ιδ95ε) & (ιδ77ε)
+  type ιδ479ε = ({ Or: _Or8})
 
-  type ιδ49ε = {Version: ((ιδ83ε))}
+  type ιδ47ε = (ιδ124ε)
+
+  type ιδ480ε = ({ And: _And8})
+
+  type ιδ481ε = ({ Not: _Not8})
+
+  type ιδ482ε = 'Nahkampf' | number 
+
+  type ιδ489ε = ({ Schutz: _Schutz2[]})
+
+  type ιδ48ε = (ιδ8ε) & (ιδ128ε) & (ιδ9ε) & (ιδ129ε) & (ιδ130ε) & (ιδ131ε) & (ιδ132ε) & (ιδ133ε) & (ιδ64ε)
+
+  type ιδ491ε = {mindestVorkommen: (number)}
+
+  type ιδ493ε = {Id: (string)}
 
   type ιδ4ε = ({ Level: _Level9})
 
-  type ιδ52ε = {Berechnung: (string)}
+  type ιδ506ε = {Von: (number)}
+
+  type ιδ507ε = {Bis: (number)}
+
+  type ιδ53ε = (ιδ8ε) & (ιδ135ε) & (ιδ136ε) & (ιδ137ε) & (ιδ69ε) & (ιδ70ε) & (ιδ71ε) & (ιδ72ε)
+
+  type ιδ54ε = (ιδ8ε) & (ιδ138ε) & (ιδ139ε) & (ιδ140ε) & (ιδ141ε) & (ιδ73ε) & (ιδ74ε) & (ιδ75ε) & (ιδ76ε) & (ιδ77ε) & (ιδ78ε) & (ιδ79ε) & (ιδ80ε) & (ιδ81ε) & (ιδ82ε)
+
+  type ιδ55ε = (ιδ8ε) & (ιδ173ε) & (ιδ174ε) & (ιδ175ε) & (ιδ176ε) & (ιδ83ε) & (ιδ84ε) & (ιδ85ε) & (ιδ86ε) & (ιδ87ε) & (ιδ88ε)
+
+  type ιδ56ε = (ιδ8ε) & (ιδ142ε) & (ιδ143ε) & (ιδ144ε) & (ιδ145ε) & (ιδ146ε) & (ιδ147ε) & (ιδ89ε) & (ιδ90ε) & (ιδ91ε)
+
+  type ιδ57ε = {} & (ιδ111ε)
+
+  type ιδ58ε = (ιδ8ε) & (ιδ9ε) & (ιδ148ε) & (ιδ111ε)
+
+  type ιδ59ε = {Version: ((ιδ117ε))}
 
   type ιδ5ε = ({ Tags: _Tags2})
 
-  type ιδ60ε = {KategorieId: (string)}
+  type ιδ62ε = {Berechnung: (string)}
 
-  type ιδ61ε = {LevelTyp: ((ιδ98ε))}
+  type ιδ64ε = {Id: (string)}
 
-  type ιδ62ε = {Level: (number)}
-
-  type ιδ64ε = {Anzahl: (number)}
-
-  type ιδ66ε = {Anzahl: (number)}
-
-  type ιδ67ε = {KategorieId: (string)}
-
-  type ιδ68ε = {Stufe: (number)}
+  type ιδ69ε = {einheit: (string)}
 
   type ιδ6ε = ({ Kosten: _Kosten16})
 
-  type ιδ70ε = {KategorieId: (string)}
+  type ιδ70ε = {Reihenfolge: (number)}
 
-  type ιδ71ε = {Stufe: (number)}
+  type ιδ71ε = {gruppe: (string) | undefined}
 
-  type ιδ74ε = {Value: (number)}
+  type ιδ72ε = {id: (string)}
 
-  type ιδ75ε = {Type: ((ιδ105ε))}
+  type ιδ73ε = {minInklusiv: (number)}
 
-  type ιδ76ε = {Value: (string) | undefined}
+  type ιδ74ε = {maxInklusiv: (number)}
 
-  type ιδ77ε = {Id: (string)}
+  type ιδ75ε = {default: (number)}
 
-  type ιδ78ε = ({ GenerierungsDaten: _GenerierungsDaten})
+  type ιδ76ε = {gruppe: (string) | undefined}
 
-  type ιδ79ε = ({ Pfade: _Pfade[]})
+  type ιδ77ε = {step: (number)}
+
+  type ιδ78ε = {diskret: (boolean)}
+
+  type ιδ79ε = {startAlter: (number)}
 
   type ιδ7ε = ({ KostenDefinitionen: _KostenDefinitionen})
 
-  type ιδ80ε = ({ Talente: _Talente[]})
+  type ιδ80ε = {einheit: (string)}
 
-  type ιδ81ε = ({ Fertigkeiten: _Fertigkeiten[]})
+  type ιδ81ε = {Reihenfolge: (number)}
 
-  type ιδ82ε = ({ Besonderheiten: _Besonderheiten2[]})
+  type ιδ82ε = {id: (string)}
 
-  type ιδ83ε = number
+  type ιδ83ε = {step: (number)}
 
-  type ιδ84ε = ({ Level: _Level5[]})
+  type ιδ84ε = {startAlter: (number)}
 
-  type ιδ85ε = ({ Tag: _Tag4[]})
+  type ιδ85ε = {einheit: (string)}
 
-  type ιδ86ε = ({ KostenDefinition: _KostenDefinition[]})
+  type ιδ86ε = {Reihenfolge: (number)}
 
-  type ιδ87ε = ({ TalentKostenFunktion: _TalentKostenFunktion})
+  type ιδ87ε = {gruppe: (string) | undefined}
+
+  type ιδ88ε = {id: (string)}
+
+  type ιδ89ε = {id: (string)}
 
   type ιδ8ε = ({ Name: _Name})
 
-  type ιδ90ε = ({ Lokalisirung: _Lokalisirung[]})
+  type ιδ90ε = {Reihenfolge: (number)}
 
-  type ιδ91ε = ({ EigenschaftenGruppen: _EigenschaftenGruppen})
+  type ιδ91ε = {gruppe: (string) | undefined}
 
-  type ιδ92ε = ({ Entwiklung: _Entwiklung | undefined})
+  type ιδ94ε = {KategorieId: (string)}
 
-  type ιδ93ε = ({ Gattung: _Gattung[]})
+  type ιδ95ε = {LevelTyp: ((ιδ151ε))}
 
-  type ιδ94ε = ({ Pfad: _Pfad[]})
+  type ιδ96ε = {Level: (number)}
 
-  type ιδ95ε = ({ Pfad: _Pfad2[]})
-
-  type ιδ96ε = ({ Kategorie: _Kategorie})
-
-  type ιδ97ε = ({ Talent: _Talent4[]})
-
-  type ιδ98ε = 'Basis' | 'Effektiv'  | 'Unterstützung' 
-
-  type ιδ99ε = ({ Kategorie: _Kategorie2})
+  type ιδ98ε = {Anzahl: (number)}
 
   type ιδ9ε = ({ Beschreibung: _Beschreibung})

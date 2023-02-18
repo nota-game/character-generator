@@ -7,7 +7,7 @@ import type structuredClone from "@ungap/structured-clone";
 import { deepEqual } from "ts-deep-equal";
 import type { Data } from "src/models/Data";
 import { filterNull, handleUninitilized } from "./misc";
-import { cosh } from "mathjs";
+import { cosh, forEach } from "mathjs";
 
 export declare type Invalidator<T> = (value?: T) => void;
 
@@ -23,15 +23,15 @@ export interface Readable<T, KeyString extends string = string> extends Readable
     /**
      * currentValue
      */
-    currentValue<V>(options: { defaultValue: V }): T|V;
+    currentValue<V>(options: { defaultValue: V }): T | V;
     currentValue(): T | typeof UNINITILEZED;
 
 }
 
 export interface Writable<T, KeyString extends string = string> extends WritableOriginal<T> {
     key: Key<KeyString, T>;
-    currentValue: () => T 
-    
+    currentValue: () => T
+
 
 }
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -126,6 +126,7 @@ type derivatFunction<T, Param, S extends KeysArray> = (this: SubscriberData<T, P
 type derivatFunctionUninitized<T, Param, S extends KeysArray> = (this: SubscriberData<T, Param>, data: Param, values: KeysValuesUninitilezed<S>, oldValue: T | typeof UNINITILEZED) => T;
 
 export default class StoreManager<Param> {
+    private readonly createClonedEntrycallback: ((store: { id: string; manager: StoreManager<Param>; } & ({ type: 'writable'; store: Writable<unknown>; } | { type: 'readable' | 'writable' | 'aggregated'; store: Readable<unknown>; })) => void) | undefined;
 
     public static key<key extends string>(key: key): KeyOf<key> {
         return {
@@ -151,6 +152,7 @@ export default class StoreManager<Param> {
         this.staticData = staticData;
         this.subscriber_queue = [];
         this.clonedFrom = cloneFrom?.other;
+        this.createClonedEntrycallback = cloneFrom?.callback;
         if (cloneFrom) {
             this.suspendNotification = true;
             if (cloneFrom.other.clonedFrom !== undefined) {
@@ -159,26 +161,32 @@ export default class StoreManager<Param> {
             cloneFrom.other.clonedTo.push(this);
             this.data = {};
             for (const key of Object.keys(cloneFrom.other.data)) {
-                const original = cloneFrom.other.data[key];
-                const element = { ...original };
-                this.data[key] = element;
-                element.changingDependent = new Set();
-                element.manager = this;
-                element.subscribers = new Set();
-
-                if (element.storeType == 'writable') {
-                    const writable = this.writableInternal(StoreManager.key(element.id).of<unknown>(), (key, setFunction) => {
-                        element.fn = setFunction;
-                        return element;
-                    }, element.value, element.compare);
-                    cloneFrom.callback({ type: element.storeType, store: writable, id: element.id, manager: this });
-                } else {
-                    const store = this.readable(StoreManager.key(element.id).of<unknown>())
-                    cloneFrom.callback({ type: element.storeType, store: store, id: element.id, manager: this });
-                }
-
+                this.CloneEntry(key);
             }
             this.suspendNotification = false;
+        }
+    }
+
+    private CloneEntry(key: string) {
+        if (this.clonedFrom == undefined || this.createClonedEntrycallback == undefined) {
+            return;
+        }
+        const original = this.clonedFrom.data[key];
+        const element = { ...original };
+        this.data[key] = element;
+        element.changingDependent = new Set();
+        element.manager = this;
+        element.subscribers = new Set();
+
+        if (element.storeType == 'writable') {
+            const writable = this.writableInternal(StoreManager.key(element.id).of<unknown>(), (key, setFunction) => {
+                element.fn = setFunction;
+                return element;
+            }, element.value, element.compare);
+            this.createClonedEntrycallback({ type: element.storeType, store: writable, id: element.id, manager: this });
+        } else {
+            const store = this.readable(StoreManager.key(element.id).of<unknown>());
+            this.createClonedEntrycallback({ type: element.storeType, store: store, id: element.id, manager: this });
         }
     }
 
@@ -210,8 +218,16 @@ export default class StoreManager<Param> {
             }
         }
         for (const key of this.changedValues) {
-            this.data[key].value = this.clonedFrom.data[key].value;
-            this.data[key].oldValues = this.clonedFrom.data[key].oldValues;
+            if (this.clonedFrom.data[key] != undefined) {
+                this.data[key].value = this.clonedFrom.data[key].value;
+                this.data[key].oldValues = this.clonedFrom.data[key].oldValues;
+            } else {
+                delete this.data[key];
+                for (const e of Object.values(this.data)) {
+                    e.alsoNotify.delete(key);
+                    e.dependentOn.delete(key);
+                }
+            }
         }
         this.changedValues.clear();
     }
@@ -260,11 +276,12 @@ export default class StoreManager<Param> {
         if (storeType == 'readable' && set !== undefined) {
             throw new Error(`Store ${key.Key} was set to readable but has a setter`);
         }
+        this.changedValues.add(key.Key)
         if (!this.data[key.Key]) {
 
-            if (this.clonedTo.length > 0 || this.clonedFrom !== undefined) {
-                throw new Error(`Can't introduce new store ${key.Key} when already cloned`);
-            }
+            // if (this.clonedTo.length > 0 || this.clonedFrom !== undefined) {
+            //     throw new Error(`Can't introduce new store ${key.Key} when already cloned`);
+            // }
 
             const setFactory = () => {
 
@@ -513,6 +530,8 @@ export default class StoreManager<Param> {
         // this.derived(this.key<"123", number>("123"), (x) => {
         //     return x;
         // })
+        this.clonedTo.forEach(x => x.CloneEntry(key.Key));
+
         return {
             subscribe, set, update, key, currentValue: () => current.value
         };
@@ -584,7 +603,7 @@ export default class StoreManager<Param> {
 
 
 
-
+        this.clonedTo.forEach(x => x.CloneEntry(key.Key));
 
         return this.readable(key);
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getText, getTextBesonderheit, renderRequirementMap } from 'src/misc/misc';
+	import { getText, getTextBesonderheit, getTextTalent, renderRequirementMap } from 'src/misc/misc';
 	import {
 		substractCost,
 		type CharacterChange,
@@ -9,15 +9,18 @@
 	} from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
 	import type { Readable, Writable } from 'svelte/store';
+	import { stringify } from 'uuid';
 	import KostenControl from '../../controls/KostenControl.svelte';
 	import TooltipControl from '../../controls/tooltipControl.svelte';
 	import ChangeView from './../../controls/ChangeView.svelte';
 
-	export let key: string;
+	export let key: string[];
 	export let data: Data;
 	export let char: Charakter;
 
 	export let useFuture: boolean;
+
+	export let hideMissing = false;
 
 	export let effective: Readable<number>;
 	export let unconditionally: Readable<number>;
@@ -41,156 +44,203 @@
 			addFuture = char.getSimulation(
 				'besonderheit',
 				(other) => {
-					other.besonderheiten[key].purchased.update((n) =>
-						Math.max(0, Math.min(entry.Stufe.length, Math.max(n + 1, $fixed + 1)))
-					);
+					other
+						.besonderheiten(...key)
+						?.purchased.update((n) =>
+							Math.max(0, Math.min(entry.Stufe.length, Math.max(n + 1, $fixed + 1)))
+						);
 				},
-				key
+				key[0]
 			);
 
 			removeFuture = char.getSimulation(
 				'besonderheit',
 				(other) => {
-					other.besonderheiten[key].purchased.update((n) =>
-						Math.max(0, Math.min(entry.Stufe.length, n - 1))
-					);
+					other
+						.besonderheiten(...key)
+						?.purchased.update((n) => Math.max(0, Math.min(entry.Stufe.length, n - 1)));
 				},
-				key
+				key[0]
 			);
 		}
 	}
 
-	$: entry = data.besonderheitenMap[key];
+	$: entry = data.besonderheitenMap[key[0]];
 </script>
 
-<!-- {#if addFuture} -->
-<div>
+{#if key.length > 1}
+	{JSON.stringify(key)}
+	{typeof key}
+{:else if entry.Parameter.length > 0}
+	<span class="warning">Under Construction: Besonderheiten mit Parameter funktioniern noch nich😢</span>
 	<h4>
 		{getTextBesonderheit(entry, $effective, char)}
 		<small style="float: right;"><KostenControl cost={$cost} {data} {char} inline /></small>
 	</h4>
-
-	<div>
-		{#if $purchased < entry.Stufe.length && $fixed < entry.Stufe.length}
-			<span class="tooltip">
-				<a
-					href="#"
-					class:missing={$missingNextLevel.length > 0}
-					on:click={(e) => {
-						e.preventDefault();
-						purchased.update((x) => Math.min(entry.Stufe.length, Math.max(x + 1, $fixed + 1)));
-					}}
-				>
-					{#if $purchased == 0 && $fixed == 0}
-						{getTextBesonderheit(entry, $purchased + 1, char)} hinzufügen
-					{:else}
-						Auf {getTextBesonderheit(entry, Math.max($purchased + 1, $fixed + 1), char)} verbessern
-					{/if}
-					<small class="parenthised"
-						><KostenControl
-							cost={substractCost($costNext, $cost)}
-							{data}
-							{char}
-							mode="cost"
-						/></small
-					>
-				</a>
-
-				{#await $addFuture}
-					<span aria-busy="true" />
-				{:then f}
-					<!-- <ChangeView change={f} {data} {char} /> -->
-				{/await}
-
-				<div class="tooltiptext">
-					<ul>
-						{#each $missingNextLevel as m}
-							<li class="missing">
-								{renderRequirementMap(m, data, { type: 'besonderheit', value: entry }, char)}
-							</li>
+	{#each entry.Parameter as parameter}
+		{#if parameter['#'] == 'Talent'}
+			<select>
+				{#each Object.keys(data.talentCategoryMap) as talentCategory}
+					<optgroup label={getText(data.talentCategoryMap[talentCategory].Name)}>
+						{#each Object.keys(data.talentCategoryMap[talentCategory].talente) as talentId}
+							{@const talent = data.talentMap[talentId]}
+							<option value={talentId}>{getTextTalent(talent, char, 'Name')}</option>
 						{/each}
-					</ul>
-					{#await $addFuture}
-						<span aria-busy="true" />
-					{:then f}
-						<ChangeView
-							change={f}
-							{data}
-							{char}
-							exclude={{ type: 'besonderheit', id: entry.Id }}
-							excludeRequirments={$missingNextLevel}
-						/>
-					{/await}
-				</div>
-			</span>
+					</optgroup>
+				{/each}
+			</select>
+		{:else if parameter['#'] == 'Zahl'}
+			<input type="number" max={parameter.Zahl.max} min={parameter.Zahl.min} />
+		{:else if parameter['#'] == 'Text'}
+			<input type="text" />
+		{:else if parameter['#'] == 'Auswahl'}
+			<select>
+				{#each parameter.Auswahl.Input.Wahl as wahl}
+					<option value={wahl.Id}>{getText(wahl.Name)}</option>
+				{/each}
+			</select>
 		{/if}
-		<br />
-		{#if $purchased > 0 && $purchased > $fixed}
-			<TooltipControl>
-				<a
-					href="#"
-					on:click={(e) => {
-						e.preventDefault();
-						purchased.update((x) => Math.max(0, x - 1));
-					}}
-				>
-					{#if $purchased == 1}
-						{getTextBesonderheit(entry, $purchased, char)} entfernen
-					{:else}
-						Auf {getTextBesonderheit(entry, $purchased - 1, char)} reduzieren
-					{/if}
-					<small class="parenthised"
-						><KostenControl
-							cost={substractCost($costPreview, $cost)}
-							{data}
-							{char}
-							mode="cost"
-						/></small
-					>
-				</a>
-				{#await $addFuture}
-					<span aria-busy="true" />
-				{:then f}
-					<!-- <ChangeView change={f} {data} {char} /> -->
-				{/await}
-
-				<div slot="tooltip">
-					{#await $removeFuture}
-						<span aria-busy="true" />
-					{:then f}
-						<ChangeView change={f} {data} {char} exclude={{ type: 'besonderheit', id: entry.Id }} />
-					{/await}
-				</div>
-			</TooltipControl>
-		{/if}
-	</div>
-
+	{/each}
 	<p>
-		{getText(entry.Stufe[$effective]?.Beschreibung)}
+		{getText(entry.Stufe[Math.max($effective - 1, 0)]?.Beschreibung)}
 	</p>
-	<details>
-		<summary> Details </summary>
-		{#each entry.Stufe.map((value, index) => index) as index}
-			{@const stufe = entry.Stufe[index]}
-			<h5>
-				{getTextBesonderheit(entry, index + 1)}
-			</h5>
-			<p>
-				{getText(stufe.Beschreibung)}
-			</p>
-		{/each}
-	</details>
+{:else}
+	<!-- {#if addFuture} -->
+	{#if !hideMissing || ($missingNextLevel.length == 0 && $purchased < entry.Stufe.length && $effective < entry.Stufe.length && $fixed < entry.Stufe.length)}
+		<div>
+			<h4>
+				{getTextBesonderheit(entry, $effective, char)}
+				<small style="float: right;"><KostenControl cost={$cost} {data} {char} inline /></small>
+			</h4>
 
-	{#if Object.values($missing).length > 0}
-		<ul>
-			{#each $missing as m}
-				<li class="missing">
-					{renderRequirementMap(m, data, { type: 'besonderheit', value: entry }, char)}
-				</li>
-			{/each}
-		</ul>
+			<div>
+				{#if $purchased < entry.Stufe.length && $fixed < entry.Stufe.length}
+					<TooltipControl>
+						<a
+							href="#"
+							class:missing={$missingNextLevel.length > 0}
+							on:click={(e) => {
+								e.preventDefault();
+								purchased.update((x) => Math.min(entry.Stufe.length, Math.max(x + 1, $fixed + 1)));
+							}}
+						>
+							{#if $purchased == 0 && $fixed == 0}
+								{getTextBesonderheit(entry, $purchased + 1, char)} hinzufügen
+							{:else}
+								Auf {getTextBesonderheit(entry, Math.max($purchased + 1, $fixed + 1), char)} verbessern
+							{/if}
+							<small class="parenthised"
+								><KostenControl
+									cost={substractCost($costNext, $cost)}
+									{data}
+									{char}
+									mode="cost"
+								/></small
+							>
+						</a>
+
+						{#await $addFuture}
+							<span aria-busy="true" />
+						{:then f}
+							<!-- <ChangeView change={f} {data} {char} /> -->
+						{/await}
+
+						<div slot="tooltip">
+							<ul>
+								{#each $missingNextLevel as m}
+									<li class="missing">
+										{renderRequirementMap(m, data, { type: 'besonderheit', value: entry }, char)}
+									</li>
+								{/each}
+							</ul>
+							{#await $addFuture}
+								<span aria-busy="true" />
+							{:then f}
+								<ChangeView
+									change={f}
+									{data}
+									{char}
+									exclude={{ type: 'besonderheit', id: entry.Id }}
+									excludeRequirments={$missingNextLevel}
+								/>
+							{/await}
+						</div>
+					</TooltipControl>
+				{/if}
+				<br />
+				{#if $purchased > 0 && $purchased > $fixed}
+					<TooltipControl>
+						<a
+							href="#"
+							on:click={(e) => {
+								e.preventDefault();
+								purchased.update((x) => Math.max(0, x - 1));
+							}}
+						>
+							{#if $purchased == 1}
+								{getTextBesonderheit(entry, $purchased, char)} entfernen
+							{:else}
+								Auf {getTextBesonderheit(entry, $purchased - 1, char)} reduzieren
+							{/if}
+							<small class="parenthised"
+								><KostenControl
+									cost={substractCost($costPreview, $cost)}
+									{data}
+									{char}
+									mode="cost"
+								/></small
+							>
+						</a>
+						{#await $addFuture}
+							<span aria-busy="true" />
+						{:then f}
+							<!-- <ChangeView change={f} {data} {char} /> -->
+						{/await}
+
+						<div slot="tooltip">
+							{#await $removeFuture}
+								<span aria-busy="true" />
+							{:then f}
+								<ChangeView
+									change={f}
+									{data}
+									{char}
+									exclude={{ type: 'besonderheit', id: entry.Id }}
+								/>
+							{/await}
+						</div>
+					</TooltipControl>
+				{/if}
+			</div>
+
+			<p>
+				{getText(entry.Stufe[Math.max($effective - 1, 0)]?.Beschreibung)}
+			</p>
+			<details>
+				<summary> Details </summary>
+				{#each entry.Stufe.map((value, index) => index) as index}
+					{@const stufe = entry.Stufe[index]}
+					<h5>
+						{getTextBesonderheit(entry, index + 1)}
+					</h5>
+					<p>
+						{getText(stufe.Beschreibung)}
+					</p>
+				{/each}
+			</details>
+
+			{#if Object.values($missing).length > 0}
+				<ul>
+					{#each $missing as m}
+						<li class="missing">
+							{renderRequirementMap(m, data, { type: 'besonderheit', value: entry }, char)}
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
 	{/if}
-</div>
+{/if}
 
 <!-- {/if} -->
 <style lang="scss">
@@ -262,6 +312,10 @@
 	.tooltip:hover .tooltiptext {
 		visibility: visible;
 		opacity: 1;
+	}
+
+	.warning{
+		color: #ecea48;
 	}
 
 	.parenthised:not(:empty)::before {
