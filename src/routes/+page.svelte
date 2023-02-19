@@ -152,6 +152,10 @@
 {/if}
 
 <style lang="scss">
+	:global(.warning) {
+		color: #ecea48;
+	}
+
 	:global(.svelte-tabs__tab) {
 		color: var(--h1-color) !important;
 	}

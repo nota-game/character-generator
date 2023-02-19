@@ -1,11 +1,11 @@
-import type { ModWert_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1, Ableitung_talent, Max_talent, KostenDefinition_misc, KostenDefinitions_misc, KostenDefinitionen_misc, _Bereich } from "../data/nota.g";
+import type { ModWert_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1, Ableitung_talent, Max_talent, KostenDefinition_misc, KostenDefinitions_misc, KostenDefinitionen_misc, _Bereich, BesonderheitDefinition_besonderheit } from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData, type Readable, type Writable } from "../misc/StoreManager2";
 import { derived, type Readable as ReadableOriginal, type Writable as WritableOriginal } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
 import * as mathjs from 'mathjs'
 
 import { Data, type DependencyData } from "./Data";
-import { distinct, filterNull, filterObjectKeys, getLast, groupBy, notUndefined, toObjectKey } from "../misc/misc";
+import { distinct, filterNull, filterObjectKeys, getLast, groupBy, join, notUndefined, toObjectKey } from "../misc/misc";
 import { cos, fix, index, isResultSet, meanTransformDependencies, xgcd } from "mathjs";
 
 export type EigenschaftTypes = 'bereich' | 'reihe' | 'punkt' | 'berechnung';
@@ -120,7 +120,7 @@ export type CharacterChange = {
         // oldIgnored: number;
     }[];
     changedBestonderheiten: {
-        key: string;
+        key: string[];
         new: number;
         old: number;
         // newIgnored: number;
@@ -269,6 +269,7 @@ type FertigkeitMissingNextLevelKey<id extends string = string> = Key<`/fertigkei
 
 
 type BesonderheitKeys<id extends string = string> = {
+    Parameter: BesonderheitParameterKey<id>,
     Effective: BesonderheitEffectiveKey<id>,
     Unbeschränkt: BesonderheitUnbeschränktKey<id>,
     Fixed: BesonderheitFixedKey<id>,
@@ -280,6 +281,7 @@ type BesonderheitKeys<id extends string = string> = {
     CostPreview: CostKey<'besonderheit', id, 'costPreview'>,
 }
 
+type BesonderheitParameterKey<id extends string = string> = Key<`/besonderheit/${id}/parameter`, (number | string)[] | undefined>;
 type BesonderheitPurchasedKey<id extends string = string> = Key<`/besonderheit/${id}/purchased`, number>;
 type BesonderheitFixedKey<id extends string = string> = Key<`/besonderheit/${id}/fixed`, number>;
 type BesonderheitUnbeschränktKey<id extends string = string> = Key<`/besonderheit/${id}/StufeUnbeschränkt`, number>;
@@ -329,7 +331,7 @@ export type TalentSupportIncrease = {
     increaseTaB: number;
     increaseEP: number;
 };
-function isBesonderheitenHolder(obj: any): obj is BesonderheitenHolder {
+export function isBesonderheitenHolder(obj: any): obj is BesonderheitenHolder {
     const test = obj as Partial<BesonderheitenHolder> | undefined;
     return test != undefined
         && typeof test.effective == "object"
@@ -349,6 +351,7 @@ type HiracicRecord<T> = Record<string, T> | HiracicRecord2<T>;
 interface HiracicRecord2<T> extends Record<string, HiracicRecord<T>> { };
 
 type BesonderheitenHolder = {
+    parameter: Writable<(number | string)[] | undefined>;
     effective: Readable<number>;
     unconditionally: Readable<number>;
     purchased: Writable<number>;
@@ -409,6 +412,8 @@ export class Charakter {
     }> = {};
 
 
+    public besonderheiten(): string[];
+    public besonderheiten(...ids: string[]): BesonderheitenHolder | string[] | undefined;
     public besonderheiten(...ids: string[]): BesonderheitenHolder | string[] | undefined {
         let current = this.besonderheitenField;
         for (let i = 0; i < ids.length; i++) {
@@ -1106,30 +1111,39 @@ export class Charakter {
     }
 
 
-    private getBesonterheitKeys<id extends string>(Id: id): BesonderheitKeys {
+    private getBesonterheitKeys<id extends string>(Id: id, ...additonal: string[]): BesonderheitKeys {
+        const current = this.stammdaten.besonderheitenMap[Id];
+        if (current.Parameter.filter(x => x["#"] == 'Auswahl' || x["#"] == 'Talent').length != additonal.length) {
+            throw new Error(`Number of parameter is wrong for ${Id} (${JSON.stringify([Id, ...additonal])})`);
+        }
+        const constructedId = join([Id, ...additonal], '→');
         return {
-            Purchased: StoreManager.key(`/besonderheit/${Id}/purchased`).of<TypeOfKey<BesonderheitPurchasedKey<id>>>(),
-            Effective: StoreManager.key(`/besonderheit/${Id}/Stufe`).of<TypeOfKey<BesonderheitEffectiveKey<id>>>(),
-            Fixed: StoreManager.key(`/besonderheit/${Id}/fixed`).of<TypeOfKey<BesonderheitFixedKey<id>>>(),
-            Missing: StoreManager.key(`/besonderheit/${Id}/missing`).of<TypeOfKey<BesonderheitMissingKey<id>>>(),
-            MissingNextLevel: StoreManager.key(`/besonderheit/${Id}/missingNextLevel`).of<TypeOfKey<BesonderheitMissingNextLevelKey<id>>>(),
-            Unbeschränkt: StoreManager.key(`/besonderheit/${Id}/StufeUnbeschränkt`).of<TypeOfKey<BesonderheitUnbeschränktKey<id>>>(),
-            Cost: StoreManager.key(`/besonderheit/${Id}/cost`).of<TypeOfKey<CostKey<'besonderheit', id>>>(),
-            CostNext: StoreManager.key(`/besonderheit/${Id}/costNext`).of<TypeOfKey<CostKey<'besonderheit', id, 'costNext'>>>(),
-            CostPreview: StoreManager.key(`/besonderheit/${Id}/costPreview`).of<TypeOfKey<CostKey<'besonderheit', id, 'costPreview'>>>(),
+            Parameter: StoreManager.key(`/besonderheit/${constructedId}/parameter`).of<TypeOfKey<BesonderheitParameterKey<id>>>(),
+            Purchased: StoreManager.key(`/besonderheit/${constructedId}/purchased`).of<TypeOfKey<BesonderheitPurchasedKey<id>>>(),
+            Effective: StoreManager.key(`/besonderheit/${constructedId}/Stufe`).of<TypeOfKey<BesonderheitEffectiveKey<id>>>(),
+            Fixed: StoreManager.key(`/besonderheit/${constructedId}/fixed`).of<TypeOfKey<BesonderheitFixedKey<id>>>(),
+            Missing: StoreManager.key(`/besonderheit/${constructedId}/missing`).of<TypeOfKey<BesonderheitMissingKey<id>>>(),
+            MissingNextLevel: StoreManager.key(`/besonderheit/${constructedId}/missingNextLevel`).of<TypeOfKey<BesonderheitMissingNextLevelKey<id>>>(),
+            Unbeschränkt: StoreManager.key(`/besonderheit/${constructedId}/StufeUnbeschränkt`).of<TypeOfKey<BesonderheitUnbeschränktKey<id>>>(),
+            Cost: StoreManager.key(`/besonderheit/${constructedId}/cost`).of<TypeOfKey<CostKey<'besonderheit', id>>>(),
+            CostNext: StoreManager.key(`/besonderheit/${constructedId}/costNext`).of<TypeOfKey<CostKey<'besonderheit', id, 'costNext'>>>(),
+            CostPreview: StoreManager.key(`/besonderheit/${constructedId}/costPreview`).of<TypeOfKey<CostKey<'besonderheit', id, 'costPreview'>>>(),
         }
     }
 
 
-    private getIdFromBesonterheitkeitKey(key: Key<string, any>): { id: string, type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'missingNextLevel' | 'Stufe' | 'cost' | 'costNext' | 'costPreview' } | undefined
+    private getIdFromBesonterheitkeitKey(key: Key<string, any>): { id: string, additional: string[], type: 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'missingNextLevel' | 'Stufe' | 'cost' | 'costNext' | 'costPreview' } | undefined
     private getIdFromBesonterheitkeitKey<id extends string>(key: BesonderheitPurchasedKey<id> | BesonderheitFixedKey<id> | BesonderheitUnbeschränktKey<id> | BesonderheitMissingKey<id> | BesonderheitEffectiveKey<id>) {
         const reg = /\/besonderheit\/(?<name>[^/]+)\/(?<type>[^/]+)/
         const match = key.Key.match(reg);
         const erg = match?.groups?.['name'] as id | undefined;
+        const splited = erg?.split('→') ?? [];
+        const Id = splited[0];
+        const [, ...additional] = splited
         const type = match?.groups?.['type'] as 'purchased' | 'fixed' | 'StufeUnbeschränkt' | 'missing' | 'missingNextLevel' | 'Stufe' | 'cost' | 'costNext' | 'costPreview' | undefined;
-        return (erg == undefined || type == undefined)
+        return (Id == undefined || type == undefined)
             ? undefined
-            : { id: erg, type: type };
+            : { id: Id, additional: additional ?? [], type };
     }
 
 
@@ -1364,18 +1378,61 @@ export class Charakter {
 
 
             for (const besonderheit of this.stammdaten.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit)) {
-                const keys = this.getBesonterheitKeys(besonderheit.Id);
-                this.besonderheitenField[besonderheit.Id] = {
-                    effective: storeList[keys.Effective.Key].store as Readable<number>,
-                    unconditionally: storeList[keys.Unbeschränkt.Key].store as Readable<number>,
-                    purchased: storeList[keys.Purchased.Key].store as Writable<number>,
-                    fixed: storeList[keys.Fixed.Key].store as Readable<number>,
-                    missing: storeList[keys.Missing.Key].store as Readable<TypeOfKey<BesonderheitMissingKey>>,
-                    missingNextLevel: storeList[keys.MissingNextLevel.Key].store as Readable<TypeOfKey<BesonderheitMissingNextLevelKey>>,
-                    cost: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'besonderheit'>>>,
-                    costNext: storeList[keys.CostNext.Key].store as Readable<TypeOfKey<CostKey<'besonderheit', string, 'costNext'>>>,
-                    costPreview: storeList[keys.CostPreview.Key].store as Readable<TypeOfKey<CostKey<'besonderheit', string, 'costPreview'>>>,
-                };
+
+
+
+                // eslint-disable-next-line no-inner-declarations
+                function createBesonderhetStore(this: Charakter, besonderheit: BesonderheitDefinition_besonderheit, ...additonal: string[]) {
+                    const specialParameter = besonderheit.Parameter.filter(x => x["#"] == 'Auswahl' || x["#"] == 'Talent');
+                    if (additonal.length < specialParameter.length) {
+                        const newParameter = specialParameter[additonal.length];
+
+                        if (newParameter["#"] == 'Auswahl') {
+                            for (const wahl of newParameter.Auswahl.Input.Wahl.map(x => x.Id)) {
+                                createBesonderhetStore.call(this, besonderheit, ...additonal, wahl);
+                            }
+                        } else if (newParameter["#"] == 'Talent') {
+                            for (const talentId of Object.keys(this.stammdaten.talentMap)) {
+                                createBesonderhetStore.call(this, besonderheit, ...additonal, talentId);
+                            }
+                        }
+                        return;
+                    }
+
+
+
+                    const keys = this.getBesonterheitKeys(besonderheit.Id, ...additonal);
+                    const holder = {
+                        parameter: storeList[keys.Parameter.Key].store as Writable<(number | string)[] | undefined>,
+                        effective: storeList[keys.Effective.Key].store as Readable<number>,
+                        unconditionally: storeList[keys.Unbeschränkt.Key].store as Readable<number>,
+                        purchased: storeList[keys.Purchased.Key].store as Writable<number>,
+                        fixed: storeList[keys.Fixed.Key].store as Readable<number>,
+                        missing: storeList[keys.Missing.Key].store as Readable<TypeOfKey<BesonderheitMissingKey>>,
+                        missingNextLevel: storeList[keys.MissingNextLevel.Key].store as Readable<TypeOfKey<BesonderheitMissingNextLevelKey>>,
+                        cost: storeList[keys.Cost.Key].store as Readable<TypeOfKey<CostKey<'besonderheit'>>>,
+                        costNext: storeList[keys.CostNext.Key].store as Readable<TypeOfKey<CostKey<'besonderheit', string, 'costNext'>>>,
+                        costPreview: storeList[keys.CostPreview.Key].store as Readable<TypeOfKey<CostKey<'besonderheit', string, 'costPreview'>>>,
+                    } satisfies BesonderheitenHolder;
+
+                    let currentLevel = this.besonderheitenField;
+                    for (const [element, index] of [besonderheit.Id, ...additonal].map((e, i) => [e, i])) {
+                        if (isBesonderheitenHolder(currentLevel))
+                            throw new Error('Something went wrong…');
+
+                        if (index == additonal.length) { // -1 because of 0 based index +1 because of the additonam id
+                            currentLevel[element] = holder;
+                        } else {
+                            if (currentLevel[element] == undefined) {
+                                currentLevel[element] = {};
+                            }
+                            currentLevel = currentLevel[element] as any;
+                        }
+                    }
+
+                }
+
+                createBesonderhetStore.call(this, besonderheit);
             }
 
 
@@ -1600,94 +1657,6 @@ export class Charakter {
 
 
 
-            const mapDependecyToKeys = (deps: DependencyData[], types?: (keyof BesonderheitKeys | keyof FertigkeitKeys | keyof TalentKeys | keyof EigenschaftKeys)[]) => {
-
-                const dependentData = deps.map(x => x.Typ);
-
-                const dependentBesonderheiten = dependentData.filter(x => x.startsWith('besonderheit-'))
-                    .map(x => x.substring('besonderheit-'.length))
-                    .flatMap(x => {
-                        if (types != undefined) {
-                            return Object.entries(this.getBesonterheitKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
-                        }
-                        return Object.values(this.getBesonterheitKeys(x));
-                    });
-                const dependentFertigkeiten = dependentData.filter(x => x.startsWith('fertigkeit-'))
-                    .map(x => x.substring('fertigkeit-'.length))
-                    .flatMap(x => {
-                        if (types != undefined) {
-                            return Object.entries(this.getFertigkeitenKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
-                        }
-                        return Object.values(this.getFertigkeitenKeys(x));
-                    });
-
-                const dependentEigenschaften = dependentData.filter(x => x.startsWith('eigenschaft-'))
-                    .map(x => x.substring('eigenschaft-'.length))
-                    .flatMap(x => {
-                        if (types != undefined) {
-                            return Object.entries(this.getPropertieKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
-                        }
-                        return Object.values(this.getPropertieKeys(x))
-                    });
-
-                const dependentTalent = dependentData.filter(x => x.startsWith('talent-'))
-                    .map(x => x.substring('talent-'.length))
-                    .flatMap(x => {
-                        if (types != undefined) {
-                            return Object.entries(this.getTalentKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
-                        }
-                        return Object.values(this.getTalentKeys(x));
-                    });
-
-                const dependentTag = dependentData.filter(x => x.startsWith('tag-'))
-                    .map(x => x.substring('tag-'.length))
-                    .flatMap(x => {
-                        if (types != undefined) {
-                            return Object.entries(this.getTagKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
-                        }
-                        return Object.values(this.getTagKeys(x));
-                    });
-                const dependentLevel = deps.filter(x => x.Typ.startsWith('level-'))
-                    .map(x => x.Typ.substring('level-'.length))
-                    .map(x => ({ path: x.split('|')[0], level: x.split('|')[1] }))
-                    .flatMap(x => {
-                        if (types != undefined) {
-                            return Object.entries(this.getLevelKeys(x.path, x.level)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
-                        }
-                        return Object.values(this.getLevelKeys(x.path, x.level));
-                    });
-
-                const dependentAge = dependentData.filter(x => x == 'other-alter')
-                    .map(() => this.ageKey);
-
-                const dependentGattung = dependentData.filter(x => x.startsWith('Gattung'))
-                    .map(() => this.gattungsInstanceKey);
-                const dependentArt = dependentData.filter(x => x.startsWith('Art'))
-                    .map(() => this.artInstanceKey);
-                const dependentMorph = dependentData.filter(x => x.startsWith('Morph'))
-                    .map(() => this.morphInstanceKey);
-
-                const dependentLebensabschnittGattung = dependentData.filter(x => x.startsWith('Lebensabschnitt-Gattung')).map(() => this.lebensabschnittGattungKey);
-                const dependentLebensabschnittArt = dependentData.filter(x => x.startsWith('Lebensabschnitt-Art')).map(() => this.lebensabschnittArtKey);
-                const dependentLebensabschnittMorph = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(() => this.lebensabschnittMorphKey);
-
-                const dep = [
-                    ...dependentGattung,
-                    ...dependentArt,
-                    ...dependentMorph,
-                    ...dependentEigenschaften,
-                    ...dependentBesonderheiten,
-                    ...dependentFertigkeiten,
-                    ...dependentTalent,
-                    ...dependentTag,
-                    ...dependentLevel,
-                    ...dependentAge,
-                    ...dependentLebensabschnittArt,
-                    ...dependentLebensabschnittGattung,
-                    ...dependentLebensabschnittMorph,
-                ];
-                return dep;
-            }
 
 
             for (const { key, type } of [
@@ -1719,8 +1688,8 @@ export class Charakter {
                 };
                 const dependentData = this.stammdaten.eigenschaftenDependencys.filter(x => x.Eigenschaft == key);
 
-                const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
-                const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
+                const valueDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+                const costDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
 
                 this.storeManager.derived(tmpKey, [this.morphInstanceKey, this.artInstanceKey, this.gattungsInstanceKey], (data, [{ newValue: morph }, { newValue: art }, { newValue: gattung }]) => {
                     const base = morph?.Entwiklung?.Berechnung?.filter(x => x.id == key).map(x => ({ entry: x, type: 'berechnung' as const, level: 'morph' as const }))[0]
@@ -2060,216 +2029,7 @@ export class Charakter {
 
 
             for (const besonderheit of this.stammdaten.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit)) {
-
-
-                const keys = this.getBesonterheitKeys(besonderheit.Id);
-
-                this.besonderheitenField[besonderheit.Id] = {
-                    effective: this.storeManager.readable(keys.Effective),
-                    unconditionally: this.storeManager.readable(keys.Unbeschränkt),
-                    purchased: this.storeManager.writable(keys.Purchased, 0),
-                    fixed: this.storeManager.readable(keys.Fixed),
-                    missing: this.storeManager.readable(keys.Missing),
-                    missingNextLevel: this.storeManager.readable(keys.MissingNextLevel),
-                    cost: this.storeManager.readable(keys.Cost),
-                    costNext: this.storeManager.readable(keys.CostNext),
-                    costPreview: this.storeManager.readable(keys.CostPreview),
-                };
-
-                const dependentData = this.stammdaten.besonderheitDependencys.filter(x => x.Eigenschaft == besonderheit.Id);
-
-                const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
-                const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
-                const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt', 'Effective', "Base", 'Support']);
-
-
-
-                this.storeManager.derived(keys.Effective, [keys.Unbeschränkt, keys.Missing], (data, [unconditionally, missing]) => {
-                    return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
-                });
-                this.storeManager.derived(keys.Unbeschränkt, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
-                    return Math.min(besonderheit.Stufe.length, Math.max(purchased.newValue, fixed.newValue));
-
-                });
-
-
-
-                this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
-                    // todo get fixed besonderheiten
-
-                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, tagDependency, levelDependency, lebensabschnittDependency, organismDependency } = this.groupDependencyData(dependent);
-
-                    const besonderheitMax = Math.max(...besonderheitDependency.map(x =>
-                        Math.max(...data.besonderheitenMap[x.id].Stufe.filter((_, i) => i < x.Effective.newValue)
-                            .map(x => Math.max(...(x.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? [])))
-                    ));
-
-                    const fertigkeitMax = Math.max(...fertigkeitDependency.map(x =>
-                        Math.max(...data.fertigkeitenMap[x.id].Stufe.filter((_, i) => i < x.Effective.newValue)
-                            .map(x => Math.max(...(x.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? [])))
-                    ));
-
-
-                    const eigenschaftMax = Math.max(...eigenschaftDependency.map(x => {
-                        if (x.Meta.newValue?.type == 'punkt' && x.Effective.newValue == 1) {
-                            return Math.max(...(x.Meta.newValue.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? []);
-                        } else if (x.Meta.newValue?.type == 'reihe') {
-                            return Math.max(...(x.Meta.newValue.currentSchwelle?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? []);
-                        }
-                        return 0;
-
-                    }));
-
-
-                    const organismMax = Math.max(...organismDependency.flatMap(x => [
-                        ...x.Gattung?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
-                        ...x.Art?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
-                        ...x.Morph?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
-                    ]));
-
-                    const lebensabschnittMax = Math.max(...lebensabschnittDependency.flatMap(x => [
-                        ...x.Gattung?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
-                        ...x.Art?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
-                        ...x.Morph?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
-                    ]));
-
-
-                    const levelMax = Math.max(
-                        ...(levelDependency.filter(x => x.Effective.newValue > 0).flatMap(x => data.levelMap[x.path][x.id].Besonderheit?.filter(y => y.Id == besonderheit.Id).map(y => y.Stufe) ?? []))
-                    );
-
-
-                    return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax, levelMax, organismMax, lebensabschnittMax);
-                });
-
-                this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
-                    // todo get Missing stuff
-
-                    const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
-
-                    const result = filterNull(besonderheit.Stufe
-                        .filter((x, i) => i < (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
-                        .map((x, i) => {
-                            const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
-                            if (missing == null) {
-                                return null;
-                            }
-                            return {
-                                wert: i + 1, missing: missing
-                            };
-                        }));
-
-                    return result;
-                }, { evalueateUndefined: true });
-
-                this.storeManager.derived(keys.MissingNextLevel, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
-                    // todo get Missing stuff
-
-                    const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
-
-                    const result = filterNull(besonderheit.Stufe
-                        .filter((x, i) => i <= (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
-                        .map((x, i) => {
-                            const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
-                            if (missing == null) {
-                                return null;
-                            }
-                            return {
-                                wert: i + 1, missing: missing
-                            };
-                        }));
-
-                    return result;
-                }, { evalueateUndefined: true });
-
-                this.storeManager.derived(keys.CostNext, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
-
-                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
-
-
-                    return transformToCost(
-                        besonderheit.Stufe.map((x, i) => ({ index: i, ...x }))
-                            .filter(x => x.index < purchased.newValue + 1)
-                            .filter(x => x.index >= fixed.newValue)
-                            .flatMap(x => x.Kosten.map(y => {
-
-                                let resultreturn: number;
-
-                                try {
-                                    resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
-                                } catch (error) {
-                                    console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
-                                    resultreturn = 0;
-                                }
-
-
-                                return [y.Id, resultreturn] as const;
-                            })), x => x);
-
-                });
-
-
-
-
-                this.storeManager.derived(keys.CostPreview, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
-
-                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
-
-
-                    return transformToCost(
-                        besonderheit.Stufe.map((x, i) => ({ index: i, ...x }))
-                            .filter(x => x.index < purchased.newValue - 1)
-                            .filter(x => x.index >= fixed.newValue)
-                            .flatMap(x => x.Kosten.map(y => {
-
-                                let resultreturn: number;
-
-                                try {
-                                    resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
-                                } catch (error) {
-                                    console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
-                                    resultreturn = 0;
-                                }
-
-
-                                return [y.Id, resultreturn] as const;
-                            })), x => x);
-
-                });
-
-
-
-
-                this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
-
-                    const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
-
-
-                    return transformToCost(
-                        besonderheit.Stufe.map((x, i) => ({ index: i, ...x }))
-                            .filter(x => x.index < purchased.newValue)
-                            .filter(x => x.index >= fixed.newValue)
-                            .flatMap(x => x.Kosten.map(y => {
-
-                                let resultreturn: number;
-
-                                try {
-                                    resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
-                                } catch (error) {
-                                    console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
-                                    resultreturn = 0;
-                                }
-
-
-                                return [y.Id, resultreturn] as const;
-                            })), x => x);
-
-                });
-
-
-
-
-
+                this.CreateBesonderhetStore(besonderheit);
             }
 
 
@@ -2292,9 +2052,9 @@ export class Charakter {
 
                 const dependentData = this.stammdaten.fertigkeitDependencys.filter(x => x.Eigenschaft == fertigkeit.Id);
 
-                const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
-                const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
-                const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt', 'Effective', 'Support', 'Base']);
+                const valueDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+                const costDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
+                const requirementsDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt', 'Effective', 'Support', 'Base']);
 
 
 
@@ -2434,10 +2194,10 @@ export class Charakter {
 
                 const dependentData = this.stammdaten.talentDependencys.filter(x => x.Eigenschaft == talent.Id);
 
-                const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'), ['Effective']);
-                const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
-                const nextLevelDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Effective', 'Purchased', 'Fixed']);
-                const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
+                const valueDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'), ['Effective']);
+                const supportDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
+                const nextLevelDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Effective', 'Purchased', 'Fixed']);
+                const requirementsDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
 
 
 
@@ -2660,10 +2420,10 @@ export class Charakter {
 
                     const dependentData = this.stammdaten.levelDependencys.filter(x => x.Eigenschaft == `${path.Id}|${level.Id}`);
 
-                    // const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
-                    // const supportDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
-                    const requirementsDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
-                    const costDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'), ['Effective']);
+                    // const valueDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+                    // const supportDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'support'), ['Base', 'Missing']);
+                    const requirementsDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Base', 'Support', 'Effective']);
+                    const costDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'), ['Effective']);
 
 
 
@@ -2847,7 +2607,7 @@ export class Charakter {
 
                 const dependentData = this.stammdaten.tagDependencys.filter(x => x.Eigenschaft == tag.Id);
 
-                const valueDependency = mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+                const valueDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
 
 
 
@@ -2936,8 +2696,17 @@ export class Charakter {
                         this.pfad[pfad]?.[levelId]?.purchased.set(value);
                     }
                 }
-                for (const [id, value] of Object.entries(idOrPersisted.besonderheiten ?? {})) {
-                    this.besonderheitenField[id].purchased.set(value);
+                for (const [rawId, value] of Object.entries(idOrPersisted.besonderheiten ?? {})) {
+                    const splited = rawId.split('→');
+                    let current = this.besonderheitenField;
+                    for (const element of splited) {
+                        const next = current[element];
+                        if (isBesonderheitenHolder(next)) {
+                            next.purchased.set(value);
+                        } else {
+                            current = next;
+                        }
+                    }
                 }
                 for (const [id, value] of Object.entries(idOrPersisted.fertigkeiten ?? {})) {
                     this.fertigkeiten[id].purchased.set(value);
@@ -2972,9 +2741,336 @@ export class Charakter {
 
 
 
+    private mapDependecyToKeys(deps: DependencyData[], types?: (keyof BesonderheitKeys | keyof FertigkeitKeys | keyof TalentKeys | keyof EigenschaftKeys)[]) {
+
+        const dependentData = deps.map(x => x.Typ);
+
+        const dependentBesonderheiten = dependentData.filter(x => x.startsWith('besonderheit-'))
+            .map(x => x.substring('besonderheit-'.length))
+            .flatMap(x => {
+                if (types != undefined) {
+                    return Object.entries(this.getBesonterheitKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                }
+                return Object.values(this.getBesonterheitKeys(x));
+            });
+        const dependentFertigkeiten = dependentData.filter(x => x.startsWith('fertigkeit-'))
+            .map(x => x.substring('fertigkeit-'.length))
+            .flatMap(x => {
+                if (types != undefined) {
+                    return Object.entries(this.getFertigkeitenKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                }
+                return Object.values(this.getFertigkeitenKeys(x));
+            });
+
+        const dependentEigenschaften = dependentData.filter(x => x.startsWith('eigenschaft-'))
+            .map(x => x.substring('eigenschaft-'.length))
+            .flatMap(x => {
+                if (types != undefined) {
+                    return Object.entries(this.getPropertieKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                }
+                return Object.values(this.getPropertieKeys(x))
+            });
+
+        const dependentTalent = dependentData.filter(x => x.startsWith('talent-'))
+            .map(x => x.substring('talent-'.length))
+            .flatMap(x => {
+                if (types != undefined) {
+                    return Object.entries(this.getTalentKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                }
+                return Object.values(this.getTalentKeys(x));
+            });
+
+        const dependentTag = dependentData.filter(x => x.startsWith('tag-'))
+            .map(x => x.substring('tag-'.length))
+            .flatMap(x => {
+                if (types != undefined) {
+                    return Object.entries(this.getTagKeys(x)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                }
+                return Object.values(this.getTagKeys(x));
+            });
+        const dependentLevel = deps.filter(x => x.Typ.startsWith('level-'))
+            .map(x => x.Typ.substring('level-'.length))
+            .map(x => ({ path: x.split('|')[0], level: x.split('|')[1] }))
+            .flatMap(x => {
+                if (types != undefined) {
+                    return Object.entries(this.getLevelKeys(x.path, x.level)).filter(([key]) => types.includes(key as any)).map(([, value]) => value);
+                }
+                return Object.values(this.getLevelKeys(x.path, x.level));
+            });
+
+        const dependentAge = dependentData.filter(x => x == 'other-alter')
+            .map(() => this.ageKey);
+
+        const dependentGattung = dependentData.filter(x => x.startsWith('Gattung'))
+            .map(() => this.gattungsInstanceKey);
+        const dependentArt = dependentData.filter(x => x.startsWith('Art'))
+            .map(() => this.artInstanceKey);
+        const dependentMorph = dependentData.filter(x => x.startsWith('Morph'))
+            .map(() => this.morphInstanceKey);
+
+        const dependentLebensabschnittGattung = dependentData.filter(x => x.startsWith('Lebensabschnitt-Gattung')).map(() => this.lebensabschnittGattungKey);
+        const dependentLebensabschnittArt = dependentData.filter(x => x.startsWith('Lebensabschnitt-Art')).map(() => this.lebensabschnittArtKey);
+        const dependentLebensabschnittMorph = dependentData.filter(x => x.startsWith('Lebensabschnitt-Morph')).map(() => this.lebensabschnittMorphKey);
+
+        const dep = [
+            ...dependentGattung,
+            ...dependentArt,
+            ...dependentMorph,
+            ...dependentEigenschaften,
+            ...dependentBesonderheiten,
+            ...dependentFertigkeiten,
+            ...dependentTalent,
+            ...dependentTag,
+            ...dependentLevel,
+            ...dependentAge,
+            ...dependentLebensabschnittArt,
+            ...dependentLebensabschnittGattung,
+            ...dependentLebensabschnittMorph,
+        ];
+        return dep;
+    }
 
 
 
+
+
+
+    private CreateBesonderhetStore(besonderheit: BesonderheitDefinition_besonderheit, ...additonal: string[]) {
+
+        const specialParameter = besonderheit.Parameter.filter(x => x["#"] == 'Auswahl' || x["#"] == 'Talent');
+        if (additonal.length < specialParameter.length) {
+            const newParameter = specialParameter[additonal.length];
+
+            if (newParameter["#"] == 'Auswahl') {
+                for (const wahl of newParameter.Auswahl.Input.Wahl.map(x => x.Id)) {
+                    this.CreateBesonderhetStore(besonderheit, ...additonal, wahl);
+                }
+            } else if (newParameter["#"] == 'Talent') {
+                for (const talentId of Object.keys(this.stammdaten.talentMap)) {
+                    this.CreateBesonderhetStore(besonderheit, ...additonal, talentId);
+                }
+            }
+
+            return;
+        }
+
+
+
+
+        const keys = this.getBesonterheitKeys(besonderheit.Id, ...additonal);
+        const holder = {
+            parameter: this.storeManager.writable(keys.Parameter, undefined),
+            effective: this.storeManager.readable(keys.Effective),
+            unconditionally: this.storeManager.readable(keys.Unbeschränkt),
+            purchased: this.storeManager.writable(keys.Purchased, 0),
+            fixed: this.storeManager.readable(keys.Fixed),
+            missing: this.storeManager.readable(keys.Missing),
+            missingNextLevel: this.storeManager.readable(keys.MissingNextLevel),
+            cost: this.storeManager.readable(keys.Cost),
+            costNext: this.storeManager.readable(keys.CostNext),
+            costPreview: this.storeManager.readable(keys.CostPreview),
+        };
+
+        let currentLevel = this.besonderheitenField;
+        for (const [element, index] of [besonderheit.Id, ...additonal].map((e, i) => [e, i])) {
+            if (isBesonderheitenHolder(currentLevel))
+                throw new Error('Something went wrong…');
+
+            if (index == additonal.length) { // -1 because of 0 based index +1 because of the additonam id
+                currentLevel[element] = holder;
+            } else {
+                if (currentLevel[element] == undefined) {
+                    currentLevel[element] = {};
+                }
+                currentLevel = currentLevel[element] as any;
+            }
+        }
+
+        const dependentData = this.stammdaten.besonderheitDependencys.filter(x => x.Eigenschaft == besonderheit.Id);
+
+        const valueDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'value'));
+        const costDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'cost'));
+        const requirementsDependency = this.mapDependecyToKeys(dependentData.filter(x => x.Effecting == 'requirements'), ['Unbeschränkt', 'Effective', "Base", 'Support']);
+
+
+
+        this.storeManager.derived(keys.Effective, [keys.Unbeschränkt, keys.Missing], (data, [unconditionally, missing]) => {
+            return Math.min(unconditionally.newValue, ...missing.newValue.map(x => x.wert - 1));
+        });
+        this.storeManager.derived(keys.Unbeschränkt, [keys.Purchased, keys.Fixed], (data, [purchased, fixed]) => {
+            return Math.min(besonderheit.Stufe.length, Math.max(purchased.newValue, fixed.newValue));
+
+        });
+
+
+
+        this.storeManager.derived(keys.Fixed, valueDependency, (data, dependent) => {
+            // todo get fixed besonderheiten
+            const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency, tagDependency, levelDependency, lebensabschnittDependency, organismDependency } = this.groupDependencyData(dependent);
+
+            const besonderheitMax = Math.max(...besonderheitDependency.map(x => Math.max(...data.besonderheitenMap[x.id].Stufe.filter((_, i) => i < x.Effective.newValue)
+                .map(x => Math.max(...(x.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? [])))
+            ));
+
+            const fertigkeitMax = Math.max(...fertigkeitDependency.map(x => Math.max(...data.fertigkeitenMap[x.id].Stufe.filter((_, i) => i < x.Effective.newValue)
+                .map(x => Math.max(...(x.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? [])))
+            ));
+
+
+            const eigenschaftMax = Math.max(...eigenschaftDependency.map(x => {
+                if (x.Meta.newValue?.type == 'punkt' && x.Effective.newValue == 1) {
+                    return Math.max(...(x.Meta.newValue.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? []);
+                } else if (x.Meta.newValue?.type == 'reihe') {
+                    return Math.max(...(x.Meta.newValue.currentSchwelle?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe)) ?? []);
+                }
+                return 0;
+
+            }));
+
+
+            const organismMax = Math.max(...organismDependency.flatMap(x => [
+                ...x.Gattung?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+                ...x.Art?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+                ...x.Morph?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+            ]));
+
+            const lebensabschnittMax = Math.max(...lebensabschnittDependency.flatMap(x => [
+                ...x.Gattung?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+                ...x.Art?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+                ...x.Morph?.newValue?.Mods?.Besonderheiten?.Besonderheit.filter(x => x.Id == besonderheit.Id).map(x => x.Stufe) ?? [],
+            ]));
+
+
+            const levelMax = Math.max(
+                ...(levelDependency.filter(x => x.Effective.newValue > 0).flatMap(x => data.levelMap[x.path][x.id].Besonderheit?.filter(y => y.Id == besonderheit.Id).map(y => y.Stufe) ?? []))
+            );
+
+
+            return Math.max(0, besonderheitMax, fertigkeitMax, eigenschaftMax, levelMax, organismMax, lebensabschnittMax);
+        });
+
+        this.storeManager.derived(keys.Missing, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
+            // todo get Missing stuff
+            const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
+
+            const result = filterNull(besonderheit.Stufe
+                .filter((x, i) => i < (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
+                .map((x, i) => {
+                    const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
+                    if (missing == null) {
+                        return null;
+                    }
+                    return {
+                        wert: i + 1, missing: missing
+                    };
+                }));
+
+            return result;
+        }, { evalueateUndefined: true });
+
+        this.storeManager.derived(keys.MissingNextLevel, [keys.Unbeschränkt, ...requirementsDependency], (data, [effective, ...dependent]) => {
+            // todo get Missing stuff
+            const { besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency } = this.groupDependencyData(dependent);
+
+            const result = filterNull(besonderheit.Stufe
+                .filter((x, i) => i <= (effective.newValue == UNINITILEZED ? 0 : effective.newValue))
+                .map((x, i) => {
+                    const missing = Charakter.getMissingInternal(x.Voraussetzung, besonderheitDependency, fertigkeitDependency, talentDependency, tagDependency);
+                    if (missing == null) {
+                        return null;
+                    }
+                    return {
+                        wert: i + 1, missing: missing
+                    };
+                }));
+
+            return result;
+        }, { evalueateUndefined: true });
+
+        this.storeManager.derived(keys.CostNext, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+
+            const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+
+
+            return transformToCost(
+                besonderheit.Stufe.map((x, i) => ({ index: i, ...x }))
+                    .filter(x => x.index < purchased.newValue + 1)
+                    .filter(x => x.index >= fixed.newValue)
+                    .flatMap(x => x.Kosten.map(y => {
+
+                        let resultreturn: number;
+
+                        try {
+                            resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                        } catch (error) {
+                            console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
+                            resultreturn = 0;
+                        }
+
+
+                        return [y.Id, resultreturn] as const;
+                    })), x => x);
+
+        });
+
+
+
+
+        this.storeManager.derived(keys.CostPreview, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+
+            const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+
+
+            return transformToCost(
+                besonderheit.Stufe.map((x, i) => ({ index: i, ...x }))
+                    .filter(x => x.index < purchased.newValue - 1)
+                    .filter(x => x.index >= fixed.newValue)
+                    .flatMap(x => x.Kosten.map(y => {
+
+                        let resultreturn: number;
+
+                        try {
+                            resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                        } catch (error) {
+                            console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
+                            resultreturn = 0;
+                        }
+
+
+                        return [y.Id, resultreturn] as const;
+                    })), x => x);
+
+        });
+
+
+
+
+        this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+
+            const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
+
+
+            return transformToCost(
+                besonderheit.Stufe.map((x, i) => ({ index: i, ...x }))
+                    .filter(x => x.index < purchased.newValue)
+                    .filter(x => x.index >= fixed.newValue)
+                    .flatMap(x => x.Kosten.map(y => {
+
+                        let resultreturn: number;
+
+                        try {
+                            resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                        } catch (error) {
+                            console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
+                            resultreturn = 0;
+                        }
+
+
+                        return [y.Id, resultreturn] as const;
+                    })), x => x);
+
+        });
+    }
 
     private levelPrerequire(root: _LevelAuswahl | undefined, levels: Record<string, number>, pfadId: string): MissingRequirements | null {
         // type missingData = ({
@@ -3306,8 +3402,9 @@ export class Charakter {
 
 
     public getSimulation(type: 'level', callback: (char: Charakter) => void, key: string, key2: string): ReadableOriginal<Promise<CharacterChange>>;
-    public getSimulation(type: 'besonderheit' | 'fertigkeit' | 'talent', callback: (char: Charakter) => void, key: string): ReadableOriginal<Promise<CharacterChange>>;
-    getSimulation(type: 'besonderheit' | 'fertigkeit' | 'talent' | 'level', callback: (char: Charakter) => void, key: string, key2?: string): ReadableOriginal<Promise<CharacterChange>> {
+    public getSimulation(type: 'besonderheit', callback: (char: Charakter) => void, key: string[]): ReadableOriginal<Promise<CharacterChange>>;
+    public getSimulation(type: 'fertigkeit' | 'talent', callback: (char: Charakter) => void, key: string): ReadableOriginal<Promise<CharacterChange>>;
+    getSimulation(type: 'besonderheit' | 'fertigkeit' | 'talent' | 'level', callback: (char: Charakter) => void, key: string | string[], key2?: string): ReadableOriginal<Promise<CharacterChange>> {
 
         let promis: Promise<CharacterChange> | undefined;
 
@@ -3370,16 +3467,40 @@ export class Charakter {
                         }
                     }
 
-                    const besonderheitenKeys = distinct(
-                        Object.keys(twin.besonderheitenField)
-                            .concat(Object.keys(this.besonderheitenField))
-                    );
+                    // const besonderheitenKeys = distinct(
+                    //     Object.keys(twin.besonderheitenField)
+                    //         .concat(Object.keys(this.besonderheitenField))
+                    // );
+
+
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    function handleBesonderheitenFilds(params: HiracicRecord<BesonderheitenHolder>): string[][] {
+                        return Object.keys(params).flatMap(x => {
+                            const current = params[x];
+                            if (isBesonderheitenHolder(current)) {
+                                return [[x]];
+                            } else {
+                                return handleBesonderheitenFilds(current).map(y => [x, ...y]);
+                            }
+                        })
+
+                    }
+
+                    const besonderheitenKeys = handleBesonderheitenFilds(this.besonderheitenField);
+
+
+
                     const changedBestonderheiten = besonderheitenKeys
                         .map((key) => {
+                            const twinHolder = twin.besonderheiten(...key);
+                            const thisHolder = this.besonderheiten(...key);
+                            if (!isBesonderheitenHolder(thisHolder) || !isBesonderheitenHolder(twinHolder)) {
+                                throw new Error('should not happen');
+                            }
                             return {
                                 key: key,
-                                new: removeUninitilized(twin.besonderheitenField[key].effective.currentValue(), 0),
-                                old: removeUninitilized(this.besonderheitenField[key].effective.currentValue(), 0),
+                                new: removeUninitilized(twinHolder.effective.currentValue(), 0),
+                                old: removeUninitilized(thisHolder.effective.currentValue(), 0),
                                 // newIgnored: removeUninitilized(twin.besonderheiten[key].unconditionally.currentValue(), 0),
                                 // oldIgnored: removeUninitilized(this.besonderheiten[key].unconditionally.currentValue(), 0)
                             };
@@ -3468,7 +3589,7 @@ export class Charakter {
 
                     const currentMissing =
                         [
-                            ...besonderheitenKeys.flatMap(x => removeUninitilized(this.besonderheitenField[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
+                            ...besonderheitenKeys.flatMap(x => removeUninitilized((this.besonderheiten(...x) as BesonderheitenHolder).missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: join(x, '→'), ...missing }))),
                             ...talentKeys.flatMap(x => removeUninitilized(this.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
                             ...fertigkeitenKeys.flatMap(x => removeUninitilized(this.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
                             ...levelKeys.flatMap(({ path, level }) => removeUninitilized(this.pfad[path][level].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'level' as const, missingOnId: { path, level }, ...missing }))),
@@ -3476,7 +3597,7 @@ export class Charakter {
                         ].sort(compaleInternal);
                     const twinMissing =
                         [
-                            ...besonderheitenKeys.flatMap(x => removeUninitilized(twin.besonderheitenField[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: x, ...missing }))),
+                            ...besonderheitenKeys.flatMap(x => removeUninitilized((twin.besonderheiten(...x) as BesonderheitenHolder).missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'besonderheit' as const, missingOnId: join(x, '→'), ...missing }))),
                             ...talentKeys.flatMap(x => removeUninitilized(twin.talente[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'talent' as const, missingOnId: x, ...missing }))),
                             ...fertigkeitenKeys.flatMap(x => removeUninitilized(twin.fertigkeiten[x].missing.currentValue(), []).flatMap(missing => ({ missingOnType: 'fertigkeit' as const, missingOnId: x, ...missing }))),
                             ...levelKeys.flatMap(({ path, level }) => {
@@ -3539,13 +3660,19 @@ export class Charakter {
         };
 
         const alweysStors = [this.pointStore, this.missingStore];
-        if (type == 'besonderheit') {
-            if (this.besonderheitenField[key] === undefined) {
-                throw new Error(`Unknown besonderheit ${key}`);
+        if (Array.isArray(key)) {
+            if (type == 'besonderheit') {
+
+                if (this.besonderheitenField[key[0]] === undefined) {
+                    throw new Error(`Unknown besonderheit ${key}`);
+                }
+                const [, ...additonal] = key;
+                const xxx = this.getBesonterheitKeys(key[0], ...(additonal ?? []));
+                const stores = Object.values(xxx).map(x => this.storeManager.readable(x));
+                return derived([...stores, ...alweysStors], handler);
+            } else {
+                throw new Error('should not happen');
             }
-            const xxx = this.getBesonterheitKeys(key);
-            const stores = Object.values(xxx).map(x => this.storeManager.readable(x));
-            return derived([...stores, ...alweysStors], handler);
         } else if (type == 'fertigkeit') {
             if (this.fertigkeiten[key] === undefined) {
                 throw new Error(`Unknown besonderheit ${key}`);
@@ -3568,6 +3695,9 @@ export class Charakter {
             const xxx = this.getLevelKeys(key, key2 ?? '');
             const stores = Object.values(xxx).map(x => this.storeManager.readable(x));
             return derived([...stores, ...alweysStors], handler);
+        }
+        else if (type == 'besonderheit') {
+            throw new Error('besonderheiten was calld with no array key');
         }
 
 

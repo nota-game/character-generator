@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getText, intersect } from 'src/misc/misc';
+	import { getText, intersect, sortLocalisable } from 'src/misc/misc';
 	import type { Charakter } from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
 	import Besonderheit from 'src/view/root/besonderheit.svelte';
@@ -11,7 +11,8 @@
 	export let category: string;
 
 	let pathsData = data.besonderheitenCategoryMap[category];
-	let filter: 'available' | 'purchased' | 'all' =
+	let selectedFilter: 'available' | 'purchased' | 'all';
+	selectedFilter =
 		intersect(Object.keys(pathsData), char.besonderheiten() as string[]).length > 0
 			? 'purchased'
 			: 'available';
@@ -23,7 +24,7 @@
 			type="radio"
 			role="switch"
 			name="a"
-			bind:group={filter}
+			bind:group={selectedFilter}
 			value={'available'}
 			aria-label="Verfügbar"
 		/>
@@ -31,7 +32,7 @@
 			type="radio"
 			role="switch"
 			name="a"
-			bind:group={filter}
+			bind:group={selectedFilter}
 			value={'purchased'}
 			aria-label="gekauft"
 		/>
@@ -39,29 +40,49 @@
 			type="radio"
 			role="switch"
 			name="a"
-			bind:group={filter}
+			bind:group={selectedFilter}
 			value={'all'}
 			aria-label="Alle"
 		/>
 	</fieldset>
 
-	{#if filter == 'all'}
-		{#each Object.entries(pathsData) as [key, value]}
-			<BesonderheitControl {data} key={[key]} {char} {...char.besonderheiten(key)} useFuture />
+	{#if selectedFilter == 'all'}
+		{#each sortLocalisable(Object.keys(pathsData), x=>data.besonderheitenMap[x]) as key}
+			<BesonderheitControl
+				{selectedFilter}
+				{data}
+				key={[key]}
+				{char}
+				{...char.besonderheiten(key)}
+				useFuture
+			/>
 		{/each}
-	{:else if filter == 'purchased'}
-		{#each intersect(Object.keys(pathsData), char.besonderheiten()) as key}
-			<BesonderheitControl {data} key={[key]} {char} {...char.besonderheiten(key)} useFuture />
+	{:else if selectedFilter == 'purchased'}
+		{#each sortLocalisable(intersect(Object.keys(pathsData), char.besonderheiten()), (x) => data.besonderheitenMap[x]) as key}
+			<BesonderheitControl
+				{selectedFilter}
+				{data}
+				key={[key]}
+				{char}
+				{...char.besonderheiten(key)}
+				useFuture
+			/>
 		{/each}
 	{:else}
-		{#each Object.keys(pathsData) as key}
-			<BesonderheitControl hideMissing {data} key={[key]} {char} {...char.besonderheiten(key)} useFuture />
+		{#each sortLocalisable(Object.keys(pathsData), x=>data.besonderheitenMap[x]) as key}
+			<BesonderheitControl
+				{selectedFilter}
+				{data}
+				key={[key]}
+				{char}
+				{...char.besonderheiten(key)}
+				useFuture
+			/>
 		{/each}
 	{/if}
 </article>
 
 <style lang="scss">
-	$color: #0cf;
 	fieldset {
 		display: grid;
 		grid-auto-flow: column;
@@ -101,7 +122,6 @@
 				left: 0;
 				width: 0%;
 				height: 100%;
-				// background-color: $color;
 				background-color: var(--switch-checked-background-color);
 				transition: all 0.3s;
 				z-index: -2;

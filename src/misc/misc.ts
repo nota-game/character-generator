@@ -63,6 +63,9 @@ export function notUndefined<T>(array: (T | undefined)[]): T[] {
     return array.filter(x => x !== undefined) as T[];
 }
 
+export function withIndex<T>(params: T[]) {
+    return params.map((e, i) => [e, i] as const);
+}
 
 export function groupBy<T, K extends keyof any>(list: T[], getKey: (item: T) => K): Record<K, T[]> {
     return list.reduce((previous, currentItem) => {
@@ -168,12 +171,45 @@ export function getTextPfad(p: PfadDefinition_pfad | undefined, level?: LevelDef
         return getText(p.Name, options);
     }
 }
-export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter): string {
+
+
+export function sortLocalisable<T, T2 extends { Name: Lokalisierungen_misc }>(a: T[], transform: (v: T) => T2): T[];
+export function sortLocalisable<T extends { Name: Lokalisierungen_misc }>(a: T[]): T[];
+export function sortLocalisable<T, T2 extends { Name: Lokalisierungen_misc }>(a: T[], transform?: (v: T) => T2): T[] {
+    const t: (v: T) => T2 = transform ? transform : (x) => x as any;
+    return a.sort((a, b) => getText(t(a).Name).localeCompare(getText(t(b).Name)));
+}
+
+export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter): string;
+export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options: Charakter, data?: Data, ...substitute: string[]): string;
+export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter, data?: Data, ...substitute: string[]): string {
     if (!p) {
         return '';
     }
+    const replace = (str: string) => {
+
+        for (let i = 0; i < p.Parameter.length; i++) {
+            const parameter = p.Parameter[i];
+            const value = substitute?.[i];
+            if (value && parameter) {
+                if (parameter["#"] == 'Auswahl') {
+                    const wahl = parameter.Auswahl.Input.Wahl.filter(x => x.Id == value)[0];
+                    str = str.replaceAll(`{${parameter.Auswahl.identifier}}`, getText(wahl.Name, options));
+                } else if (parameter["#"] == 'Talent' && data && options instanceof Charakter) {
+                    const talent = data.talentMap[value];
+                    str = str.replaceAll(`{${parameter.Talent.identifier}}`, getTextTalent(talent, options, 'Name'));
+                } else if (parameter["#"] == 'Text') {
+                    str = str.replaceAll(`{${parameter.Text.identifier}}`, value);
+                } else if (parameter["#"] == 'Zahl') {
+                    str = str.replaceAll(`{${parameter.Zahl.identifier}}`, value);
+                }
+            }
+        }
+        return str;
+    }
+
     if (stufe == 0) {
-        return getText(p.Name, options);
+        return replace(getText(p.Name, options));
     }
     const numbers = ['Ⅰ', 'Ⅱ', "Ⅲ", 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ', 'Ⅺ', 'Ⅻ']
     const list = [
@@ -186,10 +222,10 @@ export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | und
     ][0]?.stufe ?? p.Stufe.length + 1;
 
     if (base.stufe < next - 1) {
-        return `${getText(base.name, options)} ${numbers[stufe - base.stufe] ?? stufe - base.stufe + 1}`;
+        return replace(`${getText(base.name, options)} ${numbers[stufe - base.stufe] ?? stufe - base.stufe + 1}`);
 
     } else {
-        return getText(base.name, options);
+        return replace(getText(base.name, options));
     }
 }
 export function getTextFertigkeit(p: FertigkeitDefinition_fertigkeit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter): string {
