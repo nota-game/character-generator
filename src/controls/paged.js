@@ -40,7 +40,7 @@ function removeStyles() {
             }
             return 0;
         })
-        .filter(element=> !element.attributes.getNamedItem('data-vite-dev-id').value.endsWith('src/css/theme.css'))
+        .filter(element => !(element.attributes.getNamedItem('data-vite-dev-id')?.value.endsWith('src/css/theme.css') ?? false))
         // extract the href
         .map((element) => {
             if (element.nodeName === "STYLE") {
