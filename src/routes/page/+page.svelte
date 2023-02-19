@@ -12,7 +12,8 @@
 		getTextBesonderheit,
 		getTextFertigkeit,
 		getTextTalent,
-		join
+		join,
+		tail
 	} from 'src/misc/misc';
 
 	import Hitman from 'src/controls/hitman.svelte';
@@ -258,7 +259,9 @@
 													bes.unconditionally.currentValue({
 														defaultValue: 0
 													}) ?? 0,
-													char
+													char,
+													data,
+													...tail(b2Key)
 												)}
 											</span>
 										{:else if (bes.effective.currentValue( { defaultValue: 0 } ) ?? 0) < (bes.unconditionally.currentValue( { defaultValue: 0 } ) ?? 0)}
@@ -273,14 +276,18 @@
 													bes.unconditionally.currentValue({
 														defaultValue: 0
 													}) ?? 0,
-													char
+													char,
+													data,
+													...tail(b2Key)
 												)})
 											</span>
 										{:else}
 											{getTextBesonderheit(
 												data.besonderheitenMap[b2Key[0]],
 												bes.effective.currentValue({ defaultValue: 0 }) ?? 0,
-												char
+												char,
+													data,
+													...tail(b2Key)
 											)}
 										{/if}
 									</li>
