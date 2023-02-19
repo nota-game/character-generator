@@ -18,6 +18,8 @@
 		getTextTalent,
 		renderRequirement,
 		renderRequirementMap,
+		sequenceEqual,
+		tail,
 		toObjectKey
 	} from 'src/misc/misc';
 	import KostenControl from './KostenControl.svelte';
@@ -33,7 +35,8 @@
 				missing: MissingRequirements;
 		  }[] = undefined;
 	export let exclude:
-		| { type: 'besonderheit' | 'fertigkeit' | 'talent' | 'tag'; id: string }
+		| { type: 'fertigkeit' | 'talent' | 'tag'; id: string }
+		| { type: 'besonderheit'; id: string[] }
 		| undefined = undefined;
 
 	let removedRequirments = change.requirements.removed.filter((x) => {
@@ -56,7 +59,7 @@
 	});
 
 	let changedBestonderheiten = change.changedBestonderheiten.filter(
-		(x) => exclude?.type != 'besonderheit' || exclude.id != x.key
+		(x) => exclude?.type != 'besonderheit' || !sequenceEqual(exclude.id, x.key)
 	);
 	let changedFertigkeiten = change.changedFertigkeiten.filter(
 		(x) => exclude?.type != 'fertigkeit' || exclude.id != x.key
@@ -170,7 +173,7 @@
 		<div>Neue Besonderheiten</div>
 		<ul>
 			{#each changedBestonderheiten.filter((x) => x.old == 0) as b}
-				<li>{getTextBesonderheit(data.besonderheitenMap[b.key], b.new, char)}</li>
+				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.new, char, data, ...tail(b.key))}</li>
 			{/each}
 		</ul>
 	{/if}
@@ -178,7 +181,7 @@
 		<div>Verbesserte Besonderheiten</div>
 		<ul>
 			{#each changedBestonderheiten.filter((x) => x.old != 0 && x.new > x.old) as b}
-				<li>{getTextBesonderheit(data.besonderheitenMap[b.key], b.new, char)}</li>
+				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.new, char, data, ...tail(b.key))}</li>
 			{/each}
 		</ul>
 	{/if}
@@ -186,7 +189,7 @@
 		<div>Verschlechterte Besonderheiten</div>
 		<ul>
 			{#each changedBestonderheiten.filter((x) => x.new != 0 && x.new < x.old) as b}
-				<li>{getTextBesonderheit(data.besonderheitenMap[b.key], b.new, char)}</li>
+				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.new, char, data, ...tail(b.key))}</li>
 			{/each}
 		</ul>
 	{/if}
@@ -194,7 +197,7 @@
 		<div>Verlorene Besonderheiten</div>
 		<ul>
 			{#each changedBestonderheiten.filter((x) => x.new == 0) as b}
-				<li>{getTextBesonderheit(data.besonderheitenMap[b.key], b.old, char)}</li>
+				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.old, char, data, ...tail(b.key))}</li>
 			{/each}
 		</ul>
 	{/if}
@@ -317,7 +320,7 @@
 			{:else}
 				Behobene Probleme
 			{/if}
-			<ul >
+			<ul>
 				{#each removedRequirments as r}
 					<li>
 						Für
@@ -377,7 +380,7 @@
 	.probles {
 		margin: 1rem;
 	}
-	ul *{
+	ul * {
 		list-style-type: none;
 	}
 </style>

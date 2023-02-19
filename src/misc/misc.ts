@@ -172,6 +172,37 @@ export function getTextPfad(p: PfadDefinition_pfad | undefined, level?: LevelDef
     }
 }
 
+export function tail<T>(a: T[]): T[] {
+    const [, ...result] = a;
+    return result;
+}
+
+
+export function sequenceEqual<T>(a: T[], b: T[]): boolean {
+    console.log("compare", [a, b]);
+    if (a == undefined && b == undefined) {
+        console.log("return true")
+        return true;
+    }
+    if (a == undefined || b == undefined) {
+        console.log("return false")
+        return false;
+    }
+    if (a.length != b.length) {
+        console.log("return false")
+        return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] != b[i]) {
+            console.log("return false")
+            return false;
+        }
+    }
+    console.log("return true")
+    return true;
+
+}
+
 
 export function sortLocalisable<T, T2 extends { Name: Lokalisierungen_misc }>(a: T[], transform: (v: T) => T2): T[];
 export function sortLocalisable<T extends { Name: Lokalisierungen_misc }>(a: T[]): T[];
