@@ -353,15 +353,6 @@
 		</div>
 	</TooltipControl>
 
-	<a
-		href="#"
-		on:click={(e) => {
-			e.preventDefault();
-			addParametherized();
-		}}
-	>
-		hinzufügen
-	</a>
 	<p>
 		{getText(entry.Stufe[0]?.Beschreibung)}
 	</p>
