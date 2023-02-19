@@ -334,6 +334,7 @@ export type TalentSupportIncrease = {
 export function isBesonderheitenHolder(obj: any): obj is BesonderheitenHolder {
     const test = obj as Partial<BesonderheitenHolder> | undefined;
     return test != undefined
+        && typeof test.parameter == "object"
         && typeof test.effective == "object"
         && typeof test.unconditionally == "object"
         && typeof test.fixed == "object"
@@ -350,7 +351,7 @@ type HiracicRecord<T> = Record<string, T> | HiracicRecord2<T>;
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface HiracicRecord2<T> extends Record<string, HiracicRecord<T>> { };
 
-type BesonderheitenHolder = {
+export type BesonderheitenHolder = {
     parameter: Writable<(number | string)[] | undefined>;
     effective: Readable<number>;
     unconditionally: Readable<number>;

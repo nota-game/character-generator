@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { afterUpdate, onMount } from 'svelte';
 	import { Data } from 'src/models/Data';
-	import { Charakter } from 'src/models/Character';
+	import {
+		Charakter,
+		isBesonderheitenHolder,
+		type BesonderheitenHolder
+	} from 'src/models/Character';
 	import {
 		filterObjectKeys,
 		getText,
@@ -47,7 +51,7 @@
 	});
 
 	afterUpdate(() => {
-		 render();
+		render();
 	});
 
 	let renderPromise: undefined | Promise<void>;
@@ -74,6 +78,25 @@
 	let pageLink: string;
 
 	$: pageLink = ($dev ? '/' : '/character-generator/') + '#i' + $id;
+
+	function getBesonderheitenKeys() {
+		if (char == undefined) {
+			return [];
+		}
+
+		function next(char: Charakter, path: string[]): string[][] {
+			const current = char.besonderheiten(...path);
+			if (Array.isArray(current)) {
+				return current.flatMap((x) => next(char, [...path, x]));
+			} else {
+				return [path];
+			}
+		}
+
+		const keys = next(char, []);
+
+		return keys;
+	}
 </script>
 
 <nav>
@@ -201,45 +224,67 @@
 		</div>
 		<div class="extra">
 			{#each Object.keys(data.besonderheitenCategoryMap) as bKey}
-				{#if Object.keys(data.besonderheitenCategoryMap[bKey]).some((x) => (char?.besonderheiten[x]?.unconditionally.currentValue( { defaultValue: 0 } ) ?? 0) > 0)}
+				{#if getBesonderheitenKeys()
+					.filter(([key]) => Object.keys(data?.besonderheitenCategoryMap[bKey] ?? {}).includes(key) ?? false)
+					.some((x) => {
+						const b = char?.besonderheiten(...x);
+						if (isBesonderheitenHolder(b)) {
+							return b.unconditionally.currentValue({ defaultValue: 0 }) > 0;
+						} else {
+							return false;
+						}
+					})}
+					<!-- {#if Object.keys(data.besonderheitenCategoryMap[bKey]).some((x) => (char?.besonderheiten[x]?.unconditionally.currentValue( { defaultValue: 0 } ) ?? 0) > 0)} -->
 					<div class="list">
 						<strong>{bKey}</strong>
 						<ul>
-							{#each Object.keys(data.besonderheitenCategoryMap[bKey]).filter((x) => (char?.besonderheiten[x]?.unconditionally.currentValue( { defaultValue: 0 } ) ?? 0) > 0) as b2Key}
-								<li>
-									{#if (char?.besonderheiten[b2Key].effective.currentValue( { defaultValue: 0 } ) ?? 0) == 0}
-										<span class="light">
+							{#each getBesonderheitenKeys()
+								.filter(([key]) => Object.keys(data?.besonderheitenCategoryMap[bKey] ?? {}).includes(key) ?? false)
+								.filter((x) => {
+									const b = char?.besonderheiten(...x);
+									if (isBesonderheitenHolder(b)) {
+										return b.unconditionally.currentValue({ defaultValue: 0 }) > 0;
+									} else {
+										return false;
+									}
+								}) as b2Key}
+								{@const bes = char?.besonderheiten(...b2Key)}
+								{#if isBesonderheitenHolder(bes)}
+									<li>
+										{#if (bes.effective.currentValue({ defaultValue: 0 }) ?? 0) == 0}
+											<span class="light">
+												{getTextBesonderheit(
+													data.besonderheitenMap[b2Key[0]],
+													bes.unconditionally.currentValue({
+														defaultValue: 0
+													}) ?? 0,
+													char
+												)}
+											</span>
+										{:else if (bes.effective.currentValue( { defaultValue: 0 } ) ?? 0) < (bes.unconditionally.currentValue( { defaultValue: 0 } ) ?? 0)}
 											{getTextBesonderheit(
-												data.besonderheitenMap[b2Key],
-												char?.besonderheiten[b2Key].unconditionally.currentValue({
-													defaultValue: 0
-												}) ?? 0,
+												data.besonderheitenMap[b2Key[0]],
+												bes.effective.currentValue({ defaultValue: 0 }) ?? 0,
 												char
 											)}
-										</span>
-									{:else if (char?.besonderheiten[b2Key].effective.currentValue( { defaultValue: 0 } ) ?? 0) < (char?.besonderheiten[b2Key].unconditionally.currentValue( { defaultValue: 0 } ) ?? 0)}
-										{getTextBesonderheit(
-											data.besonderheitenMap[b2Key],
-											char?.besonderheiten[b2Key].effective.currentValue({ defaultValue: 0 }) ?? 0,
-											char
-										)}
-										<span class="light">
-											({getTextBesonderheit(
-												data.besonderheitenMap[b2Key],
-												char?.besonderheiten[b2Key].unconditionally.currentValue({
-													defaultValue: 0
-												}) ?? 0,
+											<span class="light">
+												({getTextBesonderheit(
+													data.besonderheitenMap[b2Key[0]],
+													bes.unconditionally.currentValue({
+														defaultValue: 0
+													}) ?? 0,
+													char
+												)})
+											</span>
+										{:else}
+											{getTextBesonderheit(
+												data.besonderheitenMap[b2Key[0]],
+												bes.effective.currentValue({ defaultValue: 0 }) ?? 0,
 												char
-											)})
-										</span>
-									{:else}
-										{getTextBesonderheit(
-											data.besonderheitenMap[b2Key],
-											char?.besonderheiten[b2Key].effective.currentValue({ defaultValue: 0 }) ?? 0,
-											char
-										)}
-									{/if}
-								</li>
+											)}
+										{/if}
+									</li>
+								{/if}
 							{/each}
 						</ul>
 						<hr />
@@ -252,7 +297,7 @@
 					<div class="list">
 						<strong>{bKey}</strong>
 						<ul>
-							{#each Object.keys(data.fertigkeitenCategoryMap[bKey]).filter((x) => (char?.fertigkeiten[x]?.unconditionally.currentValue( { defaultValue: 0 } ) ?? 0) > 0) as b2Key}
+							{#each Object.keys(data.fertigkeitenCategoryMap[bKey].fertigkeiten).filter((x) => (char?.fertigkeiten[x]?.unconditionally.currentValue( { defaultValue: 0 } ) ?? 0) > 0) as b2Key}
 								<li>
 									{#if (char?.fertigkeiten[b2Key].effective.currentValue( { defaultValue: 0 } ) ?? 0) == 0}
 										<span class="light">
@@ -587,18 +632,42 @@
 				style="grid-column: 2; grid-row: 1; display: flex; flex-wrap: wrap; justify-content: space-evenly ; align-content: flex-start;"
 			>
 				{#each Object.keys(data.besonderheitenCategoryMap) as bKey}
-					{#if Object.keys(data.besonderheitenCategoryMap[bKey]).some((x) => (char?.besonderheiten[x].effective.currentValue( { defaultValue: 0 } ) ?? 0) > 0 && (data?.besonderheitenMap[x].SubKategorie ?? []).includes('Kampf'))}
+					{#if getBesonderheitenKeys()
+						.filter(([key]) => Object.keys(data?.besonderheitenCategoryMap[bKey] ?? {}).includes(key) ?? false)
+						.some((x) => {
+							const b = char?.besonderheiten(...x);
+							if (isBesonderheitenHolder(b)) {
+								return b.effective.currentValue( { defaultValue: 0 } ) > 0 && (data?.besonderheitenMap[x[0]].SubKategorie ?? []).includes('Kampf');
+							} else {
+								return false;
+							}
+						})}
 						<div class="list">
 							<strong>{bKey}</strong>
 							<ul>
-								{#each Object.keys(data.besonderheitenCategoryMap[bKey]).filter((x) => (char?.besonderheiten[x].effective.currentValue( { defaultValue: 0 } ) ?? 0) > 0 && (data?.besonderheitenMap[x].SubKategorie ?? []).includes('Kampf')) as b2Key}
-									<li>
-										{getTextBesonderheit(
-											data.besonderheitenMap[b2Key],
-											char?.besonderheiten[b2Key].effective.currentValue({ defaultValue: 0 }) ?? 0,
-											char
-										)}
-									</li>
+								{#each getBesonderheitenKeys()
+									.filter(([key]) => Object.keys(data?.besonderheitenCategoryMap[bKey] ?? {}).includes(key) ?? false)
+									.filter((x) => {
+										const b = char?.besonderheiten(...x);
+										if (isBesonderheitenHolder(b)) {
+											return b.effective.currentValue( { defaultValue: 0 } ) > 0 && (data?.besonderheitenMap[x[0]].SubKategorie ?? []).includes('Kampf');
+										} else {
+											return false;
+										}
+									}) as b2Key}
+									{@const bes = char?.besonderheiten(...b2Key)}
+									{@const [, ...additional] = b2Key}
+									{#if isBesonderheitenHolder(bes)}
+										<li>
+											{getTextBesonderheit(
+												data.besonderheitenMap[b2Key[0]],
+												bes.effective.currentValue({ defaultValue: 0 }) ?? 0,
+												char,
+												data,
+												...additional
+											)}
+										</li>
+									{/if}
 								{/each}
 							</ul>
 							<hr />
@@ -606,11 +675,11 @@
 					{/if}
 				{/each}
 
-				{#if Object.keys(data.fertigkeitenCategoryMap['Kampfstiele'] ?? {}).some((x) => (char?.fertigkeiten[x]?.effective.currentValue( { defaultValue: 0 } ) ?? 0) > 0)}
+				{#if Object.keys(data.fertigkeitenCategoryMap['Kampfstiele']?.fertigkeiten ?? {}).some((x) => (char?.fertigkeiten[x]?.effective.currentValue( { defaultValue: 0 } ) ?? 0) > 0)}
 					<div class="list">
 						<strong>Kampfstiele</strong>
 						<ul>
-							{#each Object.keys(data.fertigkeitenCategoryMap['Kampfstiele']).filter((x) => (char?.fertigkeiten[x].effective.currentValue( { defaultValue: 0 } ) ?? 0) > 0) as b2Key}
+							{#each Object.keys(data.fertigkeitenCategoryMap['Kampfstiele'].fertigkeiten).filter((x) => (char?.fertigkeiten[x].effective.currentValue( { defaultValue: 0 } ) ?? 0) > 0) as b2Key}
 								<li>
 									{getTextFertigkeit(
 										data.fertigkeitenMap[b2Key],
@@ -623,11 +692,11 @@
 						<hr />
 					</div>
 				{/if}
-				{#if Object.keys(data.fertigkeitenCategoryMap['Kampf']).some((x) => (char?.fertigkeiten[x]?.effective.currentValue( { defaultValue: 0 } ) ?? 0) > 0)}
+				{#if Object.keys(data.fertigkeitenCategoryMap['Kampf']?.fertigkeiten ?? {}).some((x) => (char?.fertigkeiten[x]?.effective.currentValue( { defaultValue: 0 } ) ?? 0) > 0)}
 					<div class="list">
 						<strong>Fertigkeiten</strong>
 						<ul>
-							{#each Object.keys(data.fertigkeitenCategoryMap['Kampf']).filter((x) => (char?.fertigkeiten[x].effective.currentValue( { defaultValue: 0 } ) ?? 0) > 0) as b2Key}
+							{#each Object.keys(data.fertigkeitenCategoryMap['Kampf']?.fertigkeiten ?? {}).filter((x) => (char?.fertigkeiten[x].effective.currentValue( { defaultValue: 0 } ) ?? 0) > 0) as b2Key}
 								<li>
 									{getTextFertigkeit(
 										data.fertigkeitenMap[b2Key],
@@ -692,7 +761,7 @@
 			// border-radius: var(--border-radius);
 			background: var(--card-background-color);
 			box-shadow: var(--card-box-shadow);
-			
+
 			a {
 				color: var(--color);
 				font-family: Verdana, Geneva, Tahoma, sans-serif;

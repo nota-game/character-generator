@@ -183,4 +183,74 @@
 	:global(dialog) {
 		z-index: 1500;
 	}
+
+	:global(fieldset.button-group) {
+		display: grid;
+		grid-auto-flow: column;
+		width: 100%;
+
+		:global([type='radio']) {
+			border-radius: 0px;
+			margin: 0px;
+			width: 100%;
+			border-width: var(--border-width);
+
+			padding: 0.75rem 1.25rem;
+			color: #fff;
+			text-transform: uppercase;
+			font-size: 1rem;
+			letter-spacing: 0.15rem;
+			transition: all 0.3s;
+			position: relative;
+			overflow: hidden;
+			border-color: var(--form-element-focus-color);
+			background-color: var(--switch-background-color);
+			z-index: 1;
+		}
+		:global([type='radio']:after) {
+			overflow: hidden;
+			content: '';
+
+			position: absolute;
+			// text-align: center;
+			bottom: 0;
+			left: 0;
+			width: 0%;
+			height: 100%;
+			background-color: var(--switch-checked-background-color);
+			transition: all 0.3s;
+			z-index: -2;
+		}
+		:global([type='radio']:before) {
+			overflow: visible;
+			content: attr(aria-label);
+			word-wrap: normal;
+			text-align: center;
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			width: 100%;
+
+			height: 100%;
+			background-color: transparent;
+			transition: all 0.3s;
+			z-index: -1;
+		}
+		:global([type='radio']:checked) {
+			border-width: var(--border-width);
+
+			color: #fff;
+			&::after {
+				width: 100%;
+			}
+		}
+		:global([type='radio']:first-child) {
+			border-top-left-radius: var(--border-radius);
+			border-bottom-left-radius: var(--border-radius);
+		}
+		:global([type='radio']:last-child) {
+			border-top-right-radius: var(--border-radius);
+			border-bottom-right-radius: var(--border-radius);
+		}
+	}
 </style>
