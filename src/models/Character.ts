@@ -1503,14 +1503,18 @@ export class Charakter {
 
         } else {
 
-
+            let timer = 'storeManager';
+            console.time(timer)
             this.storeManager = new StoreManager(stammdaten);
-
-
-
-
-
-
+            
+            
+            
+            
+            
+            
+            console.timeEnd(timer)
+            timer = 'ground';
+            console.time(timer)
             this.ageStore = this.storeManager.writable(this.ageKey, 1);
             this.nameStore = this.storeManager.writable(nameKey, '');
 
@@ -1670,7 +1674,9 @@ export class Charakter {
                     type
                 };
             }
-
+            console.timeEnd(timer)
+            timer = 'eigenschaften';
+            console.time(timer)
 
             for (const key of this.stammdaten.allEigenschaftKeys) {
 
@@ -2027,12 +2033,17 @@ export class Charakter {
 
                 })
             }
-
+            console.timeEnd(timer)
+            timer = 'besonderheiten';
+            console.time(timer)
 
             for (const besonderheit of this.stammdaten.Instance.Daten.Besonderheiten.flatMap(x => x.Besonderheit)) {
                 this.CreateBesonderhetStore(besonderheit);
             }
 
+            console.timeEnd(timer)
+            timer = 'fertigkeiten';
+            console.time(timer)
 
             for (const fertigkeit of this.stammdaten.Instance.Daten.Fertigkeiten.flatMap(x => x.Fertigkeit)) {
 
@@ -2173,6 +2184,9 @@ export class Charakter {
 
             }
 
+            console.timeEnd(timer)
+            timer = 'talente';
+            console.time(timer)
 
             for (const talent of this.stammdaten.Instance.Daten.Talente.flatMap(x => x.Talent)) {
 
@@ -2404,6 +2418,9 @@ export class Charakter {
 
             }
 
+            console.timeEnd(timer)
+            timer = 'path';
+            console.time(timer)
             for (const path of this.stammdaten.Instance.Daten.Pfade.flatMap(x => x.Pfad)) {
                 this.pfad[path.Id] = {};
                 for (const level of path.Levels.Level) {
@@ -2594,7 +2611,9 @@ export class Charakter {
                 }
             }
 
-
+            console.timeEnd(timer)
+            timer = 'tag';
+            console.time(timer)
 
 
             for (const tag of this.stammdaten.Instance.Daten.Tags.Tag) {
@@ -2686,6 +2705,9 @@ export class Charakter {
 
             }
 
+            console.timeEnd(timer)
+            timer = 'load';
+            console.time(timer)
             if (typeof idOrPersisted == 'object') {
                 this.nameStore.set(idOrPersisted.name ?? '');
                 if (idOrPersisted.age) {
@@ -2728,8 +2750,12 @@ export class Charakter {
 
             }
 
+            console.timeEnd(timer)
+            timer = 'twin';
+            console.time(timer)
 
             this.twin = new Charakter(stammdaten, idOrPersisted, this);
+            console.timeEnd(timer)
 
         }
 

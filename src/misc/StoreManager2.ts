@@ -137,6 +137,7 @@ export default class StoreManager<Param> {
     }
 
     private readonly data: Record<string, SubscriberData<any, Param>> = {};
+    private readonly wildcardData: Record<string, RegExp> = {};
     private readonly staticData: Param;
     private readonly clonedFrom: StoreManager<Param> | undefined;
     private readonly clonedTo: StoreManager<Param>[] = [];
@@ -354,21 +355,24 @@ export default class StoreManager<Param> {
 
             if (set == undefined) {
                 const reg = generateRegex(key.Key);
-                Object.values(this.data).filter(x => reg.test(x.id) && x.id !== key.Key).forEach(x => {
+                if (reg != null) {
+                    Object.values(this.data).filter(x => reg.test(x.id) && x.id !== key.Key).forEach(x => {
+                        if (set !== undefined) {
+                            throw `${key.Key} is leaf, cant create ${x.id}`;
+                        }
+                        AddDependency(x, current);
+                    });
+                    this.wildcardData[key.Key]= reg;
+                }
+                Object.entries(this.wildcardData).filter(([wildCardKey, reg]) => {
+                    // const reg = generateRegex(x.id);
+                    
+                    return wildCardKey !== key.Key&&reg.test(key.Key);
+                }).forEach(([wildCardKey]) => {
                     if (set !== undefined) {
-                        throw `${key.Key} is leaf, cant create ${x.id}`;
+                        throw `${key.Key} is leaf, cant create ${wildCardKey}`;
                     }
-                    AddDependency(x, current);
-
-                });
-                Object.values(this.data).filter(x => {
-                    const reg = generateRegex(x.id);
-                    return reg.test(key.Key) && x.id !== key.Key
-                }).forEach(x => {
-                    if (set !== undefined) {
-                        throw `${key.Key} is leaf, cant create ${x.id}`;
-                    }
-                    AddDependency(current, x);
+                    AddDependency(current, this.data[wildCardKey]);
 
                 });
 
@@ -385,12 +389,12 @@ export default class StoreManager<Param> {
 
             if (current.storeType == 'aggregated' || current.storeType == 'writable') {
 
-                Object.values(this.data).forEach(other => {
-                    const reg = generateRegex(other.id);
-                    if (reg.test(current.id) && current.id !== other.id) {
+                Object.entries(this.wildcardData).forEach(([otherId, reg]) => {
+                    if (reg.test(current.id) && current.id !== otherId) {
                         // if (other.leaf) {
                         //     throw `${other.id} is leaf, cant create ${current.id}`;
                         // }
+                        const other = this.data[otherId];
                         AddDependency(current, other);
                         const newValue = other.fn(this.staticData);
                         this.Notify(current);
@@ -774,6 +778,12 @@ function AddDependency(notifier: SubscriberData<any, any>, dependend: Subscriber
 }
 
 function generateRegex(key: string) {
-    return new RegExp("^" + (key).replace('|', '\\|').replace('**', '.+').replace('*', '[^/]+') + '($|(/.+))');
+    if (key.includes('*')) {
+        return new RegExp("^" + (key).replace('|', '\\|').replace('**', '.+').replace('*', '[^/]+') + '$');
+    } else {
+        return null;
+    }
+
+
 }
 
