@@ -32,6 +32,8 @@
 
 	let selectedTalent: string | undefined;
 
+	let difficulty: number = 0;
+
 	let roleEntrys: roleEntry[] = [];
 	$: roleEntrys = [];
 
@@ -50,10 +52,11 @@
 		quality: number;
 		begabung: (readonly [string, number])[];
 	};
-	function role(talentId: string, probe: _Probe): roleEntry {
+	function role(talentId: string, probe: _Probe, difficulty: number): roleEntry {
 		const talent = data.talentMap[talentId];
 		const taw = char.talente[talentId].effective.currentValue({ defaultValue: 0 });
-		let tawResult = taw;
+		const tawEffectiv = taw - difficulty;
+		let tawResult = tawEffectiv;
 
 		console.log('begin role');
 		let roles: rolePropertys[] = [];
@@ -150,7 +153,7 @@
 				console.log('substitute', JSON.parse(JSON.stringify({ increse, roleToChange })));
 				roleToChange.substituted = role;
 				tawResult =
-					taw -
+					tawEffectiv -
 					roles
 						.filter((x) => (x.substituted ?? x.role) < x.target)
 						.map((x) => x.substituted ?? x.role)
@@ -169,7 +172,7 @@
 			talent,
 			roles,
 			taw,
-			tawResult,
+			tawResult: Math.min(tawResult, taw),
 			quality,
 			begabung
 		};
@@ -296,11 +299,15 @@
 												href="#"
 												on:click={(e) => {
 													e.preventDefault();
-													role(t, p);
+													role(t, p, difficulty);
 												}}
 											>
 												Role</a
 											>
+											<label>
+												Erschwerniss
+												<input type="number" bind:value={difficulty} />
+											</label>
 										{/each}
 									</td>
 								</tr>
