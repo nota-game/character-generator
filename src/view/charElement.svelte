@@ -21,6 +21,7 @@
 	import TalenteSelect from './char/pages/talente/talenteSelect.svelte';
 	import KostenControl from './char/controls/KostenControl.svelte';
 	import AusrustungList from 'src/controls/AusrustungList.svelte';
+	import Hitman from 'src/controls/hitman.svelte';
 
 	let data = writable<Data | undefined>(undefined);
 	export let char = writable<Charakter | undefined>(undefined);
@@ -29,6 +30,8 @@
 	$: morph = $char?.morphStore;
 
 	let dev = writable(true);
+
+	let bleed = writable(0);
 
 	export let charId: string | undefined;
 
@@ -79,6 +82,7 @@
 	$: persistionData = $char?.persistanceStore;
 	let charLink: string;
 	$: pageLink = ($dev ? '/page' : '/character-generator/page') + '#' + charId;
+	$: gameLink = ($dev ? '/game' : '/character-generator/game') + '#' + charId;
 
 	$: {
 		const d = JSON.stringify($persistionData ?? {});
@@ -101,6 +105,7 @@
 				<KostenControl char={$char} data={$data} mode="points" showZeroValues />
 				<br />
 				<a href={pageLink} rel="external">Charakterbogen anzeigen</a>
+				<a style="margin-left: 1rem;" href={gameLink} rel="external">Spielen</a>
 			</div>
 		</article>
 	{/if}
@@ -120,6 +125,7 @@
 				<Tab>Talente</Tab>
 				<Tab>Fertigkeiten</Tab>
 				<Tab>Ausrüstung</Tab>
+				<!-- <Tab>Test</Tab> -->
 				<!-- <Tab>Fallback</Tab> -->
 			{/if}
 		</TabList>
@@ -153,6 +159,13 @@
 		<TabPanel>
 			<AusrustungList char={$char} data={$data} />
 		</TabPanel>
+		<!-- <TabPanel>
+		
+			<input type="number" bind:value={$bleed} />
+
+			<Hitman char={$char} bleeding={bleed} ></Hitman>
+
+		</TabPanel> -->
 		<!-- <TabPanel>
 			<Fallback char={$char} data={$data} />
 		</TabPanel> -->

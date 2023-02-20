@@ -1,62 +1,79 @@
 <script lang="ts">
 	import type { Charakter } from '../models/Character';
-	import { readable, writable, type Writable } from 'svelte/store';
+	import { get, readable, writable, type Writable } from 'svelte/store';
 	import { onMount } from 'svelte';
+	import { Wound, type WoundServity } from './hitman';
 	export let char: Charakter;
+
 	let koStore = char.eigenschaften['KO'].effective;
 	$: ko = $koStore ?? 21;
 	let bonus: number;
 	$: bonus = Math.floor((21 - ko) / 3);
 
-	type Wunden = {
-		leicht: [Writable<boolean>, Writable<boolean>, Writable<boolean>];
-		mittel: [Writable<boolean>, Writable<boolean>];
-		schwer: [Writable<boolean>];
-		amputiert: [Writable<boolean>];
-	};
+	export let bleeding = writable(0);
 
-	const linkerArm: Wunden = {
-		leicht: [writable(false), writable(false), writable(false)],
-		mittel: [writable(false), writable(false)],
-		schwer: [writable(false)],
-		amputiert: [writable(false)]
-	};
-	const rechterArm: Wunden = {
-		leicht: [writable(false), writable(false), writable(false)],
-		mittel: [writable(false), writable(false)],
-		schwer: [writable(false)],
-		amputiert: [writable(false)]
-	};
-	const linkesBein: Wunden = {
-		leicht: [writable(false), writable(false), writable(false)],
-		mittel: [writable(false), writable(false)],
-		schwer: [writable(false)],
-		amputiert: [writable(false)]
-	};
-	const rechtesBein: Wunden = {
-		leicht: [writable(false), writable(false), writable(false)],
-		mittel: [writable(false), writable(false)],
-		schwer: [writable(false)],
-		amputiert: [writable(false)]
-	};
-	const brust: Wunden = {
-		leicht: [writable(false), writable(false), writable(false)],
-		mittel: [writable(false), writable(false)],
-		schwer: [writable(false)],
-		amputiert: [writable(false)]
-	};
-	const bauch: Wunden = {
-		leicht: [writable(false), writable(false), writable(false)],
-		mittel: [writable(false), writable(false)],
-		schwer: [writable(false)],
-		amputiert: [writable(false)]
-	};
-	const kopf: Wunden = {
-		leicht: [writable(false), writable(false), writable(false)],
-		mittel: [writable(false), writable(false)],
-		schwer: [writable(false)],
-		amputiert: [writable(false)]
-	};
+	export let linkerArm = new Wound();
+	const linkerArm_leicht = linkerArm.leicht;
+	const linkerArm_mittel = linkerArm.mittel;
+	const linkerArm_schwer = linkerArm.schwer;
+	const linkerArm_amputiert = linkerArm.amputiert;
+
+	export let rechterArm = new Wound();
+	const rechterArm_leicht = rechterArm.leicht;
+	const rechterArm_mittel = rechterArm.mittel;
+	const rechterArm_schwer = rechterArm.schwer;
+	const rechterArm_amputiert = rechterArm.amputiert;
+
+	export let linkesBein = new Wound();
+	const linkesBein_leicht = linkesBein.leicht;
+	const linkesBein_mittel = linkesBein.mittel;
+	const linkesBein_schwer = linkesBein.schwer;
+	const linkesBein_amputiert = linkesBein.amputiert;
+
+	export let rechtesBein = new Wound();
+	const rechtesBein_leicht = rechtesBein.leicht;
+	const rechtesBein_mittel = rechtesBein.mittel;
+	const rechtesBein_schwer = rechtesBein.schwer;
+	const rechtesBein_amputiert = rechtesBein.amputiert;
+
+	export let brust = new Wound();
+	const brust_leicht = brust.leicht;
+	const brust_mittel = brust.mittel;
+	const brust_schwer = brust.schwer;
+	const brust_amputiert = brust.amputiert;
+
+	export let bauch = new Wound();
+	const bauch_leicht = bauch.leicht;
+	const bauch_mittel = bauch.mittel;
+	const bauch_schwer = bauch.schwer;
+	const bauch_amputiert = bauch.amputiert;
+
+	export let kopf = new Wound();
+	const kopf_leicht = kopf.leicht;
+	const kopf_mittel = kopf.mittel;
+	const kopf_schwer = kopf.schwer;
+	const kopf_amputiert = kopf.amputiert;
+
+	function handleHit(e: MouseEvent | KeyboardEvent, wound: Wound, servety: WoundServity) {
+		if (e.altKey) {
+			wound.heal(servety);
+		} else {
+			wound.hit(servety);
+		}
+	}
+
+	function handelBlood(e: MouseEvent | KeyboardEvent) {
+		if (e.altKey) {
+			bleeding.update((x) => Math.max(x - 1, 0));
+		} else {
+			bleeding.update((x) => Math.min(x + 1, 8));
+		}
+	}
+
+	// [bauch, kopf, brust, linkerArm, linkesBein, rechterArm, rechtesBein].forEach((y) =>
+	// 	Object.values(y).forEach((x) => x.set(1))
+	// );
+	// bleeding.set(3);
 </script>
 
 <svg
@@ -77,7 +94,7 @@
 					<path
 						fill-rule="evenodd"
 						clip-rule="evenodd"
-						fill="#FFFFFF"
+						fill="var(--background-color)"
 						d="M123.628,261.094c-2.289,1.882-2.834-2.662-4.924-2.804
 					c0.49-3.174-2.535-6.201-0.51-9.195c-0.424-0.691-0.178-2.104-0.668-2.73c2.426-8.878-0.643-20.16-1.277-30.434
 					c-0.166-2.635-1.113-4.507-1.453-6.931c-0.268-1.925,0.197-4.04,0.08-5.912c-0.531-8.563-4.033-16.15-4.791-23.775
@@ -117,7 +134,7 @@
 					<path
 						fill-rule="evenodd"
 						clip-rule="evenodd"
-						fill="#FFFFFF"
+						fill="var(--background-color)"
 						d="M107.976,89.217c6.428-1.078,10.355,3.019,10.045,9.485
 					c-0.291,6.058-5.018,14.029-8.09,14.231c-5.48,0.358-12.728-17.104-5.861-22.32C105.119,89.814,106.546,89.456,107.976,89.217z"
 					/>
@@ -257,7 +274,7 @@
 					<path
 						fill-rule="evenodd"
 						clip-rule="evenodd"
-						fill="#FFFFFF"
+						fill="var(--background-color)"
 						d="M127.787,179.62c0.832,0.941-0.318,2.274-1.115,2.511
 					C127.111,181.36,127.451,180.491,127.787,179.62z"
 					/>
@@ -296,7 +313,7 @@
 						<path
 							fill-rule="evenodd"
 							clip-rule="evenodd"
-							fill="#FFFFFF"
+							fill="var(--background-color)"
 							d="M123.628,261.094c-2.289,1.882-2.834-2.662-4.924-2.804
 						c0.49-3.174-2.535-6.201-0.51-9.195c-0.424-0.691-0.178-2.104-0.668-2.73c2.426-8.878-0.643-20.16-1.277-30.434
 						c-0.166-2.635-1.113-4.507-1.453-6.931c-0.268-1.925,0.197-4.04,0.08-5.912c-0.531-8.563-4.033-16.15-4.791-23.775
@@ -336,7 +353,7 @@
 						<path
 							fill-rule="evenodd"
 							clip-rule="evenodd"
-							fill="#FFFFFF"
+							fill="var(--background-color)"
 							d="M107.976,89.217c6.428-1.078,10.355,3.019,10.045,9.485
 						c-0.291,6.058-5.018,14.029-8.09,14.231c-5.48,0.358-12.728-17.104-5.861-22.32C105.119,89.814,106.546,89.456,107.976,89.217z
 						"
@@ -478,7 +495,7 @@
 						<path
 							fill-rule="evenodd"
 							clip-rule="evenodd"
-							fill="#FFFFFF"
+							fill="var(--background-color)"
 							d="M127.787,179.62c0.832,0.941-0.318,2.274-1.115,2.511
 						C127.111,181.36,127.451,180.491,127.787,179.62z"
 						/>
@@ -509,654 +526,1120 @@
 			<g>
 				<polygon points="144.806,111.836 113.382,128.404 144.328,110.957 			" />
 			</g>
-			<g>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M59.028,53.857c12.006,0,12.006,17.008,0,17.008h-8.004V53.857H59.028z"
-				/>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M68.032,112.885c0,12.006-17.008,12.006-17.008,0v-8.004h17.008V112.885z"
-				/>
-				<rect
-					x="34.017"
-					y="53.857"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="17.009"
-					y="53.857"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect x="0.001" y="53.857" fill="#FFFFFF" stroke="#000000" width="17.008" height="17.008" />
-				<rect
-					x="34.017"
-					y="70.865"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="17.009"
-					y="70.865"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="34.017"
-					y="87.873"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="113.385" r="8.504" />
-				<rect
-					x="51.024"
-					y="87.873"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="51.024"
-					y="70.865"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="96.377" r="8.504" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="79.369" r="8.504" />
-				<line fill="#FFFFFF" stroke="#000000" x1="68.032" y1="70.865" x2="68.032" y2="62.361" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="62.361" r="8.504" />
-			</g>
-			<g>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M59.028,124.724c12.006,0,12.006,17.008,0,17.008h-8.004v-17.008H59.028z"
-				/>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M68.032,183.751c0,12.006-17.008,12.006-17.008,0v-8.004h17.008V183.751z"
-				/>
-				<rect
-					x="34.017"
-					y="124.724"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="17.009"
-					y="124.724"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="0.001"
-					y="124.724"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="34.017"
-					y="141.731"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="17.009"
-					y="141.731"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="34.017"
-					y="158.739"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="184.251" r="8.504" />
-				<rect
-					x="51.024"
-					y="158.739"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="51.024"
-					y="141.731"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="167.243" r="8.504" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="150.235" r="8.504" />
-				<line fill="#FFFFFF" stroke="#000000" x1="68.032" y1="141.731" x2="68.032" y2="133.228" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="133.228" r="8.504" />
-			</g>
-			<g>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M59.028,195.59c12.006,0,12.006,17.008,0,17.008h-8.004V195.59H59.028z"
-				/>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M68.032,254.617c0,12.006-17.008,12.006-17.008,0v-8.004h17.008V254.617z"
-				/>
-				<rect
-					x="34.017"
-					y="195.59"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="17.009"
-					y="195.59"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect x="0.001" y="195.59" fill="#FFFFFF" stroke="#000000" width="17.008" height="17.008" />
-				<rect
-					x="34.017"
-					y="212.598"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="17.009"
-					y="212.598"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="34.017"
-					y="229.605"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="255.117" r="8.504" />
-				<rect
-					x="51.024"
-					y="229.605"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="51.024"
-					y="212.598"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="238.109" r="8.504" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="221.102" r="8.504" />
-				<line fill="#FFFFFF" stroke="#000000" x1="68.032" y1="212.598" x2="68.032" y2="204.094" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="59.528" cy="204.094" r="8.504" />
-			</g>
-			<g>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M145.066,195.59c-12.006,0-12.006,17.008,0,17.008h8.004V195.59H145.066z"
-				/>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M136.062,254.617c0,12.006,17.008,12.006,17.008,0v-8.004h-17.008V254.617z"
-				/>
-				<rect
-					x="153.07"
-					y="195.59"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="170.078"
-					y="195.59"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="187.085"
-					y="195.59"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="153.07"
-					y="212.598"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="170.078"
-					y="212.598"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="153.07"
-					y="229.605"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="255.117" r="8.504" />
-				<rect
-					x="136.062"
-					y="229.605"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="136.062"
-					y="212.598"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="238.109" r="8.504" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="221.102" r="8.504" />
-				<line fill="#FFFFFF" stroke="#000000" x1="136.062" y1="212.598" x2="136.062" y2="204.094" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="204.094" r="8.504" />
-			</g>
-			<g>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M145.066,124.724c-12.006,0-12.006,17.008,0,17.008h8.004v-17.008H145.066z"
-				/>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M136.062,183.751c0,12.006,17.008,12.006,17.008,0v-8.004h-17.008V183.751z"
-				/>
-				<rect
-					x="153.07"
-					y="124.724"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="170.078"
-					y="124.724"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="187.085"
-					y="124.724"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="153.07"
-					y="141.731"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="170.078"
-					y="141.731"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="153.07"
-					y="158.739"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="184.251" r="8.504" />
-				<rect
-					x="136.062"
-					y="158.739"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="136.062"
-					y="141.731"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="167.243" r="8.504" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="150.235" r="8.504" />
-				<line fill="#FFFFFF" stroke="#000000" x1="136.062" y1="141.731" x2="136.062" y2="133.228" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="133.228" r="8.504" />
-			</g>
-			<g>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M145.066,53.858c-12.006,0-12.006,17.008,0,17.008h8.004V53.858H145.066z"
-				/>
-				<path
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M136.062,112.886c0,12.006,17.008,12.006,17.008,0v-8.004h-17.008V112.886z"
-				/>
-				<rect
-					x="153.07"
-					y="53.858"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="170.078"
-					y="53.858"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="187.085"
-					y="53.858"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="153.07"
-					y="70.866"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="170.078"
-					y="70.866"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="153.07"
-					y="87.874"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="113.386" r="8.504" />
-				<rect
-					x="136.062"
-					y="87.874"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					x="136.062"
-					y="70.866"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="96.378" r="8.504" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="79.37" r="8.504" />
-				<line fill="#FFFFFF" stroke="#000000" x1="136.062" y1="70.866" x2="136.062" y2="62.362" />
-				<circle fill="#FFFFFF" stroke="#000000" cx="144.566" cy="62.362" r="8.504" />
-			</g>
-			<g>
-				<path
-					id="Kopf-1-x"
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M82.704,34.86c-12.006,0-12.006,17.008,0,17.008h8.004V34.86H82.704z"
-				/>
-				<path
-					id="Kopf-4-x"
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M73.7,93.888c0,12.006,17.008,12.006,17.008,0v-8.004H73.7V93.888z"
-				/>
-				<rect
-					id="Kopf-1-1"
-					x="90.708"
-					y="34.86"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					id="Kopf-1-2"
-					x="107.716"
-					y="34.86"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					id="Kopf-1-3"
-					x="124.724"
-					y="34.86"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					id="Kopf-2-1"
-					x="90.708"
-					y="51.868"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					id="Kopf-2-2"
-					x="107.716"
-					y="51.868"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					id="Kopf-3-1"
-					x="90.708"
-					y="68.876"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle id="Kopf-4-x" fill="#FFFFFF" stroke="#000000" cx="82.204" cy="94.388" r="8.504" />
-				<rect
-					id="Kopf-3-x"
-					x="73.7"
-					y="68.876"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<rect
-					id="Kopf-2-x"
-					x="73.7"
-					y="51.868"
-					fill="#FFFFFF"
-					stroke="#000000"
-					width="17.008"
-					height="17.008"
-				/>
-				<circle id="Kopf-3-y" fill="#FFFFFF" stroke="#000000" cx="82.204" cy="77.38" r="8.504" />
-				<circle id="Kopf-2-y" fill="#FFFFFF" stroke="#000000" cx="82.204" cy="60.372" r="8.504" />
-				<!--<line id="Kopf-4-x2" fill="#FFFFFF" stroke="#00FF00" x1="73.7" y1="51.868" x2="73.7" y2="43.364"/>-->
-				<path
-					id="Kopf-4-x3"
-					fill="#FFFFFF"
-					stroke="#000000"
-					d="M73.7,43.364L73.7,51.868L89.7,51.868"
-				/>
-				<circle id="Kopf-1-y" fill="#FFFFFF" stroke="#000000" cx="82.204" cy="43.364" r="8.504" />
+			<g class="hit-locations">
+				<!-- Bauch-->
+				<g>
+					<g
+						on:click={(e) => handleHit(e, bauch, 'leicht')}
+						on:keypress={(e) => handleHit(e, bauch, 'leicht')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M50.524,53.857l8.752,0s8.752,0,8.752,8.752l0,8.752l-17.504,0z"
+							class:location-hit={$bauch_leicht > 2}
+						/>
+						<rect
+							x="34.017"
+							y="53.857"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$bauch_leicht > 0}
+						/>
+						<rect
+							x="17.009"
+							y="53.857"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$bauch_leicht > 1}
+						/>
+						<rect
+							x="0.001"
+							y="53.857"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$bauch_leicht > 2}
+						/>
+						<text
+							transform="matrix(1 0 0 1 59 65.9482)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 3}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, bauch, 'mittel')}
+						on:keypress={(e) => handleHit(e, bauch, 'mittel')}
+					>
+						<rect
+							x="51.024"
+							y="70.865"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$bauch_mittel > 1}
+						/>
+						<rect
+							x="34.017"
+							y="70.865"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$bauch_mittel > 0}
+						/>
+						<rect
+							x="17.009"
+							y="70.865"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$bauch_mittel > 1}
+						/>
+						<text
+							transform="matrix(1 0 0 1 59 82.9561)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 6}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, bauch, 'schwer')}
+						on:keypress={(e) => handleHit(e, bauch, 'schwer')}
+					>
+						<rect
+							x="51.024"
+							y="87.873"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$bauch_schwer > 0}
+						/>
+						<rect
+							x="34.017"
+							y="87.873"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$bauch_schwer > 0}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 59 99.9644)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 9}</text
+						>
+					</g>
+
+					<g
+						on:click={(e) => handleHit(e, bauch, 'amputiert')}
+						on:keypress={(e) => handleHit(e, bauch, 'amputiert')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M68.032,112.885c0,12.006-17.008,12.006-17.008,0v-8.004h17.008V112.885z"
+							class:location-hit={$bauch_amputiert > 0}
+						/>
+						<text
+							transform="matrix(1 0 0 1 59 116.9722)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 12}</text
+						>
+					</g>
+				</g>
+				<!--Rechter arm -->
+				<g>
+					<g
+						on:click={(e) => handleHit(e, rechterArm, 'leicht')}
+						on:keypress={(e) => handleHit(e, rechterArm, 'leicht')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M50.50,124.724l8.752,0s8.752,0,8.752,8.752l0,8.752l-17.504,0z"
+							class:location-hit={$rechterArm_leicht > 2}
+						/>
+						<rect
+							x="34.017"
+							y="124.724"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechterArm_leicht > 0}
+						/>
+						<rect
+							x="17.009"
+							y="124.724"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechterArm_leicht > 1}
+						/>
+						<rect
+							x="0.001"
+							y="124.724"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechterArm_leicht > 2}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 59 136.6758)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 3}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, rechterArm, 'mittel')}
+						on:keypress={(e) => handleHit(e, rechterArm, 'mittel')}
+					>
+						<rect
+							x="34.017"
+							y="141.731"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechterArm_mittel > 0}
+						/>
+						<rect
+							x="17.009"
+							y="141.731"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechterArm_mittel > 1}
+						/>
+						<rect
+							x="51.024"
+							y="141.731"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechterArm_mittel > 1}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 59 153.8223)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 5}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, rechterArm, 'schwer')}
+						on:keypress={(e) => handleHit(e, rechterArm, 'schwer')}
+					>
+						<rect
+							x="34.017"
+							y="158.739"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechterArm_schwer > 0}
+						/>
+
+						<rect
+							x="51.024"
+							y="158.739"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechterArm_schwer > 0}
+						/>
+						<text
+							transform="matrix(1 0 0 1 59 170.8574)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 8}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, rechterArm, 'amputiert')}
+						on:keypress={(e) => handleHit(e, rechterArm, 'amputiert')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M68.032,183.751c0,12.006-17.008,12.006-17.008,0v-8.004h17.008V183.751z"
+							class:location-hit={$rechterArm_amputiert > 0}
+						/>
+						<text
+							transform="matrix(1 0 0 1 59 188.4824)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 11}</text
+						>
+					</g>
+				</g>
+				<!-- Rechtes Bein-->
+				<g>
+					<g
+						on:click={(e) => handleHit(e, rechtesBein, 'leicht')}
+						on:keypress={(e) => handleHit(e, rechtesBein, 'leicht')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M50.50,195.59l8.752,0s8.752,0,8.752,8.752l0,8.752l-17.504,0z"
+							class:location-hit={$rechtesBein_leicht > 2}
+						/>
+						<rect
+							x="34.017"
+							y="195.59"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechtesBein_leicht > 0}
+						/>
+						<rect
+							x="17.009"
+							y="195.59"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechtesBein_leicht > 1}
+						/>
+						<rect
+							x="0.001"
+							y="195.59"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechtesBein_leicht > 2}
+						/>
+						<!-- <path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M59.028,195.59c12.006,0,12.006,17.008,0,17.008h-8.004V195.59H59.028z"
+						/> -->
+						<text
+							transform="matrix(1 0 0 1 59 207.8145)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 3}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, rechtesBein, 'mittel')}
+						on:keypress={(e) => handleHit(e, rechtesBein, 'mittel')}
+					>
+						<rect
+							x="34.017"
+							y="212.598"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechtesBein_mittel > 0}
+						/>
+						<rect
+							x="17.009"
+							y="212.598"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechtesBein_mittel > 1}
+						/>
+
+						<rect
+							x="51.024"
+							y="212.598"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							class:location-hit={$rechtesBein_mittel > 1}
+							height="17.008"
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 59 224.6484)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 5}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, rechtesBein, 'schwer')}
+						on:keypress={(e) => handleHit(e, rechtesBein, 'schwer')}
+					>
+						<!-- <circle
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							cx="59.528"
+							cy="255.117"
+							r="8.504"
+							/> -->
+
+						<rect
+							x="34.017"
+							y="229.605"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechtesBein_schwer > 0}
+						/>
+						<rect
+							x="51.024"
+							y="229.605"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$rechtesBein_schwer > 0}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 59 241.8145)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 8}</text
+						>
+					</g>
+
+					<g
+						on:click={(e) => handleHit(e, rechtesBein, 'amputiert')}
+						on:keypress={(e) => handleHit(e, rechtesBein, 'amputiert')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M68.032,254.617c0,12.006-17.008,12.006-17.008,0v-8.004h17.008V254.617z"
+							class:location-hit={$rechtesBein_amputiert > 0}
+						/>
+						<text
+							transform="matrix(1 0 0 1 59 258.8984)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 11}</text
+						>
+					</g>
+					<!-- <circle
+						fill="var(--background-color)"
+						stroke="var(--color)"
+						cx="59.528"
+						cy="238.109"
+						r="8.504"
+					/>
+					<circle
+						fill="var(--background-color)"
+						stroke="var(--color)"
+						cx="59.528"
+						cy="221.102"
+						r="8.504"
+					/>
+					<line
+						fill="var(--background-color)"
+						stroke="var(--color)"
+						x1="68.032"
+						y1="212.598"
+						x2="68.032"
+						y2="204.094"
+					/>
+					<circle
+						fill="var(--background-color)"
+						stroke="var(--color)"
+						cx="59.528"
+						cy="204.094"
+						r="8.504"
+					/> -->
+				</g>
+				<!-- Linkes Bein-->
+				<g>
+					<g
+						on:click={(e) => handleHit(e, linkesBein, 'leicht')}
+						on:keypress={(e) => handleHit(e, linkesBein, 'leicht')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M153.57,195.59l-8.752,0s-8.752,0,-8.752,8.752l0,8.752l17.504,0z"
+							class:location-hit={$linkesBein_leicht > 2}
+						/>
+						<rect
+							x="153.07"
+							y="195.59"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkesBein_leicht > 0}
+						/>
+						<rect
+							x="170.078"
+							y="195.59"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkesBein_leicht > 1}
+						/>
+						<rect
+							x="187.085"
+							y="195.59"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkesBein_leicht > 2}
+						/>
+						<!-- <path
+						fill="var(--background-color)"
+						stroke="var(--color)"
+						d="M145.066,195.59c-12.006,0-12.006,17.008,0,17.008h8.004V195.59H145.066z"
+						/>  -->
+
+						<text
+							transform="matrix(1 0 0 1 144.5 207.2168)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 3}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, linkesBein, 'mittel')}
+						on:keypress={(e) => handleHit(e, linkesBein, 'mittel')}
+					>
+						<rect
+							x="153.07"
+							y="212.598"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkesBein_mittel > 0}
+						/>
+						<rect
+							x="170.078"
+							y="212.598"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkesBein_mittel > 1}
+						/>
+						<rect
+							x="136.062"
+							y="212.598"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkesBein_mittel > 1}
+						/>
+						<text
+							transform="matrix(1 0 0 1 144.5 225.0664)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 5}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, linkesBein, 'schwer')}
+						on:keypress={(e) => handleHit(e, linkesBein, 'schwer')}
+					>
+						<rect
+							x="153.07"
+							y="229.605"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkesBein_schwer > 0}
+						/>
+						<rect
+							x="136.062"
+							y="229.605"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkesBein_schwer > 0}
+						/>
+						<text
+							transform="matrix(1 0 0 1 144.5 241.8145)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 8}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, linkesBein, 'amputiert')}
+						on:keypress={(e) => handleHit(e, linkesBein, 'amputiert')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M136.062,254.617c0,12.006,17.008,12.006,17.008,0v-8.004h-17.008V254.617z"
+							class:location-hit={$linkesBein_amputiert > 0}
+						/>
+						<text
+							transform="matrix(1 0 0 1 144.5 258.6484)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 11}</text
+						>
+					</g>
+				</g>
+				<!-- Linker Arm -->
+				<g>
+					<g
+						on:click={(e) => handleHit(e, linkerArm, 'leicht')}
+						on:keypress={(e) => handleHit(e, linkerArm, 'leicht')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M153.57,124.724l-8.752,0s-8.752,0,-8.752,8.752l0,8.752l17.504,0z"
+							class:location-hit={$linkerArm_leicht > 2}
+						/>
+
+						<rect
+							x="153.07"
+							y="124.724"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkerArm_leicht > 0}
+						/>
+						<rect
+							x="170.078"
+							y="124.724"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkerArm_leicht > 1}
+						/>
+						<rect
+							x="187.085"
+							y="124.724"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkerArm_leicht > 2}
+						/>
+						<text
+							transform="matrix(1 0 0 1 144.5 136.377)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 3}</text
+						>
+					</g>
+
+					<g
+						on:click={(e) => handleHit(e, linkerArm, 'mittel')}
+						on:keypress={(e) => handleHit(e, linkerArm, 'mittel')}
+					>
+						<rect
+							x="153.07"
+							y="141.731"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkerArm_mittel > 0}
+						/>
+						<rect
+							x="170.078"
+							y="141.731"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkerArm_mittel > 1}
+						/>
+						<rect
+							x="136.062"
+							y="141.731"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkerArm_mittel > 1}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 144.5 153.8223)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 5}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, linkerArm, 'schwer')}
+						on:keypress={(e) => handleHit(e, linkerArm, 'schwer')}
+					>
+						<rect
+							x="153.07"
+							y="158.739"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkerArm_schwer > 0}
+						/>
+
+						<rect
+							x="136.062"
+							y="158.739"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$linkerArm_schwer > 0}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 144.5 171.2031)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 8}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, linkerArm, 'amputiert')}
+						on:keypress={(e) => handleHit(e, linkerArm, 'amputiert')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M136.062,183.751c0,12.006,17.008,12.006,17.008,0v-8.004h-17.008V183.751z"
+							class:location-hit={$linkerArm_amputiert > 0}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 144.5 187.8203)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 11}</text
+						>
+					</g>
+				</g>
+
+				<!-- Brust -->
+				<g>
+					<g
+						on:click={(e) => handleHit(e, brust, 'leicht')}
+						on:keypress={(e) => handleHit(e, brust, 'leicht')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M153.57,53.858l-8.752,0s-8.752,0,-8.752,8.752l0,8.752l17.504,0z"
+							class:location-hit={$brust_leicht > 2}
+						/>
+						<rect
+							x="153.07"
+							y="53.858"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$brust_leicht > 0}
+						/>
+						<rect
+							x="170.078"
+							y="53.858"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$brust_leicht > 1}
+						/>
+						<rect
+							x="187.085"
+							y="53.858"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$brust_leicht > 2}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 144.5 65.9482)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 3}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, brust, 'mittel')}
+						on:keypress={(e) => handleHit(e, brust, 'mittel')}
+					>
+						<rect
+							x="153.07"
+							y="70.866"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$brust_mittel > 0}
+						/>
+						<rect
+							x="170.078"
+							y="70.866"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$brust_mittel > 1}
+						/>
+						<rect
+							x="136.062"
+							y="70.866"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$brust_mittel > 1}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 144.5 82.9561)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 6}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, brust, 'schwer')}
+						on:keypress={(e) => handleHit(e, brust, 'schwer')}
+					>
+						<rect
+							x="153.07"
+							y="87.874"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$brust_schwer > 0}
+						/>
+						<rect
+							x="136.062"
+							y="87.874"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$brust_schwer > 0}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 144.5 99.9644)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 9}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, brust, 'amputiert')}
+						on:keypress={(e) => handleHit(e, brust, 'amputiert')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M136.062,112.886c0,12.006,17.008,12.006,17.008,0v-8.004h-17.008V112.886z"
+							class:location-hit={$brust_amputiert > 0}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 144.5 117.377)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 12}</text
+						>
+					</g>
+					<!-- <circle
+						fill="var(--background-color)"
+						stroke="var(--color)"
+						cx="144.566"
+						cy="113.386"
+						r="8.504"
+					/> -->
+
+					<!-- <circle
+						fill="var(--background-color)"
+						stroke="var(--color)"
+						cx="144.566"
+						cy="96.378"
+						r="8.504"
+					/>
+					<circle
+						fill="var(--background-color)"
+						stroke="var(--color)"
+						cx="144.566"
+						cy="79.37"
+						r="8.504"
+					/>
+					<line
+						fill="var(--background-color)"
+						stroke="var(--color)"
+						x1="136.062"
+						y1="70.866"
+						x2="136.062"
+						y2="62.362"
+					/>
+					<circle
+						fill="var(--background-color)"
+						stroke="var(--color)"
+						cx="144.566"
+						cy="62.362"
+						r="8.504"
+					/> -->
+				</g>
+				<!-- Kopf -->
+				<g>
+					<g
+						on:click={(e) => handleHit(e, kopf, 'leicht')}
+						on:keypress={(e) => handleHit(e, kopf, 'leicht')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M91.208,34.86l-8.752,0s-8.752,0,-8.752,8.752l0,8.752l17.504,0z"
+							class:location-hit={$kopf_leicht > 2}
+						/>
+						<rect
+							x="90.708"
+							y="34.86"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$kopf_leicht > 0}
+						/>
+						<rect
+							x="107.716"
+							y="34.86"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$kopf_leicht > 1}
+						/>
+						<rect
+							x="124.724"
+							y="34.86"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$kopf_leicht > 2}
+						/>
+						<text
+							transform="matrix(1 0 0 1 82 46.8647)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 1}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, kopf, 'mittel')}
+						on:keypress={(e) => handleHit(e, kopf, 'mittel')}
+					>
+						<rect
+							x="90.708"
+							y="51.868"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$kopf_mittel > 0}
+						/>
+						<rect
+							x="107.716"
+							y="51.868"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$kopf_mittel > 1}
+						/>
+						<rect
+							x="73.7"
+							y="51.868"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$kopf_mittel > 1}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 82 64.1982)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 3}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, kopf, 'schwer')}
+						on:keypress={(e) => handleHit(e, kopf, 'schwer')}
+					>
+						<rect
+							x="90.708"
+							y="68.876"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$kopf_schwer > 0}
+						/>
+						<rect
+							x="73.7"
+							y="68.876"
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							width="17.008"
+							height="17.008"
+							class:location-hit={$kopf_schwer > 0}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 82 81.1982)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 5}</text
+						>
+					</g>
+					<g
+						on:click={(e) => handleHit(e, kopf, 'amputiert')}
+						on:keypress={(e) => handleHit(e, kopf, 'amputiert')}
+					>
+						<path
+							fill="var(--background-color)"
+							stroke="var(--color)"
+							d="M73.7,93.888c0,12.006,17.008,12.006,17.008,0v-8.004H73.7V93.888z"
+							class:location-hit={$kopf_amputiert > 0}
+						/>
+
+						<text
+							transform="matrix(1 0 0 1 82 98.2256)"
+							font-family="'MyriadPro-Regular'"
+							font-size="12"
+							text-anchor="middle">{bonus + 7}</text
+						>
+					</g>
+				</g>
 			</g>
 		</g>
-		<rect fill="none" stroke="#000000" width="204.095" height="266.456" />
-		<g>
+		<rect fill="none" stroke="var(--color)" width="204.095" height="266.456" />
+		<g class="bleed" on:click={handelBlood} on:keypress={handelBlood}>
 			<!--Blutungen-->
 			<g>
 				<rect y="0.279" fill="none" width="34.488" height="34.488" />
 				<path
-					fill="#EDEDED"
-					stroke="#000000"
+					class:location-hit={$bleeding > 0}
+					fill="var(--card-background-color)"
+					stroke="var(--color)"
 					stroke-miterlimit="10"
 					d="M17.244,28.984c-4.537,0-8.212-3.677-8.212-8.21
-				c0-5.476,8.212-14.717,8.212-14.717s8.21,9.241,8.21,14.717C25.454,25.308,21.777,28.984,17.244,28.984z"
+					c0-5.476,8.212-14.717,8.212-14.717s8.21,9.241,8.21,14.717C25.454,25.308,21.777,28.984,17.244,28.984z"
 				/>
 			</g>
 			<g>
 				<rect x="24.229" y="0.279" fill="none" width="34.487" height="34.488" />
 				<path
-					fill="#EDEDED"
-					stroke="#000000"
+					class:location-hit={$bleeding > 1}
+					fill="var(--card-background-color)"
+					stroke="var(--color)"
 					stroke-miterlimit="10"
 					d="M41.474,28.984c-4.535,0-8.213-3.677-8.213-8.21
-				c0-5.476,8.213-14.717,8.213-14.717s8.213,9.241,8.213,14.717C49.687,25.308,46.008,28.984,41.474,28.984z"
+					c0-5.476,8.213-14.717,8.213-14.717s8.213,9.241,8.213,14.717C49.687,25.308,46.008,28.984,41.474,28.984z"
 				/>
 			</g>
 			<g>
 				<rect x="48.459" y="0.279" fill="none" width="34.488" height="34.488" />
 				<path
-					fill="#EDEDED"
-					stroke="#000000"
+					class:location-hit={$bleeding > 2}
+					fill="var(--card-background-color)"
+					stroke="var(--color)"
 					stroke-miterlimit="10"
 					d="M65.702,28.984c-4.535,0-8.212-3.677-8.212-8.21
-				c0-5.476,8.212-14.717,8.212-14.717s8.213,9.241,8.213,14.717C73.915,25.308,70.237,28.984,65.702,28.984z"
+					c0-5.476,8.212-14.717,8.212-14.717s8.213,9.241,8.213,14.717C73.915,25.308,70.237,28.984,65.702,28.984z"
 				/>
 			</g>
 			<g>
 				<rect x="72.688" y="0.279" fill="none" width="34.489" height="34.488" />
 				<path
-					fill="#EDEDED"
-					stroke="#000000"
+					class:location-hit={$bleeding > 3}
+					fill="var(--card-background-color)"
+					stroke="var(--color)"
 					stroke-miterlimit="10"
 					d="M89.933,28.984c-4.535,0-8.211-3.677-8.211-8.21
-				c0-5.476,8.211-14.717,8.211-14.717s8.212,9.241,8.212,14.717C98.145,25.308,94.467,28.984,89.933,28.984z"
+					c0-5.476,8.211-14.717,8.211-14.717s8.212,9.241,8.212,14.717C98.145,25.308,94.467,28.984,89.933,28.984z"
 				/>
 			</g>
 			<g>
 				<rect x="96.917" y="0.279" fill="none" width="34.489" height="34.488" />
 				<path
-					fill="#EDEDED"
-					stroke="#000000"
+					class:location-hit={$bleeding > 4}
+					fill="var(--card-background-color)"
+					stroke="var(--color)"
 					stroke-miterlimit="10"
 					d="M114.162,28.984c-4.537,0-8.213-3.677-8.213-8.21
-				c0-5.476,8.213-14.717,8.213-14.717s8.209,9.241,8.209,14.717C122.371,25.308,118.695,28.984,114.162,28.984z"
+					c0-5.476,8.213-14.717,8.213-14.717s8.209,9.241,8.209,14.717C122.371,25.308,118.695,28.984,114.162,28.984z"
 				/>
 			</g>
 			<g>
 				<rect x="121.146" y="0.279" fill="none" width="34.49" height="34.488" />
 				<path
-					fill="#EDEDED"
-					stroke="#000000"
+					class:location-hit={$bleeding > 5}
+					fill="var(--card-background-color)"
+					stroke="var(--color)"
 					stroke-miterlimit="10"
 					d="M138.39,28.984c-4.535,0-8.211-3.677-8.211-8.21
-				c0-5.476,8.211-14.717,8.211-14.717s8.213,9.241,8.213,14.717C146.603,25.308,142.925,28.984,138.39,28.984z"
+					c0-5.476,8.211-14.717,8.211-14.717s8.213,9.241,8.213,14.717C146.603,25.308,142.925,28.984,138.39,28.984z"
 				/>
 			</g>
 			<g>
 				<rect x="145.376" y="0.279" fill="none" width="34.488" height="34.488" />
 				<path
-					fill="#EDEDED"
-					stroke="#000000"
+					class:location-hit={$bleeding > 6}
+					fill="var(--card-background-color)"
+					stroke="var(--color)"
 					stroke-miterlimit="10"
 					d="M162.619,28.984c-4.535,0-8.211-3.677-8.211-8.21
-				c0-5.476,8.211-14.717,8.211-14.717s8.215,9.241,8.215,14.717C170.833,25.308,167.154,28.984,162.619,28.984z"
+					c0-5.476,8.211-14.717,8.211-14.717s8.215,9.241,8.215,14.717C170.833,25.308,167.154,28.984,162.619,28.984z"
 				/>
 			</g>
 			<g>
 				<rect x="169.605" y="0.279" fill="none" width="34.488" height="34.488" />
 				<path
-					fill="#EDEDED"
-					stroke="#000000"
+					class:location-hit={$bleeding > 7}
+					fill="var(--card-background-color)"
+					stroke="var(--color)"
 					stroke-miterlimit="10"
 					d="M186.849,28.984c-4.533,0-8.209-3.677-8.209-8.21
 				c0-5.476,8.209-14.717,8.209-14.717s8.213,9.241,8.213,14.717C195.062,25.308,191.384,28.984,186.849,28.984z"
@@ -1165,194 +1648,95 @@
 		</g>
 	</g>
 
-	<!-- Bauch-->
-	<text
-		transform="matrix(1 0 0 1 59 65.9482)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 3}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 59 82.9561)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 6}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 59 99.9644)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 9}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 59 116.9722)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 12}</text
-	>
-
-	<!-- Arm Links-->
-	<text
-		transform="matrix(1 0 0 1 59 136.6758)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 3}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 59 153.8223)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 5}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 59 170.8574)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 8}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 59 188.4824)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 11}</text
-	>
-
-	<!-- Bein Links-->
-	<text
-		transform="matrix(1 0 0 1 59 207.8145)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 3}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 59 224.6484)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 5}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 59 241.8145)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 8}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 59 258.8984)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 11}</text
-	>
-
-	<!-- Bein Rechts-->
-	<text
-		transform="matrix(1 0 0 1 144.5 207.2168)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 3}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 144.5 225.0664)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 5}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 144.5 241.8145)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 8}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 144.5 258.6484)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 11}</text
-	>
-
-	<!-- Arm Rechts-->
-	<text
-		transform="matrix(1 0 0 1 144.5 136.377)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 3}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 144.5 153.8223)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 5}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 144.5 171.2031)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 8}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 144.5 187.8203)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 11}</text
-	>
-
-	<!--Brust-->
-	<text
-		transform="matrix(1 0 0 1 144.5 65.9482)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 3}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 144.5 82.9561)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 6}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 144.5 99.9644)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 9}</text
-	>
-	<text
-		transform="matrix(1 0 0 1 144.5 117.377)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 12}</text
-	>
-
-	<!--Kopf-->
-	<text
-		id="Kopf-1-t"
-		transform="matrix(1 0 0 1 82 46.8647)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 1}</text
-	>
-	<text
-		id="Kopf-2-t"
-		transform="matrix(1 0 0 1 82 64.1982)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 3}</text
-	>
-	<text
-		id="Kopf-3-t"
-		transform="matrix(1 0 0 1 82 81.1982)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 5}</text
-	>
-	<text
-		id="Kopf-4-t"
-		transform="matrix(1 0 0 1 82 98.2256)"
-		font-family="'MyriadPro-Regular'"
-		font-size="12"
-		text-anchor="middle">{bonus + 7}</text
-	>
+	<g class="amputated" transform="matrix(0.305 0 0 0.305 76 85)">
+		<g class:location-hit={$bauch_amputiert > 0} transform="matrix(1 0 0 1 3 5.5)">
+			<g>
+				<path
+					d="m171.78,284.96c-2.1-3.2-12.04-8.83-16.09-11.81-1.62-1.04-2.83-1.87-3.71-2.55-.74-.58,1.07.58,3.71,2.55,1.24.78,2.7,1.7,4.41,2.78-1.86-1.87-3.65-3.68-4.89-5.04-1.11-.64-2.23-1.28-3.37-1.94-5.01-2.89-9.99-5.42-14.98-8.28-1.8-1.06-5.91-2.98-7.62-4.12,7.67,3.54,15.15,7.41,22.54,11.41-.19-.14-.37-.28-.54-.43-3.81-2.25-7.65-4.48-11.53-6.63-.67-.34-1.35-.69-2.02-1.11l2.02,1.11c1.76.88,3.57,1.53,5.51,2.46,1.17.63,2.39,1.56,3.55,2.2.93.55,1.67,1.29,2.47,1.97l1.7,1.02c.19.06.38.13.58.21,0,0-.01-.02-.01-.03-.37-1.06-4.01-3.99-7.97-6.71-3.94-2.74-8.21-5.23-9.54-5.68-2.12-.74-4.47-.44-6.8-1.28-.78-.28-1.29-.87-1.98-.86-.13.15-.48.16-.83.18-1.56-.53-2.8-1.85-4.2-1.78-.91-.1-2.08-3.93-2.47-3.47-1.42,1.73-.38.47-2.3-.45-.22-.13-1.3.39-1.75.12-1.43-1.11-2.17-.57-4.11-1-2.98-.32-3.17-1.79-6.04-1.31-.35.04-4.42-.37-4.42-.37-2.89-1.16-5.08-.79-6.8-3.04-3.07.24-5.86-2.64-8.46-3.77-2.64-1.16-3.13-2.74-4.54-4.86-.47-.51-.93-.75-1.06-1.22-.13-.46-1.38-.43-1.79-.98l.5-.33c-.13-.18-.39-.55-.52-.73-.13-.18.04-.29.22-.39.34-.21.68-.43.6-.88-.4-.83-.83-1.62-1.26-2.38-.79-.45-1.57-.9-2.35-1.35-.24.12-.49.22-.74.25-.26-.13-.55-.25-.8-.39-.57.19-1.06.58-1.45.7-1.35.93-3.4.69-4.52,1.71-.31.34.6,2.02.52,3.18-.07.31-.78.24-1.37.4.69.98.28,1.4-.47,1.33.14.26.28.52.28.52-.2.06-.79.24-.79.24.68,1.5,1.42,3.12,2.36,4.6.95,1.45,2.12,2.72,3.55,3.42.58.34,1.71.68,2.46.86.37.09.81.84,1.03,1.03.72-.16,1.01-.72,1.5-1.08.72.85,1.96,2.09,3.16,2.85,1.2.76,2.32,1.03,2.73.08,1.46.86,2.19.13,3.78.76,2.13.78,4.81,1.73,7.44,2.59,1.47.38,2.82.88,4.2,1.34.52.16,1.02.32,1.49.47,10.34,3.08,16.94,7.19,27.07,9.87,10.24,2.7,20,8.04,27.61,13,7.63,4.96,13.23,9.52,15.41,10.95l1.68.08Z"
+				/>
+			</g>
+			<g>
+				<path
+					d="m156.32,223.56c-3.55.47-12.04,6.62-16.19,8.68-1.52.9-2.7,1.55-3.64,1.97-.79.35.92-.62,3.64-1.97,1.15-.69,2.5-1.52,4.07-2.52-2.32.75-4.56,1.46-6.22,1.88-.97.65-1.95,1.3-2.96,1.95-4.43,2.86-8.62,5.77-13.17,8.35-1.66.93-5.08,3.22-6.81,3.92,6.43-4.13,12.8-8.37,19.11-12.7-.19.09-.39.17-.58.25-3.42,2.14-6.86,4.23-10.3,6.31-.57.38-1.16.74-1.79,1.07l1.79-1.07c1.47-1.01,2.79-2.15,4.35-3.31,1-.66,2.29-1.21,3.29-1.88.83-.52,1.76-.77,2.66-1.13l1.53-.95c.12-.13.26-.26.41-.39,0,0-.02,0-.03,0-1.06-.18-4.96,1.51-8.86,3.42-3.89,1.91-7.77,4.02-8.72,4.86-1.54,1.28-2.32,3.36-4.09,4.73-.59.46-1.3.53-1.61,1.09.06.19-.09.47-.25.75-1.18.91-2.82,1.13-3.44,2.25-.53.65-4.12-.75-3.94-.17.65,2.12.18.58-1.5,1.45-.22.09-.36,1.22-.8,1.39-1.58.39-1.56,1.25-2.92,2.41-1.84,1.99-3.05,1.16-4.3,3.55-.16.28-2.79,2.97-2.79,2.97-2.53,1.37-3.47,3.21-6.17,3.2-1.46,2.51-5.21,3.2-7.34,5.14-2.1,1.92-3.66,1.85-6.2,2.9-.64.4-.98.85-1.49.94-.52.1-.68,1.44-1.3,1.87l-.29-.53c-.22.14-.63.44-.83.61-.21.16-.31-.02-.41-.2-.2-.36-.39-.72-.91-.57-.49.3-.97.61-1.44.95-.46.36-.91.74-1.35,1.14-.52,1.06-.9,2.23-1.26,3.33.18.2.36.42.45.67l-.17,1.06c.38.48.95.76,1.21,1.08,1.37.9,2.07,2.76,3.51,3.28.44.13,1.41-1.15,2.45-1.27.29,0,.5.61.9,1.07.51-.72,1.05-.38,1.28.2.16-.13.31-.27.31-.27.13.15.51.61.51.61,1.82-1.32,4.33-2.09,5.29-4.03.23-.39.5-1.21.66-1.77.09-.28.72-.41.91-.51-.08-.63-.53-1.07-.8-1.61,1.58-.68,5.02-2.02,3.7-3.62,1.15-.73.8-1.68,1.93-2.59,1.46-1.24,3.45-2.69,5.46-4.08,1.05-.84,2.16-1.5,3.27-2.19.41-.27.81-.53,1.19-.77,8.2-5.41,15.2-8.04,22.27-14.73,7.12-6.74,15.6-12.28,22.83-16.53,7.23-4.25,13.21-7.19,15.24-8.47l.66-1.43Z"
+				/>
+			</g>
+		</g>
+		<g class:location-hit={$rechterArm_amputiert > 0}>
+			<g>
+				<path
+					d="m83.64,140.52c-.75-.36-2.25-.41-4.14.29-1.89.67-4.08,1.95-6.19,3.54-4.24,3.2-8.15,7.48-10.61,9.97-1.8,2.01-3.17,3.57-4.24,4.71-.9.97,1-1.41,4.24-4.71,1.38-1.52,3.01-3.31,5.01-5.3-2.95,2.06-5.69,4.28-7.7,5.86-1.14,1.42-2.28,2.86-3.42,4.34-4.99,6.55-9.21,13.3-13.66,20.14-1.64,2.47-4.76,8.11-6.41,10.48,5.71-10.53,11.89-20.82,18.95-30.54-.22.24-.44.48-.67.72-3.83,5.03-7.43,10.23-10.85,15.54-.55.92-1.13,1.84-1.76,2.76l1.76-2.76c1.43-2.41,2.68-4.84,4.28-7.46,1.04-1.58,2.46-3.24,3.55-4.78.9-1.25,1.99-2.23,3.02-3.3.58-.75,1.15-1.5,1.74-2.23.13-.24.29-.5.45-.75-.01,0-.03.02-.04.02-1.32.47-5.92,5.3-10.09,10.71-4.21,5.38-8.03,11.27-8.86,13.08-1.36,2.87-1.62,6.01-3.1,9.18-.49,1.06-1.24,1.79-1.39,2.72.13.17.06.63-.01,1.1-.96,2.12-2.64,3.9-2.9,5.77-.33,1.23-4.67,3.06-4.26,3.56,1.5,1.79.41.49-1.02,3.11-.2.31.11,1.73-.27,2.35-1.49,2-1.12,2.95-2.01,5.6-1.02,4.06-2.61,4.37-2.77,8.29-.02.23-.36,1.76-.7,3.23-.33,1.47-.66,2.88-.66,2.88-1.81,4.11-1.77,7.07-4.36,9.86-.14,4.23-3.32,8.82-4.37,13.03-1.04,4.2-2.55,5.62-4.44,9.06-.42,1.02-.54,1.83-.97,2.38-.43.55-.03,2.24-.41,3.27l-.5-.4c-.13.35-.39,1.03-.52,1.38-.13.35-.3.21-.47.08-.33-.27-.67-.53-1.1.03-.66,1.43-1.26,2.92-1.75,4.49-.04,1.64-.02,3.26.09,4.87.25.13.49.28.67.54l.2,1.44c.53.36,1.17.37,1.52.61,1.62.26,2.91,2.35,4.46,2.11.46-.11.97-2.62,1.94-3.6.28-.22.7.48,1.23.83.25-1.45.88-1.42,1.3-.74.11-.33.21-.66.21-.66.18.12.7.47.7.47,1.36-3.5,3.62-7.17,3.8-10.84.09-.77,0-2.13-.06-3.04-.03-.45.54-1.29.69-1.61-.35-.73-.98-.81-1.47-1.22,1.27-2.46,3.94-7.74,1.92-8.19.75-2.06-.03-2.77.59-4.98.8-2.93,1.96-6.61,3.2-10.21.59-2,1.33-3.86,2.06-5.75.27-.71.53-1.39.77-2.04,2.68-7.07,5.61-12.97,8.47-18.83,2.87-5.86,5.68-11.67,8.37-18.58,5.43-13.93,13.95-27.33,22.45-36.79,4.23-4.73,8.46-8.45,12-10.77,3.55-2.36,6.22-3.15,7.35-3.33.18-.17.38-.37.57-.53l.59-.47Z"
+				/>
+			</g>
+		</g>
+		<g class:location-hit={$linkerArm_amputiert > 0}>
+			<g>
+				<path
+					d="m200.73,129.61c-3.18,3.28-8.15,16.62-10.81,22.27-.92,2.21-1.65,3.89-2.27,5.13-.52,1.04.5-1.43,2.27-5.13.69-1.69,1.5-3.68,2.46-6.01-1.75,2.72-3.45,5.34-4.73,7.2-.55,1.5-1.1,3.01-1.67,4.55-2.49,6.77-4.59,13.41-7.07,20.12-.92,2.43-2.52,7.84-3.56,10.16,3-10.05,6.21-20.04,9.61-29.95-.12.26-.25.51-.39.76-1.95,5.16-3.85,10.34-5.69,15.55-.28.89-.59,1.79-.95,2.7l.95-2.7c.73-2.34,1.24-4.67,1.99-7.24.53-1.56,1.37-3.27,1.91-4.83.47-1.26,1.17-2.34,1.79-3.48l.88-2.31c.04-.24.09-.49.17-.75,0,0-.02.02-.03.02-1.05.73-3.7,5.88-6.1,11.31-2.41,5.43-4.56,11.14-4.91,12.84-.58,2.71-.06,5.47-.74,8.46-.22,1-.78,1.75-.71,2.58.17.13.2.54.24.96-.44,2-1.67,3.79-1.5,5.46-.05,1.12-3.84,3.33-3.34,3.71,1.85,1.36.5.36-.31,2.86-.12.3.48,1.5.24,2.09-1,1.95-.45,2.74-.76,5.18-.13,3.69-1.61,4.19-.95,7.63.03.21.01,1.59-.01,2.92-.02,1.33-.03,2.61-.03,2.61-.91,3.84-.25,6.42-2.2,9.23.75,3.69-1.39,8.18-1.55,11.99-.15,3.8-1.33,5.28-2.48,8.55-.21.94-.15,1.67-.48,2.21-.32.54.42,1.94.24,2.89l-.57-.27c-.06.32-.19.95-.25,1.27-.06.32-.25.23-.44.14-.38-.18-.76-.35-1.07.2-.39,1.33-.68,2.7-.9,4.11.26,1.4.56,2.78.92,4.13.27.08.53.17.74.36l.43,1.2c.58.24,1.21.16,1.6.32,1.64,0,3.24,1.64,4.73,1.24.43-.16.57-2.41,1.36-3.41.24-.23.77.32,1.35.55,0-1.31.64-1.38,1.16-.84.05-.31.1-.61.1-.61.19.08.77.31.77.31.76-3.28,2.28-6.86,1.73-10.07-.06-.69-.42-1.85-.66-2.63-.12-.39.28-1.2.35-1.5-.49-.57-1.12-.54-1.68-.81.74-2.34,2.26-7.3.19-7.38.32-1.89-.6-2.39-.45-4.39.18-2.65.52-6.02.99-9.32.14-1.82.5-3.54.8-5.29.11-.65.23-1.28.33-1.89,1.13-6.53,2.73-12.09,4.25-17.61,1.52-5.52,2.97-11.02,3.95-17.49,1.98-13.06,6.44-26.17,10.83-36.62,4.38-10.47,8.64-18.3,9.96-21.24l-.04-2.02Z"
+				/>
+			</g>
+		</g>
+		<g class:location-hit={$brust_amputiert > 0}>
+			<g>
+				<path
+					d="m156.7,93.06c-4.19,1.81-14.06,12.19-18.68,16.44-1.72,1.69-3.04,2.97-4.09,3.88-.88.78.99-1.16,4.09-3.88,1.29-1.3,2.81-2.83,4.6-4.64-2.67,1.85-5.25,3.64-7.16,4.87-1.09,1.18-2.18,2.37-3.3,3.59-1.22,1.34-2.43,2.67-3.63,4-1.18,1.35-2.35,2.69-3.53,4.02-2.36,2.66-4.68,5.35-7.11,8-1.8,1.89-5.3,6.37-7.16,8.12,6.57-8.26,13.39-16.32,20.37-24.23-.22.19-.43.38-.66.56-1.91,2.01-3.8,4.05-5.66,6.11-1.87,2.05-3.76,4.1-5.59,6.19-.6.73-1.23,1.45-1.91,2.15l1.91-2.15c1.55-1.92,2.93-3.88,4.62-5.98,1.1-1.25,2.52-2.53,3.62-3.77.93-.99,2-1.72,3.01-2.55l1.7-1.81c.13-.21.28-.42.44-.63,0,0-.03.01-.04.01-1.24.29-5.72,4.03-10.01,8.19-2.17,2.06-4.29,4.22-5.99,6.06-1.7,1.83-3,3.31-3.48,4.04-1.56,2.32-2.12,5.08-3.9,7.61-.6.84-1.38,1.34-1.63,2.14.11.18-.02.58-.14.99-1.16,1.7-2.98,2.9-3.47,4.51-.48,1.02-4.81,1.66-4.49,2.2,1.2,1.96.33.53-1.38,2.53-.23.23-.13,1.57-.58,2.03-1.69,1.42-1.46,2.37-2.68,4.51-1.55,3.36-3.14,3.22-3.86,6.67-.1.41-2.26,5.06-2.26,5.06-2.38,3.16-2.83,5.79-5.8,7.53-.86,3.69-4.74,6.81-6.56,10.16-1.8,3.35-3.56,4.11-6.09,6.47-.62.74-.9,1.4-1.44,1.72-.54.32-.53,1.9-1.15,2.64l-.37-.5c-.21.25-.62.74-.82.99-.21.25-.33.08-.46-.09-.25-.33-.5-.67-1.04-.34-.98.96-1.89,2-2.74,3.12-.45,1.34-.85,2.67-1.21,4.01.19.2.37.41.46.68l-.23,1.24c.38.5.97.74,1.22,1.07,1.42.82,1.96,3.05,3.46,3.45.46.08,1.73-1.81,2.92-2.3.33-.08.51.66.89,1.15.67-1.15,1.25-.9,1.44-.16.2-.25.4-.49.4-.49.13.17.51.66.51.66,1.16-1.26,2.51-2.52,3.71-3.86,1.21-1.33,2.27-2.73,2.8-4.32.28-.65.52-1.87.67-2.69.08-.41.81-.96,1.02-1.2-.16-.74-.74-1.01-1.11-1.51,1.78-1.75,5.41-5.63,3.57-6.61,1.12-1.6.54-2.44,1.56-4.2,1.33-2.35,3.07-5.3,4.9-8.14.91-1.61,1.93-3.07,2.92-4.56.37-.56.73-1.09,1.08-1.61,7.43-11.17,14.52-18.2,21.21-29.52,6.77-11.43,15.94-21.92,24.05-29.92,8.09-8.04,15.13-13.59,17.49-15.81l.76-1.88Z"
+				/>
+			</g>
+			<g>
+				<path
+					d="m154.98,210.65c-.57-1.24-1.71-2.95-2.76-5.09-1.07-2.13-2.03-4.62-2.85-7.08-.82-2.46-1.59-4.87-2.43-6.97-.42-1.05-.86-2.02-1.29-2.91-.46-.89-.87-1.7-1.23-2.4-1.24-2.17-2.14-3.84-2.75-5.14-.51-1.09.84,1.33,2.75,5.14.48.84.96,1.68,1.45,2.63.48.96.97,2,1.43,3.18-.31-1.59-.7-3.13-1.17-4.55-.48-1.44-.93-2.75-1.3-3.85-.86-1.4-1.74-2.82-2.63-4.27-3.83-6.4-7.67-12.51-11.26-18.98-1.3-2.35-4.43-7.29-5.57-9.66,5.85,9.17,11.43,18.47,17.2,27.64-.13-.27-.25-.54-.36-.81l-8.56-14.81c-.51-.82-1.01-1.67-1.48-2.57l1.48,2.57c1.35,2.15,2.83,4.12,4.35,6.42.88,1.46,1.68,3.25,2.57,4.7.7,1.2,1.11,2.46,1.63,3.69l1.29,2.2c.17.19.34.39.5.61,0-.01,0-.03,0-.04.08-2.57-9.65-21.8-11.87-24.68-1.73-2.29-4.17-3.79-6.08-6.35-.63-.86-.85-1.79-1.54-2.31-.2.04-.55-.22-.9-.48-1.24-1.71-1.89-3.85-3.29-4.87-.85-.79-.09-5.24-.74-5.1-2.26.51-.61.14-2.06-2.17-.16-.29-1.49-.64-1.8-1.23-.87-2.12-1.86-2.21-3.61-4.07-2.86-2.56-2.26-4.1-5.49-5.83-.19-.11-1.29-1.04-2.34-1.94-.52-.45-1.04-.89-1.42-1.22-.38-.33-.64-.54-.64-.54-1.3-1.59-2.57-2.67-3.65-3.78-1.07-1.12-1.95-2.25-2.56-3.89-1.77-.86-3.23-2.43-4.64-4.13-1.48-1.62-2.91-3.36-4.45-4.61-1.52-1.27-2.5-2.28-3.31-3.41-.82-1.12-1.5-2.32-2.58-3.79-.34-.37-.68-.66-.96-.93-.3-.25-.54-.48-.69-.77-.3-.58-1.95-.75-2.67-1.45l.54-.32c-.25-.24-.73-.71-.98-.94-.24-.24-.06-.35.12-.45.36-.22.72-.43.41-1.02-.98-1.08-1.97-2.21-3.16-3.12-1.41-.55-2.82-1.05-4.22-1.5-.21.18-.43.36-.71.43l-1.3-.3c-.51.36-.76.95-1.1,1.19-.85,1.4-3.11,1.86-3.51,3.38-.08.46,1.81,1.82,2.28,3.03.08.33-.68.49-1.18.85,1.13.71.86,1.28.12,1.44.24.21.48.41.48.41-.17.12-.68.49-.68.49.61.6,1.21,1.24,1.82,1.88.61.64,1.23,1.28,1.82,1.95,1.21,1.31,2.5,2.45,4.03,3.1.61.33,1.83.63,2.59.92.39.13.84.94,1.05,1.17.75-.07,1.08-.61,1.63-.91.76.99,1.98,2.51,3.17,3.56,1.14,1.11,2.24,1.78,2.88.95,1.39,1.4,2.33.95,3.92,2.27,1.08.85,2.17,1.95,3.38,3.06,1.18,1.14,2.47,2.29,3.65,3.53,1.36,1.3,2.54,2.67,3.76,4.02.46.5.92.98,1.33,1.46,4.48,5.16,7.91,10.04,11.23,14.94.83,1.22,1.68,2.44,2.54,3.64.85,1.22,1.7,2.46,2.6,3.69,1.82,2.45,3.73,4.97,5.92,7.55,8.85,10.44,16.05,22.87,21.94,33.14.35.63.75,1.31,1.05,1.88.31.58.6,1.15.85,1.74.53,1.15.95,2.33,1.35,3.48.77,2.32,1.36,4.6,2.04,6.73,1.29,4.29,3.23,7.75,4.49,9.33.69.45,1.43.84,2.13,1.23Z"
+				/>
+			</g>
+		</g>
+		<g class:location-hit={$kopf_amputiert > 0} transform="matrix(0.8 0 0 0.8 20 20)">
+			<g>
+				<path
+					d="m154.77,74.68c-.52-1.67-2.6-4.36-5.05-6.97-1.24-1.29-2.51-2.61-3.67-3.82-1.19-1.18-2.25-2.26-3.01-3.13-1.24-1.25-2.19-2.22-2.85-3-.57-.65.88.69,2.85,3,.96.93,2.09,2.04,3.43,3.33-1.28-2.07-2.52-4.07-3.36-5.58-.88-.77-1.78-1.56-2.69-2.35-1.99-1.76-4.01-3.43-6.03-5.08-2.01-1.67-4.02-3.32-5.99-5.08-1.41-1.3-4.76-3.77-6.02-5.17,6.14,4.68,12.25,9.44,18.22,14.37-.14-.16-.28-.32-.41-.49-1.51-1.37-3.04-2.73-4.58-4.06-1.54-1.34-3.07-2.69-4.63-4-.55-.42-1.09-.87-1.61-1.37l1.61,1.37c1.44,1.09,2.95,2,4.55,3.17.94.78,1.87,1.84,2.81,2.62.74.67,1.25,1.5,1.85,2.27l1.36,1.22c.16.08.33.18.49.29,0,0,0-.02,0-.03-.12-1.06-2.84-4.44-5.91-7.61-3.05-3.21-6.4-6.22-7.51-6.87-1.76-1.04-3.99-1.11-5.9-2.32-.64-.4-.96-1.05-1.59-1.15-.16.12-.48.07-.8.02-1.27-.8-2.07-2.26-3.34-2.47-.8-.28-.78-4.14-1.26-3.77-1.76,1.35-.48.37-1.91-.9-.16-.17-1.28.09-1.59-.25-.95-1.34-1.74-1.03-3.32-1.88-2.54-1.01-2.21-2.43-4.9-2.75-.32-.05-3.79-1.54-3.79-1.54-2.18-1.87-4.24-2.12-5.12-4.66-2.84-.55-4.6-3.89-6.88-5.42-2.27-1.56-2.5-3.09-3.73-5.33-.42-.55-.87-.81-.98-1.29-.11-.48-1.38-.49-1.8-1.04l.51-.33c-.14-.18-.42-.55-.56-.74-.14-.19.03-.29.2-.4.34-.22.68-.44.57-.91-.5-.85-1.04-1.68-1.64-2.48-.91-.44-1.83-.84-2.77-1.2-.22.16-.45.31-.69.38l-.92-.25c-.52.31-.91.81-1.26,1.01-1.12,1.2-3.1,1.55-3.92,2.83-.21.39.93,1.64.97,2.72-.03.29-.69.41-1.22.72.74.67.36,1.18-.31,1.29.14.2.28.39.28.39-.17.1-.7.41-.7.41.7,1.13,1.34,2.43,2.1,3.6.78,1.14,1.69,2.14,2.87,2.68.47.28,1.42.53,2.06.69.32.08.59.77.74.96.66-.14,1.02-.66,1.52-1,1.03,1.6,3.45,4.89,4.66,3.19,1.07,1,1.92.41,3.16,1.27,1.68,1.11,3.74,2.6,5.79,4.04,1.17.72,2.2,1.54,3.25,2.35.4.29.79.57,1.16.83,8.07,5.76,13.07,11.29,21.77,15.64,8.78,4.38,16.71,10.8,22.61,16.7,5.95,5.87,9.76,11.21,11.32,12.94l1.51.39Z"
+				/>
+			</g>
+			<g>
+				<path
+					d="m182.49,0c-4.03.8-14.2,8.1-19.08,10.64-1.8,1.1-3.2,1.88-4.29,2.41-.93.44,1.1-.74,4.29-2.41,1.36-.84,2.97-1.83,4.84-3.03-2.69,1.01-5.29,1.94-7.19,2.54-1.16.77-2.34,1.54-3.54,2.33-5.29,3.43-10.3,6.89-15.7,10.02-1.97,1.12-6.07,3.85-8.1,4.75,7.69-4.94,15.31-9.99,22.86-15.15-.22.11-.45.22-.68.32-4.08,2.56-8.16,5.11-12.27,7.6-.68.45-1.38.89-2.13,1.3l2.13-1.3c1.77-1.19,3.37-2.53,5.25-3.89,1.2-.78,2.71-1.49,3.91-2.28.99-.62,2.07-.97,3.12-1.42l1.82-1.15c.15-.15.32-.3.5-.45,0,0-.03,0-.04,0-1.17-.1-5.75,2.04-10.34,4.4-4.59,2.37-9.19,4.96-10.35,5.92-1.86,1.51-2.96,3.77-5.09,5.38-.71.54-1.52.67-1.93,1.29.05.2-.15.51-.36.82-1.42,1.06-3.3,1.45-4.12,2.68-.67.73-4.61-.43-4.47.16.54,2.19.15.6-1.84,1.66-.25.11-.52,1.32-1.03,1.54-1.83.56-1.9,1.46-3.55,2.8-2.28,2.27-3.58,1.49-5.22,4.13-.2.31-3.45,3.37-3.45,3.37-3,1.65-4.24,3.66-7.3,3.81-1.93,2.73-6.26,3.63-8.9,5.72-2.63,2.08-4.36,2.01-7.31,3.09-.77.4-1.22.87-1.79.96-.58.09-1.02,1.48-1.76,1.94l-.21-.58c-.25.15-.76.45-1.01.6-.25.15-.32-.04-.4-.24-.14-.39-.28-.78-.86-.66-1.14.58-2.28,1.22-3.35,2.02-.75,1.1-1.42,2.26-2.04,3.42.14.24.27.48.31.75l-.43,1.12c.28.55.8.92.99,1.29,1.21,1.11,1.43,3.24,2.8,3.96.43.19,1.81-1.17,2.98-1.24.31.02.37.72.66,1.26.77-.79,1.26-.39,1.33.3.21-.15.42-.29.42-.29.09.18.38.72.38.72,2.4-1.44,5.51-2.34,7.11-4.55.38-.43.85-1.37,1.19-1.98.17-.31.93-.47,1.17-.58.04-.7-.38-1.16-.57-1.74,1.95-.77,6.18-2.39,4.92-4.04,1.45-.84,1.19-1.84,2.62-2.87,1.87-1.4,4.32-3.07,6.79-4.69,1.3-.97,2.64-1.76,3.97-2.59.49-.32.97-.62,1.43-.92,9.84-6.41,18.01-9.78,26.65-17.48,8.7-7.76,18.83-14.38,27.4-19.53,8.56-5.15,15.58-8.8,17.99-10.33l.89-1.58Z"
+				/>
+			</g>
+		</g>
+		<g class:location-hit={$rechtesBein_amputiert > 0}>
+			<g>
+				<path
+					d="m104.93,503.29c0-5.6-5.63-22.65-7.58-30.25-.87-2.89-1.49-5.11-1.89-6.8-.33-1.42.63,1.8,1.89,6.8.66,2.2,1.45,4.79,2.37,7.83-.6-3.99-1.14-7.84-1.49-10.62-.64-1.9-1.28-3.83-1.94-5.78-2.89-8.61-6.02-16.82-9.05-25.3-1.07-3.09-3.86-9.64-4.83-12.68,5.29,12.14,10,24.5,14.42,36.94-.09-.35-.17-.7-.25-1.05-2.16-6.6-4.43-13.18-6.8-19.72-.44-1.1-.86-2.22-1.24-3.39l1.24,3.39c1.17,2.86,2.41,5.6,3.71,8.71.7,1.96,1.28,4.28,1.99,6.23.55,1.61.76,3.19,1.11,4.78l.97,2.96c.14.27.28.57.4.87,0-.01,0-.04,0-.05.28-1.47-1.34-8.54-3.4-15.72-2.08-7.18-4.59-14.46-5.61-16.41-.78-1.56-1.77-2.95-2.78-4.38-1.03-1.42-2.07-2.89-2.93-4.62-.57-1.16-.72-2.3-1.41-3.07-.22,0-.56-.4-.9-.78-1.19-2.29-1.62-4.95-3.04-6.47-.83-1.13.25-6.03-.41-6.04-2.4,0-.65,0-2.01-3.02-.14-.38-1.51-1.12-1.8-1.87-.77-2.64-1.84-2.98-3.53-5.57-2.79-3.68-2.2-5.19-5.4-8.05-.18-.18-1.29-1.51-2.35-2.8-1.06-1.28-2.08-2.51-2.08-2.51-2.45-4.3-5-6.31-5.77-10.36-3.47-3.05-5.26-8.87-7.81-12.79-1.25-1.98-1.91-3.51-2.34-5.07-.45-1.55-.71-3.1-1.2-5.11-.4-1.09-.86-1.82-.87-2.55,0-.73-1.48-1.83-1.79-2.95l.64.02c-.11-.37-.32-1.1-.42-1.46-.1-.37.11-.35.33-.35.43.02.86.04.87-.68-.34-1.55-.63-3.12-1.05-4.68-.83-1.38-1.61-2.76-2.46-4.11-.28,0-.56-.03-.83-.17l-.8-1.21c-.63-.11-1.21.16-1.64.08-1.57.47-3.68-1.08-4.99-.24-.36.3.3,3.13-.05,4.63-.13.36-.87-.15-1.5-.28.52,1.66-.01,1.95-.76,1.43.09.41.18.82.18.82-.22-.04-.87-.15-.87-.15.67,4.51,1.35,9.75,3.87,13.42.49.81,1.53,2.04,2.27,2.81.36.39.57,1.55.71,1.94.8.4,1.31.02,1.96.02.93,3.06,3.42,9.49,5.13,8.24,1.19,2.21,2.27,2.15,3.7,4.31,1.89,2.84,4.29,6.44,6.66,10,1.36,1.89,2.51,3.79,3.71,5.7.45.71.88,1.39,1.3,2.05,4.51,7.06,7.73,13.56,10.93,20.01,3.22,6.44,6.3,12.88,10.41,19.98,8.29,14.35,14.13,30.82,18.18,44.5,4.04,13.7,6.37,24.7,7.49,28.63l1.46,2.02Z"
+				/>
+			</g>
+		</g>
+		<g class:location-hit={$linkesBein_amputiert > 0}>
+			<g>
+				<path
+					d="m184.51,509.59c-.78-1.24-2.26-2.87-4.01-4.89-1.73-2.04-3.76-4.42-5.55-7.07-3.64-5.29-6.27-11.28-7.64-14.94-1.16-2.78-1.97-4.91-2.52-6.55-.45-1.38.75,1.73,2.52,6.55.88,2.11,1.99,4.59,3.44,7.48-1.32-3.88-2.23-7.62-2.84-10.33-.82-1.81-1.62-3.65-2.43-5.53-1.78-4.13-3.65-8.15-5.5-12.16-.88-2.01-1.76-4.02-2.65-6.03-.85-2.03-1.6-4.1-2.38-6.17-.57-1.5-1.46-3.9-2.32-6.29-.42-1.2-.85-2.39-1.23-3.47-.35-1.09-.64-2.08-.82-2.84,1.07,3.08,2.28,6.09,3.43,9.13,1.18,3.03,2.46,6.01,3.71,9,2.63,5.89,5.5,11.81,8.21,17.77-.12-.34-.23-.68-.33-1.01-1.35-3.17-2.73-6.33-4.13-9.48l-2.01-4.7c-.66-1.57-1.35-3.12-1.94-4.72-.45-1.07-.88-2.15-1.27-3.29l1.27,3.29c1.16,2.8,2.66,5.33,4.08,8.29.85,1.87,1.65,4.11,2.5,5.99.67,1.55,1.04,3.09,1.5,4.63l1.21,2.84c.16.26.32.53.47.83,0-.01,0-.04,0-.05.16-1.47-2.04-8.34-4.68-15.24-1.22-3.41-2.56-6.79-3.54-9.66-1.03-2.84-1.9-5.05-2.34-6.02-1.43-3.06-3.77-5.45-5.22-8.96-.49-1.17-.55-2.28-1.16-3.09-.21-.02-.52-.43-.83-.83-.95-2.35-1.12-4.97-2.33-6.61-.7-1.2,1.02-5.84.37-5.92-2.36-.3-.64-.08-1.52-3.18-.09-.38-1.32-1.29-1.49-2.07-.36-2.67-1.3-3.17-2.52-5.95-2.12-4.03-1.16-5.41-3.76-8.75-.3-.41-3.22-6.03-3.22-6.03-1.49-4.68-3.53-7.15-3.5-11.26-1.42-1.83-2.28-4.25-3.07-6.76-.83-2.49-1.55-5.07-2.58-7.21-1.07-2.12-1.59-3.72-1.93-5.34-.35-1.61-.51-3.23-1.06-5.3-.4-1.14-.89-1.9-.94-2.65-.06-.76-1.53-1.91-1.96-3.04h.66c-.15-.38-.46-1.13-.61-1.51-.15-.38.07-.38.29-.38.44,0,.88-.01.79-.77-.53-1.64-1.15-3.29-1.87-4.94-1.09-1.4-2.37-2.69-3.57-3.97-.28.06-.56.1-.87,0l-1.17-1.06c-.65.06-1.12.48-1.55.52-1.38.88-3.8.01-4.79,1.26-.26.41,1.1,2.87,1.11,4.33-.05.37-.86.08-1.5.15.86,1.37.37,1.78-.43,1.5.16.35.32.69.32.69-.21.02-.86.09-.86.09.37.96.75,1.93,1.08,2.95.32,1.03.64,2.07,1,3.08.72,2.03,1.61,3.91,2.78,5.54.46.72,1.48,1.79,2.16,2.51.34.36.5,1.44.62,1.8.77.37,1.3,0,1.94.02.7,2.96,2.42,9.17,4.21,8.21.84,2.26,1.91,2.33,2.97,4.61.73,1.5,1.46,3.25,2.25,5.08.77,1.84,1.61,3.77,2.36,5.73.92,2.1,1.65,4.18,2.42,6.26.29.78.56,1.54.83,2.26,5.79,15.61,8.03,27.93,15.3,42.75,3.68,7.45,7.12,15.2,10.72,22.59.87,1.85,1.73,3.68,2.58,5.48.85,1.79,1.64,3.59,2.42,5.36,1.54,3.54,2.96,7,4.31,10.31,1.36,3.31,2.71,6.47,4.14,9.38,1.42,2.91,2.96,5.58,4.53,7.81,3.1,4.54,6.01,7.44,7.56,8.92l2.38,1.03Z"
+				/>
+			</g>
+		</g>
+	</g>
 </svg>
 
 <style lang="scss">
+	:global(:root) {
+		--body-hit-color: var(--primary);
+		--blood-hit-color: var(--del-color);
+	}
+	.location-hit {
+		fill: var(--body-hit-color);
+	}
+
+	.bleed .location-hit {
+		fill: var(--blood-hit-color);
+		stroke: var(--primary);
+	}
+
+	.amputated path {
+		display: none;
+	}
+	.amputated .location-hit path {
+		display: unset;
+	}
+
 	// *[id|='Kopf'] {
 	// 	fill: red;
 	// }

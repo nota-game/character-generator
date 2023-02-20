@@ -5,8 +5,8 @@ import { derived, type Readable as ReadableOriginal, type Writable as WritableOr
 import * as mathjs from 'mathjs'
 
 import { Data, type DependencyData } from "./Data";
-import { distinct, filterNull, filterObjectKeys, getLast, groupBy, join, notUndefined, toObjectKey } from "../misc/misc";
-import { cos, fix, index, isResultSet, meanTransformDependencies, xgcd } from "mathjs";
+import { distinct, filterNull, filterObjectKeys, getLast, groupBy, join, notUndefined, toObjectKey, withIndex } from "../misc/misc";
+import { cos, fix, index, isResultSet, meanTransformDependencies, number, xgcd } from "mathjs";
 
 export type EigenschaftTypes = 'bereich' | 'reihe' | 'punkt' | 'berechnung';
 export type EigenschaftTypesLevel = 'morph' | 'art' | 'gattung' | 'organismus';
@@ -1506,12 +1506,12 @@ export class Charakter {
             let timer = 'storeManager';
             console.time(timer)
             this.storeManager = new StoreManager(stammdaten);
-            
-            
-            
-            
-            
-            
+
+
+
+
+
+
             console.timeEnd(timer)
             timer = 'ground';
             console.time(timer)
@@ -3014,7 +3014,7 @@ export class Charakter {
             return result;
         }, { evalueateUndefined: true });
 
-        this.storeManager.derived(keys.CostNext, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+        this.storeManager.derived(keys.CostNext, [keys.Fixed, keys.Purchased, keys.Parameter, ...costDependency], (data, [fixed, purchased, parameter, ...dependencys]) => {
 
             const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
 
@@ -3027,8 +3027,43 @@ export class Charakter {
 
                         let resultreturn: number;
 
+                        const scope = {} as Record<string, number>;
+
+                        let parameterIndex = 0;
+                        let additonalIndex = 0;
+
+                        for (let i = 0; i < besonderheit.Parameter.length; i++) {
+                            const p = besonderheit.Parameter[i];
+                            const id = p["#"] == 'Talent' || p["#"] == 'Auswahl'
+                                ? additonal[additonalIndex++]
+                                : parameter.newValue?.[parameterIndex++] ?? undefined;
+
+                            if (p["#"] == 'Talent') {
+                                if (typeof id == 'string') {
+                                    const talent = data.talentMap[id];
+                                    const comp = talent.Komplexität.toLocaleLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+                                    scope[p.Talent.identifier] = comp;
+                                }
+
+                            }
+                            else if (p["#"] == 'Auswahl') {
+                                const index = withIndex(p.Auswahl.Input.Wahl).filter(([x]) => x.Id == id)[0]?.[1];
+                                if (index)
+                                    scope[p.Auswahl.identifier] = index;
+                            } else if (p["#"] == 'Zahl') {
+                                if (typeof id == 'number')
+                                    scope[p.Zahl.identifier] = Math.min(p.Zahl.max, Math.max(p.Zahl.min, id));
+                            }
+
+                        }
+
+
+
+
+
+
                         try {
-                            resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                            resultreturn = evaluateBerechnung(y.Berechnung, scope, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
                         } catch (error) {
                             console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
                             resultreturn = 0;
@@ -3043,7 +3078,7 @@ export class Charakter {
 
 
 
-        this.storeManager.derived(keys.CostPreview, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+        this.storeManager.derived(keys.CostPreview, [keys.Fixed, keys.Purchased, keys.Parameter, ...costDependency], (data, [fixed, purchased, parameter, ...dependencys]) => {
 
             const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
 
@@ -3056,8 +3091,40 @@ export class Charakter {
 
                         let resultreturn: number;
 
+                        const scope = {} as Record<string, number>;
+
+                        let parameterIndex = 0;
+                        let additonalIndex = 0;
+
+                        for (let i = 0; i < besonderheit.Parameter.length; i++) {
+                            const p = besonderheit.Parameter[i];
+                            const id = p["#"] == 'Talent' || p["#"] == 'Auswahl'
+                                ? additonal[additonalIndex++]
+                                : parameter.newValue?.[parameterIndex++] ?? undefined;
+
+                            if (p["#"] == 'Talent') {
+                                if (typeof id == 'string') {
+                                    const talent = data.talentMap[id];
+                                    const comp = talent.Komplexität.toLocaleLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+                                    scope[p.Talent.identifier] = comp;
+                                }
+
+                            }
+                            else if (p["#"] == 'Auswahl') {
+                                const index = withIndex(p.Auswahl.Input.Wahl).filter(([x]) => x.Id == id)[0]?.[1];
+                                if (index)
+                                    scope[p.Auswahl.identifier] = index;
+                            } else if (p["#"] == 'Zahl') {
+                                if (typeof id == 'number')
+                                    scope[p.Zahl.identifier] = Math.min(p.Zahl.max, Math.max(p.Zahl.min, id));
+                            }
+
+                        }
+
+
+
                         try {
-                            resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                            resultreturn = evaluateBerechnung(y.Berechnung, scope, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
                         } catch (error) {
                             console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
                             resultreturn = 0;
@@ -3072,7 +3139,7 @@ export class Charakter {
 
 
 
-        this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, ...costDependency], (data, [fixed, purchased, ...dependencys]) => {
+        this.storeManager.derived(keys.Cost, [keys.Fixed, keys.Purchased, keys.Parameter, ...costDependency], (data, [fixed, purchased, parameter, ...dependencys]) => {
 
             const { besonderheitDependency, eigenschaftDependency, fertigkeitDependency, otherDependency } = this.groupDependencyData(dependencys);
 
@@ -3085,8 +3152,40 @@ export class Charakter {
 
                         let resultreturn: number;
 
+                        const scope = {} as Record<string, number>;
+
+                        let parameterIndex = 0;
+                        let additonalIndex = 0;
+
+                        for (let i = 0; i < besonderheit.Parameter.length; i++) {
+                            const p = besonderheit.Parameter[i];
+                            const id = p["#"] == 'Talent' || p["#"] == 'Auswahl'
+                                ? additonal[additonalIndex++]
+                                : parameter.newValue?.[parameterIndex++] ?? undefined;
+
+                            if (p["#"] == 'Talent') {
+                                if (typeof id == 'string') {
+                                    const talent = data.talentMap[id];
+                                    const comp = talent.Komplexität.toLocaleLowerCase().charCodeAt(0) - 'a'.charCodeAt(0) + 1;
+                                    scope[p.Talent.identifier] = comp;
+                                }
+
+                            }
+                            else if (p["#"] == 'Auswahl') {
+                                const index = withIndex(p.Auswahl.Input.Wahl).filter(([x]) => x.Id == id)[0]?.[1];
+                                if (index)
+                                    scope[p.Auswahl.identifier] = index;
+                            } else if (p["#"] == 'Zahl') {
+                                if (typeof id == 'number')
+                                    scope[p.Zahl.identifier] = Math.min(p.Zahl.max, Math.max(p.Zahl.min, id));
+                            }
+
+                        }
+
+
+
                         try {
-                            resultreturn = evaluateBerechnung(y.Berechnung, {}, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
+                            resultreturn = evaluateBerechnung(y.Berechnung, scope, ...besonderheitDependency, ...fertigkeitDependency, ...eigenschaftDependency, ...otherDependency) ?? 0;
                         } catch (error) {
                             console.error(`Faild formle ${y.Berechnung} of ${y.Id}`, error);
                             resultreturn = 0;

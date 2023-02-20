@@ -204,6 +204,14 @@ export function sequenceEqual<T>(a: T[], b: T[]): boolean {
 }
 
 
+export function zip<T1, T2>(a: T1[], b: T2[]): (readonly [T1, T2])[] {
+    if (a.length != b.length) {
+        throw new Error('Sequences must have same length');
+    }
+    return a.map((x, i) => [x, b[i]]);
+}
+
+
 export function sortLocalisable<T, T2 extends { Name: Lokalisierungen_misc }>(a: T[], transform: (v: T) => T2): T[];
 export function sortLocalisable<T extends { Name: Lokalisierungen_misc }>(a: T[]): T[];
 export function sortLocalisable<T, T2 extends { Name: Lokalisierungen_misc }>(a: T[], transform?: (v: T) => T2): T[] {
