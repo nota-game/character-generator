@@ -258,7 +258,7 @@
 						{@const talent = char.talente[t]}
 						{@const entry = data.talentMap[t]}
 						{#if (talent.effective.currentValue( { defaultValue: 0 } ) ?? 0) || (talent.unconditionally.currentValue( { defaultValue: 0 } ) ?? 0)}
-							<tr on:click={() => (selectedTalent = selectedTalent == t ? undefined : t)}>
+							<tr style="cursor: pointer;" on:click={() => (selectedTalent = selectedTalent == t ? undefined : t)}>
 								<td>
 									{#if (talent.base.currentValue({ defaultValue: 0 }) ?? 0) == 0}
 										<span class="light"> {getTextTalent(entry, char, 'NameProbe')}</span>
@@ -302,7 +302,7 @@
 													role(t, p, difficulty);
 												}}
 											>
-												Role</a
+												Einfache Probe</a
 											>
 											<label>
 												Erschwerniss
