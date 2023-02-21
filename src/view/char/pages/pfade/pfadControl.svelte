@@ -128,7 +128,7 @@
 							change={f}
 							{data}
 							{char}
-							exclude={{ type: 'besonderheit', id: entry.Id }}
+							
 							excludeRequirments={$missingNext}
 						/>
 					{/await}
@@ -169,7 +169,7 @@
 					{#await $removeFuture}
 						<span aria-busy="true" />
 					{:then f}
-						<ChangeView change={f} {data} {char} exclude={{ type: 'besonderheit', id: entry.Id }} />
+						<ChangeView change={f} {data} {char}  />
 					{/await}
 				</div>
 			</TooltipControl>

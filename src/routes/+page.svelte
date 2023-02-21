@@ -2,14 +2,8 @@
 	import { Charakter, type PersistanceData } from '../models/Character';
 	import { Data } from '../models/Data';
 	import { onMount } from 'svelte';
-	import PropertiesSetter from '../view/root/propertiesSetter.svelte';
-	import Besonderheit from '../view/root/besonderheit.svelte';
 	import { writable } from 'svelte/store';
-	import Fertigkeit from 'src/view/root/fertigkeit.svelte';
-	import Talent from 'src/view/root/talent.svelte';
-	import Tag from 'src/view/root/tag.svelte';
 	import { filter } from 'mathjs';
-	import PathLevel from 'src/view/root/pathLevel.svelte';
 	import { renderRequirementMap } from 'src/misc/misc';
 	import { v4 as uuidv4 } from 'uuid';
 	import pako from 'pako';

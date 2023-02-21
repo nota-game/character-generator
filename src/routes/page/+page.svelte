@@ -260,7 +260,6 @@
 														defaultValue: 0
 													}) ?? 0,
 													char,
-													data,
 													...tail(b2Key)
 												)}
 											</span>
@@ -277,7 +276,6 @@
 														defaultValue: 0
 													}) ?? 0,
 													char,
-													data,
 													...tail(b2Key)
 												)})
 											</span>
@@ -286,8 +284,7 @@
 												data.besonderheitenMap[b2Key[0]],
 												bes.effective.currentValue({ defaultValue: 0 }) ?? 0,
 												char,
-													data,
-													...tail(b2Key)
+												...tail(b2Key)
 											)}
 										{/if}
 									</li>

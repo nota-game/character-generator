@@ -13,7 +13,6 @@
 	import { map } from 'mathjs';
 	import OrganismSelect from './char/pages/organism/organismSelect.svelte';
 	import EigenschaftenSelect from './char/pages/eigenschaften/eigenschaftenSelect.svelte';
-	import Fallback from './root/fallback.svelte';
 	import { noop } from 'svelte/internal';
 	import PfadSelect from './char/pages/pfade/pfadSelect.svelte';
 	import BesonderheitenSelect from './char/pages/besonderheiten/besonderheitenSelect.svelte';

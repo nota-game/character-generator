@@ -2,7 +2,7 @@
 	import { getText, intersect, sortLocalisable } from 'src/misc/misc';
 	import { isBesonderheitenHolder, type Charakter } from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
-	import Besonderheit from 'src/view/root/besonderheit.svelte';
+	
 	import BesonderheitControl from './besonderheitControl.svelte';
 	import BesonderheitControlMulty from './besonderheitControlMulty.svelte';
 

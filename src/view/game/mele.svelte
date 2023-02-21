@@ -219,7 +219,6 @@
 										data.besonderheitenMap[b2Key[0]],
 										bes.effective.currentValue({ defaultValue: 0 }) ?? 0,
 										char,
-										data,
 										...additional
 									)}
 								</li>

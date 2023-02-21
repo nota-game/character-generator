@@ -1,14 +1,27 @@
 <script lang="ts">
+	import { reducedPlanckConstantDependencies } from 'mathjs';
 	import { getText, withIndex } from 'src/misc/misc';
 	import type { Charakter } from 'src/models/Character';
-	import type { CharacterState } from 'src/models/CharacterState';
+	import type { CharacterState, LogSimpleRole, rolePropertys } from 'src/models/CharacterState';
 	import type { Data } from 'src/models/Data';
 
 	export let char: Charakter;
 	export let data: Data;
 	export let charData: CharacterState;
 
+	let glüksPunkte = charData.GlüksPunkte;
+
 	let roleEntrys = charData.log;
+
+	function reduce(r: rolePropertys, logEntry: LogSimpleRole) {
+		if (r.substituted != undefined) {
+			r.substituted--;
+		} else {
+			r.role--;
+		}
+		glüksPunkte.update((x) => x - 2);
+		charData.refreshLog(logEntry);
+	}
 </script>
 
 {#each withIndex($roleEntrys) as [entry, index]}
@@ -32,6 +45,11 @@
 		{:else if entry.type == 'simple-role'}
 			<div id="log-{index}">
 				{getText(entry.talent.Name)}
+				{#if entry.difficulty > 0}
+					mit Malus {entry.difficulty}
+				{:else if entry.difficulty < 0}
+					mit Bonus {-entry.difficulty}
+				{/if}
 			</div>
 			<div>
 				{#each entry.begabung as [b, n]}
@@ -62,6 +80,23 @@
 						</td>
 					{/each}
 				</tr>
+				{#if $glüksPunkte >= 2 && entry.roles.some((r) => (r.substituted ?? r.role) < r.target && (r.substituted ?? r.role) > 1)}
+					<tr>
+						{#each entry.roles as r}
+							<td>
+								{#if (r.substituted ?? r.role) < r.target && (r.substituted ?? r.role) > 1}
+									<a
+										href="#"
+										on:click={(e) => {
+											e.preventDefault();
+											reduce(r, entry);
+										}}>Reduzieren (-2 GlP)</a
+									>
+								{/if}
+							</td>
+						{/each}
+					</tr>
+				{/if}
 			</table>
 
 			<strong>
@@ -80,6 +115,14 @@
 {/each}
 
 <style lang="scss">
+	.miss {
+		color: var(--del-color);
+	}
+
+	.luky {
+		color: var(--primary);
+	}
+
 	.log {
 		max-width: 30rem;
 		background-color: var(--card-background-color);

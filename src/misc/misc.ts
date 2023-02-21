@@ -226,8 +226,8 @@ export function sortLocalisable<T, T2 extends { Name: Lokalisierungen_misc }>(a:
 }
 
 export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter): string;
-export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options: Charakter, data?: Data, ...substitute: string[]): string;
-export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter, data?: Data, ...substitute: string[]): string {
+export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options: Charakter, ...substitute: string[]): string;
+export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | undefined, stufe: number, options?: { sex: Geschlecht_misc } | Charakter,  ...substitute: string[]): string {
     if (!p) {
         return '';
     }
@@ -240,8 +240,8 @@ export function getTextBesonderheit(p: BesonderheitDefinition_besonderheit | und
                 if (parameter["#"] == 'Auswahl') {
                     const wahl = parameter.Auswahl.Input.Wahl.filter(x => x.Id == value)[0];
                     str = str.replaceAll(`{${parameter.Auswahl.identifier}}`, getText(wahl.Name, options));
-                } else if (parameter["#"] == 'Talent' && data && options instanceof Charakter) {
-                    const talent = data.talentMap[value];
+                } else if (parameter["#"] == 'Talent'  && options instanceof Charakter) {
+                    const talent = options.stammdaten.talentMap[value];
                     str = str.replaceAll(`{${parameter.Talent.identifier}}`, getTextTalent(talent, options, 'Name'));
                 } else if (parameter["#"] == 'Text') {
                     str = str.replaceAll(`{${parameter.Text.identifier}}`, value);

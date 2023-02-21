@@ -115,7 +115,7 @@
 {#if (key.length == 1 || $purchased > 0 || $fixed > 0) && ((selectedFilter == 'purchased' && ($purchased > 0 || $fixed > 0)) || (selectedFilter == 'available' && $missingNextLevel.length == 0 && $purchased < entry.Stufe.length && $effective < entry.Stufe.length && $fixed < entry.Stufe.length) || selectedFilter == 'all')}
 	<div>
 		<h4>
-			{getTextBesonderheit(entry, $effective, char, data, ...currentParameterValues)}
+			{getTextBesonderheit(entry, $effective, char,  ...currentParameterValues)}
 			<small style="float: right;"><KostenControl cost={$cost} {data} {char} inline /></small>
 		</h4>
 

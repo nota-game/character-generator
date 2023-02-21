@@ -303,7 +303,6 @@
 						entry,
 						$purchased + 1,
 						char,
-						data,
 						...parameterSelection.map((x) => x.toString())
 					)} hinzufügen
 				{:else}
@@ -311,7 +310,6 @@
 						entry,
 						Math.max($purchased + 1, $fixed + 1),
 						char,
-						data,
 						...parameterSelection.map((x) => x.toString())
 					)} verbessern
 				{/if}

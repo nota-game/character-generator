@@ -4,7 +4,6 @@
 	import { getText } from 'src/misc/misc';
 	import type { Charakter } from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
-	import PathLevel from 'src/view/root/pathLevel.svelte';
 	import { time_ranges_to_array, validate_each_argument } from 'svelte/internal';
 	import PfadButton from './pfadButton.svelte';
 	import PfadControl from './pfadControl.svelte';

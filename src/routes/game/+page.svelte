@@ -6,15 +6,7 @@
 		isBesonderheitenHolder,
 		type BesonderheitenHolder
 	} from 'src/models/Character';
-	import {
-		filterObjectKeys,
-		getText,
-		getTextBesonderheit,
-		getTextFertigkeit,
-		getTextTalent,
-		join,
-		tail
-	} from 'src/misc/misc';
+	
 	import { Tabs, Tab, TabList, TabPanel } from 'svelte-tabs';
 
 	import Hitman from 'src/controls/hitman.svelte';

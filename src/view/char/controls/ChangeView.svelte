@@ -173,7 +173,7 @@
 		<div>Neue Besonderheiten</div>
 		<ul>
 			{#each changedBestonderheiten.filter((x) => x.old == 0) as b}
-				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.new, char, data, ...tail(b.key))}</li>
+				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.new, char,  ...tail(b.key))}</li>
 			{/each}
 		</ul>
 	{/if}
@@ -181,7 +181,7 @@
 		<div>Verbesserte Besonderheiten</div>
 		<ul>
 			{#each changedBestonderheiten.filter((x) => x.old != 0 && x.new > x.old) as b}
-				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.new, char, data, ...tail(b.key))}</li>
+				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.new, char,  ...tail(b.key))}</li>
 			{/each}
 		</ul>
 	{/if}
@@ -189,7 +189,7 @@
 		<div>Verschlechterte Besonderheiten</div>
 		<ul>
 			{#each changedBestonderheiten.filter((x) => x.new != 0 && x.new < x.old) as b}
-				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.new, char, data, ...tail(b.key))}</li>
+				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.new, char,  ...tail(b.key))}</li>
 			{/each}
 		</ul>
 	{/if}
@@ -197,7 +197,7 @@
 		<div>Verlorene Besonderheiten</div>
 		<ul>
 			{#each changedBestonderheiten.filter((x) => x.new == 0) as b}
-				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.old, char, data, ...tail(b.key))}</li>
+				<li>{getTextBesonderheit(data.besonderheitenMap[b.key[0]], b.old, char,  ...tail(b.key))}</li>
 			{/each}
 		</ul>
 	{/if}
