@@ -40,7 +40,7 @@
 <h1 class="pagebreak">Kampf</h1>
 
 <h6>Mali <small>(Kampfgespür/2+3)</small></h6>
-<table class="ḱampf">
+<table class="kampf">
 	<tr>
 		<td />
 		<td />
@@ -176,7 +176,10 @@
         <button on:click={() => charData.newRound()}>Neue Runde</button>
 
 		<div style="display: flex; gap:1rem;">
-			<Hitman {char} {...charData.wounds} />
+            <div style="width: 20rem;">
+
+                <Hitman {char} {...charData.wounds} />
+            </div>
 			<Fatique {char} {data} {...charData.fatique} />
 		</div>
 	</div>
@@ -272,3 +275,14 @@
 		{/each}
 	</div>
 </div>
+<style lang="scss">
+    .kampf-right{
+        // display: none;
+    }
+    .kampf-info{
+        display: none;
+    }
+    .kampf{
+        display: none;;
+    }
+</style>

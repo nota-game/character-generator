@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getText } from 'src/misc/misc';
+	import { getText, withIndex } from 'src/misc/misc';
 	import type { Charakter } from 'src/models/Character';
 	import type { CharacterState } from 'src/models/CharacterState';
 	import type { Data } from 'src/models/Data';
@@ -11,12 +11,26 @@
 	let roleEntrys = charData.log;
 </script>
 
-{#each $roleEntrys as entry}
+{#each withIndex($roleEntrys) as [entry, index]}
 	<div class="log">
+		{#if index == 0}
+			<a
+				href="#log-1"
+				on:click={(e) => {
+					e.preventDefault();
+					document
+						.getElementById('log-2')
+						?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				}}>Zum Log Springen</a
+			>
+		{/if}
+
 		{#if entry.type == 'message'}
-			{entry.message}
+			<p id="log-{index}">
+				{entry.message}
+			</p>
 		{:else if entry.type == 'simple-role'}
-			<div>
+			<div id="log-{index}">
 				{getText(entry.talent.Name)}
 			</div>
 			<div>
@@ -67,30 +81,22 @@
 
 <style lang="scss">
 	.log {
-        max-width: 30rem;
+		max-width: 30rem;
 		background-color: var(--card-background-color);
 		width: 100%;
-        border-right: 1px solid var(--primary);
+		border-right: 1px solid var(--primary);
 		// margin-bottom: 1rem;
-		padding: 1.0rem;
+		padding: 1rem;
 		padding-top: 2.5rem;
 		border-bottom: 1px var(--muted-border-color) solid;
 	}
 	.log:nth-of-type(1) {
 		padding-top: 0.5rem;
-        border-top: 1px solid var(--primary);
-        border-right: 1px solid var(--primary);
+		border-top: 1px solid var(--primary);
+		border-right: 1px solid var(--primary);
 		position: sticky;
 		bottom: 00px;
 		// top: calc(100vh - 100px);
-		
-	}
-	.log:nth-of-type(1)::before {
-        content: 'Log';
-		position: sticky;
-		bottom: 00px;
-		// top: calc(100vh - 100px);
-		
 	}
 
 	aside {
