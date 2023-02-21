@@ -32,10 +32,18 @@
 	import Mele from 'src/view/game/mele.svelte';
 	import Overview from 'src/view/game/overview.svelte';
 	import Talent from 'src/view/game/talent.svelte';
+	import { CharacterState } from 'src/models/CharacterState';
+	import Log from 'src/view/game/log.svelte';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
 
+	let charData: CharacterState | undefined;
+	$: {
+		if (char != undefined) {
+			charData = new CharacterState(char);
+		}
+	}
 	let ready = false;
 
 	onMount(async () => {
@@ -110,25 +118,22 @@
 </nav>
 
 <main class="container">
-	{#if data && char}
-	<Tabs>
-		<TabList>
-			<Tab>Übersicht</Tab>
-			<Tab>Talente</Tab>
-			<Tab>Kampf</Tab>
-		</TabList>
-		<TabPanel>
-		<Overview {char} {data} />
-	</TabPanel>
-		<TabPanel>
-
-			<Talent {char} {data}  />
-
-	</TabPanel>
-	<TabPanel>
-
-		<Mele {char} {data} />
-		<!-- <div class="header">
+	{#if data && char && charData}
+		<Tabs>
+			<TabList>
+				<Tab>Übersicht</Tab>
+				<Tab>Talente</Tab>
+				<Tab>Kampf</Tab>
+			</TabList>
+			<TabPanel>
+				<Overview {charData} {char} {data} />
+			</TabPanel>
+			<TabPanel>
+				<Talent {charData} {char} {data} />
+			</TabPanel>
+			<TabPanel>
+				<Mele {charData} {char} {data} />
+				<!-- <div class="header">
 			<table style="margin: auto; border-spacing: 0.8rem ; font-size: 14pt;">
 				<tr>
 					{#each Object.values(char?.eigenschaften)
@@ -158,13 +163,16 @@
 				</tr>
 			</table>
 		</div> -->
-
-	</TabPanel>
-	</Tabs>
+			</TabPanel>
+		</Tabs>
 	{:else}
 		<p>Loding…</p>
 	{/if}
 </main>
+
+{#if data && char && charData}
+	<Log {char} {charData} {data} />
+{/if}
 
 <style lang="scss">
 	// :global() {
@@ -363,7 +371,6 @@
 		position: running(titleRunning);
 	}
 
-	
 	:global(.svelte-tabs__tab) {
 		color: var(--h1-color) !important;
 	}
@@ -378,5 +385,4 @@
 	:global(.svelte-tabs__tab:focus) {
 		color: var(--primary-focus) !important;
 	}
-
 </style>

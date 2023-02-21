@@ -10,7 +10,7 @@
 	let bonus: number;
 	$: bonus = Math.floor((21 - ko) / 3);
 
-	export let bleeding = writable(0);
+	export let blutung = writable(0);
 
 	export let linkerArm = new Wound();
 	const linkerArm_leicht = linkerArm.leicht;
@@ -64,9 +64,9 @@
 
 	function handelBlood(e: MouseEvent | KeyboardEvent) {
 		if (e.altKey) {
-			bleeding.update((x) => Math.max(x - 1, 0));
+			blutung.update((x) => Math.max(x - 1, 0));
 		} else {
-			bleeding.update((x) => Math.min(x + 1, 8));
+			blutung.update((x) => Math.min(x + 1, 8));
 		}
 	}
 
@@ -1560,7 +1560,7 @@
 			<g>
 				<rect y="0.279" fill="none" width="34.488" height="34.488" />
 				<path
-					class:location-hit={$bleeding > 0}
+					class:location-hit={$blutung > 0}
 					fill="var(--card-background-color)"
 					stroke="var(--color)"
 					stroke-miterlimit="10"
@@ -1571,7 +1571,7 @@
 			<g>
 				<rect x="24.229" y="0.279" fill="none" width="34.487" height="34.488" />
 				<path
-					class:location-hit={$bleeding > 1}
+					class:location-hit={$blutung > 1}
 					fill="var(--card-background-color)"
 					stroke="var(--color)"
 					stroke-miterlimit="10"
@@ -1582,7 +1582,7 @@
 			<g>
 				<rect x="48.459" y="0.279" fill="none" width="34.488" height="34.488" />
 				<path
-					class:location-hit={$bleeding > 2}
+					class:location-hit={$blutung > 2}
 					fill="var(--card-background-color)"
 					stroke="var(--color)"
 					stroke-miterlimit="10"
@@ -1593,7 +1593,7 @@
 			<g>
 				<rect x="72.688" y="0.279" fill="none" width="34.489" height="34.488" />
 				<path
-					class:location-hit={$bleeding > 3}
+					class:location-hit={$blutung > 3}
 					fill="var(--card-background-color)"
 					stroke="var(--color)"
 					stroke-miterlimit="10"
@@ -1604,7 +1604,7 @@
 			<g>
 				<rect x="96.917" y="0.279" fill="none" width="34.489" height="34.488" />
 				<path
-					class:location-hit={$bleeding > 4}
+					class:location-hit={$blutung > 4}
 					fill="var(--card-background-color)"
 					stroke="var(--color)"
 					stroke-miterlimit="10"
@@ -1615,7 +1615,7 @@
 			<g>
 				<rect x="121.146" y="0.279" fill="none" width="34.49" height="34.488" />
 				<path
-					class:location-hit={$bleeding > 5}
+					class:location-hit={$blutung > 5}
 					fill="var(--card-background-color)"
 					stroke="var(--color)"
 					stroke-miterlimit="10"
@@ -1626,7 +1626,7 @@
 			<g>
 				<rect x="145.376" y="0.279" fill="none" width="34.488" height="34.488" />
 				<path
-					class:location-hit={$bleeding > 6}
+					class:location-hit={$blutung > 6}
 					fill="var(--card-background-color)"
 					stroke="var(--color)"
 					stroke-miterlimit="10"
@@ -1637,7 +1637,7 @@
 			<g>
 				<rect x="169.605" y="0.279" fill="none" width="34.488" height="34.488" />
 				<path
-					class:location-hit={$bleeding > 7}
+					class:location-hit={$blutung > 7}
 					fill="var(--card-background-color)"
 					stroke="var(--color)"
 					stroke-miterlimit="10"

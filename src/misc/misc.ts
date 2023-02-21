@@ -203,6 +203,12 @@ export function sequenceEqual<T>(a: T[], b: T[]): boolean {
 
 }
 
+export function d20() {
+    return d(20);
+}
+export function d(faces: number) {
+    return Math.floor(Math.random() * faces) + 1;
+}
 
 export function zip<T1, T2>(a: T1[], b: T2[]): (readonly [T1, T2])[] {
     if (a.length != b.length) {

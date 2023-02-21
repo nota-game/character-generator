@@ -35,8 +35,9 @@
 		background-color: var(--blockquote-border-color);
 		color: #fff;
 		text-align: center;
-		padding: 5px 0;
 		border-radius: 6px;
+
+		padding: 0.5em;
 
 		/* Position the tooltip text */
 		position: absolute;

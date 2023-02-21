@@ -2,20 +2,22 @@
 	import { Charakter, isBesonderheitenHolder } from 'src/models/Character';
 	import type { Data } from 'src/models/Data';
 
-    import Hitman from 'src/controls/hitman.svelte';
+	import Hitman from 'src/controls/hitman.svelte';
 	import Armor from 'src/controls/armor.svelte';
 	import CloseCombatWeapon from 'src/controls/CloseCombatWeapon.svelte';
 	import { filterObjectKeys, getTextBesonderheit, getTextFertigkeit } from 'src/misc/misc';
-
+	import Fatique from 'src/controls/fatique.svelte';
+	import type { CharacterState } from 'src/models/CharacterState';
 
 	export let char: Charakter;
+	export let charData: CharacterState;
 	export let data: Data;
 
 	let Kampfwert = Math.floor(
 		(char.talente['Kampfgespür'].effective.currentValue({ defaultValue: 0 }) ?? 0) / 2 + 3
 	);
 
-    function getBesonderheitenKeys() {
+	function getBesonderheitenKeys() {
 		if (char == undefined) {
 			return [];
 		}
@@ -169,31 +171,14 @@
 	<div style="grid-column: 1; grid-row: 1;">
 		<Armor input={char} {data} />
 	</div>
-	<div style="grid-column: 3; grid-row: 1;">
+	<div style="grid-column: 3; grid-row: 1; ">
 		<h6>Ausdauer & Wunden</h6>
-		<Hitman {char} />
+        <button on:click={() => charData.newRound()}>Neue Runde</button>
 
-		<table class="aussdauer">
-			{#each [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as y}
-				{@const au = char?.eigenschaften['ausdauer'].effective.currentValue({
-					defaultValue: 1
-				})}
-				<tr>
-					{#each [1, 2, 3, 4, 5, 6] as x}
-						{@const c = x - 1 + (y - 1) * 6 + 1}
-						{#if au == c + 1}
-							<td style="background-color: black;">{c}</td>
-						{:else if c <= 18}
-							<td style="background-color: darkgray;">{c}</td>
-						{:else if c <= 24}
-							<td style="background-color: lightgray;">{c}</td>
-						{:else}
-							<td>{c}</td>
-						{/if}
-					{/each}
-				</tr>
-			{/each}
-		</table>
+		<div style="display: flex; gap:1rem;">
+			<Hitman {char} {...charData.wounds} />
+			<Fatique {char} {data} {...charData.fatique} />
+		</div>
 	</div>
 	<div
 		class="kampf-info"
