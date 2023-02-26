@@ -16,6 +16,7 @@
 		getTextTalent,
 		join,
 		tail,
+		withIndex,
 		zip
 	} from 'src/misc/misc';
 	import Nota from '../nota.svelte';
@@ -27,7 +28,7 @@
 	} from 'src/data/nota.g';
 	import { HtmlTag, subscribe } from 'svelte/internal';
 	import { json } from '@sveltejs/kit';
-	import type { CharacterState, LogSimpleRole, rolePropertys } from 'src/models/CharacterState';
+	import type { CharacterState, rolePropertys } from 'src/models/CharacterState';
 
 	export let char: Charakter;
 	export let data: Data;
@@ -36,10 +37,7 @@
 	let selectedTalent: string | undefined;
 
 	let difficulty: number = 0;
-
-	
 </script>
-
 
 <div style="column-count:2 ;">
 	{#each Object.keys(data.talentCategoryMap) as tk}
@@ -89,7 +87,7 @@
 							{#if selectedTalent == t}
 								<tr>
 									<td colspan="2">
-										{#each entry.Probe as p}
+										{#each withIndex(entry.Probe) as [p, index]}
 											Probe auf {join(
 												p.Eigenschaft.map((x) =>
 													getText(
@@ -105,7 +103,7 @@
 												href="#"
 												on:click={(e) => {
 													e.preventDefault();
-													charData.simpleSkillCheck(t, p, difficulty);
+													charData.simpleSkillCheck(t, difficulty, index);
 												}}
 											>
 												Einfache Probe</a
@@ -140,7 +138,6 @@
 </div>
 
 <style lang="scss">
-
 	aside {
 		--content-size: 100%;
 	}
@@ -169,6 +166,4 @@
 			--content-size: 1130px;
 		}
 	}
-
-
 </style>

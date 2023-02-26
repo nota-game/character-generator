@@ -1,35 +1,27 @@
 import { Wound } from "src/controls/hitman";
-import type { AbleitungsAuswahl_talent, Lokalisierungen_misc, TalentDefinition_talent, _Probe } from "src/data/nota.g";
-import { d20, distinct, getTextBesonderheit } from "src/misc/misc";
+import type { Lokalisierungen_misc, TalentDefinition_talent, _Probe } from "src/data/nota.g";
+import { d20, filterNull, join } from "src/misc/misc";
 import { derived, get, readable, writable, type Readable, type Writable } from "svelte/store";
-import type { BesonderheitenHolder, Charakter } from "./Character";
+import type { Charakter } from "./Character";
+import { LogSimpleRole } from "./log/LogSimpleRole";
 
 export type fatiqueType = 'Blutung' | 'Erschöpfung' | 'Verausgabung' | 'Strapazierung';
+export type meleMaliType = 'Position' | 'Schmerzen';
 
 type Log = LogMessage | LogSimpleRole;
 
-export type LogMessage = {
-    type: 'message',
-    message: string,
-}
+export class LogMessage {
+    public readonly message: readonly string[];
 
-export type rolePropertys = {
-    role: number;
-    target: number;
-    substituted?: number;
-    ignored?: true;
-    name: Lokalisierungen_misc;
-};
-export type LogSimpleRole = {
-    type: 'simple-role',
-    talent: TalentDefinition_talent;
-    roles: rolePropertys[];
-    taw: number;
-    tawResult: number;
-    difficulty: number;
-    quality: number;
-    begabung: (readonly [string, number])[];
-};
+    constructor(message: readonly string[] | string) {
+        if (typeof message == 'string') {
+            this.message = [message];
+        } else {
+            this.message = message;
+        }
+    }
+
+}
 
 
 export class CharacterState {
@@ -44,6 +36,11 @@ export class CharacterState {
         Erschöpfung: writable(0),
         Verausgabung: writable(0),
         Strapazierung: writable(0),
+    } as const;
+
+    public readonly meleMali = {
+        Schmerzen: writable(0),
+        Position: writable(0),
     } as const;
 
     public readonly wounds = {
@@ -95,182 +92,65 @@ export class CharacterState {
         })
     }
 
-    public refreshLog(log: Log) {
-        if (log.type == 'simple-role') {
+    // public refreshLog(log: Log) {
+    //     if (log.type == 'simple-role') {
 
-            const tawEffectiv = log.taw - log.difficulty;
+    //         const tawEffectiv = log.taw - log.difficulty;
 
-            const tawResult =
-                tawEffectiv -
-                log.roles
-                    .filter((x) => (x.substituted ?? x.role) < x.target)
-                    .map((x) => x.substituted ?? x.role)
-                    .reduce((a, b) => a + b, 0);
+    //         const tawResult =
+    //             tawEffectiv -
+    //             log.roles
+    //                 .filter((x) => (x.substituted ?? x.role) < x.target)
+    //                 .map((x) => x.substituted ?? x.role)
+    //                 .reduce((a, b) => a + b, 0);
 
-            const quality = tawResult < 1 ? 0 : Math.floor(Math.log2(tawResult)) + 1;
-            log.tawResult= Math.min(tawResult, log.taw);
-            log.quality = quality;
-        }
-        this.logSetter.update(x => {
-            return x;
-        })
-    }
-
-
-    public simpleSkillCheck(talentId: string, probe: _Probe, difficulty: number): LogSimpleRole {
-        difficulty += get(this.defaultErschwernis);
-        const talent = this.char.stammdaten.talentMap[talentId];
-        const taw = this.char.talente[talentId].effective.currentValue({ defaultValue: 0 });
-        const tawEffectiv = taw - difficulty;
-        let tawResult = tawEffectiv;
+    //         const quality = tawResult < 1 ? 0 : Math.floor(Math.log2(tawResult)) + 1;
+    //         log.tawResult = Math.min(tawResult, log.taw);
+    //         log.quality = quality;
+    //     }
+    //     this.logSetter.update(x => {
+    //         return x;
+    //     })
+    // }
 
 
-        console.log('begin role');
-        const roles: rolePropertys[] = [];
+    public simpleSkillCheck(talent: string | TalentDefinition_talent, difficulty = 0, testIndex = 0) {
+        const talentInstance = typeof talent == 'string'
+            ? this.char.stammdaten.talentMap[talent]
+            : talent;
 
-        function getAbleitungen(params: AbleitungsAuswahl_talent | undefined): string[] {
-            if (params == undefined) {
-                return [];
-            }
-            return [
-                ...(params.Ableitung?.map((x) => x.Id) ?? []),
-                ...(params.Max?.flatMap((x) => getAbleitungen(x)) ?? [])
-            ];
-        }
-        const relatedTalents = distinct([
-            talentId,
-            ...getAbleitungen(this.char.stammdaten.talentMap[talentId].Ableitungen)
-        ]);
-
-        const begabung = relatedTalents
-            .map((t) => [this.char.besonderheiten('Begabung Talent', t) as BesonderheitenHolder, t] as const)
-            .filter(([b, id]) => {
-                const stufe = b.effective.currentValue({ defaultValue: 0 });
-                return (id == talentId && stufe > 0) || stufe > 1;
-            })
-            .map(
-                ([b, id]) =>
-                    [
-                        getTextBesonderheit(
-                            this.char.stammdaten.besonderheitenMap['Begabung Talent'],
-                            b.effective.currentValue({ defaultValue: 0 }),
-                            this.char,
-                            id
-                        ),
-                        d20()
-                    ] as const
-            );
-
-        for (const e of probe.Eigenschaft) {
-            if (e.Name) {
-                const meta = this.char.eigenschaften[e.Name].meta.currentValue({ defaultValue: undefined });
-                if (!meta) {
-                    continue;
-                }
-
-                const defaltValue = meta.type == 'bereich' ? meta.default : 21;
-                const currentValue =
-                    this.char.eigenschaften[e.Name].effective.currentValue({ defaultValue: undefined }) ??
-                    defaltValue;
-                const role = d20();
-
-                const name = this.char.eigenschaften[e.Name ?? '']?.meta.currentValue({
-                    defaultValue: undefined
-                })?.Abkürzung ?? {
-                    Lokalisirung: [
-                        { meta: { Sprache: 'de', Geschlecht: 'Unspezifiziert' }, value: 'UNBEKANT' }
-                    ]
-                };
-
-                roles.push({ role, target: currentValue, name });
-
-                if (role < currentValue) {
-                    tawResult -= role;
-                }
-            }
-        }
-
-        for (let i = 0; i < begabung.length; i++) {
-            // role an additional role
-            const [, role] = begabung[i];
-            console.log('extra role', role);
-
-            const possibleSubstitutions = roles.filter((x) => x.target > (x.substituted ?? x.role));
-            const currentOnes = roles.filter((x) => (x.substituted ?? x.role) == 1).length;
-            const subs = possibleSubstitutions
-                .map((x) => {
-                    const change =
-                        currentOnes > 0 && role == 1
-                            ? -1 // cant do anything here
-                            : currentOnes > 1 && (x.substituted ?? x.role != 1)
-                                ? -1 // if we have more then one 1 we need to replace that
-                                : currentOnes > 1
-                                    ? 1 // fix 1 there wont be a better one in this run
-                                    : role >= x.target
-                                        ? x.substituted ?? x.role
-                                        : (x.substituted ?? x.role) - role;
-                    return [change, x] as const;
-                })
-                .filter(([x]) => x > 0)
-                .sort(([a], [b]) => b - a);
-            console.log('subs', JSON.parse(JSON.stringify(subs)));
-            if (subs[0]) {
-                const [increse, roleToChange] = subs[0];
-                console.log('substitute', JSON.parse(JSON.stringify({ increse, roleToChange })));
-                roleToChange.substituted = role;
-                tawResult =
-                    tawEffectiv -
-                    roles
-                        .filter((x) => (x.substituted ?? x.role) < x.target)
-                        .map((x) => x.substituted ?? x.role)
-                        .reduce((a, b) => a + b, 0);
-            } else if (role == 20) {
-                const s = roles.filter((x) => x.role != 20)[0];
-                if (s) {
-                    s.substituted = role;
-                }
-            }
-        }
-
-        const quality = tawResult < 1 ? 0 : Math.floor(Math.log2(tawResult)) + 1;
-
-        const roleEntry = {
-            type: 'simple-role',
-            talent,
-            roles,
-            taw,
-            tawResult: Math.min(tawResult, taw),
-            quality,
-            difficulty,
-            begabung
-        } satisfies LogSimpleRole;
-        console.log('roleEntry', roleEntry);
-        // roleEntrys.push(roleEntry);
-        this.addLog(roleEntry);
-        return roleEntry;
+        const log = new LogSimpleRole(this, talentInstance, difficulty, testIndex);
+        this.addLog(log);
+        return log;
     }
 
     /**
      * newRound
      */
     public newRound() {
-        this.addLog({ type: 'message', message: 'Beginne neue Runde' });
+        const message = ['Beginne neue Runde'];
         const currentBleeding = get(this.wounds.blutung);
+        const currentPain = get(this.meleMali.Schmerzen);
+        if (currentPain > 0) {
+            this.meleMali.Schmerzen.update(x => Math.min(0, x - 1));
+            message.push('Schmerzen haben sich vermindert');
+        }
         if (currentBleeding > 0) {
             this.fatique.Blutung.update(x => x + currentBleeding);
-            this.addLog({ type: 'message', message: `Blutung verursacht ${currentBleeding} Blutungspungte. Aktuelle Ausdauer ${get(this.Ausdauer)}` });
+            message.push(`Blutung verursacht ${currentBleeding} Blutungspungte. Aktuelle Ausdauer ${get(this.Ausdauer)}`);
 
             if (d20() > 19) {
                 this.wounds.blutung.update(x => Math.max(0, x - 1));
                 if (currentBleeding == 1) {
-                    this.addLog({ type: 'message', message: `Die Blutung hat sich gestoppt.` });
+                    message.push(`Die Blutung hat sich gestoppt.`);
                 } else {
-                    this.addLog({ type: 'message', message: `Die Blutung hat sich reduziert.` });
+                    message.push(`Die Blutung hat sich reduziert.`);
                 }
             }
 
         }
 
+        this.addLog(new LogMessage(message));
     }
 
     public rest(hours: number) {
@@ -278,7 +158,7 @@ export class CharacterState {
         const verausgabung = get(this.fatique.Verausgabung);
 
         if (verausgabung == 0 && get(this.fatique.Strapazierung) == 0) {
-            this.addLog({ type: 'message', message: `Rast (${hours} Stunden) war angenehm, aber es gab nichts zum regenerienen.` });
+            this.addLog(new LogMessage(`Rast (${hours} Stunden) war angenehm, aber es gab nichts zum regenerienen.`));
         } else if (verausgabung < hours) {
             hours -= verausgabung / 2;
             this.fatique.Verausgabung.set(0);
@@ -286,28 +166,28 @@ export class CharacterState {
             this.fatique.Strapazierung.update(x => Math.max(0, x - amountOfStrapazierungToRemove));
 
             if (verausgabung > 0 && amountOfStrapazierungToRemove > 0) {
-                this.addLog({ type: 'message', message: `Rasten (${hours} Stunden) Regeneriert ${amountOfStrapazierungToRemove} Strapazierung und sämtliche Verausgabung.` });
+                this.addLog(new LogMessage(`Rasten (${hours} Stunden) Regeneriert ${amountOfStrapazierungToRemove} Strapazierung und sämtliche Verausgabung.`));
             } else if (verausgabung > 0) {
-                this.addLog({ type: 'message', message: `Rasten (${hours} Stunden) sämtliche Verausgabung.` });
+                this.addLog(new LogMessage(`Rasten (${hours} Stunden) sämtliche Verausgabung.`));
             } else if (amountOfStrapazierungToRemove > 0) {
-                this.addLog({ type: 'message', message: `Rasten (${hours} Stunden) Regeneriert ${amountOfStrapazierungToRemove} Strapazierung.` });
+                this.addLog(new LogMessage(`Rasten (${hours} Stunden) Regeneriert ${amountOfStrapazierungToRemove} Strapazierung.`));
             } else {
-                this.addLog({ type: 'message', message: `Rast (${hours} Stunden) war nicht lange genug zur erholung.` });
+                this.addLog(new LogMessage(`Rast (${hours} Stunden) war nicht lange genug zur erholung.`));
             }
         } else {
             this.fatique.Verausgabung.update(x => Math.floor(Math.max(0, x - hours * 2)));
-            this.addLog({ type: 'message', message: `Rasten (${hours} Stunden) Regeneriert ${verausgabung - get(this.fatique.Verausgabung)} Verausgabung.` });
+            this.addLog(new LogMessage(`Rasten (${hours} Stunden) Regeneriert ${verausgabung - get(this.fatique.Verausgabung)} Verausgabung.`));
         }
     }
 
-    public restForBleeding() {
-        const recoveing = Math.min(Math.floor(get(this.Ausdauer) / 10), 1)
+    public restForBleeding(days: number) {
+        const recoveing = Math.max(Math.floor(this.MaxAussdauer / 10), 1) * Math.floor(days);
         this.fatique.Blutung.update(x => {
             const newValue = Math.max(0, x - recoveing);
             if (newValue == 0) {
-                this.addLog({ type: 'message', message: `Die Ruhe hat sämtliche folgen des Blutverlustes aufgehoben.` });
+                this.addLog(new LogMessage(`Die Ruhe hat sämtliche folgen des Blutverlustes aufgehoben.`));
             } else {
-                this.addLog({ type: 'message', message: `Die Ruhe hat ${recoveing} Blutverlust regeneriert.` });
+                this.addLog(new LogMessage(`Die Ruhe hat ${recoveing} Blutverlust regeneriert.`));
             }
             return newValue;
         })
@@ -319,36 +199,90 @@ export class CharacterState {
     public recover(type: 'half' | 'full') {
         const existingFatique = get(this.fatique.Erschöpfung);
         const addedVerausgabung = Math.floor(existingFatique / 6);
+
+
+        const addedMessages = join(filterNull(Object.entries(this.addFatique('Verausgabung', addedVerausgabung)).map(([type, amount]) => {
+            if (amount > 0) {
+                return `${amount} ${type}`;
+            } else if (amount < 0) {
+                return `${amount} ${type}`;
+            } else {
+                return undefined;
+            }
+        })), ',', ' und ');
+
         if (type == 'full') {
             this.fatique.Erschöpfung.set(0);
             if (addedVerausgabung > 0) {
-                this.addLog({ type: 'message', message: `Alle Erschöpfung ist vegangen, aber dafür wurden ${addedVerausgabung} Verausgabung erhaten.` });
+                this.addLog(new LogMessage(`Alle Erschöpfung ist vegangen, aber dafür wurden ${addedMessages} erhaten.`));
             } else {
-                this.addLog({ type: 'message', message: `Alle Erschöpfung ist vegangen.` });
+                this.addLog(new LogMessage(`Alle Erschöpfung ist vegangen.`));
             }
         } else {
             this.fatique.Erschöpfung.update(x => Math.floor(existingFatique / 2));
             if (addedVerausgabung > 0) {
-                this.addLog({ type: 'message', message: `Erschöpfung wurde auf ${Math.floor(existingFatique / 2)} reduziert, aber dafür wurden ${addedVerausgabung} Verausgabung erhaten.` });
+                this.addLog(new LogMessage(`Erschöpfung wurde auf ${Math.floor(existingFatique / 2)} reduziert, aber dafür wurden ${addedMessages} erhaten.`));
             } else {
-                this.addLog({ type: 'message', message: `Erschöpfung wurde auf ${Math.floor(existingFatique / 2)} reduziert.` });
+                this.addLog(new LogMessage(`Erschöpfung wurde auf ${Math.floor(existingFatique / 2)} reduziert.`));
             }
         }
-        this.addFatique('Verausgabung', addedVerausgabung);
     }
 
-    public addFatique(type: fatiqueType, amount = 1) {
+    public addFatique(type: fatiqueType, amount = 1, supressLog = false): Record<fatiqueType, number> {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const newValue: Record<fatiqueType, number> = { Blutung: 0, Erschöpfung: 0, Strapazierung: 0, Verausgabung: 0 }; // it will be assingend by callback
+        function addData(destination: Partial<Record<fatiqueType, number>>, source: Partial<Record<fatiqueType, number>>) {
+            for (const key of ['Blutung', 'Erschöpfung', 'Verausgabung', 'Strapazierung'] as const) {
+                destination[key] = (destination[key] ?? 0) + (source[key] ?? 0);
+            }
+        }
+
         this.fatique[type].update(x => {
             if (type == 'Verausgabung') {
                 const maxAdditonal = 6 - x;
                 const notAddable = Math.max(amount - maxAdditonal, 0);
-                this.addFatique('Strapazierung', notAddable);
-                return Math.min(Math.max(0, x + amount), 6);
+                const toAdd = amount - notAddable;
+                addData(newValue, this.addFatique('Strapazierung', notAddable, true));
+                const change = Math.min(Math.max(0, x + toAdd), 6);
+                const holde = { Verausgabung: toAdd };
+
+                addData(newValue, holde);
+                return change;
             }
+
+            const change = Math.max(x + amount, 0);
+            const holder = {} as Record<fatiqueType, number>;
+            holder[type] = amount;
+            addData(newValue, holder);
+            return change;
+        })
+        if (newValue == undefined) {
+            throw new Error('should not happen…');
+        }
+
+        if (!supressLog) {
+            const messages = filterNull(Object.entries(newValue).map(([type, amount]) => {
+                if (amount > 0) {
+                    return `${amount} ${type} wurde erhalten.`;
+                } else if (amount < 0) {
+                    return `${amount} ${type} wurde entfernt.`;
+                } else {
+                    return undefined;
+                }
+            }));
+            if (messages.length > 0) {
+                this.addLog(new LogMessage(messages));
+            }
+        }
+
+        return newValue;
+    }
+    public addMeleMali(type: meleMaliType, amount = 1) {
+        this.meleMali[type].update(x => {
             if (amount > 0) {
-                this.addLog({ type: 'message', message: `${amount} ${type} wurde erhalten.` });
+                this.addLog(new LogMessage(`${amount} ${type} wurde erhalten.`));
             } else {
-                this.addLog({ type: 'message', message: `${amount} ${type} wurde entfernt.` });
+                this.addLog(new LogMessage(`${amount} ${type} wurde entfernt.`));
             }
             return Math.max(x + amount, 0);
         })

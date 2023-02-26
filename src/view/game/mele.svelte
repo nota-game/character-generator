@@ -5,17 +5,23 @@
 	import Hitman from 'src/controls/hitman.svelte';
 	import Armor from 'src/controls/armor.svelte';
 	import CloseCombatWeapon from 'src/controls/CloseCombatWeapon.svelte';
-	import { filterObjectKeys, getTextBesonderheit, getTextFertigkeit } from 'src/misc/misc';
+	import {
+		d20,
+		dealay,
+		filterObjectKeys,
+		getTextBesonderheit,
+		getTextFertigkeit
+	} from 'src/misc/misc';
 	import Fatique from 'src/controls/fatique.svelte';
 	import type { CharacterState } from 'src/models/CharacterState';
+	import CombatMali from 'src/controls/combatMali.svelte';
+	import ActionBattle from './mele/actionBattle.svelte';
+	import ActionDamage from './mele/actionDamage.svelte';
+	import ActionRest from './mele/actionRest.svelte';
 
 	export let char: Charakter;
 	export let charData: CharacterState;
 	export let data: Data;
-
-	let Kampfwert = Math.floor(
-		(char.talente['Kampfgespür'].effective.currentValue({ defaultValue: 0 }) ?? 0) / 2 + 3
-	);
 
 	function getBesonderheitenKeys() {
 		if (char == undefined) {
@@ -37,152 +43,31 @@
 	}
 </script>
 
-<h1 class="pagebreak">Kampf</h1>
+<h6>Mali</h6>
+<CombatMali {charData} />
 
-<h6>Mali <small>(Kampfgespür/2+3)</small></h6>
-<table class="kampf">
-	<tr>
-		<td />
-		<td />
-		<td />
-		<td />
-		<td
-			>{#if Kampfwert == 1}
-				<span class="mark" />
-			{/if}
-			-1</td
-		>
-		<td />
-		<td />
-		<td />
-		<td />
-		<td
-			>{#if Kampfwert == 2}
-				<span class="mark" />
-			{/if}-2</td
-		>
-		<td />
-		<td />
-		<td />
-		<td
-			>{#if Kampfwert == 3}
-				<span class="mark" />
-			{/if}-3</td
-		>
-		<td />
-		<td />
-		<td />
-		<td
-			>{#if Kampfwert == 4}
-				<span class="mark" />
-			{/if}-4</td
-		>
-		<td />
-		<td />
-	</tr>
-	<tr>
-		<td
-			>{#if Kampfwert == 5}
-				<span class="mark" />
-			{/if}-5</td
-		>
-		<td />
-		<td />
-		<td
-			>{#if Kampfwert == 6}
-				<span class="mark" />
-			{/if}-6</td
-		>
-		<td />
-		<td
-			>{#if Kampfwert == 7}
-				<span class="mark" />
-			{/if}-7</td
-		>
-		<td />
-		<td
-			>{#if Kampfwert == 8}
-				<span class="mark" />
-			{/if}-8</td
-		>
-		<td
-			>{#if Kampfwert == 9}
-				<span class="mark" />
-			{/if}-9</td
-		>
-		<td
-			>{#if Kampfwert == 10}
-				<span class="mark" />
-			{/if}-10</td
-		>
-		<td
-			>{#if Kampfwert == 11}
-				<span class="mark" />
-			{/if}-11</td
-		>
-		<td
-			>{#if Kampfwert == 12}
-				<span class="mark" />
-			{/if}-12</td
-		>
-		<td
-			>{#if Kampfwert == 13}
-				<span class="mark" />
-			{/if}-13</td
-		>
-		<td
-			>{#if Kampfwert == 14}
-				<span class="mark" />
-			{/if}-14</td
-		>
-		<td
-			>{#if Kampfwert == 15}
-				<span class="mark" />
-			{/if}-15</td
-		>
-		<td
-			>{#if Kampfwert == 16}
-				<span class="mark" />
-			{/if}-16</td
-		>
-		<td
-			>{#if Kampfwert == 17}
-				<span class="mark" />
-			{/if}-17</td
-		>
-		<td
-			>{#if Kampfwert == 18}
-				<span class="mark" />
-			{/if}-18</td
-		>
-		<td
-			>{#if Kampfwert == 19}
-				<span class="mark" />
-			{/if}-19</td
-		>
-		<td
-			>{#if Kampfwert == 20}
-				<span class="mark" />
-			{/if}-20</td
-		>
-	</tr>
-</table>
-<div class="kampf-right">
-	<div style="grid-column: 1; grid-row: 1;">
-		<Armor input={char} {data} />
-	</div>
-	<div style="grid-column: 3; grid-row: 1; ">
-		<h6>Ausdauer & Wunden</h6>
-        <button on:click={() => charData.newRound()}>Neue Runde</button>
+<h6>Aktionen</h6>
+<div class="action-panels">
+	
+	<ActionRest  {charData}/>
+	<ActionDamage  {charData}/>
 
-		<div style="display: flex; gap:1rem;">
-            <div style="width: 20rem;">
+	<ActionBattle {charData} />
+</div>
 
-                <Hitman {char} {...charData.wounds} />
-            </div>
-			<Fatique {char} {data} {...charData.fatique} />
+<div >
+	<h6>Ausdauer & Wunden</h6>
+	
+
+	<div style="display: flex; gap:1rem;">
+		<div style="width: 20rem;">
+			<Hitman {char} {...charData.wounds} />
 		</div>
+		<Fatique {char} {data} {...charData.fatique} />
 	</div>
+</div>
+<div class="kampf-right">
+	
 	<div
 		class="kampf-info"
 		style="grid-column: 2; grid-row: 1; display: flex; flex-wrap: wrap; justify-content: space-evenly ; align-content: flex-start;"
@@ -274,14 +159,31 @@
 		{/each}
 	</div>
 </div>
+
+<div style="grid-column: 1; grid-row: 1;">
+	<Armor input={char} {data} />
+</div>
+
 <style lang="scss">
-    .kampf-right{
-        // display: none;
-    }
-    .kampf-info{
-        display: none;
-    }
-    .kampf{
-        display: none;;
-    }
+	.action-panels {
+		display: flex;
+	}
+
+	.action-panels > :global(div) {
+		display: grid;
+		gap: 1em;
+		justify-items: stretch;
+		align-items: stretch;
+		background-color: var(--card-background-color);
+		padding: 0.5rem;
+		margin: 0.2rem;
+
+	}
+
+	.kampf-info {
+		display: none;
+	}
+	.kampf {
+		display: none;
+	}
 </style>

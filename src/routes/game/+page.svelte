@@ -1,12 +1,8 @@
 <script lang="ts">
 	import { afterUpdate, onMount } from 'svelte';
 	import { Data } from 'src/models/Data';
-	import {
-		Charakter,
-		isBesonderheitenHolder,
-		type BesonderheitenHolder
-	} from 'src/models/Character';
-	
+	import { Charakter } from 'src/models/Character';
+
 	import { Tabs, Tab, TabList, TabPanel } from 'svelte-tabs';
 
 	import Hitman from 'src/controls/hitman.svelte';
@@ -29,6 +25,8 @@
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
+
+	let expandLog = false;
 
 	let charData: CharacterState | undefined;
 	$: {
@@ -105,27 +103,32 @@
 	}
 </script>
 
-<nav>
-	<a href={pageLink} role="button" rel="external">Zum Editor</a>
-</nav>
+<div class="root" class:expand-log={expandLog}>
+	<nav>
+		<a href={pageLink} role="button" rel="external">Zum Editor</a>
+		<label
+			>Log Expanded
+			<input type="checkbox" bind:checked={expandLog} />
+		</label>
+	</nav>
 
-<main class="container">
-	{#if data && char && charData}
-		<Tabs>
-			<TabList>
-				<Tab>Übersicht</Tab>
-				<Tab>Talente</Tab>
-				<Tab>Kampf</Tab>
-			</TabList>
-			<TabPanel>
-				<Overview {charData} {char} {data} />
-			</TabPanel>
-			<TabPanel>
-				<Talent {charData} {char} {data} />
-			</TabPanel>
-			<TabPanel>
-				<Mele {charData} {char} {data} />
-				<!-- <div class="header">
+	<main class="container">
+		{#if data && char && charData}
+			<Tabs>
+				<TabList>
+					<Tab>Übersicht</Tab>
+					<Tab>Talente</Tab>
+					<Tab>Kampf</Tab>
+				</TabList>
+				<TabPanel>
+					<Overview {charData} {char} {data} />
+				</TabPanel>
+				<TabPanel>
+					<Talent {charData} {char} {data} />
+				</TabPanel>
+				<TabPanel>
+					<Mele {charData} {char} {data} />
+					<!-- <div class="header">
 			<table style="margin: auto; border-spacing: 0.8rem ; font-size: 14pt;">
 				<tr>
 					{#each Object.values(char?.eigenschaften)
@@ -155,18 +158,58 @@
 				</tr>
 			</table>
 		</div> -->
-			</TabPanel>
-		</Tabs>
-	{:else}
-		<p>Loding…</p>
-	{/if}
-</main>
+				</TabPanel>
+			</Tabs>
+		{:else}
+			<p>Loding…</p>
+		{/if}
+	</main>
 
-{#if data && char && charData}
-	<Log {char} {charData} {data} />
-{/if}
+	{#if data && char && charData}
+		{#if expandLog}
+			<div class="log-container">
+				<Log {char} {charData} {data} />
+			</div>
+		{:else}
+			<Log {char} {charData} {data} />
+		{/if}
+	{/if}
+</div>
 
 <style lang="scss">
+	:global(.root.expand-log .hide-on-expand-log) {
+		display: none;
+	}
+	:global(.root:not(.expand-log) .show-on-expand-log) {
+		display: none;
+	}
+	.root.expand-log {
+		display: grid !important;
+		grid-template-columns: 30rem 1fr;
+		grid-template-rows: auto;
+		grid-template-areas:
+			'header header '
+			'log main'
+			'footer footer';
+	}
+
+	nav {
+		grid-area: header;
+		height: 2.5rem;
+		border-bottom: 1px solid var(--primary);
+	}
+
+	.root.expand-log main {
+		grid-area: main;
+		overflow-x: auto;
+		height: calc(100vh - 2.5rem);
+	}
+	.log-container {
+		grid-area: log;
+		height: calc(100vh - 2.5rem);
+		overflow-x: auto;
+	}
+
 	// :global() {
 	:global(.missing) {
 		color: brown;

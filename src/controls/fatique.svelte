@@ -134,35 +134,7 @@
 				{@const x = (index % 6) + 1}
 				{@const y = Math.floor(index / 6) + 1}
 				{#if x > 0 && y > 0}
-					<div class="token-holder" style="grid-column: {x};grid-row: {y};">
-						<TooltipControl>
-							<div class="token {f.fatiqueType.toLocaleLowerCase()}" />
-							<div slot="tooltip">
-								<strong>{f.fatiqueType}</strong>
-								{#if f.fatiqueType == 'Blutung'}
-									<p>
-										Pro Tag verliert ein Charakter Blutpunkte in höhe von 10% (abgerundet Minimum 1)
-										seiner Ausdauer.
-									</p>
-									<p>
-										Voraussetzung zum Abbau der Blutpunkte ist Ruhe und genügend Flüssigkeit und
-										Nahrung. Andernfalls kann der Abbau geringer ausfallen.
-									</p>
-								{:else if f.fatiqueType == 'Erschöpfung'}
-									<p>Können mit der Taktik Erholen abgebout werden</p>
-									<p>Jeweils 6 abgebaute Punkte verusuchen Verausgabung.</p>
-								{:else if f.fatiqueType == 'Verausgabung'}
-									<p>Wird um einen Punkt Rast je halber Stunde abgebaut.</p>
-									<p>
-										Es können nicht mehr als 6 Punkte Angesammelt werden, alles darüber hinaus
-										erzeugt Strapazierung.
-									</p>
-								{:else if f.fatiqueType == 'Strapazierung'}
-									<p>Wird um einen Punkt Rast je 2 Stunden abgebaut.</p>
-								{/if}
-							</div>
-						</TooltipControl>
-					</div>
+				<div class="token {f.fatiqueType.toLocaleLowerCase()}"  style="grid-column: {x};grid-row: {y};"/>
 				{/if}
 			{/each}
 		{/each}
@@ -229,7 +201,7 @@
 		width: 100%;
 		display: grid;
 	}
-
+	
 	.token {
 		align-self: center;
 

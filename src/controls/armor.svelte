@@ -2,7 +2,11 @@
 	import { Charakter } from '../models/Character';
 	import { derived, readable, writable, type Readable, type Writable } from 'svelte/store';
 	import { onMount } from 'svelte';
-	import type { RüstungDefinition_kampf_ausstattung } from 'src/data/nota.g';
+	import type {
+		RüstungDefinition_kampf_ausstattung,
+		_Schutz,
+		_Trefferzonen
+	} from 'src/data/nota.g';
 	import { filterNull, filterObjectKeys, getText } from 'src/misc/misc';
 	import AusrustungList from './AusrustungList.svelte';
 	import type { Data } from '../models/Data';
@@ -22,8 +26,8 @@
 		if (t == undefined) return [];
 		return Object.keys(t) as any;
 	}
-	let d: Readable<armor[]>;
-	$: d = armorStore
+
+	$: actualArmorStore = armorStore
 		? readable(
 				[
 					...Object.keys(
@@ -33,20 +37,22 @@
 						)
 					)
 				].map((a) => {
-					const xx = data.RüstungMap[a];
-					return transformArmor(xx);
+					return data.RüstungMap[a];
 				})
 		  )
 		: typeof input === 'string' && data
-		? readable([transformArmor(data.RüstungMap[input])])
+		? readable([data.RüstungMap[input]])
 		: readable([]);
+
+	let d: Readable<armor[]>;
+	$: d = derived(actualArmorStore, (x) => x.map(transformArmor));
 
 	type armor = {
 		titel: string;
 		steifheit: number;
 		härte: number;
 		dämpfung: number;
-		range: (readonly [number, number])[];
+		range: (readonly [number, number, boolean])[];
 	};
 
 	export let start = 128;
@@ -55,12 +61,54 @@
 	export let lanes = 5;
 	export let laneWidth = 22;
 
+
+	$: zoneProtection = $actualArmorStore
+		.flatMap((c) => {
+			return Object.entries(c.Trefferzonen).map(([key, value]) => {
+				if (value?.Schutz.some((x) => !x.Unzuverlässig)) {
+					return [key as keyof _Trefferzonen, c.Schutz] as const;
+				}
+				return [];
+			});
+		})
+		.reduce((p, [zone, protection]) => {
+			if (zone != undefined) {
+				const current = p[zone];
+				if (current == undefined) {
+					p[zone] = protection;
+				} else {
+					const Dämpfung = current.Dämpfung;
+					if (Dämpfung?.Wert == undefined) {
+						current.Dämpfung = protection.Dämpfung;
+					} else if (protection.Dämpfung?.Wert != undefined) {
+						Dämpfung.Wert = Math.max(Dämpfung.Wert, protection.Dämpfung.Wert);
+					}
+					const Härte = current.Härte;
+					if (Härte?.Wert == undefined) {
+						current.Härte = protection.Härte;
+					} else if (protection.Härte?.Wert != undefined) {
+						Härte.Wert = Math.max(Härte.Wert, protection.Härte.Wert);
+					}
+					const Flexibilität = current.Flexibilität;
+					if (Flexibilität?.Wert == undefined) {
+						current.Flexibilität = protection.Flexibilität;
+					} else if (protection.Flexibilität?.Wert != undefined) {
+						Flexibilität.Wert = Math.max(Flexibilität.Wert, protection.Flexibilität.Wert);
+					}
+				}
+			}
+
+			return p;
+		}, {} as Record<string, _Schutz | undefined>);
+
+	$: console.log(zoneProtection);
+
 	function transformArmor(a: RüstungDefinition_kampf_ausstattung): {
 		titel: string;
 		steifheit: number;
 		härte: number;
 		dämpfung: number;
-		range: (readonly [number, number])[];
+		range: (readonly [number, number, boolean])[];
 	} {
 		return {
 			härte: a?.Schutz.Härte?.Wert ?? 0,
@@ -86,7 +134,7 @@
 						: -1000;
 				return (
 					a?.Trefferzonen[g]?.Schutz.map(
-						(x) => [x.Von! + regionConst, x.Bis! + regionConst] as const
+						(x) => [x.Von! + regionConst, x.Bis! + regionConst, x.Unzuverlässig] as const
 					) ?? []
 				);
 			})
@@ -102,7 +150,7 @@
 	x="0px"
 	y="0px"
 	height="710px"
-	viewBox="0 0 {startX + lanes * laneWidth} {start + vDistance * 70}"
+	viewBox="-50 0 {startX + lanes * laneWidth + 70} {start + vDistance * 70}"
 	enable-background="new 0 0 164.084 631.69"
 	xml:space="preserve"
 >
@@ -144,17 +192,29 @@
 				font-size="12">{a.härte}</text
 			>
 
-			{#each a.range as [x, y], j}
-				<rect
-					id="range-{i}-{j}"
-					x={startX + laneWidth / 4 + i * laneWidth}
-					y={start + (Math.min(x, y) - 1) * vDistance}
-					fill="var(--primary)"
-					stroke="var(--color)"
-					stroke-width="0.75"
-					width={laneWidth / 2}
-					height={Math.abs(y - x) * vDistance}
-				/>
+			{#each a.range as [x, y, unreliable], j}
+				{#if unreliable}
+					<rect
+						id="range-{i}-{j}"
+						x={startX + laneWidth / 4 + i * laneWidth}
+						y={start + (Math.min(x, y) - 1) * vDistance}
+						stroke="var(--primary)"
+						stroke-width="0.75"
+						width={laneWidth / 2}
+						height={Math.abs(y - x) * vDistance}
+					/>
+				{:else}
+					<rect
+						id="range-{i}-{j}"
+						x={startX + laneWidth / 4 + i * laneWidth}
+						y={start + (Math.min(x, y) - 1) * vDistance}
+						fill="var(--primary)"
+						stroke="var(--color)"
+						stroke-width="0.75"
+						width={laneWidth / 2}
+						height={Math.abs(y - x) * vDistance}
+					/>
+				{/if}
 			{/each}
 		{/each}
 	</g>
@@ -178,7 +238,7 @@
 						fill="none"
 						stroke="var(--color)"
 						stroke-width="0.75"
-						x1="12.261"
+						x1={12.261 - 50}
 						y1={start + f * vDistance + r * vDistance * 10}
 						x2={startX + lanes * laneWidth}
 						y2={start + f * vDistance + r * vDistance * 10}
@@ -205,6 +265,15 @@
 					font-size="12">{f + 2}</text
 				>
 				{#if f == 0}
+					{@const zoneLookup = [
+						'Kopf',
+						'LinkerArm',
+						'LinkesBein',
+						'Brust',
+						'Hüfte',
+						'RechterArm',
+						'RechtesBein'
+					]}
 					<g
 						transform="matrix(1 0 0 1 5 {start +
 							f * vDistance +
@@ -212,6 +281,107 @@
 							vDistance * 5 -
 							28.346 / 2})"
 					>
+						<g transform="matrix(1 0 0 1 -80 -90)">
+							<!--Flexibility-->
+							<path
+								fill="var(--muted-color)"
+								stroke="var(--color)"
+								stroke-width="0.5"
+								stroke-miterlimit="10"
+								d="M43.116,84.336
+						c4.859,1.736,3.646-3.989,4.859,1.221c0.859,3.684,1.215,5.728,3.645,5.728l8.504-5.209c0,0-3.644-2.774-3.644-6.247
+						c0-4.911-2.431,1.035-4.86-0.701L43.116,84.336z"
+							/>
+							<!--Dämpfung-->
+							<g>
+								<path
+									fill-rule="evenodd"
+									clip-rule="evenodd"
+									fill="var(--color)"
+									d="M52.445,97.818c-0.002,0.107-0.003,0.214-0.006,0.32
+								c-0.004,0.109-0.008,0.218-0.013,0.326c-0.006,0.112-0.012,0.226-0.021,0.338c-0.019,0.228-0.036,0.455-0.06,0.682
+								c-0.021,0.21-0.048,0.418-0.076,0.627c-0.028,0.21-0.058,0.42-0.094,0.629c-0.048,0.277-0.096,0.555-0.154,0.829
+								c-0.08,0.377-0.163,0.753-0.255,1.127c-0.082,0.334-0.173,0.666-0.27,0.996c-0.115,0.394-0.237,0.786-0.366,1.176
+								c-0.167,0.509-0.354,1.011-0.559,1.507c-0.003,0.008-0.008,0.015-0.014,0.027c-0.24-0.119-0.479-0.237-0.719-0.356
+								c0.029-0.075,0.058-0.145,0.084-0.216c0.117-0.316,0.236-0.633,0.349-0.951c0.096-0.271,0.188-0.546,0.271-0.822
+								c0.119-0.393,0.233-0.786,0.343-1.182c0.077-0.279,0.148-0.561,0.212-0.843c0.085-0.38,0.167-0.762,0.239-1.145
+								c0.063-0.331,0.112-0.665,0.162-0.999c0.028-0.189,0.048-0.381,0.068-0.571c0.015-0.127,0.026-0.253,0.037-0.38
+								c0.007-0.08,0.011-0.16,0.016-0.24c0.007-0.123,0.013-0.245,0.02-0.367c0.002-0.038,0.005-0.076,0.006-0.113
+								c0.005-0.131,0.01-0.262,0.015-0.393c0-0.003,0.002-0.006,0.004-0.012c0.257,0,0.516,0,0.773,0
+								C52.441,97.814,52.443,97.816,52.445,97.818z"
+								/>
+								<path
+									fill-rule="evenodd"
+									clip-rule="evenodd"
+									fill="var(--color)"
+									d="M57.157,97.818c-0.002,0.107-0.003,0.214-0.006,0.32
+								c-0.004,0.109-0.008,0.218-0.013,0.326c-0.006,0.112-0.012,0.226-0.021,0.338c-0.019,0.228-0.036,0.455-0.06,0.682
+								c-0.021,0.21-0.048,0.418-0.076,0.627c-0.028,0.21-0.058,0.42-0.094,0.629c-0.048,0.277-0.096,0.555-0.154,0.829
+								c-0.079,0.377-0.163,0.753-0.255,1.127c-0.082,0.334-0.172,0.666-0.27,0.996c-0.115,0.394-0.237,0.786-0.366,1.176
+								c-0.167,0.509-0.354,1.011-0.559,1.507c-0.003,0.008-0.008,0.015-0.014,0.027c-0.24-0.119-0.479-0.237-0.719-0.356
+								c0.029-0.075,0.058-0.145,0.084-0.216c0.117-0.316,0.236-0.633,0.349-0.951c0.096-0.271,0.188-0.546,0.271-0.822
+								c0.119-0.393,0.233-0.786,0.343-1.182c0.077-0.279,0.148-0.561,0.212-0.843c0.086-0.38,0.167-0.762,0.239-1.145
+								c0.063-0.331,0.112-0.665,0.162-0.999c0.028-0.189,0.048-0.381,0.068-0.571c0.015-0.127,0.026-0.253,0.037-0.38
+								c0.007-0.08,0.011-0.16,0.016-0.24c0.007-0.123,0.013-0.245,0.02-0.367c0.002-0.038,0.005-0.076,0.006-0.113
+								c0.005-0.131,0.01-0.262,0.015-0.393c0-0.003,0.002-0.006,0.004-0.012c0.258,0,0.516,0,0.773,0
+								C57.153,97.814,57.155,97.816,57.157,97.818z"
+								/>
+								<path
+									fill-rule="evenodd"
+									clip-rule="evenodd"
+									fill="var(--color)"
+									d="M54.802,97.818c-0.002,0.107-0.004,0.214-0.007,0.32
+								c-0.003,0.109-0.008,0.218-0.013,0.326c-0.006,0.112-0.013,0.226-0.02,0.338c-0.006,0.086-0.012,0.171-0.02,0.257
+								c-0.01,0.106-0.021,0.214-0.032,0.321c-0.011,0.11-0.02,0.221-0.033,0.33c-0.028,0.228-0.058,0.454-0.091,0.681
+								c-0.036,0.241-0.075,0.482-0.12,0.722c-0.054,0.293-0.111,0.586-0.177,0.877c-0.082,0.359-0.168,0.719-0.262,1.076
+								c-0.085,0.326-0.178,0.65-0.276,0.974c-0.106,0.35-0.221,0.697-0.337,1.044c-0.147,0.437-0.311,0.867-0.486,1.293
+								c-0.003,0.007-0.007,0.014-0.014,0.024c-0.239-0.118-0.478-0.236-0.719-0.355c0.029-0.074,0.059-0.145,0.085-0.216
+								c0.116-0.316,0.236-0.632,0.348-0.95c0.096-0.272,0.188-0.547,0.271-0.822c0.12-0.393,0.234-0.787,0.343-1.183
+								c0.078-0.279,0.148-0.561,0.212-0.843c0.086-0.38,0.168-0.761,0.239-1.144c0.063-0.332,0.113-0.666,0.163-1
+								c0.028-0.189,0.047-0.381,0.068-0.571c0.014-0.126,0.025-0.253,0.036-0.38c0.008-0.08,0.011-0.16,0.016-0.24
+								c0.007-0.123,0.014-0.245,0.02-0.367c0.003-0.04,0.005-0.08,0.007-0.12c0.005-0.128,0.009-0.255,0.014-0.382
+								c0-0.004,0.001-0.008,0.003-0.016c0.259,0,0.517,0,0.775,0C54.798,97.814,54.8,97.816,54.802,97.818z"
+								/>
+								<path
+									fill-rule="evenodd"
+									clip-rule="evenodd"
+									fill="var(--color)"
+									d="M50.09,97.818c-0.002,0.104-0.004,0.209-0.007,0.314
+								c-0.003,0.111-0.008,0.224-0.013,0.335c-0.006,0.11-0.013,0.221-0.02,0.331c-0.008,0.113-0.015,0.226-0.026,0.338
+								c-0.032,0.303-0.06,0.606-0.101,0.908c-0.042,0.318-0.09,0.637-0.147,0.952c-0.077,0.414-0.16,0.827-0.25,1.239
+								c-0.129,0.584-0.28,1.164-0.456,1.736c-0.147,0.479-0.302,0.955-0.464,1.429c-0.111,0.325-0.241,0.645-0.363,0.966
+								c-0.003,0.011-0.009,0.02-0.015,0.032c-0.015-0.007-0.027-0.012-0.039-0.018c-0.219-0.108-0.438-0.217-0.657-0.324
+								c-0.022-0.012-0.019-0.022-0.012-0.042c0.209-0.521,0.399-1.05,0.569-1.586c0.124-0.389,0.245-0.778,0.354-1.172
+								c0.122-0.446,0.232-0.896,0.34-1.346c0.106-0.443,0.192-0.893,0.265-1.343c0.05-0.312,0.091-0.625,0.133-0.938
+								c0.018-0.125,0.027-0.252,0.039-0.379c0.012-0.123,0.022-0.247,0.033-0.37c0.007-0.095,0.014-0.19,0.02-0.285
+								c0.005-0.081,0.01-0.163,0.013-0.244c0.007-0.173,0.014-0.345,0.02-0.518c0.001-0.007,0.002-0.013,0.003-0.022
+								c0.26,0,0.518,0,0.776,0C50.086,97.814,50.088,97.816,50.09,97.818z"
+								/>
+							</g>
+
+							<path
+								fill="var(--color)"
+								d="M57.289,111.854h-2.784l-8.555,5.608v8.564h2.799l8.54-5.751V111.854z M56.67,112.494v7.656l-7.773,5.074v-7.655
+		L56.67,112.494z M54.673,112.156l1.773,0.001l-7.697,5.181h-1.773L54.673,112.156z"
+							/>
+
+							<text
+								transform="matrix(1 0 0 1 70 89)"
+								font-family="'MyriadPro-Regular'"
+								font-size="12">{zoneProtection[zoneLookup[r]]?.Flexibilität?.Wert ?? 0}</text
+							>
+							<text
+								transform="matrix(1 0 0 1 70 106)"
+								font-family="'MyriadPro-Regular'"
+								font-size="12">{zoneProtection[zoneLookup[r]]?.Dämpfung?.Wert ?? 0}</text
+							>
+							<text
+								transform="matrix(1 0 0 1 70 123)"
+								font-family="'MyriadPro-Regular'"
+								font-size="12">{zoneProtection[zoneLookup[r]]?.Härte?.Wert ?? 0}</text
+							>
+						</g>
+
 						{#if r == 0}
 							<g fill="var(--color)">
 								<path
@@ -1499,7 +1669,7 @@
 			fill="none"
 			stroke="var(--color)"
 			stroke-width="0.75"
-			x1="12.261"
+			x1={12.261 - 50}
 			y1={start + 70 * vDistance}
 			x2={startX + lanes * laneWidth}
 			y2={start + 70 * vDistance}

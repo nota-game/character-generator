@@ -187,7 +187,7 @@
 
  export type _Besonderheiten5 = ιδ30ε
 
- export type _Bis = ιδ511ε
+ export type _Bis = ιδ517ε
 
  export type _Brust = ((ιδ450ε))
 
@@ -953,7 +953,7 @@
 
  export type _Schutz1 = ιδ347ε
 
- export type _Schutz2 = ({} & (ιδ510ε) & (ιδ511ε))
+ export type _Schutz2 = ({} & (ιδ516ε) & (ιδ517ε) & (ιδ518ε))
 
  export type _Schutz3 = ιδ493ε
 
@@ -1113,6 +1113,8 @@
 
  export type _Type1 = ιδ109ε
 
+ export type _Unzuverlässig = ιδ518ε
+
  export type _Value = ιδ108ε
 
  export type _Value1 = ιδ110ε
@@ -1147,7 +1149,7 @@
 
  export type _Verteilung5 = ιδ147ε
 
- export type _Von = ιδ510ε
+ export type _Von = ιδ516ε
 
  export type _Voraussetzung = ((ιδ260ε))
 
@@ -2107,9 +2109,11 @@
 
   type ιδ4ε = ({ Level: _Level9})
 
-  type ιδ510ε = {Von: (number)}
+  type ιδ516ε = {Von: (number)}
 
-  type ιδ511ε = {Bis: (number)}
+  type ιδ517ε = {Bis: (number)}
+
+  type ιδ518ε = {Unzuverlässig: (boolean)}
 
   type ιδ53ε = (ιδ8ε) & (ιδ135ε) & (ιδ136ε) & (ιδ137ε) & (ιδ69ε) & (ιδ70ε) & (ιδ71ε) & (ιδ72ε)
 
