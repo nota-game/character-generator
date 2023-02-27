@@ -22,8 +22,8 @@ export class Wound {
 
     }
 
-    public hit(servety: WoundServity) {
-        function increase(servety: WoundServity): WoundServity |null{
+    public hit(servety: WoundServity): WoundServity | undefined {
+        function increase(servety: WoundServity): WoundServity | null {
             return servety == 'leicht'
                 ? 'mittel'
                 : servety == 'mittel'
@@ -37,11 +37,13 @@ export class Wound {
             servety == 'leicht' ? 3 : servety == 'mittel' ? 2 : servety == 'schwer' ? 1 : 1;
         if (get(this[servety]) >= max) {
             const increased = increase(servety);
-            if(increased!=null){
-                this.hit(increased);
+            if (increased != null) {
+                return this.hit(increased);
             }
         } else {
             this[servety].update(x => x + 1);
+            return servety;
         }
+        return undefined;
     }
 }

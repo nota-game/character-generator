@@ -41,6 +41,7 @@
 
 		return keys;
 	}
+	$: defaultErschwernis = charData.defaultErschwernis
 </script>
 
 <h6>Mali</h6>
@@ -58,10 +59,11 @@
 <div >
 	<h6>Ausdauer & Wunden</h6>
 	
+	{$defaultErschwernis}
 
 	<div style="display: flex; gap:1rem;">
 		<div style="width: 20rem;">
-			<Hitman {char} {...charData.wounds} />
+			<Hitman {charData} />
 		</div>
 		<Fatique {char} {data} {...charData.fatique} />
 	</div>

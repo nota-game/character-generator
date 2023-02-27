@@ -7,7 +7,7 @@ import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
 import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, BedingungsAuswahl_besonderheit, LevelAuswahl_misc, BedingungsAuswahl_misc, Schutzwert_kampf_ausstattung, AbleitungsAuswahl_talent, LevelDefinition_misc } from 'src/data/nota.g';
-import { distinct, toObjectKey } from 'src/misc/misc';
+import { distinct, filterNull, toObjectKey } from 'src/misc/misc';
 
 // type lebensabschnittData =
 //     | {
@@ -87,7 +87,45 @@ export class Data {
         this.id = digest;
         this.instance = data;
 
-        window.localStorage.setItem('s' + digest, JSON.stringify(data));
+        try {
+            window.localStorage.setItem('s' + digest, JSON.stringify(data));
+
+        } catch (error) {
+            // cleanup 
+
+            const keys = filterNull(Array.from({ length: window.localStorage.length }).map((_, i) => window.localStorage.key(i)));
+
+            const dataKeys = keys.filter(x => x[0] == 's');
+            const charKeys = keys.filter(x => x[0] == 'c');
+
+            const usedData = filterNull(charKeys.map(key =>
+                window.localStorage.getItem(key)
+            )
+                .map(text => {
+                    try {
+
+                        const obj = JSON.parse(text ?? '{}');
+                        return (obj as { stammdatenId: string | undefined }).stammdatenId;
+                    } catch (error) {
+                        return undefined;
+
+                    }
+                }));
+
+            const dataKeysToRemove = dataKeys.filter(x => {
+                return !usedData.map(x => `s${x}`).includes(x);
+            })
+
+
+            console.log("Removing orpand stammdataen", dataKeysToRemove);
+            for (const key of dataKeysToRemove) {
+                window.localStorage.removeItem(key);                
+            }
+
+
+            window.localStorage.setItem('s' + digest, JSON.stringify(data));
+        }
+
 
 
 

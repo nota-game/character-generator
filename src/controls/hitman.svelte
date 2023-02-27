@@ -2,57 +2,63 @@
 	import type { Charakter } from '../models/Character';
 	import { get, readable, writable, type Writable } from 'svelte/store';
 	import { onMount } from 'svelte';
+	import type { CharacterState } from 'src/models/CharacterState';
 	import { Wound, type WoundServity } from './hitman';
-	export let char: Charakter;
 
-	let koStore = char.eigenschaften['KO'].effective;
+	export let charData: CharacterState;
+
+	$: char = charData.char;
+
+	$: koStore = char.eigenschaften['KO'].effective;
 	$: ko = $koStore ?? 21;
 	let bonus: number;
 	$: bonus = Math.floor((21 - ko) / 3);
 
-	export let blutung = writable(0);
+	$: blutung = charData.wounds.Blutung;
 
-	export let linkerArm = new Wound();
-	const linkerArm_leicht = linkerArm.leicht;
-	const linkerArm_mittel = linkerArm.mittel;
-	const linkerArm_schwer = linkerArm.schwer;
-	const linkerArm_amputiert = linkerArm.amputiert;
+	$: linkerArm = charData.wounds.LinkerArm;
+	$: linkerArm_leicht = linkerArm.leicht;
+	$: linkerArm_mittel = linkerArm.mittel;
+	$: linkerArm_schwer = linkerArm.schwer;
+	$: linkerArm_amputiert = linkerArm.amputiert;
 
-	export let rechterArm = new Wound();
-	const rechterArm_leicht = rechterArm.leicht;
-	const rechterArm_mittel = rechterArm.mittel;
-	const rechterArm_schwer = rechterArm.schwer;
-	const rechterArm_amputiert = rechterArm.amputiert;
+	$: rechterArm = charData.wounds.RechterArm;
+	$: rechterArm_leicht = rechterArm.leicht;
+	$: rechterArm_mittel = rechterArm.mittel;
+	$: rechterArm_schwer = rechterArm.schwer;
+	$: rechterArm_amputiert = rechterArm.amputiert;
 
-	export let linkesBein = new Wound();
-	const linkesBein_leicht = linkesBein.leicht;
-	const linkesBein_mittel = linkesBein.mittel;
-	const linkesBein_schwer = linkesBein.schwer;
-	const linkesBein_amputiert = linkesBein.amputiert;
+	$: linkesBein = charData.wounds.LinkesBein;
+	$: linkesBein_leicht = linkesBein.leicht;
+	$: linkesBein_mittel = linkesBein.mittel;
+	$: linkesBein_schwer = linkesBein.schwer;
+	$: linkesBein_amputiert = linkesBein.amputiert;
 
-	export let rechtesBein = new Wound();
-	const rechtesBein_leicht = rechtesBein.leicht;
-	const rechtesBein_mittel = rechtesBein.mittel;
-	const rechtesBein_schwer = rechtesBein.schwer;
-	const rechtesBein_amputiert = rechtesBein.amputiert;
+	$: rechtesBein = charData.wounds.RechtesBein;
+	$: rechtesBein_leicht = rechtesBein.leicht;
+	$: rechtesBein_mittel = rechtesBein.mittel;
+	$: rechtesBein_schwer = rechtesBein.schwer;
+	$: rechtesBein_amputiert = rechtesBein.amputiert;
 
-	export let brust = new Wound();
-	const brust_leicht = brust.leicht;
-	const brust_mittel = brust.mittel;
-	const brust_schwer = brust.schwer;
-	const brust_amputiert = brust.amputiert;
+	$: brust = charData.wounds.Brust;
+	$: brust_leicht = brust.leicht;
+	$: brust_mittel = brust.mittel;
+	$: brust_schwer = brust.schwer;
+	$: brust_amputiert = brust.amputiert;
 
-	export let bauch = new Wound();
-	const bauch_leicht = bauch.leicht;
-	const bauch_mittel = bauch.mittel;
-	const bauch_schwer = bauch.schwer;
-	const bauch_amputiert = bauch.amputiert;
+	$: bauch = charData.wounds.Hüfte;
+	$: bauch_leicht = bauch.leicht;
+	$: bauch_mittel = bauch.mittel;
+	$: bauch_schwer = bauch.schwer;
+	$: bauch_amputiert = bauch.amputiert;
 
-	export let kopf = new Wound();
-	const kopf_leicht = kopf.leicht;
-	const kopf_mittel = kopf.mittel;
-	const kopf_schwer = kopf.schwer;
-	const kopf_amputiert = kopf.amputiert;
+	$: kopf = charData.wounds.Kopf;
+	$: kopf_leicht = kopf.leicht;
+	$: kopf_mittel = kopf.mittel;
+	$: kopf_schwer = kopf.schwer;
+	$: kopf_amputiert = kopf.amputiert;
+
+	$: toughness = charData.toughness;
 
 	function handleHit(e: MouseEvent | KeyboardEvent, wound: Wound, servety: WoundServity) {
 		if (e.altKey) {
@@ -570,7 +576,7 @@
 							transform="matrix(1 0 0 1 59 65.9482)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 3}</text
+							text-anchor="middle">{$toughness.Hüfte.leicht}</text
 						>
 					</g>
 					<g
@@ -608,7 +614,7 @@
 							transform="matrix(1 0 0 1 59 82.9561)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 6}</text
+							text-anchor="middle">{$toughness.Hüfte.mittel}</text
 						>
 					</g>
 					<g
@@ -638,7 +644,7 @@
 							transform="matrix(1 0 0 1 59 99.9644)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 9}</text
+							text-anchor="middle">{$toughness.Hüfte.schwer}</text
 						>
 					</g>
 
@@ -656,7 +662,7 @@
 							transform="matrix(1 0 0 1 59 116.9722)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 12}</text
+							text-anchor="middle">{$toughness.Hüfte.amputiert}</text
 						>
 					</g>
 				</g>
@@ -734,7 +740,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 59 136.6758)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 3}</text
+							text-anchor="middle">{$toughness.RechterArm.leicht}</text
 						>
 					</g>
 					<g
@@ -773,7 +779,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 59 153.8223)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 5}</text
+							text-anchor="middle">{$toughness.RechterArm.mittel}</text
 						>
 					</g>
 					<g
@@ -803,7 +809,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 59 170.8574)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 8}</text
+							text-anchor="middle">{$toughness.RechterArm.schwer}</text
 						>
 					</g>
 					<g
@@ -820,7 +826,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 59 188.4824)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 11}</text
+							text-anchor="middle">{$toughness.RechterArm.amputiert}</text
 						>
 					</g>
 				</g>
@@ -872,7 +878,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 59 207.8145)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 3}</text
+							text-anchor="middle">{$toughness.RechtesBein.amputiert}</text
 						>
 					</g>
 					<g
@@ -912,7 +918,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 59 224.6484)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 5}</text
+							text-anchor="middle">{$toughness.RechtesBein.mittel}</text
 						>
 					</g>
 					<g
@@ -950,7 +956,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 59 241.8145)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 8}</text
+							text-anchor="middle">{$toughness.RechtesBein.schwer}</text
 						>
 					</g>
 
@@ -968,7 +974,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 59 258.8984)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 11}</text
+							text-anchor="middle">{$toughness.RechtesBein.amputiert}</text
 						>
 					</g>
 					<!-- <circle
@@ -1050,7 +1056,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 207.2168)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 3}</text
+							text-anchor="middle">{$toughness.LinkesBein.leicht}</text
 						>
 					</g>
 					<g
@@ -1088,7 +1094,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 225.0664)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 5}</text
+							text-anchor="middle">{$toughness.LinkesBein.mittel}</text
 						>
 					</g>
 					<g
@@ -1117,7 +1123,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 241.8145)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 8}</text
+							text-anchor="middle">{$toughness.LinkesBein.schwer}</text
 						>
 					</g>
 					<g
@@ -1134,7 +1140,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 258.6484)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 11}</text
+							text-anchor="middle">{$toughness.LinkesBein.amputiert}</text
 						>
 					</g>
 				</g>
@@ -1182,7 +1188,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 136.377)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 3}</text
+							text-anchor="middle">{$toughness.LinkerArm.leicht}</text
 						>
 					</g>
 
@@ -1222,7 +1228,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 153.8223)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 5}</text
+							text-anchor="middle">{$toughness.LinkerArm.mittel}</text
 						>
 					</g>
 					<g
@@ -1253,7 +1259,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 171.2031)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 8}</text
+							text-anchor="middle">{$toughness.LinkerArm.schwer}</text
 						>
 					</g>
 					<g
@@ -1271,7 +1277,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 187.8203)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 11}</text
+							text-anchor="middle">{$toughness.LinkerArm.amputiert}</text
 						>
 					</g>
 				</g>
@@ -1320,7 +1326,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 65.9482)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 3}</text
+							text-anchor="middle">{$toughness.Brust.leicht}</text
 						>
 					</g>
 					<g
@@ -1359,7 +1365,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 82.9561)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 6}</text
+							text-anchor="middle">{$toughness.Brust.mittel}</text
 						>
 					</g>
 					<g
@@ -1389,7 +1395,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 99.9644)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 9}</text
+							text-anchor="middle">{$toughness.Brust.schwer}</text
 						>
 					</g>
 					<g
@@ -1407,46 +1413,9 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 144.5 117.377)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 12}</text
+							text-anchor="middle">{$toughness.Brust.amputiert}</text
 						>
 					</g>
-					<!-- <circle
-						fill="var(--background-color)"
-						stroke="var(--color)"
-						cx="144.566"
-						cy="113.386"
-						r="8.504"
-					/> -->
-
-					<!-- <circle
-						fill="var(--background-color)"
-						stroke="var(--color)"
-						cx="144.566"
-						cy="96.378"
-						r="8.504"
-					/>
-					<circle
-						fill="var(--background-color)"
-						stroke="var(--color)"
-						cx="144.566"
-						cy="79.37"
-						r="8.504"
-					/>
-					<line
-						fill="var(--background-color)"
-						stroke="var(--color)"
-						x1="136.062"
-						y1="70.866"
-						x2="136.062"
-						y2="62.362"
-					/>
-					<circle
-						fill="var(--background-color)"
-						stroke="var(--color)"
-						cx="144.566"
-						cy="62.362"
-						r="8.504"
-					/> -->
 				</g>
 				<!-- Kopf -->
 				<g>
@@ -1491,7 +1460,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 82 46.8647)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 1}</text
+							text-anchor="middle">{$toughness.Kopf.leicht}</text
 						>
 					</g>
 					<g
@@ -1530,7 +1499,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 82 64.1982)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 3}</text
+							text-anchor="middle">{$toughness.Kopf.mittel}</text
 						>
 					</g>
 					<g
@@ -1560,7 +1529,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 82 81.1982)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 5}</text
+							text-anchor="middle">{$toughness.Kopf.schwer}</text
 						>
 					</g>
 					<g
@@ -1578,7 +1547,7 @@ c-0.345-0.104-0.688-0.208-1.046-0.314C9.356,5.799,9.356,9.677,9.356,13.574z"
 							transform="matrix(1 0 0 1 82 98.2256)"
 							font-family="'MyriadPro-Regular'"
 							font-size="12"
-							text-anchor="middle">{bonus + 7}</text
+							text-anchor="middle">{$toughness.Kopf.amputiert}</text
 						>
 					</g>
 				</g>

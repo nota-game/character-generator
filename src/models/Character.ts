@@ -1,4 +1,11 @@
-import type { ModWert_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen, GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit, Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc, BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen, _LevelAuswahl, _Level1, Ableitung_talent, Max_talent, KostenDefinition_misc, KostenDefinitions_misc, KostenDefinitionen_misc, _Bereich, BesonderheitDefinition_besonderheit } from "../data/nota.g";
+import type {
+    ModWert_lebewesen, MorphDefinition_lebewesen, ArtDefinition_lebewesen,
+    GattungDefinition_lebewesen, LebensabschnittDefinition_lebewesen, StaticheDefinition_lebewesen, ReiheDefinition_lebewesen, FormelDefintion_lebewesen, PunktDefintion_lebewesen, _Reihe, _Schwelle, _Lokalisirung, _Besonderheit,
+    Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc,
+    BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen,
+    _LevelAuswahl, _Level1, Ableitung_talent,
+    Max_talent, _Bereich, BesonderheitDefinition_besonderheit, _Trefferzonen, _Schutz
+} from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData, type Readable, type Writable } from "../misc/StoreManager2";
 import { derived, type Readable as ReadableOriginal, type Writable as WritableOriginal } from "svelte/store";
 // import { derivedLazy } from "../lazyDerivied";
@@ -296,10 +303,10 @@ type BesonderheitMissingNextLevelKey<id extends string = string> = Key<`/besonde
 }[]>;
 
 
-type EquipmentKeys<id extends string = string> = {
-    equiped: EquipmentKey<id>,
+type EquipmentKeys<Type extends 'armor' | 'longRangeWeapon' | 'closeCombatWeapon' | 'misc', id extends string = string> = {
+    equiped: EquipmentKey<Type, id>,
 };
-type EquipmentKey<id extends string = string> = Key<`/equipment/${id}/equiped`, true | undefined>;
+type EquipmentKey<Type extends 'armor' | 'longRangeWeapon' | 'closeCombatWeapon' | 'misc', id extends string = string> = Key<`/equipment/${Type}/${id}/equiped`, true | undefined>;
 
 
 
@@ -493,6 +500,8 @@ export class Charakter {
         type: 'armor' | 'longRangeWeapon' | 'closeCombatWeapon' | 'misc',
         equiped: Writable<true | undefined>,
     }> = {};
+
+    public readonly zoneArmor: Readable<Record<keyof _Trefferzonen, Record<keyof _Schutz, number>>>;
 
 
     public readonly stammdaten: Data;
@@ -1104,9 +1113,9 @@ export class Charakter {
         return { lebensabschnittDependency, organismDependency, fertigkeitDependency, besonderheitDependency, eigenschaftDependency, talentDependency, otherDependency, tagDependency, levelDependency };
     }
 
-    private getEquipmentKeys<id extends string>(Id: id): EquipmentKeys<id> {
+    private getEquipmentKeys<id extends string, Type extends 'armor' | 'longRangeWeapon' | 'closeCombatWeapon'>(Id: id, type: Type): EquipmentKeys<Type, id> {
         return {
-            equiped: StoreManager.key(`/equipment/${Id}/equiped`).of<true | undefined>(),
+            equiped: StoreManager.key(`/equipment/${type}/${Id}/equiped`).of<true | undefined>(),
         }
 
     }
@@ -1315,8 +1324,6 @@ export class Charakter {
         const sumCost = StoreManager.key('/**/cost').of<Record<string, Record<string, Record<string, Cost>>>>();
         const sumMissing = StoreManager.key('/**/missing').of<Record<string, Record<string, Record<string, MissingRequirements>>>>();
 
-
-
         if (cloneFrom) {
 
             const storeList: Record<string, ({ id: string, manager: StoreManager<Data> } & ({ type: 'writable', store: Writable<unknown> } | { type: 'readable' | 'writable' | 'aggregated', store: Readable<unknown> }))> = {}
@@ -1361,7 +1368,7 @@ export class Charakter {
                 ...Object.keys(this.stammdaten.nahkampfMap).map(key => ({ key, type: 'closeCombatWeapon' as const })),
             ]) {
                 this.equipment[key] = {
-                    equiped: storeList[this.getEquipmentKeys(key).equiped.Key].store as Writable<true | undefined>,
+                    equiped: storeList[this.getEquipmentKeys(key, type).equiped.Key].store as Writable<true | undefined>,
                     type
                 }
             }
@@ -1640,7 +1647,7 @@ export class Charakter {
                 gattungsIdKey,
                 artIdKey,
                 morphIdKey,
-                StoreManager.key('/equipment/*/equiped').of<Record<string, { equiped: true | undefined }>>(),
+                StoreManager.key('/equipment/**/equiped').of<Record<string, Record<string, { equiped: true | undefined }>>>(),
 
             ], (data, [name, age, pfad, besonderheiten, fertigkeiten, talente, eigenschaften, gattung, art, morph, ausstattung]) => {
                 return {
@@ -1656,7 +1663,7 @@ export class Charakter {
                     gattung: gattung.newValue,
                     art: art.newValue,
                     morph: morph.newValue,
-                    ausstattung: Object.keys(filterObjectKeys(ausstattung.newValue, x => x.equiped == true)),
+                    ausstattung: Object.keys(filterObjectKeys(Object.values(ausstattung.newValue).reduce((p, c) => ({ ...p, ...c }), {}), x => x.equiped == true)),
                 };
             })
 
@@ -1670,10 +1677,12 @@ export class Charakter {
                 ...Object.keys(this.stammdaten.nahkampfMap).map(key => ({ key, type: 'closeCombatWeapon' as const })),
             ]) {
                 this.equipment[key] = {
-                    equiped: this.storeManager.writable(this.getEquipmentKeys(key).equiped, undefined),
+                    equiped: this.storeManager.writable(this.getEquipmentKeys(key, type).equiped, undefined),
                     type
                 };
             }
+
+
             console.timeEnd(timer)
             timer = 'eigenschaften';
             console.time(timer)
@@ -2758,6 +2767,47 @@ export class Charakter {
             console.timeEnd(timer)
 
         }
+
+
+        this.zoneArmor = this.storeManager.derived(StoreManager.key('/equipment/totalArmor').of<Record<keyof _Trefferzonen, Record<keyof _Schutz, number>>>(), StoreManager.key('/equipment/armor/*/equiped').of<Record<string, { equiped: true | undefined }>>(), (data, equipment) => {
+
+            const emptyProtection: Record<keyof _Trefferzonen, Record<keyof _Schutz, number>> = {
+                Brust: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                Hüfte: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                Kopf: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                LinkerArm: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                LinkesBein: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                RechterArm: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                RechtesBein: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+            };
+
+            return Object.entries(equipment.newValue).filter(([, e]) => e.equiped)
+                .map(([id]) => data.RüstungMap[id])
+                .flatMap((c) => {
+                    return Object.entries(c.Trefferzonen).map(([key, value]) => {
+                        if (value?.Schutz.some((x) => !x.Unzuverlässig)) {
+                            return [key as keyof _Trefferzonen, Object.fromEntries(Object.keys(c.Schutz).filter((x): x is keyof _Schutz => true).map(key => [key, c.Schutz[key]?.Wert ?? 0] as const)) as Record<keyof _Schutz, number>] as const;
+                        }
+                        return [];
+                    });
+                })
+                .reduce((p, [zone, protection]) => {
+                    if (zone != undefined) {
+                        const current = p[zone];
+                        if (current == undefined) {
+                            p[zone] = protection;
+                        } else {
+                            current.Dämpfung = Math.max(current.Dämpfung ?? 0, protection.Dämpfung ?? 0);
+                            current.Flexibilität = Math.min(current.Flexibilität ?? 99, protection.Flexibilität ?? 99);
+                            current.Härte = Math.max(current.Härte ?? 0, protection.Härte ?? 0);
+                        }
+                    }
+
+                    return p;
+                }, emptyProtection);
+
+
+        });
 
 
 
