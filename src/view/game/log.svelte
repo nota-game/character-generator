@@ -6,6 +6,8 @@
 	import { LogSimpleRole } from 'src/models/log/LogSimpleRole';
 	import type { Data } from 'src/models/Data';
 	import SimpleRole from './log/simpleRole.svelte';
+	import BattleAction from './log/battleAction.svelte';
+	import { LogBattleAction } from 'src/models/log/LogBattleAction';
 
 	export let char: Charakter;
 	export let data: Data;
@@ -51,6 +53,8 @@
 			{/each}
 		</div>
 		<div class="log last" id="log-end-{index}" />
+	{:else if entry instanceof LogBattleAction}
+		<BattleAction {entry} {index} />
 	{:else if entry instanceof LogSimpleRole}
 		<SimpleRole {entry} {index} />
 	{/if}
@@ -87,7 +91,7 @@
 		bottom: 00px;
 		// top: calc(100vh - 100px);
 	}
-	:global(.root.expand-log .log:nth-of-type(1)){
+	:global(.root.expand-log .log:nth-of-type(1)) {
 		border-top: unset;
 	}
 

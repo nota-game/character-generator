@@ -1,27 +1,24 @@
 <script lang="ts">
 	import { number } from 'mathjs';
-	import type { _Taktik } from 'src/data/nota.g';
+	import type { NahkampfWaffenDefinition_kampf_ausstattung, _Taktik } from 'src/data/nota.g';
 	import { getText, getTextTalent, removeOneOf } from 'src/misc/misc';
 	import type { CharacterState } from 'src/models/CharacterState';
-	import ActionTacticsTacticConfig from './actionTacticsTacticConfig.svelte';
+	import ActionTacticsTacticConfig, {
+		type TacticsInformation
+	} from './actionTacticsTacticConfig.svelte';
 
 	export let charData: CharacterState;
 
 	let position = 1;
 	let au = 1;
 
-	export let modifierFunction: (input: number) => number = () => 0;
-	let modifierFunctionSub: ((input: number) => number)[][] = [];
+	export let modifierFunction: TacticsInformation[] = [];
+	let modifierFunctionSub: TacticsInformation[][] = [];
 
 	$: {
-		const numberOfElements = selectedTactics.length;
-		modifierFunction = (input) => {
-			return modifierFunctionSub
-				.flatMap((x) => x)
-				.slice(0, numberOfElements)
-				.reduce((p, c) => p + c(input), 0);
-		};
-		console.log('modifierFunction ', modifierFunction(4));
+		// const numberOfElements = selectedTactics.length;
+		modifierFunction = modifierFunctionSub.flatMap((x) => x);
+		// console.log('modifierFunction ', modifierFunction(4));
 	}
 
 	$: taktigen = charData.char.stammdaten.Instance.Daten.Taktiken.Taktik;
@@ -51,15 +48,24 @@
 	$: ausdauer = selectedTactics
 		.map((x) => charData.char.stammdaten.TaktikMap[x])
 		.reduce((p, x) => p + x.Kosten, 0);
+
+	let selectedWeaponHandler: string | undefined;
+	$: selectedWeaponSkill =
+		selectedWeaponHandler == undefined
+			? undefined
+			: (JSON.parse(selectedWeaponHandler) as readonly [string, string] | undefined);
 </script>
 
 <div class="root">
-	{modifierFunction(4)}
+	{JSON.stringify(modifierFunction.map((x) => x.f(4)))}
 	<strog style="grid-column: 1/ span 3 ; grid-row: 1; text-align: center;">Taktiken</strog>
 
-	<select style="grid-column: 1;grid-row: 2; width: max-content;">
+	<select
+		bind:value={selectedWeaponHandler}
+		style="grid-column: 1;grid-row: 2; width: max-content;"
+	>
 		{#each weaponSkill as [weapon, skill]}
-			<option value={[weapon.Id, skill]}
+			<option value={JSON.stringify([weapon.Id, skill])}
 				>{getText(weapon.Name)}
 				<em>({getTextTalent(charData.char.stammdaten.talentMap[skill], charData.char, 'Name')})</em
 				></option
@@ -106,18 +112,14 @@
 	>
 
 	<div style="grid-column: 1;grid-row: 3; z-index: 0;">
-		{#each selectedTacticsOrdered as [tactic, amount], i}
-			<ActionTacticsTacticConfig
+		{#each selectedTacticsOrdered as [tactic, amount], i (tactic.Id)}<ActionTacticsTacticConfig
 				{charData}
 				{tactic}
 				{amount}
+				weapon={charData.char.stammdaten.nahkampfMap[selectedWeaponSkill?.[0] ?? '']}
+				on:remove={() => (selectedTactics = removeOneOf(selectedTactics, tactic.Id ?? ''))}
 				bind:modifierFunction={modifierFunctionSub[i]}
-			/>
-			<!-- <button
-				class="tactic-display text"
-				on:click={() => (selectedTactics = removeOneOf(selectedTactics, tactic.Id ?? ''))}
-				>{#if amount > 1}{amount}×{/if}{getText(tactic.Name)}</button
-			> -->{' '}
+			/>{' '}
 		{:else}
 			Keine Taktik Ausgewählt
 		{/each}
@@ -127,26 +129,17 @@
 		{belastung} Belastung, {ausdauer} Ausdauer
 	</div>
 
-	<button class="outline" style="grid-column: 3/span 2;grid-row: 3;" disabled>Ausführe🚧</button>
-	<!-- 	
-
-	<input bind:value={position} type="number" style="max-width:5em; grid-column: 1; grid-row: 2;" />
-	<input bind:value={au} type="number" style="max-width:5em; grid-column: 1; grid-row: 3;" />
 	<button
-		on:click={() => charData.addMeleMali('Position', position)}
 		class="outline"
-		style="grid-column: 2; grid-row: 2; white-space: nowrap;">Positions Mali</button
+		style="grid-column: 3/span 2;grid-row: 3;"
+		disabled={selectedWeaponSkill == undefined}
+		on:click={() =>
+			charData.perforTacticAction(
+				charData.char.stammdaten.nahkampfMap[selectedWeaponSkill?.[0] ?? ''],
+				modifierFunction,
+				selectedWeaponSkill?.[1] ?? ''
+			)}>Ausführen🚧</button
 	>
-	<button
-		on:click={() => charData.addFatique('Erschöpfung', au)}
-		class="outline"
-		style="grid-column: 2; grid-row: 3; white-space: nowrap;">Ausdauer Verlust</button
-	>
-	<button
-		on:click={() => charData.newRound()}
-		class="outline"
-		style="grid-column:  3;  grid-row: 2/ span 2; align-self: stretch;">Nächste Runde</button
-	> -->
 </div>
 
 <style lang="scss">

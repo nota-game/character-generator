@@ -70,11 +70,11 @@ export class LogSimpleRole {
         // this helps with reproducing bugs in SkillCheck logic
         const newDebugRoles: number[] = [];
         const debugRoles = [
-            7,
-            14,
-            4,
-            6,
-            6
+            // 7,
+            // 14,
+            // 4,
+            // 6,
+            // 6
         ] as const;
         let debugIndex = 0;
 

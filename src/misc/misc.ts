@@ -201,7 +201,6 @@ export function head<T>(a: readonly T[]): T[] {
 
 
 export function sequenceEqual<T>(a: T[], b: T[]): boolean {
-    console.log("compare", [a, b]);
     if (a == undefined && b == undefined) {
         console.log("return true")
         return true;
@@ -220,7 +219,6 @@ export function sequenceEqual<T>(a: T[], b: T[]): boolean {
             return false;
         }
     }
-    console.log("return true")
     return true;
 
 }

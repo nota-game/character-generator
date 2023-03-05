@@ -1,8 +1,10 @@
 import { Wound, type WoundServity } from "src/controls/hitman";
-import type { Lokalisierungen_misc, TalentDefinition_talent, _Probe, _Trefferzonen } from "src/data/nota.g";
+import type { Lokalisierungen_misc, Nachladeeinheit_kampf_ausstattung, NahkampfWaffenDefinition_kampf_ausstattung, TalentDefinition_talent, _Probe, _Trefferzonen } from "src/data/nota.g";
 import { d20, filterNull, join } from "src/misc/misc";
+import type { TacticsInformation } from "src/view/game/mele/actionTacticsTacticConfig.svelte";
 import { derived, get, readable, writable, type Readable, type Writable } from "svelte/store";
 import type { Charakter } from "./Character";
+import { LogBattleAction } from "./log/LogBattleAction";
 import { LogSimpleRole } from "./log/LogSimpleRole";
 
 export type fatiqueType = 'Blutung' | 'Erschöpfung' | 'Verausgabung' | 'Strapazierung';
@@ -235,6 +237,16 @@ export class CharacterState {
     //         return x;
     //     })
     // }
+
+    public perforTacticAction(weapon: NahkampfWaffenDefinition_kampf_ausstattung | undefined, tacticsInformation: TacticsInformation[], talent: string | TalentDefinition_talent, difficulty = 0, testIndex = 0) {
+        const talentInstance = typeof talent == 'string'
+            ? this.char.stammdaten.talentMap[talent]
+            : talent;
+
+        const log = new LogBattleAction(this, weapon, tacticsInformation, talentInstance, difficulty, testIndex);
+        this.addLog(log);
+        return log;
+    }
 
 
     public simpleSkillCheck(talent: string | TalentDefinition_talent, difficulty = 0, testIndex = 0) {
