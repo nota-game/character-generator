@@ -32,6 +32,10 @@ export function intersect<T>(a: ArrayLike<T>, b: ArrayLike<T>, equals?: (a: T, b
     return result;
 }
 
+export function sum(...params: number[]) {
+    return params.reduce((p, c) => p + c, 0);
+}
+
 export function filterNull<T>(x: (T | null | undefined)[]): T[] {
     return x.filter(y => y !== null && y !== undefined) as T[];
 }
@@ -375,11 +379,9 @@ export function renderRequirementMap(req: {
 
         return `${text.substring(0, text.length - 1)}, um ${getTextPfad(pfad, level, options)} zu Aktivieren.`
     }
-
-
     return text;
-
 }
+
 export function renderRequirement(req: MissingRequirements, data: Data | undefined) {
     if (!data)
         return "";

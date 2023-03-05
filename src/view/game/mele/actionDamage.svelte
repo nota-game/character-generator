@@ -51,10 +51,10 @@ console.log({blunt,cut});
 		<option value="Kopf">Kopf</option>
 		<option value="Brust">Brust</option>
 		<option value="Bauch">Bauch</option>
-		<option value="WaffenArm">Waffen Arm</option>
-		<option value="WaffenBein">Waffen Bein</option>
-		<option value="SchildArm">Schild Arm</option>
-		<option value="SchildBein">Schild Bein</option>
+		<option value="RechterArm">Waffen Arm</option>
+		<option value="RechtesBein">Waffen Bein</option>
+		<option value="LinkesArm">Schild Arm</option>
+		<option value="LinkerBein">Schild Bein</option>
 	</select>
 
 	<button on:click={() => doDamage()} class="outline" style="grid-column: 3; grid-row: 3;"

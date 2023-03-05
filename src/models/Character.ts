@@ -1324,6 +1324,11 @@ export class Charakter {
         const sumCost = StoreManager.key('/**/cost').of<Record<string, Record<string, Record<string, Cost>>>>();
         const sumMissing = StoreManager.key('/**/missing').of<Record<string, Record<string, Record<string, MissingRequirements>>>>();
 
+        const zoneArmorKey = StoreManager.key('/equipment/totalArmor').of<Record<keyof _Trefferzonen, Record<keyof _Schutz, number>>>();
+
+
+
+
         if (cloneFrom) {
 
             const storeList: Record<string, ({ id: string, manager: StoreManager<Data> } & ({ type: 'writable', store: Writable<unknown> } | { type: 'readable' | 'writable' | 'aggregated', store: Readable<unknown> }))> = {}
@@ -1332,6 +1337,7 @@ export class Charakter {
                 storeList[data.id] = (data);
             });
 
+            this.zoneArmor = storeList[zoneArmorKey.Key].store as any;
 
             this.ageStore = storeList[this.ageKey.Key].store as Writable<number>;
             this.nameStore = storeList[nameKey.Key].store as Writable<string>;
@@ -1513,7 +1519,6 @@ export class Charakter {
             let timer = 'storeManager';
             console.time(timer)
             this.storeManager = new StoreManager(stammdaten);
-
 
 
 
@@ -2759,6 +2764,46 @@ export class Charakter {
 
             }
 
+            this.zoneArmor = this.storeManager.derived(zoneArmorKey, StoreManager.key('/equipment/armor/*/equiped').of<Record<string, { equiped: true | undefined }>>(), (data, equipment) => {
+
+                const emptyProtection: Record<keyof _Trefferzonen, Record<keyof _Schutz, number>> = {
+                    Brust: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                    Hüfte: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                    Kopf: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                    LinkerArm: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                    LinkesBein: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                    RechterArm: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                    RechtesBein: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
+                };
+
+                return Object.entries(equipment.newValue).filter(([, e]) => e.equiped)
+                    .map(([id]) => data.RüstungMap[id])
+                    .flatMap((c) => {
+                        return Object.entries(c.Trefferzonen).map(([key, value]) => {
+                            if (value?.Schutz.some((x) => !x.Unzuverlässig)) {
+                                return [key as keyof _Trefferzonen, Object.fromEntries(Object.keys(c.Schutz).filter((x): x is keyof _Schutz => true).map(key => [key, c.Schutz[key]?.Wert ?? 0] as const)) as Record<keyof _Schutz, number>] as const;
+                            }
+                            return [];
+                        });
+                    })
+                    .reduce((p, [zone, protection]) => {
+                        if (zone != undefined) {
+                            const current = p[zone];
+                            if (current == undefined) {
+                                p[zone] = protection;
+                            } else {
+                                current.Dämpfung = Math.max(current.Dämpfung ?? 0, protection.Dämpfung ?? 0);
+                                current.Flexibilität = Math.min(current.Flexibilität ?? 99, protection.Flexibilität ?? 99);
+                                current.Härte = Math.max(current.Härte ?? 0, protection.Härte ?? 0);
+                            }
+                        }
+
+                        return p;
+                    }, emptyProtection);
+
+
+            });
+
             console.timeEnd(timer)
             timer = 'twin';
             console.time(timer)
@@ -2769,45 +2814,6 @@ export class Charakter {
         }
 
 
-        this.zoneArmor = this.storeManager.derived(StoreManager.key('/equipment/totalArmor').of<Record<keyof _Trefferzonen, Record<keyof _Schutz, number>>>(), StoreManager.key('/equipment/armor/*/equiped').of<Record<string, { equiped: true | undefined }>>(), (data, equipment) => {
-
-            const emptyProtection: Record<keyof _Trefferzonen, Record<keyof _Schutz, number>> = {
-                Brust: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
-                Hüfte: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
-                Kopf: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
-                LinkerArm: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
-                LinkesBein: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
-                RechterArm: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
-                RechtesBein: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
-            };
-
-            return Object.entries(equipment.newValue).filter(([, e]) => e.equiped)
-                .map(([id]) => data.RüstungMap[id])
-                .flatMap((c) => {
-                    return Object.entries(c.Trefferzonen).map(([key, value]) => {
-                        if (value?.Schutz.some((x) => !x.Unzuverlässig)) {
-                            return [key as keyof _Trefferzonen, Object.fromEntries(Object.keys(c.Schutz).filter((x): x is keyof _Schutz => true).map(key => [key, c.Schutz[key]?.Wert ?? 0] as const)) as Record<keyof _Schutz, number>] as const;
-                        }
-                        return [];
-                    });
-                })
-                .reduce((p, [zone, protection]) => {
-                    if (zone != undefined) {
-                        const current = p[zone];
-                        if (current == undefined) {
-                            p[zone] = protection;
-                        } else {
-                            current.Dämpfung = Math.max(current.Dämpfung ?? 0, protection.Dämpfung ?? 0);
-                            current.Flexibilität = Math.min(current.Flexibilität ?? 99, protection.Flexibilität ?? 99);
-                            current.Härte = Math.max(current.Härte ?? 0, protection.Härte ?? 0);
-                        }
-                    }
-
-                    return p;
-                }, emptyProtection);
-
-
-        });
 
 
 
