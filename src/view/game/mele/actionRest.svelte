@@ -7,11 +7,11 @@
 	let days = 1;
 </script>
 
-<div>
+<div class="root">
 	<strog style="grid-column: 1/ span 3 ; grid-row: 1; text-align: center;">Rasten</strog>
 	<strog style="grid-column:  3 ; grid-row: 1; text-align: center;">Erholen</strog>
-	<input bind:value={hours} type="number" style="max-width:5em; grid-column: 1; grid-row: 2;" />
-	<input bind:value={days} type="number" style="max-width:5em; grid-column: 1; grid-row: 3;" />
+	<input bind:value={hours} type="number" style=" grid-column: 1; grid-row: 2;" />
+	<input bind:value={days} type="number" style=" grid-column: 1; grid-row: 3;" />
 	<button on:click={() => charData.rest(hours)} class="outline" style="grid-column: 2; grid-row: 2;"
 		>Stunden</button
 	>
@@ -37,4 +37,8 @@
 		height: unset;
 		min-width: 4em;
 	}
+	.root{
+		grid-template-columns: 5em 1fr 1.5fr;
+	}
+
 </style>

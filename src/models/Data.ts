@@ -6,7 +6,7 @@ import notaStructure from 'src/data/nota-structure.g.json';
 import { deserialize } from '@ungap/structured-clone';
 import type { SerializedRecord } from '@ungap/structured-clone';
 import type { element } from 'xsd-ts/dist/xsd';
-import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, BedingungsAuswahl_besonderheit, LevelAuswahl_misc, BedingungsAuswahl_misc, Schutzwert_kampf_ausstattung, AbleitungsAuswahl_talent, LevelDefinition_misc } from 'src/data/nota.g';
+import type { ArtDefinition_lebewesen, Art_lebewesen, AusrüstungEigengchaftDefinition_kampf_ausstattung, BesonderheitDefinition_besonderheit, Daten_nota as Daten, FernkampfwaffenDafinition_kampf_ausstattung, FertigkeitDefinition_fertigkeit, GattungDefinition_lebewesen, Gattung_lebewesen, LebensabschnittDefinition_lebewesen, Lebensabschnitt_lebewesen, Level_misc, Lokalisierungen_misc, MorphDefinition_lebewesen, Morph_lebewesen, NahkampfWaffenDefinition_kampf_ausstattung, PfadDefinition_pfad, RüstungDefinition_kampf_ausstattung, TagDefinition_misc, TalentDefinition_talent, BedingungsAuswahl_besonderheit, LevelAuswahl_misc, BedingungsAuswahl_misc, Schutzwert_kampf_ausstattung, AbleitungsAuswahl_talent, LevelDefinition_misc, _Taktik } from 'src/data/nota.g';
 import { distinct, filterNull, toObjectKey } from 'src/misc/misc';
 
 // type lebensabschnittData =
@@ -79,6 +79,8 @@ export class Data {
     public readonly nahkampfMap: Record<string, Readonly<NahkampfWaffenDefinition_kampf_ausstattung>>;
     public readonly fernkampfMap: Record<string, Readonly<FernkampfwaffenDafinition_kampf_ausstattung>>;
     public readonly RüstungMap: Record<string, Readonly<RüstungDefinition_kampf_ausstattung>>;
+    
+    public readonly TaktikMap: Record<string, Readonly<_Taktik>>;
     //talentCostTabel: readonly { Kosten: { Wert: number; Id: string; }[]; }[][];
     /**
      *
@@ -688,6 +690,7 @@ export class Data {
 
 
 
+        this.TaktikMap = data.Daten.Taktiken.Taktik.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, _Taktik>)
         this.AusrüstungsEigenschaftMap = data.Daten.Ausstattung.Eigenschaften.Eigenschaft.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, AusrüstungEigengchaftDefinition_kampf_ausstattung>)
         this.nahkampfMap = data.Daten.Ausstattung.Waffen.Nahkampfwaffe.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, NahkampfWaffenDefinition_kampf_ausstattung>)
         this.fernkampfMap = data.Daten.Ausstattung.Waffen.Fernkampfwaffe.reduce((p, c) => { p[c.Id] = c; return p; }, {} as Record<string, FernkampfwaffenDafinition_kampf_ausstattung>)

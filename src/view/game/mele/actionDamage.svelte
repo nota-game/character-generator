@@ -30,21 +30,21 @@ console.log({blunt,cut});
 	}
 </script>
 
-<div>
+<div class="root">
 	<strog style="grid-column: 1 / span 3; grid-row: 1; text-align: center;">Schaden</strog>
 	<label for="blunt-damage" style="grid-column: 1; grid-row: 2; align-self: center;">Wucht </label>
 	<input
 		bind:value={bluntDamage}
 		id="blunt-damage"
 		type="number"
-		style="max-width:5em; grid-column: 2; grid-row: 2;"
+		style="grid-column: 2; grid-row: 2;"
 	/>
 	<label for="cut-damage" style="grid-column: 1; grid-row: 3; align-self: center;">Schnitt </label>
 	<input
 		bind:value={cutDamage}
 		id="cut-damage"
 		type="number"
-		style="max-width:5em; grid-column: 2; grid-row: 3;"
+		style="grid-column: 2; grid-row: 3;"
 	/>
 
 	<select bind:value={zone} style="grid-column: 3; grid-row: 2;">
@@ -67,4 +67,8 @@ console.log({blunt,cut});
 		height: unset;
 		min-width: 4em;
 	}
+	.root{
+		grid-template-columns: max-content 5em 1fr;
+	}
+
 </style>

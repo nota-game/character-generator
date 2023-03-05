@@ -108,14 +108,26 @@ export function distinct<T>(t: T[], keyFunction?: (a: T) => string) {
     }
 }
 
-export function join(array: string[], delimeter?: string, lastDelimeter?: string ): string {
+export function removeOneOf<T>(arry: T[], toRemove: T): T[] {
+    let removed = false;
+    return arry.filter(x => {
+        if (x == toRemove && !removed) {
+            removed = true;
+            return false;
+        }
+        return true;
+    });
+
+}
+
+export function join(array: string[], delimeter?: string, lastDelimeter?: string): string {
     if (!delimeter) {
         delimeter = ', '
     }
-    if(lastDelimeter != undefined && array.length>1){
-        return head(array).reduce((p, c) => p.length == 0 ? c : p + delimeter + c, "")+lastDelimeter+getLast(array);
+    if (lastDelimeter != undefined && array.length > 1) {
+        return head(array).reduce((p, c) => p.length == 0 ? c : p + delimeter + c, "") + lastDelimeter + getLast(array);
 
-    }else{
+    } else {
         return array.reduce((p, c) => p.length == 0 ? c : p + delimeter + c, "");
 
     }
@@ -183,8 +195,8 @@ export function tail<T>(a: readonly T[]): T[] {
     return result;
 }
 export function head<T>(a: readonly T[]): T[] {
-    
-    return a.slice(0,-1);
+
+    return a.slice(0, -1);
 }
 
 
@@ -221,10 +233,19 @@ export function d(faces: number) {
 }
 
 export function zip<T1, T2>(a: T1[], b: T2[]): (readonly [T1, T2])[] {
-    if (a.length != b.length) {
-        throw new Error('Sequences must have same length');
+    if (a == undefined) {
+        a = [];
     }
-    return a.map((x, i) => [x, b[i]]);
+    if (b == undefined) {
+        b = [];
+    }
+    if (a.length < b.length) {
+        return b.map((x, i) => [a[i], x]);
+
+    } else {
+        return a.map((x, i) => [x, b[i]]);
+    }
+
 }
 
 

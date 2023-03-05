@@ -7,8 +7,8 @@
 	let au = 1;
 </script>
 
-<div>
-	<strog style="grid-column: 1/ span 3 ; grid-row: 1; text-align: center;">Kampf</strog>
+<div class="root">
+	<strog style="grid-column: 1/ span 3 ; grid-row: 1; text-align: center;">Kampf Allgemein</strog>
 	<input bind:value={position} type="number" style="max-width:5em; grid-column: 1; grid-row: 2;" />
 	<input bind:value={au} type="number" style="max-width:5em; grid-column: 1; grid-row: 3;" />
 	<button
@@ -32,5 +32,8 @@
 	input[type='number'] {
 		height: unset;
 		min-width: 4em;
+	}
+	.root{
+		grid-template-columns: 5em 1fr 1.5fr;
 	}
 </style>

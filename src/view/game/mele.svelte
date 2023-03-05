@@ -18,6 +18,7 @@
 	import ActionBattle from './mele/actionBattle.svelte';
 	import ActionDamage from './mele/actionDamage.svelte';
 	import ActionRest from './mele/actionRest.svelte';
+	import ActionTactics from './mele/actionTactics.svelte';
 
 	export let char: Charakter;
 	export let charData: CharacterState;
@@ -54,6 +55,7 @@
 	<ActionDamage  {charData}/>
 
 	<ActionBattle {charData} />
+	<ActionTactics {charData} />
 </div>
 
 <div >
@@ -169,6 +171,7 @@
 <style lang="scss">
 	.action-panels {
 		display: flex;
+		flex-wrap: wrap;
 	}
 
 	.action-panels > :global(div) {
@@ -179,6 +182,7 @@
 		background-color: var(--card-background-color);
 		padding: 0.5rem;
 		margin: 0.2rem;
+		flex-grow: 1;
 
 	}
 
