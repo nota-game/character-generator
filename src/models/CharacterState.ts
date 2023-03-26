@@ -1,5 +1,5 @@
 import { Wound, type WoundServity } from "src/controls/hitman";
-import type { Lokalisierungen_misc, Nachladeeinheit_kampf_ausstattung, NahkampfWaffenDefinition_kampf_ausstattung, TalentDefinition_talent, _Probe, _Trefferzonen } from "src/data/nota.g";
+import type { Lokalisierungen_misc, Nachladeeinheit_kampf_ausstattung, NahkampfWaffenDefinition_kampf_ausstattung, TalentDefinition_talent, _Probe, Trefferzonen_Definition_kampf_ausstattung } from "src/data/nota.g";
 import { d20, filterNull, join } from "src/misc/misc";
 import type { TacticsInformation } from "src/view/game/mele/actionTacticsTacticConfig.svelte";
 import { derived, get, readable, writable, type Readable, type Writable } from "svelte/store";
@@ -29,7 +29,7 @@ export class LogMessage {
 export class CharacterState {
     public readonly char: Charakter;
 
-    public readonly toughness: Readable<Record<keyof _Trefferzonen, Record<WoundServity, number>>>;
+    public readonly toughness: Readable<Record<string, Record<WoundServity, number>>>;
     public readonly log: Readable<Log[]>;
     public readonly defaultErschwernis: Readable<number>;
     private logSetter = writable([] as Log[]);
@@ -203,7 +203,7 @@ export class CharacterState {
                     schwer: wiederstandsRechtesBeinSchwer ?? 0,
                     amputiert: wiederstandsRechtesBeinAmputation ?? 0
                 }
-            } satisfies Record<keyof _Trefferzonen, Record<WoundServity, number>>;
+            } satisfies Record<string, Record<WoundServity, number>>;
 
 
 
@@ -363,7 +363,7 @@ export class CharacterState {
         }
     }
 
-    public addDamage(zone: keyof _Trefferzonen, { blunt = 0, cut = 0 }) {
+    public addDamage(zone: string, { blunt = 0, cut = 0 }) {
 
 
         const toghnes = get(this.toughness);

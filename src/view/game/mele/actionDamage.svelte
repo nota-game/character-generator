@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { WoundServity } from 'src/controls/hitman';
-	import type { _Schutz, _Trefferzonen } from 'src/data/nota.g';
+	import type { _Schutz, Trefferzonen_Definition_kampf_ausstattung as Trefferzonen_Definition_kampf_ausstattung } from 'src/data/nota.g';
 	import type { CharacterState } from 'src/models/CharacterState';
 	import { get } from 'svelte/store';
 
 	export let charData: CharacterState;
 
-	let zone: keyof _Trefferzonen = 'Brust';
+	let zone: string = 'Brust';
 	let bluntDamage = 1;
 	let cutDamage = 1;
 

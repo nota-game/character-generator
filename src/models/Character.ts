@@ -4,7 +4,7 @@ import type {
     Schutzwert_kampf_ausstattung, _Anzahl, _ActionType, BedingungsAuswahl_misc, BedingungsAuswahl_besonderheit, BedingungsAuswahlen_misc,
     BedingungsAuswahlen_besonderheit, _Ableitung, _Max, _LevelAuswahlen,
     _LevelAuswahl, _Level1, Ableitung_talent,
-    Max_talent, _Bereich, BesonderheitDefinition_besonderheit, _Trefferzonen, _Schutz
+    Max_talent, _Bereich, BesonderheitDefinition_besonderheit, Trefferzonen_Definition_kampf_ausstattung, _Schutz
 } from "../data/nota.g";
 import StoreManager, { UNINITILEZED, type Key, type KeyData, type Readable, type Writable } from "../misc/StoreManager2";
 import { derived, type Readable as ReadableOriginal, type Writable as WritableOriginal } from "svelte/store";
@@ -501,7 +501,7 @@ export class Charakter {
         equiped: Writable<true | undefined>,
     }> = {};
 
-    public readonly zoneArmor: Readable<Record<keyof _Trefferzonen, Record<keyof _Schutz, number>>>;
+    public readonly zoneArmor: Readable<Record<string, Record<keyof _Schutz, number>>>;
 
 
     public readonly stammdaten: Data;
@@ -884,7 +884,7 @@ export class Charakter {
                 type: 'other' as const,
             }
                 ;
-        }), e => e.id));
+        }), e => e.id ?? ''));
 
 
 
@@ -1324,7 +1324,7 @@ export class Charakter {
         const sumCost = StoreManager.key('/**/cost').of<Record<string, Record<string, Record<string, Cost>>>>();
         const sumMissing = StoreManager.key('/**/missing').of<Record<string, Record<string, Record<string, MissingRequirements>>>>();
 
-        const zoneArmorKey = StoreManager.key('/equipment/totalArmor').of<Record<keyof _Trefferzonen, Record<keyof _Schutz, number>>>();
+        const zoneArmorKey = StoreManager.key('/equipment/totalArmor').of<Record<string, Record<keyof _Schutz, number>>>();
 
 
 
@@ -2766,7 +2766,7 @@ export class Charakter {
 
             this.zoneArmor = this.storeManager.derived(zoneArmorKey, StoreManager.key('/equipment/armor/*/equiped').of<Record<string, { equiped: true | undefined }>>(), (data, equipment) => {
 
-                const emptyProtection: Record<keyof _Trefferzonen, Record<keyof _Schutz, number>> = {
+                const emptyProtection: Record<string, Record<keyof _Schutz, number>> = {
                     Brust: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
                     Hüfte: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
                     Kopf: { Dämpfung: 0, Flexibilität: 99, Härte: 0 },
@@ -2779,9 +2779,9 @@ export class Charakter {
                 return Object.entries(equipment.newValue).filter(([, e]) => e.equiped)
                     .map(([id]) => data.RüstungMap[id])
                     .flatMap((c) => {
-                        return Object.entries(c.Trefferzonen).map(([key, value]) => {
+                        return c.Trefferzonen.Zone.map(( value) => {
                             if (value?.Schutz.some((x) => !x.Unzuverlässig)) {
-                                return [key as keyof _Trefferzonen, Object.fromEntries(Object.keys(c.Schutz).filter((x): x is keyof _Schutz => true).map(key => [key, c.Schutz[key]?.Wert ?? 0] as const)) as Record<keyof _Schutz, number>] as const;
+                                return [value.Name, Object.fromEntries(Object.keys(c.Schutz).filter((x): x is keyof _Schutz => true).map(key => [key, c.Schutz[key]?.Wert ?? 0] as const)) as Record<keyof _Schutz, number>] as const;
                             }
                             return [];
                         });

@@ -5,7 +5,7 @@
 	import type {
 		RüstungDefinition_kampf_ausstattung,
 		_Schutz,
-		_Trefferzonen
+		Trefferzonen_Definition_kampf_ausstattung
 	} from 'src/data/nota.g';
 	import { filterNull, filterObjectKeys, getText } from 'src/misc/misc';
 	import AusrustungList from './AusrustungList.svelte';
@@ -17,7 +17,7 @@
 	let char = input instanceof Charakter ? input : undefined;
 	let armorStore = char instanceof Charakter ? char.equipment : undefined;
 
-	const zoneLookup: (keyof _Trefferzonen)[] = [
+	const zoneLookup: (string)[] = [
 		'Kopf',
 		'LinkerArm',
 		'LinkesBein',
@@ -85,25 +85,25 @@
 			dämpfung: a?.Schutz.Dämpfung?.Wert ?? 0,
 			steifheit: a?.Schutz.Flexibilität?.Wert ?? 0,
 			titel: getText(a?.Name),
-			range: keys(a?.Trefferzonen).flatMap((g) => {
+			range: a?.Trefferzonen.Zone.flatMap((g) => {
 				const regionConst =
-					g == 'Kopf'
+					g.Name == 'Kopf'
 						? 0
-						: g == 'LinkerArm'
+						: g.Name == 'LinkerArm'
 						? 10
-						: g == 'RechterArm'
+						: g.Name == 'RechterArm'
 						? 20
-						: g == 'Brust'
+						: g.Name == 'Brust'
 						? 30
-						: g == 'Hüfte'
+						: g.Name == 'Hüfte'
 						? 40
-						: g == 'RechtesBein'
+						: g.Name == 'RechtesBein'
 						? 50
-						: g == 'LinkesBein'
+						: g.Name == 'LinkesBein'
 						? 60
 						: -1000;
 				return (
-					a?.Trefferzonen[g]?.Schutz.map(
+					g.Schutz.map(
 						(x) => [x.Von! + regionConst, x.Bis! + regionConst, x.Unzuverlässig] as const
 					) ?? []
 				);
@@ -331,17 +331,17 @@
 								<text
 									transform="matrix(1 0 0 1 70 89)"
 									font-family="'MyriadPro-Regular'"
-									font-size="12">{$zoneProtection[zoneLookup[r]]?.Flexibilität?.Wert ?? 0}</text
+									font-size="12">{$zoneProtection[zoneLookup[r]]?.Flexibilität ?? 0}</text
 								>
 								<text
 									transform="matrix(1 0 0 1 70 106)"
 									font-family="'MyriadPro-Regular'"
-									font-size="12">{$zoneProtection[zoneLookup[r]]?.Dämpfung?.Wert ?? 0}</text
+									font-size="12">{$zoneProtection[zoneLookup[r]]?.Dämpfung ?? 0}</text
 								>
 								<text
 									transform="matrix(1 0 0 1 70 123)"
 									font-family="'MyriadPro-Regular'"
-									font-size="12">{$zoneProtection[zoneLookup[r]]?.Härte?.Wert ?? 0}</text
+									font-size="12">{$zoneProtection[zoneLookup[r]]?.Härte ?? 0}</text
 								>
 							</g>
 						{/if}
