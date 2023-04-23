@@ -384,7 +384,8 @@ type ArtKey = Key<"/organism/art/instance", ArtDefinition_lebewesen | undefined>
 
 type MorphKey = Key<"/organism/morph/instance", MorphDefinition_lebewesen | undefined>;
 
-type LebensabschnittKey<type extends 'gattung' | 'art' | 'morph'> = Key<`/organism/${type}/lebensabschnitt`, LebensabschnittDefinition_lebewesen | undefined>;
+type LebensabschnittKey<type extends 'gattung' | 'art' | 'morph'> = Key<`/organism/${type}/lebensabschnitt/meta`, LebensabschnittDefinition_lebewesen | undefined>;
+type LebensabschnittCostKey<type extends 'gattung' | 'art' | 'morph'> = Key<`/organism/${type}/lebensabschnitt/cost`, Cost>;
 
 export class Charakter {
 
@@ -1283,6 +1284,10 @@ export class Charakter {
     private readonly lebensabschnittArtKey: LebensabschnittKey<'art'>;
     private readonly lebensabschnittMorphKey: LebensabschnittKey<'morph'>;
 
+    private readonly lebensabschnittGattungCostKey: LebensabschnittCostKey<'gattung'>;
+    private readonly lebensabschnittArtCostKey: LebensabschnittCostKey<'art'>;
+    private readonly lebensabschnittMorphCostKey: LebensabschnittCostKey<'morph'>;
+
     /**
      *
      */
@@ -1316,9 +1321,15 @@ export class Charakter {
         const costKey = StoreManager.key('/points/total').of<Cost>();
         const missingKey = StoreManager.key('/totalMissing').of<missingMapping[]>();
 
-        this.lebensabschnittGattungKey = StoreManager.key('/organism/gattung/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
-        this.lebensabschnittArtKey = StoreManager.key('/organism/art/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
-        this.lebensabschnittMorphKey = StoreManager.key('/organism/morph/lebensabschnitt').of<LebensabschnittDefinition_lebewesen | undefined>()
+        this.lebensabschnittGattungKey = StoreManager.key('/organism/gattung/lebensabschnitt/meta').of<LebensabschnittDefinition_lebewesen | undefined>()
+        this.lebensabschnittArtKey = StoreManager.key('/organism/art/lebensabschnitt/meta').of<LebensabschnittDefinition_lebewesen | undefined>()
+        this.lebensabschnittMorphKey = StoreManager.key('/organism/morph/lebensabschnitt/meta').of<LebensabschnittDefinition_lebewesen | undefined>()
+
+        this.lebensabschnittGattungCostKey = StoreManager.key('/organism/gattung/lebensabschnitt/cost').of<Cost>()
+        this.lebensabschnittArtCostKey = StoreManager.key('/organism/art/lebensabschnitt/cost').of<Cost>()
+        this.lebensabschnittMorphCostKey = StoreManager.key('/organism/morph/lebensabschnitt/cost').of<Cost>()
+
+
         const lebensabschnittKey = StoreManager.key('/organism/*/lebensabschnitt').of<{ gattung: LebensabschnittDefinition_lebewesen | undefined, art: LebensabschnittDefinition_lebewesen | undefined, morph: LebensabschnittDefinition_lebewesen | undefined }>()
 
         const sumCost = StoreManager.key('/**/cost').of<Record<string, Record<string, Record<string, Cost>>>>();
@@ -1583,6 +1594,18 @@ export class Charakter {
             })
             this.storeManager.derived(this.lebensabschnittMorphKey, [this.ageKey, this.morphInstanceKey], (data, [age, morph],) => {
                 return getLast(morph.newValue?.Lebensabschnitte?.Lebensabschnitt.filter(m => age.newValue >= m.startAlter && (m.endAlter == undefined || m.endAlter <= age.newValue)));
+            })
+
+
+            this.storeManager.derived(this.lebensabschnittGattungCostKey, [this.lebensabschnittGattungKey], (data, [meta]) => {
+                return transformToCost(meta.newValue?.Spielbar?.Kosten ?? [], x => [x.Id, mathjs.evaluate(x.Berechnung, {})] as const)
+            })
+            this.storeManager.derived(this.lebensabschnittArtCostKey, [this.lebensabschnittArtKey], (data, [meta]) => {
+                console.log("cost calculat",meta)
+                return transformToCost(meta.newValue?.Spielbar?.Kosten ?? [], x => [x.Id, mathjs.evaluate(x.Berechnung, {})] as const)
+            })
+            this.storeManager.derived(this.lebensabschnittMorphCostKey, [this.lebensabschnittArtKey], (data, [meta],) => {
+                return transformToCost(meta.newValue?.Spielbar?.Kosten ?? [], x => [x.Id, mathjs.evaluate(x.Berechnung, {})] as const)
             })
 
             this.pointStore = this.storeManager.readable(costKey);
@@ -2779,7 +2802,7 @@ export class Charakter {
                 return Object.entries(equipment.newValue).filter(([, e]) => e.equiped)
                     .map(([id]) => data.RüstungMap[id])
                     .flatMap((c) => {
-                        return c.Trefferzonen.Zone.map(( value) => {
+                        return c.Trefferzonen.Zone.map((value) => {
                             if (value?.Schutz.some((x) => !x.Unzuverlässig)) {
                                 return [value.Name, Object.fromEntries(Object.keys(c.Schutz).filter((x): x is keyof _Schutz => true).map(key => [key, c.Schutz[key]?.Wert ?? 0] as const)) as Record<keyof _Schutz, number>] as const;
                             }

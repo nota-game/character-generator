@@ -69,16 +69,15 @@
 </script>
 
 <!-- {#if addFuture} -->
-<div>
+<div class="root">
 	<h5>
-		{getTextPfad(entryPfad, entry, char)} {$purchased}
+		{getTextPfad(entryPfad, entry, char)}
+		{$purchased}
 		<small style="float: right;"><KostenControl cost={$cost} {data} {char} inline /></small>
 	</h5>
 	<div>
 		{#if $purchased < entry.WiederhoteNutzung}
 			<TooltipControl>
-
-            
 				<a
 					href="#"
 					class:missing={$missingNext.length > 0}
@@ -124,13 +123,7 @@
 					{#await $addFuture}
 						<span aria-busy="true" />
 					{:then f}
-						<ChangeView
-							change={f}
-							{data}
-							{char}
-							
-							excludeRequirments={$missingNext}
-						/>
+						<ChangeView change={f} {data} {char} excludeRequirments={$missingNext} />
 					{/await}
 				</div>
 			</TooltipControl>
@@ -169,7 +162,7 @@
 					{#await $removeFuture}
 						<span aria-busy="true" />
 					{:then f}
-						<ChangeView change={f} {data} {char}  />
+						<ChangeView change={f} {data} {char} />
 					{/await}
 				</div>
 			</TooltipControl>
@@ -250,5 +243,10 @@
 {/if}
 
 <style lang="scss">
- 
+	h5 {
+		margin-bottom: 0.2em;
+	}
+	.root:not(:last-of-type) {
+		margin-bottom: 1rem;
+	}
 </style>

@@ -199,7 +199,6 @@ export function tail<T>(a: readonly T[]): T[] {
     return result;
 }
 export function head<T>(a: readonly T[]): T[] {
-
     return a.slice(0, -1);
 }
 

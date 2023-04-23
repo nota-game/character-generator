@@ -291,12 +291,22 @@ export default class StoreManager<Param> {
                     // if (current.value !== UNINITILEZED)
                     //     return current.value;
 
-                    if ([...current.dependentOn.values()].filter(x => {
+                    if (current.dependentOn.size > 0 && [...current.dependentOn.values()].filter(x => {
                         if (this.manager.data[x] === undefined)
                             console.log("*****************")
                         // throw new Error("AURS " +x);
-                        return this.manager.data[x]?.storeType ?? false
-                    }).map(x => this.manager.data[x].value !== UNINITILEZED).every(x => x)) {
+                        const alreadySet = this.manager.data[x]?.storeType ?? false;
+                        if (!alreadySet) {
+                            // console.debug(`Stortype not set for ${x}, skip Update on ${this.id}`)
+                        }
+                        return alreadySet;
+                    }).map(x => {
+                        const alreadySet = this.manager.data[x].value !== UNINITILEZED;
+                        if (!alreadySet) {
+                            // console.debug(`Missing Value for ${x}, skip Update on ${this.id}`)
+                        }
+                        return alreadySet;
+                    }).every(x => x)) {
 
 
                         // find the part that is fix
@@ -362,12 +372,12 @@ export default class StoreManager<Param> {
                         }
                         AddDependency(x, current);
                     });
-                    this.wildcardData[key.Key]= reg;
+                    this.wildcardData[key.Key] = reg;
                 }
                 Object.entries(this.wildcardData).filter(([wildCardKey, reg]) => {
                     // const reg = generateRegex(x.id);
-                    
-                    return wildCardKey !== key.Key&&reg.test(key.Key);
+
+                    return wildCardKey !== key.Key && reg.test(key.Key);
                 }).forEach(([wildCardKey]) => {
                     if (set !== undefined) {
                         throw `${key.Key} is leaf, cant create ${wildCardKey}`;
@@ -380,11 +390,13 @@ export default class StoreManager<Param> {
             const possibleNewValue = current.fn(this.staticData);
 
 
+            this.setValue(current, possibleNewValue);
             if ((typeof possibleNewValue !== "object") || Object.keys(possibleNewValue ?? {}).length > 0) {
 
-                this.setValue(current, possibleNewValue);
                 // current.needsUpdate.delete(key.Key);
 
+            } else {
+                console.log(`do not set for ${current.id}`)
             }
 
             if (current.storeType == 'aggregated' || current.storeType == 'writable') {

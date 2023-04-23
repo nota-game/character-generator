@@ -7,6 +7,7 @@
 	import { time_ranges_to_array, validate_each_argument } from 'svelte/internal';
 	import PfadButton from './pfadButton.svelte';
 	import PfadControl from './pfadControl.svelte';
+	import KostenControl from '../../controls/KostenControl.svelte';
 
 	export let data: Data;
 	export let char: Charakter;
@@ -32,6 +33,7 @@
 			<header>
 
 				<h4>{getText(current.Name)}</h4>
+				<KostenControl char={char} data={data} mode="points" showZeroValues />
 			</header>
 
 			{#each current.Levels.Level as lvl}

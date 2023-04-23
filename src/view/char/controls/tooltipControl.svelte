@@ -2,9 +2,11 @@
 	<slot />
 
 	<div class="tooltiptext">
-		<slot name="tooltip">
-			<span class="missing">Unknown tooltip</span>
-		</slot>
+		<div class="container">
+			<slot name="tooltip">
+				<span class="missing">Unknown tooltip</span>
+			</slot>
+		</div>
 	</div>
 </span>
 
@@ -29,9 +31,6 @@
 
 	.tooltip > .tooltiptext {
 		visibility: hidden;
-		min-width: 220px;
-		max-width: 520px;
-		width: max-content;
 		background-color: var(--blockquote-border-color);
 		color: #fff;
 		text-align: center;
@@ -49,6 +48,14 @@
 		/* Fade in tooltip */
 		opacity: 0;
 		transition: opacity 0.3s;
+		& > .container {
+			min-width: 220px;
+			max-width: 520px;
+			max-height: 15rem;
+			height: max-content;
+			overflow-y: auto;
+			width: max-content;
+		}
 	}
 
 	@media screen and (max-width: 520px) {
