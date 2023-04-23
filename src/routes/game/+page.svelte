@@ -22,11 +22,16 @@
 	import Talent from 'src/view/game/talent.svelte';
 	import { CharacterState } from 'src/models/CharacterState';
 	import Log from 'src/view/game/log.svelte';
+	import { ConnectionPlayer } from '../gm/connection';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
+	$: charCoreData = char?.persistanceStore;
+	let params: URLSearchParams | undefined;
 
 	let expandLog = false;
+
+	let connection: ConnectionPlayer | undefined;
 
 	let charData: CharacterState | undefined;
 	$: {
@@ -35,6 +40,32 @@
 		}
 	}
 	let ready = false;
+
+	$: {
+		if (params && $charCoreData) {
+			const serverUrl = params.get('server');
+			const playerName = params.get('playerName');
+			const playerId = params.get('playerId');
+			const groupId = params.get('groupId');
+
+			if (playerName && playerId && groupId && serverUrl) {
+				connection = new ConnectionPlayer(serverUrl, playerId, groupId);
+			}
+		}
+	}
+
+	$: {
+		if (params && $charCoreData && connection) {
+			const serverUrl = params.get('server');
+			const playerName = params.get('playerName');
+			const playerId = params.get('playerId');
+			const groupId = params.get('groupId');
+
+			if (playerName && playerId && groupId && serverUrl) {
+				connection.InitPlayerData(playerName, $charCoreData);
+			}
+		}
+	}
 
 	onMount(async () => {
 		ready = true;
@@ -51,6 +82,9 @@
 			id.set(char?.id ?? '');
 		});
 		localStorageChar.updateId('c' + window.location.hash.slice(1));
+
+		params = new URLSearchParams(window.location.search);
+
 		// const currentChar = local<CharakterData>('c' + window.location.hash.slice(1));
 	});
 
@@ -106,6 +140,7 @@
 <div class="root" class:expand-log={expandLog}>
 	<nav>
 		<a href={pageLink} role="button" rel="external">Zum Editor</a>
+		<span>{#if connection !==undefined}Connected{:else}Unconnected{/if}</span>
 		<label
 			>Log Expanded
 			<input type="checkbox" bind:checked={expandLog} />

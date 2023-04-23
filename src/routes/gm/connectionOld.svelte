@@ -1,13 +1,19 @@
 <script lang="ts">
 	import {} from '@picocss/pico/css/pico.css';
 	import {} from 'src/css/theme.css';
+	import pako from 'pako';
+
+	import * as signalR from "@microsoft/signalr";
 
 	import * as base64 from 'universal-base64';
+	import * as base64Binary from 'base64-uint8';
 	import SimplePeer from 'simple-peer';
 	import ecoji from 'ecoji-js';
 
 	import type { PeerConnection } from 'src/models/Connection';
 	import { get } from 'svelte/store';
+
+	import { getImage } from 'src/misc/baseImage';
 
 	export let connection: PeerConnection;
 
@@ -16,6 +22,7 @@
 	let codeIncommingOffer: string = '';
 	let invite: SimplePeer.SignalData | undefined;
 	let codeOutgoingOffer: string = '';
+	let imageOutgoingOffer: string = '';
 	let offerAnswer: (data: SimplePeer.SignalData) => void | undefined;
 
 	let codeIncommingAnswer: string = '';
@@ -24,12 +31,6 @@
 
 	let viewDialogInvite = false;
 	let viewDialogAnswer = false;
-
-	$: {
-		if (answer) {
-			offerAnswer(answer);
-		}
-	}
 
 	$: {
 		if (peer != undefined && !get(connection.IsConnected)) {
@@ -79,6 +80,9 @@
 				if (answer?.type != 'answer') {
 					answer = undefined;
 				}
+				if (answer) {
+					offerAnswer(answer);
+				}
 			}
 		} catch (error) {
 			console.error(error);
@@ -89,21 +93,30 @@
 	function generateAnswer(invite: SimplePeer.SignalData) {
 		const p = new SimplePeer({
 			initiator: false,
-			trickle: false
+			trickle: false,
+			offerOptions:{
+				offerToReceiveAudio:false,
+				offerToReceiveVideo:false,
+			}
 		});
 
 		p.on('error', (err) => console.log('error', err));
 
 		p.on('signal', (data) => {
 			console.log('SIGNAL', JSON.stringify(data));
-
+			
 			const escaped = Object.fromEntries(
 				Object.entries(data).map(
 					([key, value]) => [key, typeof value == 'string' ? base64.encode(value) : value] as const
 				)
-			);
+				);
+				
+				const str = JSON.stringify(escaped);
+				console.log('SIGNAL', str);
+				console.log('GZip', pako.gzip( str));
+				
 
-			const str = JSON.stringify(escaped);
+
 			const encodede = ecoji.encode(str);
 
 			codeOutgoingAnswer = encodede;
@@ -132,7 +145,7 @@
 
 		p.on('error', (err) => console.log('error', err));
 
-		p.on('signal', (data) => {
+		p.on('signal', async (data) => {
 			console.log('SIGNAL', JSON.stringify(data));
 
 			const escaped = Object.fromEntries(
@@ -143,6 +156,14 @@
 
 			const str = JSON.stringify(escaped);
 			const encodede = ecoji.encode(str);
+
+			console.log('SIGNAL', str);
+				console.log('GZip', base64Binary.encode(pako.gzip( str)));
+				
+
+			const image = await getImage(str);
+
+			imageOutgoingOffer = image.url;
 
 			codeOutgoingOffer = encodede;
 			navigator.clipboard.writeText(codeOutgoingOffer);
@@ -190,6 +211,7 @@
 	<dialog open={viewDialogInvite}>
 		{#if codeOutgoingOffer}
 			<article>
+				<img src={imageOutgoingOffer} alt="Code image" width="400" style="image-rendering: pixelated;" />
 				<details>
 					<summary> Einladungscode </summary>
 					{codeOutgoingOffer}
@@ -233,5 +255,4 @@
 {/if}
 
 <style>
-
 </style>
