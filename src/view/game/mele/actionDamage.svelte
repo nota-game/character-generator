@@ -1,6 +1,9 @@
 <script lang="ts">
 	import type { WoundServity } from 'src/controls/hitman';
-	import type { _Schutz, Trefferzonen_Definition_kampf_ausstattung as Trefferzonen_Definition_kampf_ausstattung } from 'src/data/nota.g';
+	import type {
+		_Schutz,
+		Trefferzonen_Definition_kampf_ausstattung as Trefferzonen_Definition_kampf_ausstattung
+	} from 'src/data/nota.g';
 	import type { CharacterState } from 'src/models/CharacterState';
 	import { get } from 'svelte/store';
 
@@ -20,12 +23,12 @@
 				zoneArmor.Dämpfung
 		);
 
-        console.log(`${bluntDamage} -
+		console.log(`${bluntDamage} -
 				Math.floor((${bluntDamage} - ${zoneArmor.Dämpfung}) / (${zoneArmor.Flexibilität} + 1)) -
-				${zoneArmor.Dämpfung}`)
+				${zoneArmor.Dämpfung}`);
 
 		const cut = Math.max(0, cutDamage - Math.max(0, zoneArmor.Härte - Math.floor(bluntDamage / 2)));
-console.log({blunt,cut});
+		console.log({ blunt, cut });
 		charData.addDamage(zone, { blunt, cut });
 	}
 </script>
@@ -67,8 +70,7 @@ console.log({blunt,cut});
 		height: unset;
 		min-width: 4em;
 	}
-	.root{
+	.root {
 		grid-template-columns: max-content 5em 1fr;
 	}
-
 </style>

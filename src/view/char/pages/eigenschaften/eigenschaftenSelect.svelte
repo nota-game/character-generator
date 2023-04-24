@@ -14,7 +14,7 @@
 	import { derived, get, readable, writable, type Readable, type Writable } from 'svelte/store';
 	import type { choise } from 'xsd-ts/dist/xsd';
 
-	import { dealay, distinct, filterNull, getText } from 'src/misc/misc';
+	import { dealay, distinct, filterNull, getAgeText, getText } from 'src/misc/misc';
 	import type { Charakter } from 'src/models/Character';
 	import { Data } from 'src/models/Data';
 	// import KostenControl from './KostenControl.svelte';
@@ -72,18 +72,7 @@
 				float
 				formatter={(v) => v}
 				handleFormatter={(v) => {
-					let l = Data.age2Lebensabschnitte(v, organism?.morph, organism?.art, organism?.gattung);
-					const year = Math.floor(v);
-					const month = Math.round((v - year) * 12);
-					const age = month == 0 ? ` (${year} Jahre)` : ` (${year} Jahre und ${month} Monate)`;
-
-					if (l === undefined) return age;
-					else
-						return (
-							distinct(l.map((x) => (x ? getText(x.Name, char) : '')))
-								.filter((x) => x != '')
-								.join(', ') + age
-						);
+					return `(${getAgeText(v, organism, char)})`;
 				}}
 				bind:values={ageArray}
 				pips

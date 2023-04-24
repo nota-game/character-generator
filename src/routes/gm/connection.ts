@@ -1,16 +1,23 @@
 import * as signalR from "@microsoft/signalr";
 import { Charakter, type PersistanceData } from "src/models/Character";
+import { CharacterState, Syncronizer } from "src/models/CharacterState";
 import { Data } from "src/models/Data";
-import { readable, writable, type Readable, type Writable, derived } from "svelte/store";
+import { readable, writable, type Readable, type Writable, derived, get } from "svelte/store";
 
+
+export type userHolder = { id: string, sendToUsers: (data: message) => Promise<void> } & ({ playerName?: undefined } | { playerName: string, char: Charakter, state: CharacterState, charStateSyncronizer: Syncronizer });
+export type userHolderWithChar = userHolder & { playerName: string };
 
 export class ConnectionGM {
     public readonly url: string;
     public readonly group: string;
 
-    private users: Record<string, { id: string, playerName?: string, char?: Charakter }> = {};
-    public readonly usersStore: Writable<Record<string, { id: string, playerName?: string, char?: Charakter }>>;
-    public readonly Users: Readable<Record<string, { id: string, playerName?: string, char?: Charakter }>>;
+    public readonly isConected: Readable<boolean>;
+    private readonly _isConected: Writable<boolean>;
+
+    private users: Record<string, userHolder> = {};
+    public readonly usersStore: Writable<Record<string, userHolder>>;
+    public readonly Users: Readable<Record<string, userHolder>>;
 
     private connection: signalR.HubConnection;
     private connectionPromise: Promise<void>;
@@ -20,6 +27,9 @@ export class ConnectionGM {
         this.group = group;
         this.usersStore = writable({});
         this.Users = derived(this.usersStore, x => x);
+
+        this._isConected = writable(false);
+        this.isConected = derived(this._isConected, x => x);
 
 
         this.connection = new signalR.HubConnectionBuilder()
@@ -54,9 +64,24 @@ export class ConnectionGM {
                     await this.SendToPlayer(user.id, { 'type': 'requestChar', 'withStammdaten': true });
                 }
 
+                const prev = this.users[user.id];
+                if (prev?.playerName) {
+                    prev.charStateSyncronizer.unsubscribe();
+                    prev.charStateSyncronizer.RemoveEventListener(this.transmitStateChange.bind(this, user.id));
+
+                }
+
                 if (char) {
-                    this.users[user.id] = { ...user, char }
+                    const state = new CharacterState(char);
+                    const syncronizer = new Syncronizer(state);
+                    this.users[user.id] = { ...user, char, state, charStateSyncronizer: syncronizer, sendToUsers: this.SendToPlayer.bind(this, user.id) };
                     this.usersStore.set(this.users);
+                    syncronizer.subscribe();
+                    syncronizer.AddEventListener(this.transmitStateChange.bind(this, user.id));
+
+
+                    this.SendToPlayer(id, { type: 'requestStats' });
+
                 }
             }
         });
@@ -65,10 +90,37 @@ export class ConnectionGM {
 
             const message = JSON.parse(data) as message;
 
+            if (message.type == 'updateStat') {
+                const userData = this.users[user];
+                if (userData.playerName !== undefined) {
+                    const { charStateSyncronizer } = userData;
+                    charStateSyncronizer.set(message.path, message.value);
+                }
+            } else {
+                console.warn("unknown message", message);
+            }
+
+
+
 
         });
 
-        this.connectionPromise = this.connection.start().catch((err) => console.error(err));
+
+        this.connection.onreconnecting(() => this._isConected.set(false));
+        this.connection.onreconnected(() => this._isConected.set(false));
+        this.connectionPromise = this.connection.start().catch((err) => console.error(err)).then(() => this._isConected.set(true));
+
+    }
+
+    private async transmitStateChange(playerId: string, path: readonly PropertyKey[], value: unknown) {
+        console.info(`send to ${playerId}`, { path, value })
+        await this.SendToPlayer(playerId, { type: 'updateStat', path, value });
+    }
+
+
+    public async Close() {
+        this._isConected.set(false);
+        await this.connection.stop();
     }
 
     /**
@@ -78,7 +130,7 @@ export class ConnectionGM {
         await this.connectionPromise;
         const result = await this.connection.invoke("AddUser");
         if (typeof result === 'string' && result.length > 0) {
-            this.users[result] = { id: result };
+            this.users[result] = { id: result, sendToUsers: this.SendToPlayer.bind(this, result) };
             this.usersStore.set(this.users);
         }
     }
@@ -101,10 +153,19 @@ export class ConnectionPlayer {
 
     private playerName: string | undefined;
     private char: PersistanceData | undefined;
+    private charState: CharacterState | undefined;
+    private charStateSyncronizer: Syncronizer | undefined;
     private connectionPromise: Promise<void>;
+
+    public readonly isConected: Readable<boolean>;
+    private readonly _isConected: Writable<boolean>;
+
 
     constructor(url: string, id: string, group: string) {
         this.url = url;
+
+        this._isConected = writable(false);
+        this.isConected = derived(this._isConected, x => x);
         this.connection = new signalR.HubConnectionBuilder()
             .withUrl(url + "/hub", {
                 headers: {
@@ -131,19 +192,57 @@ export class ConnectionPlayer {
                 } else {
                     this.UpdateSelf(false);
                 }
+            } else if (message.type == 'updateStat') {
+                this.charStateSyncronizer?.set(message.path, message.value);
+            } else if (message.type == 'requestStats') {
+
+                if (this.charStateSyncronizer) {
+                    const allValues = this.charStateSyncronizer.get();
+                    await Promise.all(allValues.map(([path, value]) =>
+                        this.transmitStateChange(path, value)
+                    ));
+                }
+
+            } else {
+                console.warn("unknown message", message);
             }
 
 
         });
 
 
-        this.connectionPromise = this.connection.start().catch((err) => console.error(err));
+        this.connection.onreconnecting(() => this._isConected.set(false));
+        this.connection.onreconnected(() => this._isConected.set(false));
+        this.connectionPromise = this.connection.start().catch((err) => console.error(err)).then(() => this._isConected.set(true));
     }
 
-    public async InitPlayerData(playerName: string, char: PersistanceData) {
+    public async Close() {
+        this._isConected.set(false);
+        await this.connection.stop();
+    }
+
+
+    private async transmitStateChange(path: readonly PropertyKey[], value: unknown) {
+        console.info('send to GM', { path, value })
+        await this.SendToGm({ type: 'updateStat', path, value });
+    }
+
+    public async InitPlayerData(playerName: string, char: PersistanceData | CharacterState) {
         await this.connectionPromise;
         this.playerName = playerName;
-        this.char = char;
+        if (this.charStateSyncronizer) {
+            this.charStateSyncronizer.RemoveEventListener(this.transmitStateChange.bind(this));
+            this.charStateSyncronizer.unsubscribe();
+        }
+        if (char instanceof CharacterState) {
+            this.charState = char;
+            this.charStateSyncronizer = new Syncronizer(this.charState);
+            this.char = get(char.char.persistanceStore);
+            this.charStateSyncronizer.subscribe();
+            this.charStateSyncronizer.AddEventListener(this.transmitStateChange.bind(this));
+        } else {
+            this.char = char;
+        }
         await this.UpdateSelf();
     }
 
@@ -174,5 +273,12 @@ export class ConnectionPlayer {
 type message = {
     type: 'requestChar',
     withStammdaten?: boolean
-}
+} | {
+    type: 'requestStats',
+    path?: readonly PropertyKey[],
+} | {
+    type: 'updateStat',
+    path: readonly PropertyKey[],
+    value: unknown,
+};
 

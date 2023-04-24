@@ -3,6 +3,7 @@ import { d20 as originalD20, distinct, filterNull, getLast, getTextBesonderheit,
 import { derived, get, writable, type Readable, type Writable } from "svelte/store";
 import type { BesonderheitenHolder } from "./../Character";
 import type { CharacterState } from "./../CharacterState";
+import { Log } from "./BaseLog";
 
 
 
@@ -37,7 +38,7 @@ export type modifier<used extends 'used' | 'available'> = { readonly id: number,
     }
 );
 
-export class LogSimpleRole {
+export class LogSimpleRole extends Log {
     // private readonly _tawResult = writable(0);
     private readonly _modifier: Writable<readonly modifier<'available'>[]>;
 
@@ -67,6 +68,7 @@ export class LogSimpleRole {
 
     constructor(charState: CharacterState, talent: TalentDefinition_talent, difficulty = 0, testIndex = 0) {
 
+        super();
         // this helps with reproducing bugs in SkillCheck logic
         const newDebugRoles: number[] = [];
         const debugRoles = [

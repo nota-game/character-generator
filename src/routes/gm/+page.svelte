@@ -4,24 +4,34 @@
 	import { ConnectionGM } from './connection';
 	import { base } from '$app/paths';
 	import ExportView from 'src/view/exportView.svelte';
-	import { get } from 'svelte/store';
+	import { get as svelteGet, type Readable } from 'svelte/store';
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
+	import { getAgeText, getText, getTextBesonderheit, tail } from 'src/misc/misc';
+	import { isBesonderheitenHolder, type Charakter } from 'src/models/Character';
+	import PlayerData from './playerData.svelte';
+	import { Tab, TabList, TabPanel, Tabs } from 'svelte-tabs';
+	import PlayerBattleData from './playerBattleData.svelte';
+	import Battle from './battle.svelte';
 
 	let server: string | undefined = 'http://localhost:5035';
 
 	let connection: ConnectionGM | undefined;
+	$: isConnected = connection?.isConected;
 	let exportText: string | undefined;
 	$: users = connection?.Users;
 
-	onMount(() => {
+	onMount(async () => {
 		let params = new URLSearchParams(document.location.search);
-		const updateParams = () => {
+		const updateParams = async () => {
 			const gm = params.get('gm');
 			const server = params.get('server');
 			const group = params.get('group');
 
 			if (server && gm && group) {
+				if (connection) {
+					await connection.Close();
+				}
 				connection = new ConnectionGM(server, gm, group);
 				connection.SendToAll({ type: 'requestChar' });
 			}
@@ -32,7 +42,13 @@
 			params = new URLSearchParams(document.location.search);
 			updateParams();
 		};
-		updateParams();
+		await updateParams();
+	});
+
+	onDestroy(async () => {
+		if (connection) {
+			await connection.Close();
+		}
 	});
 
 	function shareChar(user: string) {
@@ -53,6 +69,15 @@
 				exportText = new URL(shareData.url, document.baseURI).href;
 			}
 		}
+	}
+
+	function get<T>(value: Readable<T>): T;
+	function get<T>(value: undefined): undefined;
+	function get<T>(value: Readable<T> | undefined): T | undefined {
+		if (value == undefined) {
+			return undefined;
+		}
+		return svelteGet(value);
 	}
 
 	async function connect() {
@@ -77,35 +102,85 @@
 
 <ExportView bind:exportText />
 
-<main>
+<main class="container">
 	{#if connection}
-		Connected
+		{#if $isConnected}
+			Connected
+		{:else}
+			Connecting…
+		{/if}
+		<Tabs initialSelectedIndex={1}>
+			<TabList>
+				<Tab>Übersicht</Tab>
+				<Tab>Kampf</Tab>
+			</TabList>
 
-		{#each Object.values($users ?? {}) as u}
-			<div>
-				{#if !u.playerName}
-					<button on:click={() => shareChar(u.id)}>Share Player Invite</button>
-					<a
-						rel="noreferrer"
-						href={`${base}/play?server=${encodeURIComponent(
-							connection.url
-						)}&playerId=${encodeURIComponent(u.id)}&groupId=${encodeURIComponent(
-							connection.group
-						)}`}
-						target="_blank">Add Player</a
-					>
-				{:else}
-					{u.playerName} -
-					{#if u.char?.nameStore}
-						{get(u.char.nameStore)}
-					{/if}
-				{/if}
-			</div>
-		{/each}
+			<TabPanel>
+				{#each Object.values($users ?? {}) as u}
+					<article>
+						<div>
+							{#if !u.playerName}
+								<button on:click={() => shareChar(u.id)}>Share Player Invite</button>
+								<a
+									rel="noreferrer"
+									href={`${base}/play?server=${encodeURIComponent(
+										connection.url
+									)}&playerId=${encodeURIComponent(u.id)}&groupId=${encodeURIComponent(
+										connection.group
+									)}`}
+									target="_blank">Add Player</a
+								>
+							{:else}
+								<header>
+									{#if u.char?.nameStore}
+										<hgroup>
+											<h1>
+												{get(u.char.nameStore)}
+											</h1>
+											<h2>
+												{u.playerName}
+											</h2>
+										</hgroup>
+									{:else}
+										<h2>
+											{u.playerName}
+										</h2>
+									{/if}
+								</header>
+								{#if u.char && u.playerName}
+									<PlayerData user={u} />
+								{/if}
+							{/if}
+						</div>
+					</article>
+				{/each}
 
-		<button on:click={() => connection?.AddPlayer()}>Add User</button>
+				<button on:click={() => connection?.AddPlayer()}>Add User</button>
+			</TabPanel>
+
+			<TabPanel>
+				<Battle {connection} />
+			</TabPanel>
+		</Tabs>
 	{:else}
 		<input type="text" bind:value={server} />
 		<button on:click={() => connect()}>Connect</button>
 	{/if}
 </main>
+
+<style lang="scss">
+	:global(.svelte-tabs__tab) {
+		color: var(--h1-color) !important;
+	}
+
+	:global(.svelte-tabs__selected) {
+		color: var(--primary) !important;
+		border-color: var(--primary) !important;
+	}
+	:global(.svelte-tabs__tab:hover) {
+		color: var(--primary-hover) !important;
+	}
+	:global(.svelte-tabs__tab:focus) {
+		color: var(--primary-focus) !important;
+	}
+</style>

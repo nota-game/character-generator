@@ -4,8 +4,10 @@
 
 import type { BesonderheitDefinition_besonderheit, FertigkeitDefinition_fertigkeit, Geschlecht_misc, LevelDefinition_misc, Lokalisierungen_misc, PfadDefinition_pfad, TalentDefinition_talent } from "src/data/nota.g";
 import { Charakter, type MissingRequirements } from "src/models/Character";
-import type { Data } from "src/models/Data";
+import { Data } from "src/models/Data";
 import { UNINITILEZED } from "./StoreManager2";
+import type { StartStopNotifier, Subscriber, Unsubscriber, Writable } from "svelte/store";
+import { noop } from "svelte/internal";
 
 
 
@@ -138,7 +140,28 @@ export function join(array: string[], delimeter?: string, lastDelimeter?: string
 }
 
 
+export function getAgeText(v: number, organism: Data['morphLookup'][never] | undefined, char: Charakter | undefined) {
+    const l = Data.age2Lebensabschnitte(v, organism?.morph, organism?.art, organism?.gattung);
+    const year = Math.floor(v);
+    const month = Math.round((v - year) * 12);
+    const age = month == 0 ? ` ${year} Jahr${year === 1 ? '' : 'e'}` : ` ${year} Jahr${year === 1 ? '' : 'e'} und ${month} Monat${month === 1 ? '' : 'e'}`;
 
+    if (l === undefined) return age;
+    else
+        return (
+            distinct(l.map((x) => (x ? getText(x.Name, char) : '')))
+                .filter((x) => x != '')
+                .join(', ') + age
+        );
+
+}
+
+
+export function hasKey<T extends object>(
+    obj: T, prop: PropertyKey
+): prop is keyof T {
+    return prop in obj;
+}
 export function getText(p: Lokalisierungen_misc | undefined, options?: { sex: Geschlecht_misc } | Charakter): string {
     const languege = 'de';
     if (!p) {
@@ -163,14 +186,16 @@ export function getText(p: Lokalisierungen_misc | undefined, options?: { sex: Ge
     ).value;
 }
 
-export function getTextTalent(p: TalentDefinition_talent | undefined, character: Charakter, format: 'Name' | 'Probe' | 'NameProbe' = 'NameProbe'): string {
+export function getTextTalent(p: TalentDefinition_talent | undefined, character?: undefined, format?: 'Name'): string
+export function getTextTalent(p: TalentDefinition_talent | undefined, character: Charakter, format: 'Name' | 'Probe' | 'NameProbe'): string
+export function getTextTalent(p: TalentDefinition_talent | undefined, character?: Charakter, format: 'Name' | 'Probe' | 'NameProbe' = 'Name'): string {
     if (!p) {
         return '';
     }
-    const probe = [
+    const probe = character ? [
         ...filterNull(p.Probe.flatMap(x => x.Eigenschaft.map(y => y.Name))
             .map(x => handleUninitilized(character.eigenschaften[x ?? '']?.meta.currentValue()))
-            .map(x => x?.Abkürzung))];
+            .map(x => x?.Abkürzung))] : [];
     if (format == 'NameProbe' && probe.length > 0)
         return `${getText(p.Name)} (${probe.map(x => getText(x)).reduce((p, c) => `${p}•${c}`)})`
     else if (format == 'NameProbe')
@@ -575,3 +600,46 @@ export function renderRequirement(req: MissingRequirements, data: Data | undefin
 //     };
 //     return new Proxy(target, handler2);
 // }
+
+const subscriber_queue: any = [];
+export function writable<T>(value: T, start: StartStopNotifier<T> = noop): Writable<T> {
+    let stop: Unsubscriber | null = null;
+    const subscribers = new Set<readonly [Subscriber<T>, Unsubscriber]>();
+    function set(new_value: T) {
+        if (value !== new_value) {
+            value = new_value;
+            if (stop) { // store is ready
+                const run_queue = !subscriber_queue.length;
+                for (const subscriber of subscribers) {
+                    subscriber[1]();
+                    subscriber_queue.push(subscriber, value);
+                }
+                if (run_queue) {
+                    for (let i = 0; i < subscriber_queue.length; i += 2) {
+                        subscriber_queue[i][0](subscriber_queue[i + 1]);
+                    }
+                    subscriber_queue.length = 0;
+                }
+            }
+        }
+    }
+    function update(fn: (r: T) => T) {
+        set(fn(value));
+    }
+    function subscribe(run: Subscriber<T>, invalidate = noop) {
+        const subscriber = [run, invalidate] as const;
+        subscribers.add(subscriber);
+        if (subscribers.size === 1) {
+            stop = start(set) || noop;
+        }
+        run(value);
+        return () => {
+            subscribers.delete(subscriber);
+            if (subscribers.size === 0) {
+                stop?.();
+                stop = null;
+            }
+        };
+    }
+    return { set, update, subscribe };
+}

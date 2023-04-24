@@ -38,6 +38,8 @@
 
 	export let modifierFunction: TacticsInformation[] = [];
 
+	$: targets = charData.possibleTargets;
+
 	const dispatch = createEventDispatcher();
 
 	const remove = () => dispatch('remove');
@@ -329,6 +331,14 @@
 			>
 
 			{#each Array.from({ length: amount }).map((_, i) => i) as index}
+				{#if tactic.Typ == 'Offensiv' && ($targets ?? []).length>1}
+					<select>
+						{#each $targets as a}
+							<option value={a.id}>{a.name}</option>
+						{/each}
+					</select>
+				{/if}
+
 				<div
 					style="display: grid; grid-template-columns: max-content 1fr;margin-bottom: 1em;"
 					class="hide-empty"

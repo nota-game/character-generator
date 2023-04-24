@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { afterUpdate, onMount } from 'svelte';
+	import { afterUpdate, onDestroy, onMount } from 'svelte';
 	import { Data } from 'src/models/Data';
 	import { Charakter } from 'src/models/Character';
 
@@ -49,20 +49,32 @@
 			const groupId = params.get('groupId');
 
 			if (playerName && playerId && groupId && serverUrl) {
-				connection = new ConnectionPlayer(serverUrl, playerId, groupId);
+				if (connection) {
+					connection.Close().then(() => {
+						connection = new ConnectionPlayer(serverUrl, playerId, groupId);
+					});
+				} else {
+					connection = new ConnectionPlayer(serverUrl, playerId, groupId);
+				}
 			}
 		}
 	}
 
+	onDestroy(()=>{
+		if(connection){
+			connection.Close();
+		}
+	})
+
 	$: {
-		if (params && $charCoreData && connection) {
+		if (params && charData && connection) {
 			const serverUrl = params.get('server');
 			const playerName = params.get('playerName');
 			const playerId = params.get('playerId');
 			const groupId = params.get('groupId');
 
 			if (playerName && playerId && groupId && serverUrl) {
-				connection.InitPlayerData(playerName, $charCoreData);
+				connection.InitPlayerData(playerName, charData);
 			}
 		}
 	}
@@ -140,7 +152,9 @@
 <div class="root" class:expand-log={expandLog}>
 	<nav>
 		<a href={pageLink} role="button" rel="external">Zum Editor</a>
-		<span>{#if connection !==undefined}Connected{:else}Unconnected{/if}</span>
+		<span
+			>{#if connection !== undefined}Connected{:else}Unconnected{/if}</span
+		>
 		<label
 			>Log Expanded
 			<input type="checkbox" bind:checked={expandLog} />

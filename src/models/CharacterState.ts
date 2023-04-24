@@ -1,26 +1,133 @@
 import { Wound, type WoundServity } from "src/controls/hitman";
 import type { Lokalisierungen_misc, Nachladeeinheit_kampf_ausstattung, NahkampfWaffenDefinition_kampf_ausstattung, TalentDefinition_talent, _Probe, Trefferzonen_Definition_kampf_ausstattung } from "src/data/nota.g";
-import { d20, filterNull, join } from "src/misc/misc";
+import { d20, filterNull, hasKey, join, writable } from "src/misc/misc";
 import type { TacticsInformation } from "src/view/game/mele/actionTacticsTacticConfig.svelte";
-import { derived, get, readable, writable, type Readable, type Writable } from "svelte/store";
-import type { Charakter } from "./Character";
+import { derived, get,  type Readable, type Writable, type Unsubscriber } from "svelte/store";
+import { Charakter } from "./Character";
 import { LogBattleAction } from "./log/LogBattleAction";
 import { LogSimpleRole } from "./log/LogSimpleRole";
+import { Log } from "./log/BaseLog";
+import { deepEqual } from "ts-deep-equal";
+
 
 export type fatiqueType = 'Blutung' | 'Erschöpfung' | 'Verausgabung' | 'Strapazierung';
 export type meleMaliType = 'Position' | 'Schmerzen';
 
-type Log = LogMessage | LogSimpleRole;
 
-export class LogMessage {
+export class LogMessage extends Log {
     public readonly message: readonly string[];
 
     constructor(message: readonly string[] | string) {
+        super();
         if (typeof message == 'string') {
             this.message = [message];
         } else {
             this.message = message;
         }
+    }
+
+}
+
+function safe_not_equal(a: unknown, b: unknown) {
+    return a != a
+        ? b == b
+        : a !== b
+        || ((a && typeof a === 'object') || typeof a === 'function');
+}
+
+export class Syncronizer {
+
+    private readonly arg;
+
+    /**
+     *
+     */
+    constructor(arg: unknown) {
+        this.arg = arg;
+    }
+
+    private readonly listeners: ((path: readonly PropertyKey[], value: unknown) => void)[] = [];
+
+    private unsubscriber: Unsubscriber[] | undefined;
+
+    private forEach<T>(doit: ((a: Writable<unknown>, path: readonly PropertyKey[]) => T), a: unknown, path: readonly (PropertyKey)[] = []): T[] {
+
+        const ignoredKeys = ['logSetter'];
+        if (ignoredKeys.includes(path[path.length - 1] as string)) {
+            return [];
+        }
+
+
+        if (typeof a != 'object' || a == null) {
+            return [];
+        }
+        if (a instanceof Charakter || a instanceof Log) {
+            return []; // igonor characte…
+        }
+        if (Array.isArray(a)) {
+            return a.flatMap((v, i) => this.forEach(doit, v, [...path, i]));
+        } else if ('subscribe' in a && 'set' in a && 'update' in a) {
+            const writable = a as Writable<unknown>;
+            return [doit(writable, path)];
+        } else {
+            return Object.entries(a).flatMap(([key, value]) => this.forEach(doit, value, [...path, key]))
+        }
+    }
+
+    public AddEventListener(callback: (path: readonly PropertyKey[], value: unknown) => void) {
+        this.listeners.push(callback);
+    }
+    public RemoveEventListener(callback: (path: readonly PropertyKey[], value: unknown) => void) {
+        const i = this.listeners.indexOf(callback); this.listeners.splice(i, Math.max(i, 0));
+    }
+
+    private trigger(path: readonly PropertyKey[], value: unknown) {
+        this.listeners.map(x => x(path, value))
+    }
+
+
+
+    public set(path: readonly PropertyKey[], value: unknown) {
+        let current = this.arg as unknown;
+        for (const key of path) {
+            if (typeof current !== 'object' || current == null || !(hasKey(current, key))) {
+                throw new Error('Path mismatch');
+            }
+            current = current[key];
+        }
+        const a = current as Writable<unknown>;
+        if (typeof a == 'object' && a !== null && 'subscribe' in a && 'set' in a && 'update' in a) {
+            a.update(oldValue => {
+
+
+                if (typeof oldValue == 'object' && typeof value == 'object') {
+                    const eq = deepEqual(oldValue, value);
+                    console.log('eq', eq)
+                    if (eq)
+                        return oldValue;
+                }
+                return value
+
+            });
+        } else {
+            throw new Error('Path mismatch no Writable');
+        }
+    }
+
+    public get() {
+        return this.forEach((w, path) => [path, get(w)] as const, this.arg)
+    }
+
+    public subscribe() {
+        this.unsubscribe();
+        this.unsubscriber = this.forEach((w, path) => {
+            return w.subscribe((r) => this.trigger(path, r))
+        }, this.arg);
+    }
+
+    public unsubscribe() {
+        this.unsubscriber?.forEach(x => x());
+        this.unsubscriber = undefined;
     }
 
 }
@@ -64,8 +171,11 @@ export class CharacterState {
     public readonly MaxGlüksPunkte: number;
     public readonly GlüksPunkte: Writable<number>;
 
+    public readonly possibleTargets: Writable<Array<{ id: string, name: string }>>;
+
     constructor(char: Charakter) {
         this.char = char;
+        this.possibleTargets = writable([]);
         this.MaxAussdauer = char.eigenschaften['ausdauer'].effective.currentValue({
             defaultValue: 1
         }) ?? 1;
@@ -363,7 +473,7 @@ export class CharacterState {
         }
     }
 
-    public addDamage(zone: string, { blunt = 0, cut = 0 }) {
+    public addDamage(zone: string, { blunt = 0, cut = 0 }, source?: string | object) {
 
 
         const toghnes = get(this.toughness);
@@ -393,14 +503,16 @@ export class CharacterState {
             }
         }
 
+        const sourceText = source ? ` von ${source.toString()}` : '';
+
         if (cut > 0 && hitServity != undefined) {
-            this.addLog(new LogMessage(`Schaden Erhalten, ${cut} Blutungen, und eine ${hitServity} Wunde am ${zone}.`));
+            this.addLog(new LogMessage(`Schaden Erhalten${sourceText}, ${cut} Blutungen, und eine ${hitServity} Wunde am ${zone}.`));
         } else if (cut > 0) {
-            this.addLog(new LogMessage(`Schaden Erhalten, ${cut} Blutungen.`));
+            this.addLog(new LogMessage(`Schaden Erhalten${sourceText}, ${cut} Blutungen.`));
         } else if (hitServity != undefined) {
-            this.addLog(new LogMessage(`Schaden Erhalten, eine ${hitServity} Wunde am ${zone}.`));
+            this.addLog(new LogMessage(`Schaden Erhalten${sourceText}, eine ${hitServity} Wunde am ${zone}.`));
         } else {
-            this.addLog(new LogMessage(`Kein Schaden erlitten.`));
+            this.addLog(new LogMessage(`Kein Schaden${sourceText} erlitten.`));
         }
 
 
