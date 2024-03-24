@@ -3,7 +3,7 @@
 	import { get, readable, writable, type Writable } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import type { CharacterState } from 'src/models/CharacterState';
-	import { Wound, type WoundServity } from './hitman';
+	import type { Wound, WoundServity } from './hitman';
 
 	export let charData: CharacterState;
 

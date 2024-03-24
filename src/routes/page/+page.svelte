@@ -27,9 +27,12 @@
 	import { filterNull } from 'src/misc/misc';
 	import Nota from 'src/view/nota.svelte';
 	import {} from 'src/css/theme.css';
+	import { CharacterState } from 'src/models/CharacterState';
 
 	let data: Data | undefined;
 	let char: Charakter | undefined;
+
+	$: charData = char == undefined ? undefined : new CharacterState(char);
 
 	let ready = false;
 
@@ -607,7 +610,9 @@
 			</div>
 			<div style="grid-column: 3; grid-row: 1;">
 				<h6>Ausdauer & Wunden</h6>
-				<Hitman {char} />
+				{#if charData}
+					<Hitman {charData} />
+				{/if}
 
 				<table class="aussdauer">
 					{#each [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as y}
